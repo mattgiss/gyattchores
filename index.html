@@ -78,10 +78,9 @@
         
         .dashboard-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 16px;
-            max-width: 1600px;
-            margin: 0 auto;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            padding: 0 20px;
             width: 100%;
         }
         
@@ -366,6 +365,16 @@
                 };
 
                 checkAndReset();
+            }, []);
+
+            // Auto-refresh for wall-mounted display - refresh every 30 seconds
+            useEffect(() => {
+                const interval = setInterval(() => {
+                    console.log('Auto-refreshing data for wall display...');
+                    loadData();
+                }, 30000); // 30 seconds
+
+                return () => clearInterval(interval);
             }, []);
 
             const loadData = async () => {
@@ -1991,41 +2000,41 @@
                     {/* Dashboard Header - Key Info */}
                     <div style={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-                        gap: '12px',
-                        maxWidth: '1600px',
-                        margin: '0 auto 20px'
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+                        gap: '20px',
+                        padding: '0 20px',
+                        margin: '0 0 24px 0'
                     }}>
                         {/* Daily Quote */}
                         {(() => {
                             const dailyQuote = getDailyQuote();
                             return (
                                 <div className="material-card elevation-1" style={{
-                                    padding: '16px',
+                                    padding: '24px',
                                     background: theme.cardBg,
-                                    borderLeft: `3px solid ${theme.primary}`
+                                    borderLeft: `4px solid ${theme.primary}`
                                 }}>
                                     <div style={{
-                                        fontSize: '0.6875rem',
-                                        fontWeight: '500',
+                                        fontSize: '0.875rem',
+                                        fontWeight: '600',
                                         textTransform: 'uppercase',
-                                        letterSpacing: '1px',
+                                        letterSpacing: '1.5px',
                                         color: theme.textSecondary,
-                                        marginBottom: '8px'
+                                        marginBottom: '12px'
                                     }}>
                                         💭 Today's Inspiration
                                     </div>
                                     <div style={{
-                                        fontSize: '0.9375rem',
+                                        fontSize: '1.25rem',
                                         fontStyle: 'italic',
                                         color: theme.cardText,
-                                        marginBottom: '6px',
-                                        lineHeight: '1.5'
+                                        marginBottom: '8px',
+                                        lineHeight: '1.6'
                                     }}>
                                         "{dailyQuote.quote}"
                                     </div>
                                     <div style={{
-                                        fontSize: '0.8125rem',
+                                        fontSize: '1.125rem',
                                         fontWeight: '500',
                                         color: theme.textSecondary
                                     }}>
@@ -2038,36 +2047,36 @@
                         {/* Weather */}
                         {weather && !weatherLoading && (
                             <div className="material-card elevation-1" style={{
-                                padding: '16px',
+                                padding: '24px',
                                 background: theme.cardBg
                             }}>
                                 <div style={{
-                                    fontSize: '0.6875rem',
-                                    fontWeight: '500',
+                                    fontSize: '0.875rem',
+                                    fontWeight: '600',
                                     textTransform: 'uppercase',
-                                    letterSpacing: '1px',
+                                    letterSpacing: '1.5px',
                                     color: theme.textSecondary,
-                                    marginBottom: '8px'
+                                    marginBottom: '12px'
                                 }}>
                                     🌤️ Brighton, CO Weather
                                 </div>
                                 <div style={{
-                                    fontSize: '2rem',
-                                    fontWeight: '600',
+                                    fontSize: '2.75rem',
+                                    fontWeight: '700',
                                     color: theme.primary,
-                                    marginBottom: '4px'
+                                    marginBottom: '8px'
                                 }}>
                                     {Math.round(weather.temp)}°F
                                 </div>
                                 <div style={{
-                                    fontSize: '0.875rem',
+                                    fontSize: '1.125rem',
                                     color: theme.cardText,
-                                    marginBottom: '6px'
+                                    marginBottom: '8px'
                                 }}>
                                     {weather.description}
                                 </div>
                                 <div style={{
-                                    fontSize: '0.8125rem',
+                                    fontSize: '1rem',
                                     color: theme.textSecondary
                                 }}>
                                     👕 {weather.clothing}
@@ -2141,11 +2150,11 @@
                         {/* Players Column */}
                         <div>
                             <div style={{
-                                fontSize: '0.6875rem',
-                                fontWeight: '500',
-                                marginBottom: '16px',
+                                fontSize: '0.875rem',
+                                fontWeight: '600',
+                                marginBottom: '20px',
                                 textTransform: 'uppercase',
-                                letterSpacing: '1px',
+                                letterSpacing: '1.5px',
                                 color: theme.textSecondary,
                                 paddingLeft: '8px'
                             }}>
@@ -2153,8 +2162,8 @@
                             </div>
                             {players.map(player => (
                                 <div key={player.id} className="material-card elevation-1" style={{
-                                    padding: '16px',
-                                    marginBottom: '12px',
+                                    padding: '24px',
+                                    marginBottom: '16px',
                                     background: theme.cardBg,
                                     border: isGoat(player.id) ? '2px solid #FFD700' : 'none',
                                     boxShadow: isGoat(player.id)
@@ -2187,9 +2196,9 @@
                                                 }
                                             }}
                                             style={{
-                                            fontSize: '2.5rem',
-                                            width: '56px',
-                                            height: '56px',
+                                            fontSize: '3.5rem',
+                                            width: '80px',
+                                            height: '80px',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
@@ -2212,16 +2221,16 @@
                                         </div>
                                         <div style={{ flex: 1 }}>
                                             <div style={{
-                                                fontSize: '1.25rem',
-                                                fontWeight: '500',
-                                                marginBottom: '4px',
+                                                fontSize: '1.75rem',
+                                                fontWeight: '600',
+                                                marginBottom: '6px',
                                                 color: theme.cardText,
                                                 fontFamily: "'Google Sans Display', sans-serif"
                                             }}>
                                                 {player.name}
                                             </div>
                                             <div style={{
-                                                fontSize: '0.875rem',
+                                                fontSize: '1.125rem',
                                                 color: theme.textSecondary
                                             }}>
                                                 {player.completedChores} chores completed
@@ -2231,7 +2240,7 @@
                                                 if (pendingCount > 0) {
                                                     return (
                                                         <div style={{
-                                                            fontSize: '0.8125rem',
+                                                            fontSize: '1rem',
                                                             color: theme.accent,
                                                             fontWeight: '500'
                                                         }}>
@@ -2482,11 +2491,11 @@
                         {/* Available Chores Column */}
                         <div>
                             <div style={{
-                                fontSize: '0.6875rem',
-                                fontWeight: '500',
-                                marginBottom: '16px',
+                                fontSize: '0.875rem',
+                                fontWeight: '600',
+                                marginBottom: '20px',
                                 textTransform: 'uppercase',
-                                letterSpacing: '1px',
+                                letterSpacing: '1.5px',
                                 color: theme.textSecondary,
                                 paddingLeft: '8px'
                             }}>
@@ -2510,46 +2519,46 @@
                                     const isCustomTask = chore.icon === '⭐';
                                     return (
                                     <div key={chore.id || idx} className="material-card elevation-1" style={{
-                                        marginBottom: '12px',
+                                        marginBottom: '16px',
                                         overflow: 'hidden',
                                         background: theme.cardBg,
-                                        border: isCustomTask ? `2px solid ${theme.accent}` : 'none',
+                                        border: isCustomTask ? `3px solid ${theme.accent}` : 'none',
                                         boxShadow: isCustomTask
-                                            ? `0 0 16px ${darkMode ? 'rgba(18, 10, 204, 0.3)' : 'rgba(235, 112, 30, 0.3)'}, 0 2px 8px 0 rgba(0,0,0,.1)`
+                                            ? `0 0 20px ${darkMode ? 'rgba(18, 10, 204, 0.4)' : 'rgba(235, 112, 30, 0.4)'}, 0 2px 8px 0 rgba(0,0,0,.1)`
                                             : undefined
                                     }}>
-                                        <div style={{ padding: '16px' }}>
+                                        <div style={{ padding: '24px' }}>
                                             <div style={{
                                                 display: 'flex',
                                                 alignItems: 'center',
-                                                gap: '12px',
-                                                marginBottom: '12px'
+                                                gap: '16px',
+                                                marginBottom: '16px'
                                             }}>
                                                 <div style={{
-                                                    fontSize: '1.5rem',
-                                                    width: '48px',
-                                                    height: '48px',
+                                                    fontSize: '2.25rem',
+                                                    width: '64px',
+                                                    height: '64px',
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     justifyContent: 'center',
-                                                    borderRadius: '12px',
+                                                    borderRadius: '14px',
                                                     background: darkMode ? 'rgba(71, 178, 196, 0.1)' : 'rgba(208, 165, 0, 0.1)'
                                                 }}>
                                                     {chore.icon}
                                                 </div>
                                                 <div style={{ flex: 1 }}>
                                                     <span className="text-wrap" style={{
-                                                        fontSize: '1rem',
-                                                        fontWeight: '500',
+                                                        fontSize: '1.375rem',
+                                                        fontWeight: '600',
                                                         color: theme.cardText,
                                                         display: 'block',
-                                                        marginBottom: '4px'
+                                                        marginBottom: '6px'
                                                     }}>
                                                         {chore.name}
                                                     </span>
                                                     <span style={{
-                                                        fontSize: '0.875rem',
-                                                        fontWeight: '500',
+                                                        fontSize: '1.125rem',
+                                                        fontWeight: '600',
                                                         color: theme.primary
                                                     }}>
                                                         {chore.points} pts
@@ -2605,15 +2614,16 @@
                                                     className="ripple"
                                                     style={{
                                                         flex: 1,
-                                                        padding: '12px',
+                                                        padding: '18px',
                                                         background: theme.primary,
                                                         color: theme.onPrimary,
                                                         border: 'none',
                                                         cursor: 'pointer',
-                                                        fontSize: '0.875rem',
-                                                        fontWeight: '500',
+                                                        fontSize: '1.125rem',
+                                                        fontWeight: '600',
                                                         textTransform: 'uppercase',
-                                                        letterSpacing: '0.25px'
+                                                        letterSpacing: '0.5px',
+                                                        borderRadius: '8px'
                                                     }}
                                                 >
                                                     {player.name}
