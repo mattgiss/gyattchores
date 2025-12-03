@@ -196,6 +196,18 @@
         ::-webkit-scrollbar-thumb:hover {
             background: rgba(0,0,0,0.3);
         }
+
+        /* Achievement notification animation */
+        @keyframes slideInRight {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1851,6 +1863,81 @@
                         </div>
                     </div>
 
+                    {/* Achievement Unlock Notifications */}
+                    {newAchievements.length > 0 && (
+                        <div style={{
+                            position: 'fixed',
+                            top: '20px',
+                            right: '20px',
+                            zIndex: 1000,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '12px',
+                            maxWidth: '350px'
+                        }}>
+                            {newAchievements.map((achievement, idx) => {
+                                const player = players.find(p => p.id === achievement.playerId);
+                                return (
+                                    <div key={`${achievement.id}-${achievement.playerId}-${idx}`}
+                                        className="material-card elevation-3"
+                                        style={{
+                                            padding: '16px',
+                                            background: darkMode ? '#1E1E1E' : '#FFFFFF',
+                                            border: `2px solid ${theme.primary}`,
+                                            boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+                                            animation: 'slideInRight 0.3s ease-out'
+                                        }}>
+                                        <div style={{
+                                            fontSize: '0.6875rem',
+                                            fontWeight: '600',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '1px',
+                                            color: theme.primary,
+                                            marginBottom: '8px'
+                                        }}>
+                                            🏆 Achievement Unlocked!
+                                        </div>
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '12px'
+                                        }}>
+                                            <div style={{ fontSize: '3rem' }}>
+                                                {achievement.icon}
+                                            </div>
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{
+                                                    fontSize: '1rem',
+                                                    fontWeight: '600',
+                                                    color: theme.text,
+                                                    marginBottom: '4px'
+                                                }}>
+                                                    {achievement.name}
+                                                </div>
+                                                <div style={{
+                                                    fontSize: '0.8125rem',
+                                                    color: theme.textSecondary,
+                                                    marginBottom: '4px'
+                                                }}>
+                                                    {achievement.description}
+                                                </div>
+                                                {player && (
+                                                    <div style={{
+                                                        fontSize: '0.75rem',
+                                                        color: theme.primary,
+                                                        fontWeight: '500'
+                                                    }}>
+                                                        {player.avatar} {player.name}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+
                     {/* Dashboard Header - Key Info */}
                     <div style={{
                         display: 'grid',
@@ -2166,6 +2253,47 @@
                                             ))}
                                         </div>
                                     )}
+
+                                    {/* Latest Achievement */}
+                                    {(() => {
+                                        const playerAchs = playerAchievements[player.id] || [];
+                                        if (playerAchs.length > 0) {
+                                            // Get the most recent achievement
+                                            const latest = playerAchs.sort((a, b) =>
+                                                new Date(b.earned_at) - new Date(a.earned_at)
+                                            )[0];
+                                            const achievement = achievements.find(a => a.id === latest.achievement_id);
+
+                                            if (achievement) {
+                                                return (
+                                                    <div style={{
+                                                        marginTop: '12px',
+                                                        padding: '8px',
+                                                        background: theme.surface,
+                                                        borderRadius: '8px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '8px',
+                                                        fontSize: '0.75rem'
+                                                    }}>
+                                                        <span style={{ fontSize: '1.25rem' }}>{achievement.icon}</span>
+                                                        <div style={{ flex: 1 }}>
+                                                            <div style={{
+                                                                fontWeight: '600',
+                                                                color: theme.cardText
+                                                            }}>
+                                                                {achievement.name}
+                                                            </div>
+                                                            <div style={{ color: theme.textSecondary, fontSize: '0.6875rem' }}>
+                                                                {playerAchs.length} {playerAchs.length === 1 ? 'achievement' : 'achievements'}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            }
+                                        }
+                                        return null;
+                                    })()}
 
                                     <button
                                         className="material-button ripple"
