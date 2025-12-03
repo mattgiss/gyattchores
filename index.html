@@ -673,13 +673,12 @@
                         }
                     }
 
-                    // Brighton, CO coordinates
-                    const lat = 39.9851;
-                    const lon = -104.8206;
+                    // Brighton, CO zipcode
+                    const zipcode = '80601';
 
                     // Using free OpenWeatherMap API
                     const API_KEY = ''; // User needs to add their own key
-                    const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=imperial&appid=${API_KEY}`;
+                    const url = `https://api.openweathermap.org/data/2.5/weather?zip=${zipcode},US&units=imperial&appid=${API_KEY}`;
 
                     // If no API key, use mock data for demo
                     if (!API_KEY) {
@@ -1497,50 +1496,153 @@
                         </div>
                     </div>
 
-                    {/* Daily Quote */}
-                    {(() => {
-                        const dailyQuote = getDailyQuote();
-                        return (
+                    {/* Dashboard Header - Key Info */}
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                        gap: '12px',
+                        maxWidth: '1600px',
+                        margin: '0 auto 20px'
+                    }}>
+                        {/* Daily Quote */}
+                        {(() => {
+                            const dailyQuote = getDailyQuote();
+                            return (
+                                <div className="material-card elevation-1" style={{
+                                    padding: '16px',
+                                    background: theme.cardBg,
+                                    borderLeft: `3px solid ${theme.primary}`
+                                }}>
+                                    <div style={{
+                                        fontSize: '0.6875rem',
+                                        fontWeight: '500',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '1px',
+                                        color: theme.textSecondary,
+                                        marginBottom: '8px'
+                                    }}>
+                                        💭 Today's Inspiration
+                                    </div>
+                                    <div style={{
+                                        fontSize: '0.9375rem',
+                                        fontStyle: 'italic',
+                                        color: theme.cardText,
+                                        marginBottom: '6px',
+                                        lineHeight: '1.5'
+                                    }}>
+                                        "{dailyQuote.quote}"
+                                    </div>
+                                    <div style={{
+                                        fontSize: '0.8125rem',
+                                        fontWeight: '500',
+                                        color: theme.textSecondary
+                                    }}>
+                                        — {dailyQuote.author}
+                                    </div>
+                                </div>
+                            );
+                        })()}
+
+                        {/* Weather */}
+                        {weather && !weatherLoading && (
                             <div className="material-card elevation-1" style={{
-                                padding: '20px',
-                                marginBottom: '20px',
-                                maxWidth: '1600px',
-                                margin: '0 auto 20px',
-                                background: darkMode
-                                    ? 'linear-gradient(135deg, rgba(71, 178, 196, 0.08) 0%, rgba(181, 158, 217, 0.08) 100%)'
-                                    : 'linear-gradient(135deg, rgba(208, 165, 0, 0.08) 0%, rgba(235, 112, 30, 0.08) 100%)',
-                                borderLeft: `3px solid ${theme.primary}`,
-                                textAlign: 'center'
+                                padding: '16px',
+                                background: theme.cardBg
                             }}>
                                 <div style={{
-                                    fontSize: '0.75rem',
+                                    fontSize: '0.6875rem',
                                     fontWeight: '500',
                                     textTransform: 'uppercase',
                                     letterSpacing: '1px',
-                                    color: theme.primary,
-                                    marginBottom: '12px'
+                                    color: theme.textSecondary,
+                                    marginBottom: '8px'
                                 }}>
-                                    💭 Today's Inspiration
+                                    🌤️ Brighton, CO Weather
                                 </div>
                                 <div style={{
-                                    fontSize: '1.125rem',
-                                    fontStyle: 'italic',
-                                    color: theme.text,
-                                    marginBottom: '12px',
-                                    lineHeight: '1.6'
+                                    fontSize: '2rem',
+                                    fontWeight: '600',
+                                    color: theme.primary,
+                                    marginBottom: '4px'
                                 }}>
-                                    "{dailyQuote.quote}"
+                                    {Math.round(weather.temp)}°F
                                 </div>
                                 <div style={{
                                     fontSize: '0.875rem',
-                                    fontWeight: '500',
+                                    color: theme.cardText,
+                                    marginBottom: '6px'
+                                }}>
+                                    {weather.description}
+                                </div>
+                                <div style={{
+                                    fontSize: '0.8125rem',
                                     color: theme.textSecondary
                                 }}>
-                                    — {dailyQuote.author}
+                                    👕 {weather.clothing}
                                 </div>
                             </div>
-                        );
-                    })()}
+                        )}
+
+                        {/* Next Payout */}
+                        <div className="material-card elevation-1" style={{
+                            padding: '16px',
+                            background: theme.cardBg,
+                            textAlign: 'center'
+                        }}>
+                            <div style={{
+                                fontSize: '0.6875rem',
+                                fontWeight: '500',
+                                textTransform: 'uppercase',
+                                letterSpacing: '1px',
+                                color: theme.textSecondary,
+                                marginBottom: '8px'
+                            }}>
+                                💸 Next Payout
+                            </div>
+                            <div style={{
+                                fontSize: '1.125rem',
+                                fontWeight: '500',
+                                color: theme.cardText
+                            }}>
+                                {payoutDate}
+                            </div>
+                        </div>
+
+                        {/* Weekly GOAT */}
+                        {weeklyGoats.length > 0 && (
+                            <div className="material-card elevation-1" style={{
+                                padding: '16px',
+                                background: theme.cardBg,
+                                border: '2px solid #FFD700',
+                                boxShadow: '0 0 16px rgba(255, 215, 0, 0.2), 0 2px 8px 0 rgba(0,0,0,.1)'
+                            }}>
+                                <div style={{
+                                    fontSize: '0.6875rem',
+                                    fontWeight: '500',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '1px',
+                                    color: theme.textSecondary,
+                                    marginBottom: '8px'
+                                }}>
+                                    🐐 {weeklyGoats.length > 1 ? 'CO-GOATS' : 'GOAT'} OF THE WEEK
+                                </div>
+                                <div style={{
+                                    fontSize: '1.125rem',
+                                    fontWeight: '600',
+                                    color: '#FFD700',
+                                    marginBottom: '4px'
+                                }}>
+                                    {weeklyGoats.map(g => g.player_name).join(' & ')}
+                                </div>
+                                <div style={{
+                                    fontSize: '0.875rem',
+                                    color: theme.textSecondary
+                                }}>
+                                    {weeklyGoats[0].weekly_total.toLocaleString()} points
+                                </div>
+                            </div>
+                        )}
+                    </div>
 
                     {/* Dashboard Grid */}
                     <div className="dashboard-grid">
@@ -1568,7 +1670,31 @@
                                         : undefined
                                 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                                        <div style={{ 
+                                        <div
+                                            onClick={async () => {
+                                                const newEmoji = prompt(`Pick a new emoji for ${player.name}:`, player.avatar);
+                                                if (newEmoji && newEmoji.trim() && newEmoji !== player.avatar) {
+                                                    try {
+                                                        const { error } = await supabase
+                                                            .from('players')
+                                                            .update({ avatar_url: newEmoji.trim() })
+                                                            .eq('id', player.id);
+
+                                                        if (error) throw error;
+
+                                                        // Update local state
+                                                        setPlayers(prev => prev.map(p =>
+                                                            p.id === player.id ? { ...p, avatar: newEmoji.trim() } : p
+                                                        ));
+
+                                                        alert(`✅ Avatar updated for ${player.name}!`);
+                                                    } catch (error) {
+                                                        console.error('Error updating avatar:', error);
+                                                        alert('Failed to update avatar');
+                                                    }
+                                                }
+                                            }}
+                                            style={{
                                             fontSize: '2.5rem',
                                             width: '56px',
                                             height: '56px',
@@ -1576,8 +1702,20 @@
                                             alignItems: 'center',
                                             justifyContent: 'center',
                                             borderRadius: '50%',
-                                            background: darkMode ? 'rgba(71, 178, 196, 0.1)' : 'rgba(208, 165, 0, 0.1)'
-                                        }}>
+                                            background: darkMode ? 'rgba(71, 178, 196, 0.1)' : 'rgba(208, 165, 0, 0.1)',
+                                            cursor: 'pointer',
+                                            transition: 'transform 0.2s, background 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.transform = 'scale(1.1)';
+                                            e.currentTarget.style.background = darkMode ? 'rgba(71, 178, 196, 0.2)' : 'rgba(208, 165, 0, 0.2)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.transform = 'scale(1)';
+                                            e.currentTarget.style.background = darkMode ? 'rgba(71, 178, 196, 0.1)' : 'rgba(208, 165, 0, 0.1)';
+                                        }}
+                                        title="Click to change avatar"
+                                        >
                                             {player.avatar}
                                         </div>
                                         <div style={{ flex: 1 }}>
@@ -1596,6 +1734,20 @@
                                             }}>
                                                 {player.completedChores} chores completed
                                             </div>
+                                            {(() => {
+                                                const pendingCount = pendingChores.filter(c => c.player_id === player.id).length;
+                                                if (pendingCount > 0) {
+                                                    return (
+                                                        <div style={{
+                                                            fontSize: '0.8125rem',
+                                                            color: theme.accent,
+                                                            fontWeight: '500'
+                                                        }}>
+                                                            ⏳ {pendingCount} pending approval
+                                                        </div>
+                                                    );
+                                                }
+                                            })()}
                                             {isGoat(player.id) && (
                                                 <div className="chip" style={{
                                                     background: darkMode ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255, 215, 0, 0.3)',
@@ -1679,31 +1831,6 @@
                                 </div>
                             ))}
 
-                            <div className="material-card elevation-1" style={{
-                                padding: '20px',
-                                background: theme.cardBg,
-                                textAlign: 'center',
-                                marginBottom: '12px'
-                            }}>
-                                <div style={{
-                                    fontSize: '0.6875rem',
-                                    fontWeight: '500',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '1px',
-                                    color: theme.textSecondary,
-                                    marginBottom: '8px'
-                                }}>
-                                    Next Payout
-                                </div>
-                                <div style={{
-                                    fontSize: '1rem',
-                                    fontWeight: '500',
-                                    color: theme.cardText
-                                }}>
-                                    {payoutDate}
-                                </div>
-                            </div>
-
                             {/* Last Week's GOAT */}
                             {lastWeekGoat && lastWeekGoat.length > 0 && (
                                 <div className="material-card elevation-1" style={{
@@ -1735,61 +1862,6 @@
                                         marginTop: '4px'
                                     }}>
                                         {lastWeekGoat[0].weekly_total.toLocaleString()} points
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Weather Widget */}
-                            {weather && (
-                                <div className="material-card elevation-1" style={{
-                                    padding: '20px',
-                                    background: theme.cardBg,
-                                    marginBottom: '12px'
-                                }}>
-                                    <div style={{
-                                        fontSize: '0.6875rem',
-                                        fontWeight: '500',
-                                        textTransform: 'uppercase',
-                                        letterSpacing: '1px',
-                                        color: theme.textSecondary,
-                                        marginBottom: '8px',
-                                        textAlign: 'center'
-                                    }}>
-                                        Brighton, CO Weather
-                                    </div>
-                                    <div style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '12px',
-                                        marginBottom: '12px'
-                                    }}>
-                                        <div style={{ fontSize: '3rem' }}>{weather.icon}</div>
-                                        <div>
-                                            <div style={{
-                                                fontSize: '2rem',
-                                                fontWeight: '600',
-                                                color: theme.primary
-                                            }}>
-                                                {weather.temp}°F
-                                            </div>
-                                            <div style={{
-                                                fontSize: '0.875rem',
-                                                color: theme.textSecondary
-                                            }}>
-                                                {weather.condition}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div style={{
-                                        fontSize: '0.875rem',
-                                        color: theme.cardText,
-                                        textAlign: 'center',
-                                        padding: '12px',
-                                        background: theme.surface,
-                                        borderRadius: '8px'
-                                    }}>
-                                        👕 {weather.clothing}
                                     </div>
                                 </div>
                             )}
@@ -1888,11 +1960,29 @@
                                 Available Chores
                             </div>
                             <div>
-                                {chores.map((chore, idx) => (
+                                {chores.filter(chore => {
+                                    // Get today's date
+                                    const today = new Date().toISOString().split('T')[0];
+
+                                    // Check if this chore has been completed today by anyone
+                                    const completedToday = pendingChores.some(completion =>
+                                        completion.chore_id === chore.id &&
+                                        completion.completed_date === today
+                                    );
+
+                                    // Only show chores that haven't been claimed today
+                                    return !completedToday;
+                                }).map((chore, idx) => {
+                                    const isCustomTask = chore.icon === '⭐';
+                                    return (
                                     <div key={chore.id || idx} className="material-card elevation-1" style={{
                                         marginBottom: '12px',
                                         overflow: 'hidden',
-                                        background: theme.cardBg
+                                        background: theme.cardBg,
+                                        border: isCustomTask ? `2px solid ${theme.accent}` : 'none',
+                                        boxShadow: isCustomTask
+                                            ? `0 0 16px ${darkMode ? 'rgba(18, 10, 204, 0.3)' : 'rgba(235, 112, 30, 0.3)'}, 0 2px 8px 0 rgba(0,0,0,.1)`
+                                            : undefined
                                     }}>
                                         <div style={{ padding: '16px' }}>
                                             <div style={{
@@ -1957,7 +2047,8 @@
                                             ))}
                                         </div>
                                     </div>
-                                ))}
+                                );
+                                })}
                             </div>
                         </div>
 
