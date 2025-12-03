@@ -210,6 +210,46 @@
 
         const APPROVAL_CODE = "1234";
 
+        // Daily motivational quotes from kid-friendly characters
+        const MOTIVATIONAL_QUOTES = [
+            { quote: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
+            { quote: "Believe you can and you're halfway there.", author: "Theodore Roosevelt" },
+            { quote: "Do or do not. There is no try.", author: "Yoda" },
+            { quote: "It always seems impossible until it's done.", author: "Nelson Mandela" },
+            { quote: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt" },
+            { quote: "You're braver than you believe, stronger than you seem, and smarter than you think.", author: "Christopher Robin" },
+            { quote: "All our dreams can come true, if we have the courage to pursue them.", author: "Walt Disney" },
+            { quote: "Success is not final, failure is not fatal: it is the courage to continue that counts.", author: "Winston Churchill" },
+            { quote: "Why do we fall? So we can learn to pick ourselves back up.", author: "Batman" },
+            { quote: "With great power comes great responsibility.", author: "Spider-Man" },
+            { quote: "Even miracles take a little time.", author: "Fairy Godmother" },
+            { quote: "The flower that blooms in adversity is the most rare and beautiful of all.", author: "The Emperor (Mulan)" },
+            { quote: "Just keep swimming!", author: "Dory" },
+            { quote: "Adventure is out there!", author: "Ellie (Up)" },
+            { quote: "To infinity and beyond!", author: "Buzz Lightyear" },
+            { quote: "Ohana means family, and family means nobody gets left behind.", author: "Stitch" },
+            { quote: "The past can hurt, but you can either run from it or learn from it.", author: "Rafiki" },
+            { quote: "No matter how your heart is grieving, if you keep on believing, the dream that you wish will come true.", author: "Cinderella" },
+            { quote: "Sometimes the right path is not the easiest one.", author: "Grandmother Willow" },
+            { quote: "It's kind of fun to do the impossible.", author: "Walt Disney" },
+            { quote: "A person's a person, no matter how small.", author: "Dr. Seuss" },
+            { quote: "Don't cry because it's over, smile because it happened.", author: "Dr. Seuss" },
+            { quote: "Today you are You, that is truer than true. There is no one alive who is Youer than You.", author: "Dr. Seuss" },
+            { quote: "You have brains in your head. You have feet in your shoes. You can steer yourself any direction you choose.", author: "Dr. Seuss" },
+            { quote: "The more that you read, the more things you will know. The more that you learn, the more places you'll go.", author: "Dr. Seuss" },
+            { quote: "Nothing is impossible. The word itself says 'I'm possible!'", author: "Audrey Hepburn" },
+            { quote: "A champion is someone who gets up when they can't.", author: "Jack Dempsey" },
+            { quote: "Winning isn't everything, but wanting to win is.", author: "Vince Lombardi" },
+            { quote: "The only limit to our realization of tomorrow will be our doubts of today.", author: "Franklin D. Roosevelt" },
+            { quote: "Don't let what you cannot do interfere with what you can do.", author: "John Wooden" }
+        ];
+
+        // Get daily quote (same quote for everyone on the same day)
+        const getDailyQuote = () => {
+            const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
+            return MOTIVATIONAL_QUOTES[dayOfYear % MOTIVATIONAL_QUOTES.length];
+        };
+
         const getLastFridayOfMonth = () => {
             const now = new Date();
             const year = now.getFullYear();
@@ -228,7 +268,16 @@
         };
 
         function FamilyChores() {
-            const [darkMode, setDarkMode] = useState(true);
+            // Auto-detect dark mode based on time of day (6 AM - 6 PM = light, else dark)
+            const getInitialDarkMode = () => {
+                const hour = new Date().getHours();
+                return hour < 6 || hour >= 18;
+            };
+
+            const [isLoggedIn, setIsLoggedIn] = useState(() => {
+                return localStorage.getItem('gyatt_session') === 'active';
+            });
+            const [darkMode, setDarkMode] = useState(getInitialDarkMode);
             const [loading, setLoading] = useState(true);
             const [players, setPlayers] = useState([]);
             const [chores, setChores] = useState([]);
@@ -255,6 +304,33 @@
 
             // Bonus system states
             const [playerBonuses, setPlayerBonuses] = useState({});
+
+            // Weather states
+            const [weather, setWeather] = useState(null);
+            const [weatherLoading, setWeatherLoading] = useState(true);
+
+            // Login states
+            const [loginPassword, setLoginPassword] = useState('');
+            const [loginError, setLoginError] = useState('');
+
+            // Login handler
+            const handleLogin = (e) => {
+                e.preventDefault();
+                if (loginPassword === APPROVAL_CODE) {
+                    localStorage.setItem('gyatt_session', 'active');
+                    setIsLoggedIn(true);
+                    setLoginError('');
+                } else {
+                    setLoginError('Invalid password');
+                    setLoginPassword('');
+                }
+            };
+
+            // Logout handler
+            const handleLogout = () => {
+                localStorage.removeItem('gyatt_session');
+                setIsLoggedIn(false);
+            };
 
             // Load data from Supabase
             useEffect(() => {
@@ -426,6 +502,11 @@
                 }
             }, [players, loading]);
 
+            // Fetch weather on mount
+            useEffect(() => {
+                fetchWeather();
+            }, []);
+
             // Material Design with Brand Colors
             const darkTheme = {
                 bg: '#0D121A',
@@ -572,6 +653,94 @@
 
                 } catch (error) {
                     console.error('Error checking bonuses:', error);
+                }
+            };
+
+            // Fetch weather for Brighton, CO
+            const fetchWeather = async () => {
+                try {
+                    // Check cache (localStorage with 30-min expiry)
+                    const cached = localStorage.getItem('weather_cache');
+                    if (cached) {
+                        const { data, timestamp } = JSON.parse(cached);
+                        const age = Date.now() - timestamp;
+                        if (age < 30 * 60 * 1000) { // 30 minutes
+                            setWeather(data);
+                            setWeatherLoading(false);
+                            return;
+                        }
+                    }
+
+                    // Brighton, CO coordinates
+                    const lat = 39.9851;
+                    const lon = -104.8206;
+
+                    // Using free OpenWeatherMap API
+                    const API_KEY = ''; // User needs to add their own key
+                    const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=imperial&appid=${API_KEY}`;
+
+                    // If no API key, use mock data for demo
+                    if (!API_KEY) {
+                        const mockWeather = {
+                            temp: 65,
+                            condition: 'Partly Cloudy',
+                            icon: '☁️',
+                            clothing: 'Light jacket recommended'
+                        };
+                        setWeather(mockWeather);
+                        setWeatherLoading(false);
+                        return;
+                    }
+
+                    const response = await fetch(url);
+                    const data = await response.json();
+
+                    const temp = Math.round(data.main.temp);
+                    const condition = data.weather[0].main;
+
+                    // Weather icon mapping
+                    const iconMap = {
+                        'Clear': '☀️',
+                        'Clouds': '☁️',
+                        'Rain': '🌧️',
+                        'Snow': '❄️',
+                        'Thunderstorm': '⛈️',
+                        'Drizzle': '🌦️'
+                    };
+
+                    // Clothing suggestions based on temp
+                    let clothing = '';
+                    if (temp < 32) clothing = 'Heavy coat, hat, and gloves!';
+                    else if (temp < 50) clothing = 'Jacket or sweater recommended';
+                    else if (temp < 65) clothing = 'Light jacket might be nice';
+                    else if (temp < 80) clothing = 'Perfect weather, dress comfortably!';
+                    else clothing = 'Stay cool, light clothing!';
+
+                    const weatherData = {
+                        temp,
+                        condition,
+                        icon: iconMap[condition] || '🌤️',
+                        clothing
+                    };
+
+                    // Cache for 30 minutes
+                    localStorage.setItem('weather_cache', JSON.stringify({
+                        data: weatherData,
+                        timestamp: Date.now()
+                    }));
+
+                    setWeather(weatherData);
+                } catch (error) {
+                    console.error('Error fetching weather:', error);
+                    // Fallback data
+                    setWeather({
+                        temp: '--',
+                        condition: 'Weather unavailable',
+                        icon: '🌤️',
+                        clothing: 'Check outside before heading out!'
+                    });
+                } finally {
+                    setWeatherLoading(false);
                 }
             };
 
@@ -1122,8 +1291,133 @@
                 );
             }
 
+            // If not logged in, show login screen
+            if (!isLoggedIn) {
+                return (
+                    <div style={{
+                        minHeight: '100vh',
+                        background: darkMode ? '#121212' : '#f5f5f5',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        fontFamily: "'Google Sans', -apple-system, BlinkMacSystemFont, sans-serif"
+                    }}>
+                        <div className="material-card elevation-3" style={{
+                            padding: '40px',
+                            maxWidth: '400px',
+                            width: '90%',
+                            background: darkMode ? '#1E1E1E' : '#FFFFFF',
+                            borderRadius: '28px',
+                            textAlign: 'center'
+                        }}>
+                            <h1 style={{
+                                fontSize: '2rem',
+                                fontWeight: '500',
+                                marginBottom: '8px',
+                                color: darkMode ? '#E0E0E0' : '#202124'
+                            }}>
+                                GyattChores
+                            </h1>
+                            <p style={{
+                                fontSize: '0.875rem',
+                                color: darkMode ? '#9E9E9E' : '#5F6368',
+                                marginBottom: '32px'
+                            }}>
+                                Family Chore Tracker
+                            </p>
+
+                            <form onSubmit={handleLogin}>
+                                <div style={{ marginBottom: '24px', textAlign: 'left' }}>
+                                    <label style={{
+                                        display: 'block',
+                                        fontSize: '0.875rem',
+                                        fontWeight: '500',
+                                        marginBottom: '8px',
+                                        color: darkMode ? '#E0E0E0' : '#202124'
+                                    }}>
+                                        Password
+                                    </label>
+                                    <input
+                                        type="password"
+                                        value={loginPassword}
+                                        onChange={(e) => setLoginPassword(e.target.value)}
+                                        placeholder="Enter password"
+                                        autoFocus
+                                        style={{
+                                            width: '100%',
+                                            padding: '12px 16px',
+                                            fontSize: '1rem',
+                                            border: `1px solid ${darkMode ? '#333' : '#dadce0'}`,
+                                            borderRadius: '8px',
+                                            background: darkMode ? '#2C2C2C' : '#FFFFFF',
+                                            color: darkMode ? '#E0E0E0' : '#202124',
+                                            outline: 'none',
+                                            transition: 'border-color 0.2s'
+                                        }}
+                                        onFocus={(e) => {
+                                            e.target.style.borderColor = '#1a73e8';
+                                        }}
+                                        onBlur={(e) => {
+                                            e.target.style.borderColor = darkMode ? '#333' : '#dadce0';
+                                        }}
+                                    />
+                                </div>
+
+                                {loginError && (
+                                    <div style={{
+                                        padding: '12px',
+                                        marginBottom: '16px',
+                                        background: 'rgba(244, 67, 54, 0.1)',
+                                        border: '1px solid rgba(244, 67, 54, 0.3)',
+                                        borderRadius: '8px',
+                                        color: '#f44336',
+                                        fontSize: '0.875rem'
+                                    }}>
+                                        {loginError}
+                                    </div>
+                                )}
+
+                                <button
+                                    type="submit"
+                                    className="material-button elevation-1 ripple"
+                                    style={{
+                                        width: '100%',
+                                        padding: '12px',
+                                        fontSize: '1rem',
+                                        fontWeight: '500',
+                                        background: '#1a73e8',
+                                        color: '#FFFFFF',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        cursor: 'pointer',
+                                        transition: 'background 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.target.style.background = '#1557b0';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.background = '#1a73e8';
+                                    }}
+                                >
+                                    Login
+                                </button>
+                            </form>
+                        </div>
+
+                        <div style={{
+                            marginTop: '32px',
+                            fontSize: '0.75rem',
+                            color: darkMode ? '#9E9E9E' : '#5F6368'
+                        }}>
+                            Created by Matthew Gissentanna
+                        </div>
+                    </div>
+                );
+            }
+
             return (
-                <div style={{ 
+                <div style={{
                     minHeight: '100vh',
                     background: theme.bg,
                     color: theme.text,
@@ -1175,17 +1469,76 @@
                                 GyattChores
                             </h1>
                         </div>
-                        <button
-                            className="fab elevation-2 ripple"
-                            onClick={() => setDarkMode(!darkMode)}
-                            style={{
-                                background: theme.primary,
-                                color: theme.onPrimary
-                            }}
-                        >
-                            {darkMode ? '☀️' : '🌙'}
-                        </button>
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <button
+                                className="fab elevation-2 ripple"
+                                onClick={handleLogout}
+                                style={{
+                                    background: theme.error || '#f44336',
+                                    color: '#FFFFFF',
+                                    fontSize: '1rem'
+                                }}
+                                title="Logout"
+                            >
+                                🚪
+                            </button>
+                            <button
+                                className="fab elevation-2 ripple"
+                                onClick={() => setDarkMode(!darkMode)}
+                                style={{
+                                    background: theme.primary,
+                                    color: theme.onPrimary
+                                }}
+                            >
+                                {darkMode ? '☀️' : '🌙'}
+                            </button>
+                        </div>
                     </div>
+
+                    {/* Daily Quote */}
+                    {(() => {
+                        const dailyQuote = getDailyQuote();
+                        return (
+                            <div className="material-card elevation-2" style={{
+                                padding: '24px',
+                                marginBottom: '24px',
+                                maxWidth: '1600px',
+                                margin: '0 auto 24px',
+                                background: darkMode
+                                    ? 'linear-gradient(135deg, rgba(71, 178, 196, 0.1) 0%, rgba(181, 158, 217, 0.1) 100%)'
+                                    : 'linear-gradient(135deg, rgba(208, 165, 0, 0.1) 0%, rgba(235, 112, 30, 0.1) 100%)',
+                                borderLeft: `4px solid ${theme.primary}`,
+                                textAlign: 'center'
+                            }}>
+                                <div style={{
+                                    fontSize: '0.75rem',
+                                    fontWeight: '500',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '1px',
+                                    color: theme.primary,
+                                    marginBottom: '12px'
+                                }}>
+                                    💭 Today's Inspiration
+                                </div>
+                                <div style={{
+                                    fontSize: '1.125rem',
+                                    fontStyle: 'italic',
+                                    color: theme.text,
+                                    marginBottom: '12px',
+                                    lineHeight: '1.6'
+                                }}>
+                                    "{dailyQuote.quote}"
+                                </div>
+                                <div style={{
+                                    fontSize: '0.875rem',
+                                    fontWeight: '500',
+                                    color: theme.textSecondary
+                                }}>
+                                    — {dailyQuote.author}
+                                </div>
+                            </div>
+                        );
+                    })()}
 
                     {/* Dashboard Grid */}
                     <div className="dashboard-grid">
@@ -1380,6 +1733,61 @@
                                         marginTop: '4px'
                                     }}>
                                         {lastWeekGoat[0].weekly_total.toLocaleString()} points
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Weather Widget */}
+                            {weather && (
+                                <div className="material-card elevation-1" style={{
+                                    padding: '20px',
+                                    background: theme.cardBg,
+                                    marginBottom: '12px'
+                                }}>
+                                    <div style={{
+                                        fontSize: '0.6875rem',
+                                        fontWeight: '500',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '1px',
+                                        color: theme.textSecondary,
+                                        marginBottom: '8px',
+                                        textAlign: 'center'
+                                    }}>
+                                        Brighton, CO Weather
+                                    </div>
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '12px',
+                                        marginBottom: '12px'
+                                    }}>
+                                        <div style={{ fontSize: '3rem' }}>{weather.icon}</div>
+                                        <div>
+                                            <div style={{
+                                                fontSize: '2rem',
+                                                fontWeight: '600',
+                                                color: theme.primary
+                                            }}>
+                                                {weather.temp}°F
+                                            </div>
+                                            <div style={{
+                                                fontSize: '0.875rem',
+                                                color: theme.textSecondary
+                                            }}>
+                                                {weather.condition}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style={{
+                                        fontSize: '0.875rem',
+                                        color: theme.cardText,
+                                        textAlign: 'center',
+                                        padding: '12px',
+                                        background: theme.surface,
+                                        borderRadius: '8px'
+                                    }}>
+                                        👕 {weather.clothing}
                                     </div>
                                 </div>
                             )}
