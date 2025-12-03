@@ -248,6 +248,11 @@
             const [currentWeekStart, setCurrentWeekStart] = useState(null);
             const [needsWeeklyReset, setNeedsWeeklyReset] = useState(false);
 
+            // Profile page states
+            const [showProfile, setShowProfile] = useState(false);
+            const [selectedPlayer, setSelectedPlayer] = useState(null);
+            const [playerHistory, setPlayerHistory] = useState([]);
+
             // Load data from Supabase
             useEffect(() => {
                 const checkAndReset = async () => {
@@ -447,6 +452,31 @@
             // Helper function to check if player is GOAT
             const isGoat = (playerId) => {
                 return weeklyGoats.some(goat => goat.player_id === playerId);
+            };
+
+            // Load player profile data
+            const loadPlayerProfile = async (playerId) => {
+                try {
+                    // Get last 30 days of chore history
+                    const thirtyDaysAgo = new Date();
+                    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+                    const { data, error } = await supabase
+                        .from('chore_completions')
+                        .select(`
+                            *,
+                            chores(name, icon, base_value)
+                        `)
+                        .eq('player_id', playerId)
+                        .gte('completed_date', thirtyDaysAgo.toISOString().split('T')[0])
+                        .order('completed_date', { ascending: false });
+
+                    if (error) throw error;
+
+                    setPlayerHistory(data || []);
+                } catch (error) {
+                    console.error('Error loading player profile:', error);
+                }
             };
 
             // Weekly reset function
@@ -664,6 +694,313 @@
                 );
             }
 
+            // Profile Page View
+            if (showProfile && selectedPlayer) {
+                const approvedHistory = playerHistory.filter(h => h.status === 'approved');
+                const last7Days = approvedHistory.slice(0, 7);
+
+                // Group by date for daily totals
+                const dailyTotals = {};
+                approvedHistory.forEach(h => {
+                    const date = h.completed_date;
+                    if (!dailyTotals[date]) {
+                        dailyTotals[date] = { date, points: 0, chores: [] };
+                    }
+                    dailyTotals[date].points += h.value_awarded;
+                    dailyTotals[date].chores.push(h);
+                });
+
+                const dailyData = Object.values(dailyTotals).sort((a, b) =>
+                    new Date(b.date) - new Date(a.date)
+                );
+
+                return (
+                    <div style={{
+                        minHeight: '100vh',
+                        background: theme.bg,
+                        color: theme.text,
+                        padding: '16px'
+                    }}>
+                        {/* Header with Back Button */}
+                        <div className="elevation-2" style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '16px',
+                            padding: '12px 20px',
+                            marginBottom: '24px',
+                            maxWidth: '1200px',
+                            margin: '0 auto 24px',
+                            background: theme.surface,
+                            borderRadius: '28px',
+                            height: '64px'
+                        }}>
+                            <button
+                                onClick={() => setShowProfile(false)}
+                                className="fab elevation-1 ripple"
+                                style={{
+                                    background: theme.primary,
+                                    color: theme.onPrimary,
+                                    width: '48px',
+                                    height: '48px',
+                                    fontSize: '1.25rem'
+                                }}
+                            >
+                                ←
+                            </button>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                                <div style={{ fontSize: '2rem' }}>{selectedPlayer.avatar}</div>
+                                <h1 style={{
+                                    fontSize: '1.375rem',
+                                    fontWeight: '500',
+                                    margin: 0,
+                                    fontFamily: "'Google Sans Display', sans-serif"
+                                }}>
+                                    {selectedPlayer.name}'s Profile
+                                </h1>
+                            </div>
+                        </div>
+
+                        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                            {/* Stats Grid */}
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                                gap: '16px',
+                                marginBottom: '24px'
+                            }}>
+                                {/* Weekly Total */}
+                                <div className="material-card elevation-1" style={{
+                                    padding: '20px',
+                                    background: theme.cardBg,
+                                    textAlign: 'center'
+                                }}>
+                                    <div style={{
+                                        fontSize: '0.75rem',
+                                        fontWeight: '500',
+                                        textTransform: 'uppercase',
+                                        color: theme.textSecondary,
+                                        marginBottom: '8px'
+                                    }}>
+                                        This Week
+                                    </div>
+                                    <div style={{
+                                        fontSize: '2rem',
+                                        fontWeight: '600',
+                                        color: theme.primary
+                                    }}>
+                                        {selectedPlayer.points.toLocaleString()}
+                                    </div>
+                                    <div style={{ fontSize: '0.875rem', color: theme.textSecondary }}>points</div>
+                                </div>
+
+                                {/* Personal Best */}
+                                <div className="material-card elevation-1" style={{
+                                    padding: '20px',
+                                    background: theme.cardBg,
+                                    textAlign: 'center'
+                                }}>
+                                    <div style={{
+                                        fontSize: '0.75rem',
+                                        fontWeight: '500',
+                                        textTransform: 'uppercase',
+                                        color: theme.textSecondary,
+                                        marginBottom: '8px'
+                                    }}>
+                                        Personal Best
+                                    </div>
+                                    <div style={{
+                                        fontSize: '2rem',
+                                        fontWeight: '600',
+                                        color: theme.accent
+                                    }}>
+                                        {selectedPlayer.best_week_total.toLocaleString()}
+                                    </div>
+                                    <div style={{ fontSize: '0.875rem', color: theme.textSecondary }}>points</div>
+                                </div>
+
+                                {/* Total Chores */}
+                                <div className="material-card elevation-1" style={{
+                                    padding: '20px',
+                                    background: theme.cardBg,
+                                    textAlign: 'center'
+                                }}>
+                                    <div style={{
+                                        fontSize: '0.75rem',
+                                        fontWeight: '500',
+                                        textTransform: 'uppercase',
+                                        color: theme.textSecondary,
+                                        marginBottom: '8px'
+                                    }}>
+                                        Total Chores
+                                    </div>
+                                    <div style={{
+                                        fontSize: '2rem',
+                                        fontWeight: '600',
+                                        color: theme.success
+                                    }}>
+                                        {selectedPlayer.completedChores}
+                                    </div>
+                                    <div style={{ fontSize: '0.875rem', color: theme.textSecondary }}>completed</div>
+                                </div>
+
+                                {/* Next Payout */}
+                                <div className="material-card elevation-1" style={{
+                                    padding: '20px',
+                                    background: theme.cardBg,
+                                    textAlign: 'center'
+                                }}>
+                                    <div style={{
+                                        fontSize: '0.75rem',
+                                        fontWeight: '500',
+                                        textTransform: 'uppercase',
+                                        color: theme.textSecondary,
+                                        marginBottom: '8px'
+                                    }}>
+                                        Next Payout
+                                    </div>
+                                    <div style={{
+                                        fontSize: '1rem',
+                                        fontWeight: '500',
+                                        color: theme.cardText
+                                    }}>
+                                        {payoutDate}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Last 7 Days */}
+                            <div className="material-card elevation-1" style={{
+                                padding: '20px',
+                                background: theme.cardBg,
+                                marginBottom: '16px'
+                            }}>
+                                <h2 style={{
+                                    fontSize: '1.25rem',
+                                    fontWeight: '500',
+                                    marginBottom: '16px',
+                                    color: theme.cardText
+                                }}>
+                                    Last 7 Days
+                                </h2>
+                                {last7Days.length === 0 ? (
+                                    <div style={{
+                                        textAlign: 'center',
+                                        padding: '32px',
+                                        color: theme.textSecondary
+                                    }}>
+                                        No completed chores in the last 7 days
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        {last7Days.map((chore, idx) => (
+                                            <div key={idx} style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '12px',
+                                                padding: '12px',
+                                                background: theme.surface,
+                                                borderRadius: '12px'
+                                            }}>
+                                                <div style={{ fontSize: '1.5rem' }}>{chore.chores.icon}</div>
+                                                <div style={{ flex: 1 }}>
+                                                    <div style={{
+                                                        fontWeight: '500',
+                                                        color: theme.cardText
+                                                    }}>
+                                                        {chore.chores.name}
+                                                    </div>
+                                                    <div style={{
+                                                        fontSize: '0.75rem',
+                                                        color: theme.textSecondary
+                                                    }}>
+                                                        {new Date(chore.completed_date).toLocaleDateString('en-US', {
+                                                            weekday: 'short',
+                                                            month: 'short',
+                                                            day: 'numeric'
+                                                        })}
+                                                    </div>
+                                                </div>
+                                                <div style={{
+                                                    fontWeight: '600',
+                                                    color: theme.primary
+                                                }}>
+                                                    +{chore.value_awarded}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* 30-Day Log */}
+                            <div className="material-card elevation-1" style={{
+                                padding: '20px',
+                                background: theme.cardBg
+                            }}>
+                                <h2 style={{
+                                    fontSize: '1.25rem',
+                                    fontWeight: '500',
+                                    marginBottom: '16px',
+                                    color: theme.cardText
+                                }}>
+                                    30-Day History
+                                </h2>
+                                {dailyData.length === 0 ? (
+                                    <div style={{
+                                        textAlign: 'center',
+                                        padding: '32px',
+                                        color: theme.textSecondary
+                                    }}>
+                                        No chore history yet
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                        {dailyData.map((day, idx) => (
+                                            <div key={idx} className="material-card" style={{
+                                                padding: '16px',
+                                                background: theme.surface,
+                                                borderLeft: `4px solid ${theme.primary}`
+                                            }}>
+                                                <div style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    marginBottom: '8px'
+                                                }}>
+                                                    <div style={{
+                                                        fontWeight: '600',
+                                                        color: theme.cardText
+                                                    }}>
+                                                        {new Date(day.date).toLocaleDateString('en-US', {
+                                                            weekday: 'long',
+                                                            month: 'long',
+                                                            day: 'numeric'
+                                                        })}
+                                                    </div>
+                                                    <div style={{
+                                                        fontWeight: '700',
+                                                        fontSize: '1.125rem',
+                                                        color: theme.primary
+                                                    }}>
+                                                        {day.points} pts
+                                                    </div>
+                                                </div>
+                                                <div style={{
+                                                    fontSize: '0.875rem',
+                                                    color: theme.textSecondary
+                                                }}>
+                                                    {day.chores.map(c => c.chores.name).join(', ')}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
             return (
                 <div style={{ 
                     minHeight: '100vh',
@@ -828,6 +1165,23 @@
                                             🚀 Personal Best: {player.best_week_total.toLocaleString()} pts
                                         </div>
                                     )}
+
+                                    <button
+                                        className="material-button ripple"
+                                        onClick={async () => {
+                                            setSelectedPlayer(player);
+                                            await loadPlayerProfile(player.id);
+                                            setShowProfile(true);
+                                        }}
+                                        style={{
+                                            width: '100%',
+                                            marginTop: '12px',
+                                            background: theme.primary,
+                                            color: theme.onPrimary
+                                        }}
+                                    >
+                                        View Profile
+                                    </button>
                                 </div>
                             ))}
 
