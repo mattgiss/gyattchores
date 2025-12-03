@@ -147,10 +147,96 @@ CREATE TABLE bonuses (
 -- Index for bonuses
 CREATE INDEX idx_bonuses_player_week ON bonuses(player_id, week_start_date);
 
+-- Achievement System Tables
+
+-- Achievements definition table
+CREATE TABLE achievements (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name TEXT NOT NULL,
+    description TEXT NOT NULL,
+    icon TEXT NOT NULL,
+    category TEXT NOT NULL CHECK (category IN ('chore_milestone', 'point_milestone', 'weekly_performance', 'streak', 'special')),
+    requirement_type TEXT NOT NULL CHECK (requirement_type IN ('total_chores', 'total_points', 'goat_wins', 'streak_days', 'week_points', 'special')),
+    requirement_value INTEGER,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Player achievements tracking
+CREATE TABLE player_achievements (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    player_id UUID NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+    achievement_id UUID NOT NULL REFERENCES achievements(id) ON DELETE CASCADE,
+    earned_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    progress_data JSONB,
+    UNIQUE(player_id, achievement_id)
+);
+
+-- Player stats for achievement tracking
+CREATE TABLE player_stats (
+    player_id UUID PRIMARY KEY REFERENCES players(id) ON DELETE CASCADE,
+    total_chores_completed INTEGER DEFAULT 0,
+    total_points_earned INTEGER DEFAULT 0,
+    goat_wins INTEGER DEFAULT 0,
+    current_streak INTEGER DEFAULT 0,
+    longest_streak INTEGER DEFAULT 0,
+    last_activity_date DATE,
+    early_bird_count INTEGER DEFAULT 0,
+    night_owl_count INTEGER DEFAULT 0,
+    personal_best_beats INTEGER DEFAULT 0,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Indexes for performance
+CREATE INDEX idx_player_achievements_player ON player_achievements(player_id);
+CREATE INDEX idx_player_achievements_achievement ON player_achievements(achievement_id);
+CREATE INDEX idx_achievements_category ON achievements(category);
+
+-- Insert achievement definitions
+INSERT INTO achievements (name, description, icon, category, requirement_type, requirement_value) VALUES
+-- Chore Milestones
+('First Steps', 'Complete your first chore', '🌱', 'chore_milestone', 'total_chores', 1),
+('Getting Started', 'Complete 10 chores', '🔰', 'chore_milestone', 'total_chores', 10),
+('Chore Champion', 'Complete 50 chores', '💪', 'chore_milestone', 'total_chores', 50),
+('Hundred Club', 'Complete 100 chores', '🎯', 'chore_milestone', 'total_chores', 100),
+('Chore Master', 'Complete 250 chores', '⭐', 'chore_milestone', 'total_chores', 250),
+('Chore Legend', 'Complete 500 chores', '👑', 'chore_milestone', 'total_chores', 500),
+
+-- Point Milestones
+('Point Starter', 'Earn 1,000 total points', '💵', 'point_milestone', 'total_points', 1000),
+('Point Collector', 'Earn 5,000 total points', '💸', 'point_milestone', 'total_points', 5000),
+('Point Master', 'Earn 10,000 total points', '🤑', 'point_milestone', 'total_points', 10000),
+('Point Legend', 'Earn 25,000 total points', '💎', 'point_milestone', 'total_points', 25000),
+
+-- Weekly Performance
+('First GOAT', 'Win GOAT of the Week', '🐐', 'weekly_performance', 'goat_wins', 1),
+('GOAT Dynasty', 'Win GOAT 3 times', '🔥', 'weekly_performance', 'goat_wins', 3),
+('GOAT Domination', 'Win GOAT 5 times', '👑', 'weekly_performance', 'goat_wins', 5),
+('High Roller', 'Earn 5,000+ points in one week', '🚀', 'weekly_performance', 'week_points', 5000),
+
+-- Streaks
+('Daily Dedication', 'Complete chores 3 days in a row', '📅', 'streak', 'streak_days', 3),
+('Weekly Warrior', 'Complete chores 7 days in a row', '🗓️', 'streak', 'streak_days', 7),
+('Unstoppable', 'Complete chores 14 days in a row', '🔥', 'streak', 'streak_days', 14),
+('Legendary', 'Complete chores 30 days in a row', '💫', 'streak', 'streak_days', 30),
+
+-- Special
+('Early Bird', 'Complete 5 chores before noon', '🌅', 'special', 'special', 5),
+('Night Owl', 'Complete 5 chores after 6 PM', '🌙', 'special', 'special', 5),
+('Speed Demon', 'Complete 5 chores in one day', '⚡', 'special', 'special', 5),
+('Overachiever', 'Beat your personal best 3 times', '🎖️', 'special', 'special', 3);
+
+-- Initialize player_stats for existing players
+INSERT INTO player_stats (player_id)
+SELECT id FROM players
+ON CONFLICT (player_id) DO NOTHING;
+
 -- Comments for documentation
 COMMENT ON TABLE players IS 'Family members who can complete chores';
 COMMENT ON TABLE chores IS 'Available chores with point values';
 COMMENT ON TABLE chore_completions IS 'Record of completed chores, one per player per day per chore';
 COMMENT ON TABLE weekly_resets IS 'Tracks weekly resets to prevent double-resets';
 COMMENT ON TABLE bonuses IS 'Weekly bonus awards (beat GOAT, beat personal best)';
+COMMENT ON TABLE achievements IS 'Available achievements that can be earned';
+COMMENT ON TABLE player_achievements IS 'Tracks which achievements each player has earned';
+COMMENT ON TABLE player_stats IS 'Player statistics for achievement tracking';
 COMMENT ON COLUMN chore_completions.status IS 'pending=awaiting approval, approved=points awarded, rejected=not counted';

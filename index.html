@@ -312,6 +312,12 @@
             const [weather, setWeather] = useState(null);
             const [weatherLoading, setWeatherLoading] = useState(true);
 
+            // Achievement system states
+            const [achievements, setAchievements] = useState([]);
+            const [playerAchievements, setPlayerAchievements] = useState({});
+            const [playerStats, setPlayerStats] = useState({});
+            const [newAchievements, setNewAchievements] = useState([]);
+
             // Login states
             const [loginPassword, setLoginPassword] = useState('');
             const [loginError, setLoginError] = useState('');
@@ -475,6 +481,39 @@
                         .rpc('get_weekly_goat');
 
                     setWeeklyGoats(goatData || []);
+
+                    // Load achievements data
+                    const { data: achievementsData } = await supabase
+                        .from('achievements')
+                        .select('*')
+                        .order('requirement_value', { ascending: true });
+
+                    const { data: playerAchievementsData } = await supabase
+                        .from('player_achievements')
+                        .select('*');
+
+                    const { data: playerStatsData } = await supabase
+                        .from('player_stats')
+                        .select('*');
+
+                    setAchievements(achievementsData || []);
+
+                    // Group player achievements by player_id
+                    const achievementsByPlayer = {};
+                    (playerAchievementsData || []).forEach(pa => {
+                        if (!achievementsByPlayer[pa.player_id]) {
+                            achievementsByPlayer[pa.player_id] = [];
+                        }
+                        achievementsByPlayer[pa.player_id].push(pa);
+                    });
+                    setPlayerAchievements(achievementsByPlayer);
+
+                    // Group player stats by player_id
+                    const statsByPlayer = {};
+                    (playerStatsData || []).forEach(ps => {
+                        statsByPlayer[ps.player_id] = ps;
+                    });
+                    setPlayerStats(statsByPlayer);
 
                     // Get last week's GOAT for display
                     const lastMonday = new Date(monday);
