@@ -367,12 +367,12 @@
                 checkAndReset();
             }, []);
 
-            // Auto-refresh for wall-mounted display - refresh every 30 seconds
+            // Auto-refresh for wall-mounted display - refresh every 15 minutes
             useEffect(() => {
                 const interval = setInterval(() => {
                     console.log('Auto-refreshing data for wall display...');
                     loadData();
-                }, 30000); // 30 seconds
+                }, 900000); // 15 minutes
 
                 return () => clearInterval(interval);
             }, []);
