@@ -1,0 +1,20 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+    <!-- Purple gradient version -->
+    <defs>
+        <linearGradient id="purpleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+        </linearGradient>
+    </defs>
+    
+    <!-- Circle background -->
+    <circle cx="256" cy="256" r="230" fill="url(#purpleGradient)"/>
+    
+    <!-- G -->
+    <path d="M 180 140 Q 140 140, 140 180 L 140 332 Q 140 372, 180 372 L 260 372 L 260 312 L 200 312 L 200 200 L 260 200 L 260 266 L 300 266 L 300 170 Q 300 140, 270 140 Z" 
+          fill="#FFFFFF"/>
+    
+    <!-- C -->
+    <path d="M 360 140 Q 320 140, 320 180 L 320 332 Q 320 372, 360 372 L 372 372 L 372 312 L 360 312 Q 360 312, 360 302 L 360 210 Q 360 200, 372 200 L 372 140 Z" 
+          fill="#FFFFFF"/>
+</svg>

@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GyattChores</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg width='512' height='512' viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'><circle cx='256' cy='256' r='230' fill='%23000000'/><path d='M 180 140 Q 140 140, 140 180 L 140 332 Q 140 372, 180 372 L 260 372 L 260 312 L 200 312 L 200 200 L 260 200 L 260 266 L 300 266 L 300 170 Q 300 140, 270 140 Z' fill='%23FFFFFF'/><path d='M 360 140 Q 320 140, 320 180 L 320 332 Q 320 372, 360 372 L 372 372 L 372 312 L 360 312 Q 360 312, 360 302 L 360 210 Q 360 200, 372 200 L 372 140 Z' fill='%23FFFFFF'/></svg>">
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Google+Sans+Display:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        input, textarea, button {
+            font-family: 'Google Sans', sans-serif;
+        }
+        
+        /* Material Design Elevation Shadows */
+        .elevation-1 {
+            box-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15);
+        }
+        .elevation-2 {
+            box-shadow: 0 1px 3px 0 rgba(60,64,67,.3), 0 4px 8px 3px rgba(60,64,67,.15);
+        }
+        .elevation-3 {
+            box-shadow: 0 4px 8px 3px rgba(60,64,67,.15), 0 1px 3px rgba(60,64,67,.3);
+        }
+        
+        /* Material Design Ripple Effect */
+        @keyframes ripple {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+        
+        .ripple {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .ripple:before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .ripple:active:before {
+            width: 300px;
+            height: 300px;
+            transition: 0s;
+        }
+        
+        /* Smooth transitions */
+        * {
+            transition: background-color 0.2s cubic-bezier(0.4, 0.0, 0.2, 1),
+                        color 0.2s cubic-bezier(0.4, 0.0, 0.2, 1),
+                        box-shadow 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 16px;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        @media (max-width: 600px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .text-wrap {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+        }
+        
+        /* Floating Action Button */
+        .fab {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+        
+        .fab:hover {
+            transform: translateY(-2px);
+        }
+        
+        .fab:active {
+            transform: translateY(0);
+        }
+        
+        /* Material Card */
+        .material-card {
+            border-radius: 24px;
+            transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+        
+        .material-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        /* Chip Style */
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        /* Input Material Style */
+        .material-input {
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+        
+        .material-input:focus {
+            border-width: 2px;
+            padding: 15px;
+        }
+        
+        /* Button Material Style */
+        .material-button {
+            padding: 12px 24px;
+            border-radius: 100px;
+            border: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            letter-spacing: 0.25px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+        
+        .material-button:hover {
+            transform: translateY(-1px);
+        }
+        
+        .material-button:active {
+            transform: translateY(0);
+        }
+        
+        /* Smooth scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0,0,0,0.2);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Initialize Supabase
+        const supabase = window.supabase.createClient(
+            'https://ukshxdoqgwoxobjdclpx.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrc2h4ZG9xZ3dveG9iamRjbHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3MjI2NDEsImV4cCI6MjA4MDI5ODY0MX0.UGNrsfG6goEA0PPWG4x7gxBueA7D5Oe9uWI-iCXIar0'
+        );
+
+        const APPROVAL_CODE = "1234";
+
+        const getLastFridayOfMonth = () => {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth();
+            const lastDay = new Date(year, month + 1, 0);
+            
+            while (lastDay.getDay() !== 5) {
+                lastDay.setDate(lastDay.getDate() - 1);
+            }
+            
+            return lastDay.toLocaleDateString('en-US', { 
+                month: 'long', 
+                day: 'numeric',
+                year: 'numeric'
+            });
+        };
+
+        function FamilyChores() {
+            const [darkMode, setDarkMode] = useState(true);
+            const [loading, setLoading] = useState(true);
+            const [players, setPlayers] = useState([]);
+            const [chores, setChores] = useState([]);
+            const [pendingChores, setPendingChores] = useState([]);
+            const [availableTasks, setAvailableTasks] = useState([]);
+
+            const [newTaskName, setNewTaskName] = useState('');
+            const [newTaskPoints, setNewTaskPoints] = useState('');
+            const [approvalCode, setApprovalCode] = useState('');
+            const [showApproval, setShowApproval] = useState(null);
+
+            // GOAT System states
+            const [weeklyGoats, setWeeklyGoats] = useState([]);
+            const [lastWeekGoat, setLastWeekGoat] = useState(null);
+
+            // Weekly Reset states
+            const [currentWeekStart, setCurrentWeekStart] = useState(null);
+            const [needsWeeklyReset, setNeedsWeeklyReset] = useState(false);
+
+            // Load data from Supabase
+            useEffect(() => {
+                const checkAndReset = async () => {
+                    await loadData();
+
+                    // If reset is needed, trigger it automatically
+                    if (needsWeeklyReset) {
+                        await performWeeklyReset();
+                    }
+                };
+
+                checkAndReset();
+            }, []);
+
+            const loadData = async () => {
+                try {
+                    setLoading(true);
+
+                    // Check current week and if reset is needed
+                    const monday = new Date();
+                    monday.setDate(monday.getDate() - monday.getDay() + 1);
+                    monday.setHours(0, 0, 0, 0);
+                    const weekStartDate = monday.toISOString().split('T')[0];
+
+                    // Check if we've already reset this week
+                    const { data: resetData } = await supabase
+                        .from('weekly_resets')
+                        .select('*')
+                        .eq('week_start_date', weekStartDate)
+                        .single();
+
+                    // If no reset record for this week exists, we need to reset
+                    if (!resetData) {
+                        setNeedsWeeklyReset(true);
+                        setCurrentWeekStart(weekStartDate);
+                    }
+
+                    // Load players
+                    const { data: playersData, error: playersError } = await supabase
+                        .from('players')
+                        .select('*')
+                        .order('name');
+
+                    if (playersError) throw playersError;
+
+                    // Load chores
+                    const { data: choresData, error: choresError } = await supabase
+                        .from('chores')
+                        .select('*')
+                        .eq('is_active', true)
+                        .order('name');
+
+                    if (choresError) throw choresError;
+
+                    // Load pending chore completions
+                    const { data: pendingData, error: pendingError } = await supabase
+                        .from('chore_completions')
+                        .select(`
+                            *,
+                            players(name),
+                            chores(name, icon)
+                        `)
+                        .eq('status', 'pending')
+                        .order('completed_at', { ascending: false });
+
+                    if (pendingError) throw pendingError;
+
+                    // Get weekly totals for each player
+                    const playersWithStats = await Promise.all(playersData.map(async (player) => {
+                        const { count } = await supabase
+                            .from('chore_completions')
+                            .select('*', { count: 'exact', head: true })
+                            .eq('player_id', player.id)
+                            .eq('status', 'approved');
+
+                        // Get current week's points
+                        const monday = new Date();
+                        monday.setDate(monday.getDate() - monday.getDay() + 1);
+                        monday.setHours(0, 0, 0, 0);
+
+                        const { data: weeklyData } = await supabase
+                            .from('chore_completions')
+                            .select('value_awarded')
+                            .eq('player_id', player.id)
+                            .eq('status', 'approved')
+                            .gte('completed_date', monday.toISOString().split('T')[0]);
+
+                        const weeklyPoints = weeklyData?.reduce((sum, c) => sum + c.value_awarded, 0) || 0;
+
+                        return {
+                            id: player.id,
+                            name: player.name,
+                            avatar: player.avatar_url,
+                            points: weeklyPoints,
+                            completedChores: count || 0,
+                            best_week_total: player.best_week_total
+                        };
+                    }));
+
+                    // Format chores
+                    const formattedChores = choresData.map(chore => ({
+                        id: chore.id,
+                        name: chore.name,
+                        points: chore.base_value,
+                        icon: chore.icon,
+                        max_per_day: chore.max_per_day
+                    }));
+
+                    // Format pending chores
+                    const formattedPending = pendingData.map(completion => ({
+                        id: completion.id,
+                        playerId: completion.player_id,
+                        choreId: completion.chore_id,
+                        choreName: completion.chores.name,
+                        points: completion.value_awarded,
+                        icon: completion.chores.icon,
+                        status: 'pending',
+                        timestamp: new Date(completion.completed_at)
+                    }));
+
+                    setPlayers(playersWithStats);
+                    setChores(formattedChores);
+                    setPendingChores(formattedPending);
+
+                    // Get current week's GOAT(s)
+                    const { data: goatData } = await supabase
+                        .rpc('get_weekly_goat');
+
+                    setWeeklyGoats(goatData || []);
+
+                    // Get last week's GOAT for display
+                    const lastMonday = new Date(monday);
+                    lastMonday.setDate(lastMonday.getDate() - 7);
+
+                    const { data: prevWeekData } = await supabase
+                        .rpc('get_weekly_totals', {
+                            week_start: lastMonday.toISOString().split('T')[0]
+                        });
+
+                    if (prevWeekData && prevWeekData.length > 0) {
+                        const maxTotal = Math.max(...prevWeekData.map(p => p.weekly_total));
+                        const lastWeekWinners = prevWeekData.filter(p => p.weekly_total === maxTotal && maxTotal > 0);
+                        setLastWeekGoat(lastWeekWinners.length > 0 ? lastWeekWinners : null);
+                    }
+
+                } catch (error) {
+                    console.error('Error loading data:', error);
+                    alert('Error loading data from database');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            // Material Design with Brand Colors
+            const darkTheme = {
+                bg: '#0D121A',
+                surface: '#1F1F1F',
+                surfaceVariant: '#363845',
+                text: '#E8EAED',
+                textSecondary: '#9AA0A6',
+                primary: '#47B2C4',
+                primaryVariant: '#3498B0',
+                secondary: '#F23861',
+                secondaryVariant: '#D91F4A',
+                tertiary: '#B59ED9',
+                error: '#F28B82',
+                success: '#81C995',
+                cardBg: '#D6D6D6',
+                cardText: '#0D121A',
+                onPrimary: '#000000',
+                outline: '#5F6368',
+                accent: '#120ACC'
+            };
+
+            const lightTheme = {
+                bg: '#F6F0E0',
+                surface: '#FFFFFF',
+                surfaceVariant: '#F6F0E0',
+                text: '#1B1714',
+                textSecondary: '#5F6368',
+                primary: '#D0A500',
+                primaryVariant: '#B89300',
+                secondary: '#F85D00',
+                secondaryVariant: '#E04F00',
+                tertiary: '#EB701E',
+                error: '#B3261E',
+                success: '#0F9D58',
+                cardBg: '#FFFFFF',
+                cardText: '#1B1714',
+                onPrimary: '#FFFFFF',
+                outline: '#79747E',
+                accent: '#EB701E'
+            };
+
+            const theme = darkMode ? darkTheme : lightTheme;
+
+            // Helper function to check if player is GOAT
+            const isGoat = (playerId) => {
+                return weeklyGoats.some(goat => goat.player_id === playerId);
+            };
+
+            // Weekly reset function
+            const performWeeklyReset = async () => {
+                try {
+                    // Record the reset
+                    await supabase
+                        .from('weekly_resets')
+                        .insert([{
+                            week_start_date: currentWeekStart
+                        }]);
+
+                    setNeedsWeeklyReset(false);
+                    await loadData(); // Refresh data
+
+                    console.log('Weekly reset completed for week starting:', currentWeekStart);
+                } catch (error) {
+                    console.error('Error performing weekly reset:', error);
+                }
+            };
+
+            const claimChore = async (playerId, chore) => {
+                try {
+                    // Check if player already did this chore today
+                    const today = new Date().toISOString().split('T')[0];
+                    const { data: existing } = await supabase
+                        .from('chore_completions')
+                        .select('*')
+                        .eq('player_id', playerId)
+                        .eq('chore_id', chore.id)
+                        .eq('completed_date', today);
+
+                    if (existing && existing.length > 0) {
+                        alert('⚠️ This chore was already done today!');
+                        return;
+                    }
+
+                    // Insert chore completion
+                    const { data, error } = await supabase
+                        .from('chore_completions')
+                        .insert([{
+                            player_id: playerId,
+                            chore_id: chore.id,
+                            completed_date: today,
+                            value_awarded: chore.points,
+                            status: 'pending'
+                        }])
+                        .select(`
+                            *,
+                            players(name),
+                            chores(name, icon)
+                        `)
+                        .single();
+
+                    if (error) throw error;
+
+                    // Add to local pending state
+                    setPendingChores(prev => [...prev, {
+                        id: data.id,
+                        playerId: data.player_id,
+                        choreId: data.chore_id,
+                        choreName: data.chores.name,
+                        points: data.value_awarded,
+                        icon: data.chores.icon,
+                        status: 'pending',
+                        timestamp: new Date(data.completed_at)
+                    }]);
+
+                    alert(`✅ Chore claimed! Waiting for approval.`);
+                } catch (error) {
+                    console.error('Error claiming chore:', error);
+                    alert('Error claiming chore');
+                }
+            };
+
+
+            const approveChore = async (choreId, code) => {
+                if (code !== APPROVAL_CODE) {
+                    alert('❌ Invalid admin code');
+                    return;
+                }
+
+                try {
+                    // Update chore completion status to approved
+                    const { error } = await supabase
+                        .from('chore_completions')
+                        .update({ status: 'approved' })
+                        .eq('id', choreId);
+
+                    if (error) throw error;
+
+                    // Remove from pending list
+                    setPendingChores(prev => prev.filter(c => c.id !== choreId));
+                    setShowApproval(null);
+                    setApprovalCode('');
+
+                    // Reload data to update points
+                    await loadData();
+
+                    alert('✅ Chore approved!');
+                } catch (error) {
+                    console.error('Error approving chore:', error);
+                    alert('Error approving chore');
+                }
+            };
+
+            const rejectChore = async (choreId) => {
+                try {
+                    // Update chore completion status to rejected
+                    const { error } = await supabase
+                        .from('chore_completions')
+                        .update({ status: 'rejected' })
+                        .eq('id', choreId);
+
+                    if (error) throw error;
+
+                    // Remove from pending list
+                    setPendingChores(prev => prev.filter(c => c.id !== choreId));
+                    setShowApproval(null);
+                    setApprovalCode('');
+
+                    alert('❌ Chore rejected');
+                } catch (error) {
+                    console.error('Error rejecting chore:', error);
+                    alert('Error rejecting chore');
+                }
+            };
+
+            const createTask = async () => {
+                if (!newTaskName.trim() || newTaskPoints <= 0) {
+                    alert('Please enter a task name and point value');
+                    return;
+                }
+
+                const code = prompt('Enter admin code to create custom task:');
+                if (code !== APPROVAL_CODE) {
+                    if (code !== null) {
+                        alert('❌ Invalid admin code');
+                    }
+                    return;
+                }
+
+                try {
+                    const { data, error } = await supabase
+                        .from('chores')
+                        .insert([{
+                            name: newTaskName,
+                            base_value: parseInt(newTaskPoints),
+                            icon: '⭐',
+                            is_active: true,
+                            max_per_day: 1
+                        }])
+                        .select()
+                        .single();
+
+                    if (error) throw error;
+
+                    // Add to chores list
+                    setChores(prev => [...prev, {
+                        id: data.id,
+                        name: data.name,
+                        points: data.base_value,
+                        icon: data.icon,
+                        max_per_day: data.max_per_day
+                    }]);
+
+                    setNewTaskName('');
+                    setNewTaskPoints('');
+                    alert('✅ Custom task created!');
+                } catch (error) {
+                    console.error('Error creating task:', error);
+                    alert('Error creating custom task');
+                }
+            };
+
+            const payoutDate = getLastFridayOfMonth();
+
+            if (loading) {
+                return (
+                    <div style={{
+                        minHeight: '100vh',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: theme.bg,
+                        color: theme.text,
+                        fontSize: '1.5rem'
+                    }}>
+                        Loading...
+                    </div>
+                );
+            }
+
+            return (
+                <div style={{ 
+                    minHeight: '100vh',
+                    background: theme.bg,
+                    color: theme.text,
+                    padding: '16px',
+                    fontFamily: "'Google Sans', -apple-system, BlinkMacSystemFont, sans-serif"
+                }}>
+                    {/* Material Top App Bar */}
+                    <div className="elevation-2" style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '12px 20px',
+                        marginBottom: '24px',
+                        maxWidth: '1600px',
+                        margin: '0 auto 24px',
+                        background: theme.surface,
+                        borderRadius: '28px',
+                        height: '64px'
+                    }}>
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px'
+                        }}>
+                            {/* Logo */}
+                            <div style={{
+                                width: '40px',
+                                height: '40px',
+                                borderRadius: '50%',
+                                overflow: 'hidden',
+                                flexShrink: 0
+                            }}>
+                                <svg width="40" height="40" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="256" cy="256" r="230" fill={darkMode ? '#FFFFFF' : '#000000'}/>
+                                    <path d="M 180 140 Q 140 140, 140 180 L 140 332 Q 140 372, 180 372 L 260 372 L 260 312 L 200 312 L 200 200 L 260 200 L 260 266 L 300 266 L 300 170 Q 300 140, 270 140 Z" 
+                                          fill={darkMode ? '#000000' : '#FFFFFF'}/>
+                                    <path d="M 360 140 Q 320 140, 320 180 L 320 332 Q 320 372, 360 372 L 372 372 L 372 312 L 360 312 Q 360 312, 360 302 L 360 210 Q 360 200, 372 200 L 372 140 Z" 
+                                          fill={darkMode ? '#000000' : '#FFFFFF'}/>
+                                </svg>
+                            </div>
+                            <h1 style={{
+                                fontSize: '1.375rem',
+                                fontWeight: '500',
+                                margin: 0,
+                                color: theme.text,
+                                fontFamily: "'Google Sans Display', sans-serif",
+                                letterSpacing: '0'
+                            }}>
+                                GyattChores
+                            </h1>
+                        </div>
+                        <button
+                            className="fab elevation-2 ripple"
+                            onClick={() => setDarkMode(!darkMode)}
+                            style={{
+                                background: theme.primary,
+                                color: theme.onPrimary
+                            }}
+                        >
+                            {darkMode ? '☀️' : '🌙'}
+                        </button>
+                    </div>
+
+                    {/* Dashboard Grid */}
+                    <div className="dashboard-grid">
+                        {/* Players Column */}
+                        <div>
+                            <div style={{
+                                fontSize: '0.6875rem',
+                                fontWeight: '500',
+                                marginBottom: '16px',
+                                textTransform: 'uppercase',
+                                letterSpacing: '1px',
+                                color: theme.textSecondary,
+                                paddingLeft: '8px'
+                            }}>
+                                Players
+                            </div>
+                            {players.map(player => (
+                                <div key={player.id} className="material-card elevation-1" style={{
+                                    padding: '20px',
+                                    marginBottom: '12px',
+                                    background: theme.cardBg,
+                                    border: isGoat(player.id) ? '2px solid #FFD700' : 'none',
+                                    boxShadow: isGoat(player.id)
+                                        ? '0 0 20px rgba(255, 215, 0, 0.3), 0 1px 3px 0 rgba(60,64,67,.3), 0 4px 8px 3px rgba(60,64,67,.15)'
+                                        : undefined
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                                        <div style={{ 
+                                            fontSize: '2.5rem',
+                                            width: '56px',
+                                            height: '56px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            borderRadius: '50%',
+                                            background: darkMode ? 'rgba(71, 178, 196, 0.1)' : 'rgba(208, 165, 0, 0.1)'
+                                        }}>
+                                            {player.avatar}
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{
+                                                fontSize: '1.25rem',
+                                                fontWeight: '500',
+                                                marginBottom: '4px',
+                                                color: theme.cardText,
+                                                fontFamily: "'Google Sans Display', sans-serif"
+                                            }}>
+                                                {player.name}
+                                            </div>
+                                            <div style={{
+                                                fontSize: '0.875rem',
+                                                color: theme.textSecondary
+                                            }}>
+                                                {player.completedChores} chores completed
+                                            </div>
+                                            {isGoat(player.id) && (
+                                                <div className="chip" style={{
+                                                    background: darkMode ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255, 215, 0, 0.3)',
+                                                    color: '#FFD700',
+                                                    marginTop: '8px',
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: '600',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '4px'
+                                                }}>
+                                                    🐐 {weeklyGoats.length > 1 ? 'CO-GOAT' : 'GOAT'} OF THE WEEK
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="chip" style={{
+                                        background: darkMode ? 'rgba(71, 178, 196, 0.15)' : 'rgba(208, 165, 0, 0.15)',
+                                        color: theme.primary,
+                                        marginBottom: '12px',
+                                        fontWeight: '500'
+                                    }}>
+                                        {player.points.toLocaleString()} points
+                                    </div>
+                                    
+                                    {player.completedChores >= 5 && (
+                                        <div className="chip" style={{
+                                            background: darkMode ? 'rgba(129, 201, 149, 0.15)' : 'rgba(15, 157, 88, 0.15)',
+                                            color: theme.success,
+                                            fontWeight: '500'
+                                        }}>
+                                            💰 ${(player.points / 250).toFixed(2)}
+                                        </div>
+                                    )}
+
+                                    {player.best_week_total > 0 && (
+                                        <div style={{
+                                            fontSize: '0.75rem',
+                                            color: theme.textSecondary,
+                                            marginTop: '8px'
+                                        }}>
+                                            🚀 Personal Best: {player.best_week_total.toLocaleString()} pts
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+
+                            <div className="material-card elevation-1" style={{
+                                padding: '20px',
+                                background: theme.cardBg,
+                                textAlign: 'center',
+                                marginBottom: '12px'
+                            }}>
+                                <div style={{
+                                    fontSize: '0.6875rem',
+                                    fontWeight: '500',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '1px',
+                                    color: theme.textSecondary,
+                                    marginBottom: '8px'
+                                }}>
+                                    Next Payout
+                                </div>
+                                <div style={{
+                                    fontSize: '1rem',
+                                    fontWeight: '500',
+                                    color: theme.cardText
+                                }}>
+                                    {payoutDate}
+                                </div>
+                            </div>
+
+                            {/* Last Week's GOAT */}
+                            {lastWeekGoat && lastWeekGoat.length > 0 && (
+                                <div className="material-card elevation-1" style={{
+                                    padding: '20px',
+                                    background: theme.cardBg,
+                                    textAlign: 'center',
+                                    marginBottom: '12px'
+                                }}>
+                                    <div style={{
+                                        fontSize: '0.6875rem',
+                                        fontWeight: '500',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '1px',
+                                        color: theme.textSecondary,
+                                        marginBottom: '8px'
+                                    }}>
+                                        Last Week's GOAT
+                                    </div>
+                                    <div style={{
+                                        fontSize: '1rem',
+                                        fontWeight: '500',
+                                        color: theme.cardText
+                                    }}>
+                                        🐐 {lastWeekGoat.map(g => g.player_name).join(' & ')}
+                                    </div>
+                                    <div style={{
+                                        fontSize: '0.875rem',
+                                        color: theme.textSecondary,
+                                        marginTop: '4px'
+                                    }}>
+                                        {lastWeekGoat[0].weekly_total.toLocaleString()} points
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Game Rules */}
+                            <div style={{
+                                fontSize: '0.6875rem',
+                                fontWeight: '500',
+                                marginBottom: '16px',
+                                textTransform: 'uppercase',
+                                letterSpacing: '1px',
+                                color: theme.textSecondary,
+                                paddingLeft: '8px'
+                            }}>
+                                Game Rules
+                            </div>
+                            <div className="material-card elevation-1" style={{
+                                padding: '20px',
+                                background: theme.cardBg,
+                                fontSize: '0.875rem',
+                                lineHeight: '1.6',
+                                color: theme.cardText
+                            }}>
+                                <div style={{ marginBottom: '16px' }}>
+                                    <div style={{ 
+                                        fontWeight: '500', 
+                                        marginBottom: '8px',
+                                        color: theme.primary,
+                                        fontSize: '1rem'
+                                    }}>
+                                        💰 Points System
+                                    </div>
+                                    <div className="text-wrap">
+                                        Earn points by completing chores. After 5 completed chores, your dollar amount unlocks!
+                                    </div>
+                                </div>
+
+                                <div style={{ marginBottom: '16px' }}>
+                                    <div style={{ 
+                                        fontWeight: '500', 
+                                        marginBottom: '8px',
+                                        color: theme.primary,
+                                        fontSize: '1rem'
+                                    }}>
+                                        ✅ How to Play
+                                    </div>
+                                    <div className="text-wrap">
+                                        1. Pick a chore<br/>
+                                        2. Complete it<br/>
+                                        3. Wait for approval<br/>
+                                        4. Points added!
+                                    </div>
+                                </div>
+
+                                <div style={{ marginBottom: '16px' }}>
+                                    <div style={{ 
+                                        fontWeight: '500', 
+                                        marginBottom: '8px',
+                                        color: theme.primary,
+                                        fontSize: '1rem'
+                                    }}>
+                                        👨‍👩‍👧‍👦 Approval
+                                    </div>
+                                    <div className="text-wrap">
+                                        Matthew or Andrea will review and approve your completed chores.
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div style={{ 
+                                        fontWeight: '500', 
+                                        marginBottom: '8px',
+                                        color: theme.primary,
+                                        fontSize: '1rem'
+                                    }}>
+                                        💸 Payout
+                                    </div>
+                                    <div className="text-wrap">
+                                        Payments happen on the last Friday of each month. Keep earning!
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Available Chores Column */}
+                        <div>
+                            <div style={{
+                                fontSize: '0.6875rem',
+                                fontWeight: '500',
+                                marginBottom: '16px',
+                                textTransform: 'uppercase',
+                                letterSpacing: '1px',
+                                color: theme.textSecondary,
+                                paddingLeft: '8px'
+                            }}>
+                                Available Chores
+                            </div>
+                            <div style={{
+                                maxHeight: 'calc(100vh - 150px)',
+                                overflowY: 'auto',
+                                paddingRight: '4px'
+                            }}>
+                                {chores.map((chore, idx) => (
+                                    <div key={chore.id || idx} className="material-card elevation-1" style={{
+                                        marginBottom: '12px',
+                                        overflow: 'hidden',
+                                        background: theme.cardBg
+                                    }}>
+                                        <div style={{ padding: '16px' }}>
+                                            <div style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '12px',
+                                                marginBottom: '12px'
+                                            }}>
+                                                <div style={{
+                                                    fontSize: '1.5rem',
+                                                    width: '48px',
+                                                    height: '48px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    borderRadius: '12px',
+                                                    background: darkMode ? 'rgba(71, 178, 196, 0.1)' : 'rgba(208, 165, 0, 0.1)'
+                                                }}>
+                                                    {chore.icon}
+                                                </div>
+                                                <div style={{ flex: 1 }}>
+                                                    <span className="text-wrap" style={{
+                                                        fontSize: '1rem',
+                                                        fontWeight: '500',
+                                                        color: theme.cardText,
+                                                        display: 'block',
+                                                        marginBottom: '4px'
+                                                    }}>
+                                                        {chore.name}
+                                                    </span>
+                                                    <span style={{
+                                                        fontSize: '0.875rem',
+                                                        fontWeight: '500',
+                                                        color: theme.primary
+                                                    }}>
+                                                        {chore.points} pts
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '1px', background: theme.outline }}>
+                                            {players.map(player => (
+                                                <button
+                                                    key={player.id}
+                                                    onClick={() => claimChore(player.id, chore)}
+                                                    className="ripple"
+                                                    style={{
+                                                        flex: 1,
+                                                        padding: '12px',
+                                                        background: theme.primary,
+                                                        color: theme.onPrimary,
+                                                        border: 'none',
+                                                        cursor: 'pointer',
+                                                        fontSize: '0.875rem',
+                                                        fontWeight: '500',
+                                                        textTransform: 'uppercase',
+                                                        letterSpacing: '0.25px'
+                                                    }}
+                                                >
+                                                    {player.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Pending Approval Column */}
+                        <div>
+                            <div style={{
+                                fontSize: '0.6875rem',
+                                fontWeight: '500',
+                                marginBottom: '16px',
+                                textTransform: 'uppercase',
+                                letterSpacing: '1px',
+                                color: theme.textSecondary,
+                                paddingLeft: '8px'
+                            }}>
+                                Pending Approval
+                            </div>
+                            
+                            {pendingChores.length > 0 && (
+                                <div className="material-card elevation-2" style={{
+                                    marginBottom: '16px',
+                                    padding: '16px',
+                                    background: theme.cardBg
+                                }}>
+                                    <div style={{
+                                        fontSize: '0.6875rem',
+                                        fontWeight: '500',
+                                        marginBottom: '12px',
+                                        color: theme.textSecondary,
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '1px'
+                                    }}>
+                                        Admin Controls
+                                    </div>
+                                    <button
+                                        className="material-button elevation-1 ripple"
+                                        onClick={async () => {
+                                            const code = prompt('Enter admin code to approve all:');
+                                            if (code !== APPROVAL_CODE) {
+                                                if (code !== null) {
+                                                    alert('❌ Invalid admin code');
+                                                }
+                                                return;
+                                            }
+
+                                            try {
+                                                // Approve all pending chores in database
+                                                const { error } = await supabase
+                                                    .from('chore_completions')
+                                                    .update({ status: 'approved' })
+                                                    .eq('status', 'pending');
+
+                                                if (error) throw error;
+
+                                                setPendingChores([]);
+                                                await loadData();
+                                                alert('✅ All chores approved!');
+                                            } catch (error) {
+                                                console.error('Error approving all:', error);
+                                                alert('Error approving chores');
+                                            }
+                                        }}
+                                        style={{
+                                            width: '100%',
+                                            marginBottom: '8px',
+                                            background: theme.success,
+                                            color: '#FFFFFF'
+                                        }}
+                                    >
+                                        Approve All ({pendingChores.length})
+                                    </button>
+                                    <button
+                                        className="material-button elevation-1 ripple"
+                                        onClick={async () => {
+                                            const code = prompt('Enter admin code to reset:');
+                                            if (code !== APPROVAL_CODE) {
+                                                if (code !== null) {
+                                                    alert('❌ Invalid admin code');
+                                                }
+                                                return;
+                                            }
+
+                                            if (!confirm('Clear all pending chores?')) {
+                                                return;
+                                            }
+
+                                            try {
+                                                // Delete all pending chores from database
+                                                const { error } = await supabase
+                                                    .from('chore_completions')
+                                                    .delete()
+                                                    .eq('status', 'pending');
+
+                                                if (error) throw error;
+
+                                                setPendingChores([]);
+                                                alert('✅ Pending chores cleared');
+                                            } catch (error) {
+                                                console.error('Error clearing pending:', error);
+                                                alert('Error clearing pending chores');
+                                            }
+                                        }}
+                                        style={{
+                                            width: '100%',
+                                            background: theme.error,
+                                            color: '#FFFFFF'
+                                        }}
+                                    >
+                                        Reset Pending
+                                    </button>
+                                    <button
+                                        className="material-button elevation-1 ripple"
+                                        onClick={async () => {
+                                            const code = prompt('Enter admin code to force weekly reset:');
+                                            if (code !== APPROVAL_CODE) {
+                                                if (code !== null) {
+                                                    alert('❌ Invalid admin code');
+                                                }
+                                                return;
+                                            }
+
+                                            if (!confirm('Force reset weekly points? This starts a new week.')) {
+                                                return;
+                                            }
+
+                                            const monday = new Date();
+                                            monday.setDate(monday.getDate() - monday.getDay() + 1);
+                                            monday.setHours(0, 0, 0, 0);
+
+                                            setCurrentWeekStart(monday.toISOString().split('T')[0]);
+                                            setNeedsWeeklyReset(true);
+                                            await performWeeklyReset();
+                                        }}
+                                        style={{
+                                            width: '100%',
+                                            marginTop: '8px',
+                                            background: theme.accent,
+                                            color: '#FFFFFF'
+                                        }}
+                                    >
+                                        Force Weekly Reset
+                                    </button>
+                                </div>
+                            )}
+
+                            <div style={{
+                                maxHeight: 'calc(100vh - 300px)',
+                                overflowY: 'auto',
+                                paddingRight: '4px'
+                            }}>
+                                {pendingChores.length === 0 ? (
+                                    <div className="material-card" style={{
+                                        padding: '32px 24px',
+                                        textAlign: 'center',
+                                        color: theme.textSecondary,
+                                        fontSize: '0.875rem',
+                                        background: theme.cardBg,
+                                        border: `2px dashed ${theme.outline}`
+                                    }}>
+                                        No pending chores
+                                    </div>
+                                ) : (
+                                    pendingChores.map(chore => {
+                                        const player = players.find(p => p.id === chore.playerId);
+                                        return (
+                                            <div key={chore.id} className="material-card elevation-1" style={{
+                                                marginBottom: '12px',
+                                                padding: '16px',
+                                                background: darkMode ? 'rgba(251, 191, 36, 0.15)' : '#FEF3C7',
+                                                border: `2px solid ${darkMode ? '#fbbf24' : '#f59e0b'}`
+                                            }}>
+                                                <div style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '12px',
+                                                    marginBottom: '12px'
+                                                }}>
+                                                    <div style={{ fontSize: '1.5rem' }}>{chore.icon}</div>
+                                                    <div style={{ flex: 1 }}>
+                                                        <div className="text-wrap" style={{
+                                                            fontSize: '1rem',
+                                                            fontWeight: '500',
+                                                            marginBottom: '4px',
+                                                            color: darkMode ? '#fbbf24' : '#78350f'
+                                                        }}>
+                                                            {chore.choreName}
+                                                        </div>
+                                                        <div style={{
+                                                            fontSize: '0.875rem',
+                                                            color: darkMode ? '#fbbf24' : '#92400e'
+                                                        }}>
+                                                            {player?.name} • {chore.points} pts
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                {showApproval === chore.id ? (
+                                                    <div>
+                                                        <input
+                                                            type="password"
+                                                            placeholder="Admin code"
+                                                            value={approvalCode}
+                                                            onChange={(e) => setApprovalCode(e.target.value)}
+                                                            className="material-input"
+                                                            style={{
+                                                                marginBottom: '12px',
+                                                                background: theme.cardBg,
+                                                                borderColor: theme.outline,
+                                                                color: theme.cardText
+                                                            }}
+                                                            onKeyPress={(e) => {
+                                                                if (e.key === 'Enter') {
+                                                                    approveChore(chore.id, approvalCode);
+                                                                }
+                                                            }}
+                                                        />
+                                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                                            <button
+                                                                className="material-button ripple"
+                                                                onClick={() => approveChore(chore.id, approvalCode)}
+                                                                style={{
+                                                                    flex: 1,
+                                                                    background: theme.success,
+                                                                    color: '#FFFFFF'
+                                                                }}
+                                                            >
+                                                                Approve
+                                                            </button>
+                                                            <button
+                                                                className="material-button ripple"
+                                                                onClick={() => {
+                                                                    if (approvalCode === APPROVAL_CODE) {
+                                                                        rejectChore(chore.id);
+                                                                    } else {
+                                                                        alert('❌ Invalid admin code');
+                                                                    }
+                                                                }}
+                                                                style={{
+                                                                    flex: 1,
+                                                                    background: theme.error,
+                                                                    color: '#FFFFFF'
+                                                                }}
+                                                            >
+                                                                Reject
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        className="material-button ripple"
+                                                        onClick={() => setShowApproval(chore.id)}
+                                                        style={{
+                                                            width: '100%',
+                                                            background: theme.primary,
+                                                            color: theme.onPrimary
+                                                        }}
+                                                    >
+                                                        Review
+                                                    </button>
+                                                )}
+                                            </div>
+                                        );
+                                    })
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Create Task Column */}
+                        <div>
+                            <div style={{
+                                fontSize: '0.6875rem',
+                                fontWeight: '500',
+                                marginBottom: '16px',
+                                textTransform: 'uppercase',
+                                letterSpacing: '1px',
+                                color: theme.textSecondary,
+                                paddingLeft: '8px'
+                            }}>
+                                Create Custom Task
+                            </div>
+                            <div className="material-card elevation-1" style={{
+                                padding: '20px',
+                                background: theme.cardBg,
+                                marginBottom: '16px'
+                            }}>
+                                <input
+                                    type="text"
+                                    placeholder="Task name"
+                                    value={newTaskName}
+                                    onChange={(e) => setNewTaskName(e.target.value)}
+                                    className="material-input"
+                                    style={{
+                                        marginBottom: '12px',
+                                        background: theme.surface,
+                                        borderColor: theme.outline,
+                                        color: theme.text
+                                    }}
+                                />
+                                <input
+                                    type="number"
+                                    placeholder="Points"
+                                    value={newTaskPoints}
+                                    onChange={(e) => setNewTaskPoints(e.target.value)}
+                                    className="material-input"
+                                    style={{
+                                        marginBottom: '16px',
+                                        background: theme.surface,
+                                        borderColor: theme.outline,
+                                        color: theme.text
+                                    }}
+                                />
+                                <button
+                                    className="material-button ripple"
+                                    onClick={createTask}
+                                    style={{
+                                        width: '100%',
+                                        background: theme.secondary,
+                                        color: '#FFFFFF'
+                                    }}
+                                >
+                                    Add Task
+                                </button>
+                            </div>
+                            <div style={{
+                                padding: '16px',
+                                background: theme.cardBg,
+                                borderRadius: '12px',
+                                fontSize: '0.875rem',
+                                color: theme.textSecondary,
+                                textAlign: 'center'
+                            }}>
+                                Custom tasks appear in Available Chores
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(FamilyChores));
+    </script>
+</body>
+</html>
