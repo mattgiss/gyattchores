@@ -484,6 +484,30 @@
                         return;
                     }
 
+                    // High-value chores (>500 pts) can't be done more than once every 3 days
+                    if (chore.points > 500) {
+                        const threeDaysAgo = new Date();
+                        threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+                        const threeDaysAgoStr = threeDaysAgo.toISOString().split('T')[0];
+
+                        const { data: recentHigh } = await supabase
+                            .from('chore_completions')
+                            .select('completed_date')
+                            .eq('player_id', playerId)
+                            .eq('chore_id', chore.id)
+                            .gte('completed_date', threeDaysAgoStr)
+                            .order('completed_date', { ascending: false })
+                            .limit(1);
+
+                        if (recentHigh && recentHigh.length > 0) {
+                            const lastDate = new Date(recentHigh[0].completed_date);
+                            const daysSince = Math.floor((new Date(today) - lastDate) / (1000 * 60 * 60 * 24));
+                            const daysRemaining = 3 - daysSince;
+                            alert(`⚠️ High-value chore! You must wait ${daysRemaining} more day${daysRemaining === 1 ? '' : 's'} before doing this again.`);
+                            return;
+                        }
+                    }
+
                     // Insert chore completion
                     const { data, error } = await supabase
                         .from('chore_completions')
