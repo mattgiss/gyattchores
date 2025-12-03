@@ -26,15 +26,15 @@
             font-family: 'Google Sans', sans-serif;
         }
         
-        /* Material Design Elevation Shadows */
+        /* Apple-like Subtle Shadows */
         .elevation-1 {
-            box-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15);
+            box-shadow: 0 1px 3px 0 rgba(0,0,0,.08), 0 1px 2px 0 rgba(0,0,0,.06);
         }
         .elevation-2 {
-            box-shadow: 0 1px 3px 0 rgba(60,64,67,.3), 0 4px 8px 3px rgba(60,64,67,.15);
+            box-shadow: 0 2px 8px 0 rgba(0,0,0,.1), 0 1px 4px 0 rgba(0,0,0,.08);
         }
         .elevation-3 {
-            box-shadow: 0 4px 8px 3px rgba(60,64,67,.15), 0 1px 3px rgba(60,64,67,.3);
+            box-shadow: 0 4px 16px 0 rgba(0,0,0,.12), 0 2px 6px 0 rgba(0,0,0,.1);
         }
         
         /* Material Design Ripple Effect */
@@ -99,81 +99,83 @@
         
         /* Floating Action Button */
         .fab {
-            width: 56px;
-            height: 56px;
-            border-radius: 16px;
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-size: 20px;
             cursor: pointer;
             border: none;
-            transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+            transition: all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
         }
-        
+
         .fab:hover {
-            transform: translateY(-2px);
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px 0 rgba(0,0,0,.15);
         }
-        
+
         .fab:active {
-            transform: translateY(0);
+            transform: scale(0.95);
         }
-        
-        /* Material Card */
+
+        /* Apple-style Card */
         .material-card {
-            border-radius: 24px;
-            transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+            border-radius: 16px;
+            transition: all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
         }
-        
+
         .material-card:hover {
-            transform: translateY(-2px);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px 0 rgba(0,0,0,.12), 0 2px 6px 0 rgba(0,0,0,.1);
         }
         
         /* Chip Style */
         .chip {
             display: inline-flex;
             align-items: center;
-            padding: 6px 12px;
-            border-radius: 16px;
-            font-size: 0.875rem;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8125rem;
             font-weight: 500;
         }
-        
-        /* Input Material Style */
+
+        /* Input Apple Style */
         .material-input {
             width: 100%;
-            padding: 16px;
-            border-radius: 12px;
+            padding: 12px 16px;
+            border-radius: 10px;
             border: 1px solid;
             font-size: 1rem;
             outline: none;
-            transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+            transition: all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
         }
-        
+
         .material-input:focus {
             border-width: 2px;
-            padding: 15px;
+            padding: 11px 15px;
         }
-        
-        /* Button Material Style */
+
+        /* Button Apple Style */
         .material-button {
-            padding: 12px 24px;
-            border-radius: 100px;
+            padding: 10px 20px;
+            border-radius: 10px;
             border: none;
-            font-size: 0.875rem;
+            font-size: 0.9375rem;
             font-weight: 500;
-            letter-spacing: 0.25px;
+            letter-spacing: -0.01em;
             cursor: pointer;
-            text-transform: uppercase;
-            transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+            transition: all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
         }
-        
+
         .material-button:hover {
-            transform: translateY(-1px);
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px 0 rgba(0,0,0,.15);
         }
-        
+
         .material-button:active {
-            transform: translateY(0);
+            transform: scale(0.98);
         }
         
         /* Smooth scrollbar */
@@ -521,8 +523,8 @@
                 tertiary: '#B59ED9',
                 error: '#F28B82',
                 success: '#81C995',
-                cardBg: '#D6D6D6',
-                cardText: '#0D121A',
+                cardBg: '#1E1E1E',
+                cardText: '#E8EAED',
                 onPrimary: '#000000',
                 outline: '#5F6368',
                 accent: '#120ACC'
@@ -1021,8 +1023,8 @@
                             maxWidth: '1200px',
                             margin: '0 auto 24px',
                             background: theme.surface,
-                            borderRadius: '28px',
-                            height: '64px'
+                            borderRadius: '16px',
+                            height: '56px'
                         }}>
                             <button
                                 onClick={() => setShowProfile(false)}
@@ -1060,7 +1062,7 @@
                             }}>
                                 {/* Weekly Total */}
                                 <div className="material-card elevation-1" style={{
-                                    padding: '20px',
+                                    padding: '16px',
                                     background: theme.cardBg,
                                     textAlign: 'center'
                                 }}>
@@ -1085,7 +1087,7 @@
 
                                 {/* Personal Best */}
                                 <div className="material-card elevation-1" style={{
-                                    padding: '20px',
+                                    padding: '16px',
                                     background: theme.cardBg,
                                     textAlign: 'center'
                                 }}>
@@ -1110,7 +1112,7 @@
 
                                 {/* Total Chores */}
                                 <div className="material-card elevation-1" style={{
-                                    padding: '20px',
+                                    padding: '16px',
                                     background: theme.cardBg,
                                     textAlign: 'center'
                                 }}>
@@ -1135,7 +1137,7 @@
 
                                 {/* Next Payout */}
                                 <div className="material-card elevation-1" style={{
-                                    padding: '20px',
+                                    padding: '16px',
                                     background: theme.cardBg,
                                     textAlign: 'center'
                                 }}>
@@ -1160,7 +1162,7 @@
 
                             {/* Last 7 Days */}
                             <div className="material-card elevation-1" style={{
-                                padding: '20px',
+                                padding: '16px',
                                 background: theme.cardBg,
                                 marginBottom: '16px'
                             }}>
@@ -1304,11 +1306,11 @@
                         fontFamily: "'Google Sans', -apple-system, BlinkMacSystemFont, sans-serif"
                     }}>
                         <div className="material-card elevation-3" style={{
-                            padding: '40px',
+                            padding: '32px',
                             maxWidth: '400px',
                             width: '90%',
                             background: darkMode ? '#1E1E1E' : '#FFFFFF',
-                            borderRadius: '28px',
+                            borderRadius: '20px',
                             textAlign: 'center'
                         }}>
                             <h1 style={{
@@ -1430,12 +1432,12 @@
                         justifyContent: 'space-between',
                         alignItems: 'center',
                         padding: '12px 20px',
-                        marginBottom: '24px',
+                        marginBottom: '20px',
                         maxWidth: '1600px',
-                        margin: '0 auto 24px',
+                        margin: '0 auto 20px',
                         background: theme.surface,
-                        borderRadius: '28px',
-                        height: '64px'
+                        borderRadius: '16px',
+                        height: '56px'
                     }}>
                         <div style={{
                             display: 'flex',
@@ -1499,15 +1501,15 @@
                     {(() => {
                         const dailyQuote = getDailyQuote();
                         return (
-                            <div className="material-card elevation-2" style={{
-                                padding: '24px',
-                                marginBottom: '24px',
+                            <div className="material-card elevation-1" style={{
+                                padding: '20px',
+                                marginBottom: '20px',
                                 maxWidth: '1600px',
-                                margin: '0 auto 24px',
+                                margin: '0 auto 20px',
                                 background: darkMode
-                                    ? 'linear-gradient(135deg, rgba(71, 178, 196, 0.1) 0%, rgba(181, 158, 217, 0.1) 100%)'
-                                    : 'linear-gradient(135deg, rgba(208, 165, 0, 0.1) 0%, rgba(235, 112, 30, 0.1) 100%)',
-                                borderLeft: `4px solid ${theme.primary}`,
+                                    ? 'linear-gradient(135deg, rgba(71, 178, 196, 0.08) 0%, rgba(181, 158, 217, 0.08) 100%)'
+                                    : 'linear-gradient(135deg, rgba(208, 165, 0, 0.08) 0%, rgba(235, 112, 30, 0.08) 100%)',
+                                borderLeft: `3px solid ${theme.primary}`,
                                 textAlign: 'center'
                             }}>
                                 <div style={{
@@ -1557,15 +1559,15 @@
                             </div>
                             {players.map(player => (
                                 <div key={player.id} className="material-card elevation-1" style={{
-                                    padding: '20px',
+                                    padding: '16px',
                                     marginBottom: '12px',
                                     background: theme.cardBg,
                                     border: isGoat(player.id) ? '2px solid #FFD700' : 'none',
                                     boxShadow: isGoat(player.id)
-                                        ? '0 0 20px rgba(255, 215, 0, 0.3), 0 1px 3px 0 rgba(60,64,67,.3), 0 4px 8px 3px rgba(60,64,67,.15)'
+                                        ? '0 0 16px rgba(255, 215, 0, 0.2), 0 2px 8px 0 rgba(0,0,0,.1)'
                                         : undefined
                                 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
                                         <div style={{ 
                                             fontSize: '2.5rem',
                                             width: '56px',
@@ -1805,7 +1807,7 @@
                                 Game Rules
                             </div>
                             <div className="material-card elevation-1" style={{
-                                padding: '20px',
+                                padding: '16px',
                                 background: theme.cardBg,
                                 fontSize: '0.875rem',
                                 lineHeight: '1.6',
@@ -1885,11 +1887,7 @@
                             }}>
                                 Available Chores
                             </div>
-                            <div style={{
-                                maxHeight: 'calc(100vh - 150px)',
-                                overflowY: 'auto',
-                                paddingRight: '4px'
-                            }}>
+                            <div>
                                 {chores.map((chore, idx) => (
                                     <div key={chore.id || idx} className="material-card elevation-1" style={{
                                         marginBottom: '12px',
@@ -2240,7 +2238,7 @@
                                 Create Custom Task
                             </div>
                             <div className="material-card elevation-1" style={{
-                                padding: '20px',
+                                padding: '16px',
                                 background: theme.cardBg,
                                 marginBottom: '16px'
                             }}>
