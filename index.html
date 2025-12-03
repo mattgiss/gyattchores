@@ -673,54 +673,44 @@
                         }
                     }
 
-                    // Brighton, CO zipcode
-                    const zipcode = '80601';
+                    // Brighton, CO location
+                    const location = 'Brighton,Colorado';
 
-                    // Using free OpenWeatherMap API
-                    const API_KEY = ''; // User needs to add their own key
-                    const url = `https://api.openweathermap.org/data/2.5/weather?zip=${zipcode},US&units=imperial&appid=${API_KEY}`;
-
-                    // If no API key, use mock data for demo
-                    if (!API_KEY) {
-                        const mockWeather = {
-                            temp: 65,
-                            condition: 'Partly Cloudy',
-                            icon: '☁️',
-                            clothing: 'Light jacket recommended'
-                        };
-                        setWeather(mockWeather);
-                        setWeatherLoading(false);
-                        return;
-                    }
+                    // Using free wttr.in API (no key required)
+                    const url = `https://wttr.in/${location}?format=j1`;
 
                     const response = await fetch(url);
                     const data = await response.json();
 
-                    const temp = Math.round(data.main.temp);
-                    const condition = data.weather[0].main;
+                    const currentCondition = data.current_condition[0];
+                    const tempF = Math.round(parseFloat(currentCondition.temp_F));
+                    const description = currentCondition.weatherDesc[0].value;
 
-                    // Weather icon mapping
-                    const iconMap = {
-                        'Clear': '☀️',
-                        'Clouds': '☁️',
-                        'Rain': '🌧️',
-                        'Snow': '❄️',
-                        'Thunderstorm': '⛈️',
-                        'Drizzle': '🌦️'
+                    // Weather icon mapping based on weather codes
+                    const getWeatherIcon = (desc) => {
+                        const lower = desc.toLowerCase();
+                        if (lower.includes('sunny') || lower.includes('clear')) return '☀️';
+                        if (lower.includes('cloud')) return '☁️';
+                        if (lower.includes('rain')) return '🌧️';
+                        if (lower.includes('snow')) return '❄️';
+                        if (lower.includes('storm') || lower.includes('thunder')) return '⛈️';
+                        if (lower.includes('drizzle') || lower.includes('mist')) return '🌦️';
+                        if (lower.includes('fog')) return '🌫️';
+                        return '🌤️';
                     };
 
                     // Clothing suggestions based on temp
                     let clothing = '';
-                    if (temp < 32) clothing = 'Heavy coat, hat, and gloves!';
-                    else if (temp < 50) clothing = 'Jacket or sweater recommended';
-                    else if (temp < 65) clothing = 'Light jacket might be nice';
-                    else if (temp < 80) clothing = 'Perfect weather, dress comfortably!';
+                    if (tempF < 32) clothing = 'Heavy coat, hat, and gloves!';
+                    else if (tempF < 50) clothing = 'Jacket or sweater recommended';
+                    else if (tempF < 65) clothing = 'Light jacket might be nice';
+                    else if (tempF < 80) clothing = 'Perfect weather, dress comfortably!';
                     else clothing = 'Stay cool, light clothing!';
 
                     const weatherData = {
-                        temp,
-                        condition,
-                        icon: iconMap[condition] || '🌤️',
+                        temp: tempF,
+                        description: description,
+                        icon: getWeatherIcon(description),
                         clothing
                     };
 
