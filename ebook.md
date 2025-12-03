@@ -14,9 +14,10 @@
 5. [Phase 1: Core Features](#phase-1-core-features)
 6. [Phase 2: Enhancements](#phase-2-enhancements)
 7. [Phase 3: Gamification](#phase-3-gamification)
-8. [Deployment](#deployment)
-9. [Lessons Learned](#lessons-learned)
-10. [Next Steps](#next-steps)
+8. [Phase 4: Optimization & Refinement](#phase-4-optimization--refinement)
+9. [Deployment](#deployment)
+10. [Lessons Learned](#lessons-learned)
+11. [Next Steps](#next-steps)
 
 ---
 
@@ -1280,6 +1281,341 @@ const checkAndAwardAchievements = async (playerId) => {
 
 ---
 
+## Phase 4: Optimization & Refinement
+
+Phase 4 focused on improving the user experience for real-world usage:
+- Chore frequency/cooldown system
+- Tablet optimization for wall-mounted displays
+- Auto-refresh functionality
+
+### Chore Cooldown System
+
+**Problem:** All chores could be completed daily, which wasn't realistic for household maintenance. Some chores like vacuuming only need to be done weekly.
+
+**Solution:** Add cooldown periods to chores based on realistic frequency.
+
+#### Database Schema Update
+
+```sql
+-- Add cooldown_hours column to chores table
+ALTER TABLE chores ADD COLUMN IF NOT EXISTS cooldown_hours INTEGER DEFAULT 24;
+
+-- Update existing chores with recommended cooldowns
+
+-- Daily chores (24 hours)
+UPDATE chores SET cooldown_hours = 24 WHERE name IN (
+    'Feed Pet',
+    'Set Table',
+    'Clear Table',
+    'Get Mail',
+    'Wipe Counters'
+);
+
+-- Every other day (48 hours)
+UPDATE chores SET cooldown_hours = 48 WHERE name IN (
+    'Pick up Poop',
+    'Wash Dishes',
+    'Load Dishwasher',
+    'Unload Dishwasher',
+    'Water Plants'
+);
+
+-- 2-3x per week (72 hours / 3 days)
+UPDATE chores SET cooldown_hours = 72 WHERE name IN (
+    'Sweep Floor',
+    'Fold Laundry'
+);
+
+-- Weekly (168 hours / 7 days)
+UPDATE chores SET cooldown_hours = 168 WHERE name IN (
+    'Vacuum Living Room',
+    'Take Out Trash',
+    'Take Out Recycling',
+    'Clean Room'
+);
+
+COMMENT ON COLUMN chores.cooldown_hours IS 'Hours that must pass before chore can be claimed again by anyone';
+```
+
+#### Load Completion History
+
+To check cooldowns, we need recent completion data:
+
+```javascript
+// Load all completions from past 7 days for cooldown checking
+const sevenDaysAgo = new Date();
+sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+const { data: allCompletionsData } = await supabase
+    .from('chore_completions')
+    .select('chore_id, completed_at')
+    .gte('completed_at', sevenDaysAgo.toISOString())
+    .order('completed_at', { ascending: false });
+
+setAllCompletions(allCompletionsData || []);
+```
+
+#### Check Chore Availability
+
+Helper function to determine if a chore is available:
+
+```javascript
+const getChoreAvailability = (chore) => {
+    // Find the most recent completion of this chore by anyone
+    const lastCompletion = allCompletions.find(c => c.chore_id === chore.id);
+
+    if (!lastCompletion) {
+        return { available: true, hoursRemaining: 0 };
+    }
+
+    const lastCompletedAt = new Date(lastCompletion.completed_at);
+    const now = new Date();
+    const hoursSinceCompletion = (now - lastCompletedAt) / (1000 * 60 * 60);
+    const cooldownHours = chore.cooldown_hours || 24;
+
+    if (hoursSinceCompletion >= cooldownHours) {
+        return { available: true, hoursRemaining: 0 };
+    }
+
+    const hoursRemaining = Math.ceil(cooldownHours - hoursSinceCompletion);
+    return { available: false, hoursRemaining };
+};
+```
+
+#### Filter Available Chores
+
+Update the chore display to only show available chores:
+
+```javascript
+{chores
+    .filter(chore => {
+        // Check if chore is available based on cooldown
+        const availability = getChoreAvailability(chore);
+        return availability.available;
+    })
+    .map(chore => (
+        // Render chore
+    ))}
+```
+
+#### Display Unavailable Chores
+
+Show chores on cooldown in a "Coming Soon" section:
+
+```javascript
+{(() => {
+    const unavailableChores = chores
+        .map(chore => ({
+            ...chore,
+            availability: getChoreAvailability(chore)
+        }))
+        .filter(chore => !chore.availability.available)
+        .sort((a, b) => a.availability.hoursRemaining - b.availability.hoursRemaining);
+
+    if (unavailableChores.length === 0) return null;
+
+    return (
+        <>
+            <div style={{ /* Coming Soon header */ }}>
+                Coming Soon
+            </div>
+            {unavailableChores.map((chore) => {
+                const days = Math.floor(chore.availability.hoursRemaining / 24);
+                const hours = chore.availability.hoursRemaining % 24;
+                let timeText = '';
+                if (days > 0) {
+                    timeText = `${days}d`;
+                    if (hours > 0) timeText += ` ${hours}h`;
+                } else {
+                    timeText = `${hours}h`;
+                }
+
+                return (
+                    <div key={chore.id} style={{ /* Faded card */ }}>
+                        <div>{chore.icon}</div>
+                        <div>
+                            <div>{chore.name}</div>
+                            <div>{chore.points} pts</div>
+                        </div>
+                        <div>⏳ {timeText}</div>
+                    </div>
+                );
+            })}
+        </>
+    );
+})()}
+```
+
+#### Enforce Cooldown on Claim
+
+Prevent claiming chores on cooldown:
+
+```javascript
+const claimChore = async (playerId, chore) => {
+    try {
+        // Check cooldown first
+        const availability = getChoreAvailability(chore);
+        if (!availability.available) {
+            const days = Math.floor(availability.hoursRemaining / 24);
+            const hours = availability.hoursRemaining % 24;
+            let timeText = '';
+            if (days > 0) {
+                timeText = days === 1 ? '1 day' : `${days} days`;
+                if (hours > 0) timeText += ` ${hours}h`;
+            } else {
+                timeText = hours === 1 ? '1 hour' : `${hours} hours`;
+            }
+            alert(`⏳ This chore is on cooldown! Available in ${timeText}.`);
+            return;
+        }
+
+        // Proceed with claim...
+    } catch (error) {
+        console.error('Error claiming chore:', error);
+    }
+};
+```
+
+### Tablet Optimization
+
+**Problem:** The app was designed for desktop/mobile but needed to work on a wall-mounted tablet viewed from 6-10 feet away.
+
+**Solution:** Increase font sizes by 30-40%, improve touch targets, and use full screen width.
+
+#### Layout Changes
+
+Remove max-width constraints:
+
+```javascript
+// Before
+<div style={{
+    maxWidth: '1600px',
+    margin: '0 auto'
+}}>
+
+// After
+<div style={{
+    padding: '0 20px',
+    width: '100%'
+}}>
+```
+
+Update grid columns:
+
+```css
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); /* was 320px */
+    gap: 20px; /* was 16px */
+    padding: 0 20px;
+    width: 100%;
+}
+```
+
+#### Font Size Increases
+
+**Headers (30% increase):**
+```javascript
+fontSize: '0.875rem'  // was 0.6875rem
+fontWeight: '600'     // was 500
+letterSpacing: '1.5px' // was 1px
+```
+
+**Player Names (40% increase):**
+```javascript
+fontSize: '1.75rem'   // was 1.25rem
+fontWeight: '600'     // was 500
+```
+
+**Player Avatars (40% increase):**
+```javascript
+fontSize: '3.5rem'    // was 2.5rem
+width: '80px'         // was 56px
+height: '80px'        // was 56px
+```
+
+**Chore Names (37% increase):**
+```javascript
+fontSize: '1.375rem'  // was 1rem
+fontWeight: '600'     // was 500
+```
+
+**Chore Icons (50% increase):**
+```javascript
+fontSize: '2.25rem'   // was 1.5rem
+width: '64px'         // was 48px
+height: '64px'        // was 48px
+```
+
+**Weather Temperature (37% increase):**
+```javascript
+fontSize: '2.75rem'   // was 2rem
+fontWeight: '700'     // was 600
+```
+
+**Quote Text (33% increase):**
+```javascript
+fontSize: '1.25rem'   // was 0.9375rem
+lineHeight: '1.6'     // was 1.5
+```
+
+**Buttons (28% increase):**
+```javascript
+fontSize: '1.125rem'  // was 0.875rem
+padding: '18px'       // was 12px
+fontWeight: '600'     // was 500
+borderRadius: '8px'   // added
+```
+
+#### Card Padding Increases
+
+All cards increased by 50%:
+
+```javascript
+padding: '24px'  // was 16px
+```
+
+#### Auto-Refresh Feature
+
+Add automatic data refresh for wall displays:
+
+```javascript
+// Auto-refresh for wall-mounted display - refresh every 30 seconds
+useEffect(() => {
+    const interval = setInterval(() => {
+        console.log('Auto-refreshing data for wall display...');
+        loadData();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+}, []);
+```
+
+**Benefits:**
+- Keeps chore availability current
+- Updates points and GOAT status in real-time
+- No manual refresh needed
+- Perfect for "always-on" displays
+
+### Testing Checklist
+
+**Cooldown System:**
+- [ ] Daily chores reappear after 24 hours
+- [ ] Weekly chores reappear after 7 days
+- [ ] "Coming Soon" section shows unavailable chores
+- [ ] Countdown timers display correctly
+- [ ] Attempting to claim shows friendly error message
+- [ ] Multiple completions respect cooldown
+
+**Tablet Display:**
+- [ ] Text readable from 6-10 feet away
+- [ ] Buttons easy to tap from distance
+- [ ] Full screen width utilized
+- [ ] Auto-refresh working (check console)
+- [ ] Layout responsive on tablet size
+- [ ] No horizontal scrolling
+
+---
+
 ## Deployment
 
 ### GitHub Pages Setup
@@ -1625,5 +1961,5 @@ copies or substantial portions of the Software.
 
 **End of ebook.md**
 
-*Last Updated: December 2024*
-*Version: 1.0*
+*Last Updated: December 2025*
+*Version: 1.1*
