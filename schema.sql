@@ -133,9 +133,24 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Bonuses table for tracking weekly bonuses
+CREATE TABLE bonuses (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    player_id UUID NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+    week_start_date DATE NOT NULL,
+    bonus_type TEXT NOT NULL CHECK (bonus_type IN ('beat_goat', 'beat_personal_best')),
+    bonus_amount INTEGER NOT NULL,
+    awarded_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(player_id, week_start_date, bonus_type)
+);
+
+-- Index for bonuses
+CREATE INDEX idx_bonuses_player_week ON bonuses(player_id, week_start_date);
+
 -- Comments for documentation
 COMMENT ON TABLE players IS 'Family members who can complete chores';
 COMMENT ON TABLE chores IS 'Available chores with point values';
 COMMENT ON TABLE chore_completions IS 'Record of completed chores, one per player per day per chore';
 COMMENT ON TABLE weekly_resets IS 'Tracks weekly resets to prevent double-resets';
+COMMENT ON TABLE bonuses IS 'Weekly bonus awards (beat GOAT, beat personal best)';
 COMMENT ON COLUMN chore_completions.status IS 'pending=awaiting approval, approved=points awarded, rejected=not counted';

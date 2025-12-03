@@ -253,6 +253,9 @@
             const [selectedPlayer, setSelectedPlayer] = useState(null);
             const [playerHistory, setPlayerHistory] = useState([]);
 
+            // Bonus system states
+            const [playerBonuses, setPlayerBonuses] = useState({});
+
             // Load data from Supabase
             useEffect(() => {
                 const checkAndReset = async () => {
@@ -332,21 +335,31 @@
                         const monday = new Date();
                         monday.setDate(monday.getDate() - monday.getDay() + 1);
                         monday.setHours(0, 0, 0, 0);
+                        const weekStartDate = monday.toISOString().split('T')[0];
 
                         const { data: weeklyData } = await supabase
                             .from('chore_completions')
                             .select('value_awarded')
                             .eq('player_id', player.id)
                             .eq('status', 'approved')
-                            .gte('completed_date', monday.toISOString().split('T')[0]);
+                            .gte('completed_date', weekStartDate);
 
-                        const weeklyPoints = weeklyData?.reduce((sum, c) => sum + c.value_awarded, 0) || 0;
+                        const chorePoints = weeklyData?.reduce((sum, c) => sum + c.value_awarded, 0) || 0;
+
+                        // Get current week's bonuses
+                        const { data: bonusData } = await supabase
+                            .from('bonuses')
+                            .select('bonus_amount')
+                            .eq('player_id', player.id)
+                            .eq('week_start_date', weekStartDate);
+
+                        const bonusPoints = bonusData?.reduce((sum, b) => sum + b.bonus_amount, 0) || 0;
 
                         return {
                             id: player.id,
                             name: player.name,
                             avatar: player.avatar_url,
-                            points: weeklyPoints,
+                            points: chorePoints + bonusPoints,
                             completedChores: count || 0,
                             best_week_total: player.best_week_total
                         };
@@ -406,6 +419,13 @@
                 }
             };
 
+            // Call bonus checker after loading data
+            useEffect(() => {
+                if (!loading && players.length > 0) {
+                    checkAndAwardBonuses();
+                }
+            }, [players, loading]);
+
             // Material Design with Brand Colors
             const darkTheme = {
                 bg: '#0D121A',
@@ -452,6 +472,107 @@
             // Helper function to check if player is GOAT
             const isGoat = (playerId) => {
                 return weeklyGoats.some(goat => goat.player_id === playerId);
+            };
+
+            // Check and award bonuses
+            const checkAndAwardBonuses = async () => {
+                try {
+                    const monday = new Date();
+                    monday.setDate(monday.getDate() - monday.getDay() + 1);
+                    monday.setHours(0, 0, 0, 0);
+                    const weekStartDate = monday.toISOString().split('T')[0];
+
+                    // Get last week's GOAT total
+                    const lastMonday = new Date(monday);
+                    lastMonday.setDate(lastMonday.getDate() - 7);
+
+                    const { data: lastWeekTotals } = await supabase
+                        .rpc('get_weekly_totals', {
+                            week_start: lastMonday.toISOString().split('T')[0]
+                        });
+
+                    const lastWeekGoatTotal = lastWeekTotals && lastWeekTotals.length > 0
+                        ? Math.max(...lastWeekTotals.map(p => p.weekly_total))
+                        : 0;
+
+                    // Check bonuses for each player
+                    for (const player of players) {
+                        // Check Beat Last Week's GOAT bonus (🔥)
+                        if (lastWeekGoatTotal > 0 && player.points > lastWeekGoatTotal) {
+                            // Check if bonus already awarded this week
+                            const { data: existing } = await supabase
+                                .from('bonuses')
+                                .select('*')
+                                .eq('player_id', player.id)
+                                .eq('week_start_date', weekStartDate)
+                                .eq('bonus_type', 'beat_goat')
+                                .single();
+
+                            if (!existing) {
+                                const bonusAmount = 500; // 500 point bonus
+                                await supabase
+                                    .from('bonuses')
+                                    .insert([{
+                                        player_id: player.id,
+                                        week_start_date: weekStartDate,
+                                        bonus_type: 'beat_goat',
+                                        bonus_amount: bonusAmount
+                                    }]);
+                                console.log(`🔥 Beat GOAT bonus awarded to ${player.name}!`);
+                            }
+                        }
+
+                        // Check Beat Personal Best bonus (🚀)
+                        if (player.best_week_total > 0 && player.points > player.best_week_total) {
+                            // Check if bonus already awarded this week
+                            const { data: existing } = await supabase
+                                .from('bonuses')
+                                .select('*')
+                                .eq('player_id', player.id)
+                                .eq('week_start_date', weekStartDate)
+                                .eq('bonus_type', 'beat_personal_best')
+                                .single();
+
+                            if (!existing) {
+                                const bonusAmount = 750; // 750 point bonus
+                                await supabase
+                                    .from('bonuses')
+                                    .insert([{
+                                        player_id: player.id,
+                                        week_start_date: weekStartDate,
+                                        bonus_type: 'beat_personal_best',
+                                        bonus_amount: bonusAmount
+                                    }]);
+
+                                // Update personal best
+                                await supabase
+                                    .from('players')
+                                    .update({ best_week_total: player.points })
+                                    .eq('id', player.id);
+
+                                console.log(`🚀 Personal Best bonus awarded to ${player.name}!`);
+                            }
+                        }
+                    }
+
+                    // Load current week's bonuses for display
+                    const { data: bonuses } = await supabase
+                        .from('bonuses')
+                        .select('*')
+                        .eq('week_start_date', weekStartDate);
+
+                    const bonusMap = {};
+                    bonuses?.forEach(bonus => {
+                        if (!bonusMap[bonus.player_id]) {
+                            bonusMap[bonus.player_id] = [];
+                        }
+                        bonusMap[bonus.player_id].push(bonus);
+                    });
+                    setPlayerBonuses(bonusMap);
+
+                } catch (error) {
+                    console.error('Error checking bonuses:', error);
+                }
             };
 
             // Load player profile data
@@ -1163,6 +1284,24 @@
                                             marginTop: '8px'
                                         }}>
                                             🚀 Personal Best: {player.best_week_total.toLocaleString()} pts
+                                        </div>
+                                    )}
+
+                                    {/* Bonuses */}
+                                    {playerBonuses[player.id] && playerBonuses[player.id].length > 0 && (
+                                        <div style={{ marginTop: '12px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                            {playerBonuses[player.id].map((bonus, idx) => (
+                                                <div key={idx} className="chip" style={{
+                                                    background: bonus.bonus_type === 'beat_goat'
+                                                        ? (darkMode ? 'rgba(255, 87, 34, 0.2)' : 'rgba(255, 87, 34, 0.15)')
+                                                        : (darkMode ? 'rgba(76, 175, 80, 0.2)' : 'rgba(76, 175, 80, 0.15)'),
+                                                    color: bonus.bonus_type === 'beat_goat' ? '#FF5722' : '#4CAF50',
+                                                    fontWeight: '600',
+                                                    fontSize: '0.75rem'
+                                                }}>
+                                                    {bonus.bonus_type === 'beat_goat' ? '🔥' : '🚀'} +{bonus.bonus_amount} pts
+                                                </div>
+                                            ))}
                                         </div>
                                     )}
 
