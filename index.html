@@ -296,6 +296,7 @@
             const [players, setPlayers] = useState([]);
             const [chores, setChores] = useState([]);
             const [pendingChores, setPendingChores] = useState([]);
+            const [allCompletions, setAllCompletions] = useState([]);
             const [availableTasks, setAvailableTasks] = useState([]);
 
             const [newTaskName, setNewTaskName] = useState('');
@@ -420,6 +421,15 @@
 
                     if (pendingError) throw pendingError;
 
+                    // Load all completions from past 7 days for cooldown checking
+                    const sevenDaysAgo = new Date();
+                    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                    const { data: allCompletionsData } = await supabase
+                        .from('chore_completions')
+                        .select('chore_id, completed_at')
+                        .gte('completed_at', sevenDaysAgo.toISOString())
+                        .order('completed_at', { ascending: false });
+
                     // Get weekly totals for each player
                     const playersWithStats = await Promise.all(playersData.map(async (player) => {
                         const { count } = await supabase
@@ -469,7 +479,8 @@
                         points: chore.base_value,
                         icon: chore.icon,
                         max_per_day: chore.max_per_day,
-                        description: chore.description
+                        description: chore.description,
+                        cooldown_hours: chore.cooldown_hours || 24
                     }));
 
                     // Format pending chores
@@ -487,6 +498,7 @@
                     setPlayers(playersWithStats);
                     setChores(formattedChores);
                     setPendingChores(formattedPending);
+                    setAllCompletions(allCompletionsData || []);
 
                     // Get current week's GOAT(s)
                     const { data: goatData } = await supabase
@@ -985,8 +997,46 @@
                 }
             };
 
+            // Check if chore is available based on cooldown
+            const getChoreAvailability = (chore) => {
+                // Find the most recent completion of this chore by anyone
+                const lastCompletion = allCompletions.find(c => c.chore_id === chore.id);
+
+                if (!lastCompletion) {
+                    return { available: true, hoursRemaining: 0 };
+                }
+
+                const lastCompletedAt = new Date(lastCompletion.completed_at);
+                const now = new Date();
+                const hoursSinceCompletion = (now - lastCompletedAt) / (1000 * 60 * 60);
+                const cooldownHours = chore.cooldown_hours || 24;
+
+                if (hoursSinceCompletion >= cooldownHours) {
+                    return { available: true, hoursRemaining: 0 };
+                }
+
+                const hoursRemaining = Math.ceil(cooldownHours - hoursSinceCompletion);
+                return { available: false, hoursRemaining };
+            };
+
             const claimChore = async (playerId, chore) => {
                 try {
+                    // Check cooldown first
+                    const availability = getChoreAvailability(chore);
+                    if (!availability.available) {
+                        const days = Math.floor(availability.hoursRemaining / 24);
+                        const hours = availability.hoursRemaining % 24;
+                        let timeText = '';
+                        if (days > 0) {
+                            timeText = days === 1 ? '1 day' : `${days} days`;
+                            if (hours > 0) timeText += ` ${hours}h`;
+                        } else {
+                            timeText = hours === 1 ? '1 hour' : `${hours} hours`;
+                        }
+                        alert(`⏳ This chore is on cooldown! Available in ${timeText}.`);
+                        return;
+                    }
+
                     // Check if player already did this chore today
                     const today = new Date().toISOString().split('T')[0];
                     const { data: existing } = await supabase
@@ -2453,17 +2503,9 @@
                                     return 0;
                                 })
                                 .filter(chore => {
-                                    // Get today's date
-                                    const today = new Date().toISOString().split('T')[0];
-
-                                    // Check if this chore has been completed today by anyone
-                                    const completedToday = pendingChores.some(completion =>
-                                        completion.chore_id === chore.id &&
-                                        completion.completed_date === today
-                                    );
-
-                                    // Only show chores that haven't been claimed today
-                                    return !completedToday;
+                                    // Check if chore is available based on cooldown
+                                    const availability = getChoreAvailability(chore);
+                                    return availability.available;
                                 }).map((chore, idx) => {
                                     const isCustomTask = chore.icon === '⭐';
                                     return (
@@ -2628,6 +2670,84 @@
                                 );
                                 })}
                             </div>
+
+                            {/* Coming Soon (Chores on Cooldown) */}
+                            {(() => {
+                                const unavailableChores = chores
+                                    .map(chore => ({
+                                        ...chore,
+                                        availability: getChoreAvailability(chore)
+                                    }))
+                                    .filter(chore => !chore.availability.available)
+                                    .sort((a, b) => a.availability.hoursRemaining - b.availability.hoursRemaining);
+
+                                if (unavailableChores.length === 0) return null;
+
+                                return (
+                                    <>
+                                        <div style={{
+                                            fontSize: '0.6875rem',
+                                            fontWeight: '500',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '1px',
+                                            color: theme.textSecondary,
+                                            paddingLeft: '8px',
+                                            marginTop: '24px',
+                                            marginBottom: '8px'
+                                        }}>
+                                            Coming Soon
+                                        </div>
+                                        {unavailableChores.map((chore, idx) => {
+                                            const days = Math.floor(chore.availability.hoursRemaining / 24);
+                                            const hours = chore.availability.hoursRemaining % 24;
+                                            let timeText = '';
+                                            if (days > 0) {
+                                                timeText = `${days}d`;
+                                                if (hours > 0) timeText += ` ${hours}h`;
+                                            } else {
+                                                timeText = `${hours}h`;
+                                            }
+
+                                            return (
+                                                <div key={chore.id || idx} className="material-card" style={{
+                                                    marginBottom: '8px',
+                                                    padding: '12px',
+                                                    background: theme.cardBg,
+                                                    opacity: 0.6,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '12px'
+                                                }}>
+                                                    <div style={{ fontSize: '1.25rem' }}>{chore.icon}</div>
+                                                    <div style={{ flex: 1 }}>
+                                                        <div style={{
+                                                            fontSize: '0.875rem',
+                                                            fontWeight: '500',
+                                                            color: theme.cardText
+                                                        }}>
+                                                            {chore.name}
+                                                        </div>
+                                                        <div style={{
+                                                            fontSize: '0.75rem',
+                                                            color: theme.textSecondary
+                                                        }}>
+                                                            {chore.points} pts
+                                                        </div>
+                                                    </div>
+                                                    <div style={{
+                                                        fontSize: '0.75rem',
+                                                        fontWeight: '500',
+                                                        color: theme.accent,
+                                                        whiteSpace: 'nowrap'
+                                                    }}>
+                                                        ⏳ {timeText}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </>
+                                );
+                            })()}
                         </div>
 
                         {/* Pending Approval Column */}
