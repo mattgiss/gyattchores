@@ -245,8 +245,8 @@
 
             /* Header adjustments */
             .fab {
-                width: 40px;
-                height: 40px;
+                width: 44px;
+                height: 44px;
                 font-size: 16px;
             }
 
@@ -431,13 +431,13 @@
             }
 
             .fab {
-                width: 36px;
-                height: 36px;
+                width: 44px;
+                height: 44px;
                 font-size: 14px;
             }
 
             button {
-                min-height: 36px;
+                min-height: 44px;
             }
         }
 
@@ -642,6 +642,19 @@
                 setIsLoggedIn(false);
             };
 
+            // Session timeout - auto logout after 30 minutes of inactivity
+            useEffect(() => {
+                if (!isLoggedIn) return;
+
+                const sessionTimeout = 30 * 60 * 1000; // 30 minutes
+                const timer = setTimeout(() => {
+                    handleLogout();
+                    alert('⏱️ Session expired due to inactivity. Please log in again.');
+                }, sessionTimeout);
+
+                return () => clearTimeout(timer);
+            }, [isLoggedIn]);
+
             // Load data from Supabase
             useEffect(() => {
                 const checkAndReset = async () => {
@@ -787,9 +800,9 @@
                         id: completion.id,
                         playerId: completion.player_id,
                         choreId: completion.chore_id,
-                        choreName: completion.chores.name,
+                        choreName: completion.chores?.name || 'Unknown Chore',
                         points: completion.value_awarded,
-                        icon: completion.chores.icon,
+                        icon: completion.chores?.icon || '❓',
                         status: 'pending',
                         timestamp: new Date(completion.completed_at)
                     }));
@@ -855,7 +868,7 @@
 
                 } catch (error) {
                     console.error('Error loading data:', error);
-                    alert('Error loading data from database');
+                    alert(`Error loading data: ${error.message || 'Unknown error'}`);
                 } finally {
                     setLoading(false);
                 }
@@ -1209,7 +1222,17 @@
                         clearTimeout(timeoutId);
                         const data = await response.json();
 
+                    // Validate weather data structure
+                    if (!data.current_condition || !data.current_condition[0]) {
+                        throw new Error('Invalid weather data structure');
+                    }
+
                     const currentCondition = data.current_condition[0];
+
+                    if (!currentCondition.weatherDesc || !currentCondition.weatherDesc[0]) {
+                        throw new Error('Invalid weather description data');
+                    }
+
                     const tempF = Math.round(parseFloat(currentCondition.temp_F));
                     const description = currentCondition.weatherDesc[0].value;
 
@@ -1419,9 +1442,9 @@
                         id: data.id,
                         playerId: data.player_id,
                         choreId: data.chore_id,
-                        choreName: data.chores.name,
+                        choreName: data.chores?.name || 'Unknown Chore',
                         points: data.value_awarded,
-                        icon: data.chores.icon,
+                        icon: data.chores?.icon || '❓',
                         status: 'pending',
                         timestamp: new Date(data.completed_at)
                     }]);
@@ -1429,7 +1452,7 @@
                     alert(`✅ Chore claimed! Waiting for approval.`);
                 } catch (error) {
                     console.error('Error claiming chore:', error);
-                    alert('Error claiming chore');
+                    alert(`Error claiming chore: ${error.message || 'Unknown error'}`);
                 }
             };
 
@@ -1476,7 +1499,7 @@
                     alert('✅ Chore approved!');
                 } catch (error) {
                     console.error('Error approving chore:', error);
-                    alert('Error approving chore');
+                    alert(`Error approving chore: ${error.message || 'Unknown error'}`);
                 }
             };
 
@@ -1498,7 +1521,7 @@
                     alert('❌ Chore rejected');
                 } catch (error) {
                     console.error('Error rejecting chore:', error);
-                    alert('Error rejecting chore');
+                    alert(`Error rejecting chore: ${error.message || 'Unknown error'}`);
                 }
             };
 
@@ -1551,7 +1574,7 @@
                     alert('✅ Custom task created!');
                 } catch (error) {
                     console.error('Error creating task:', error);
-                    alert('Error creating custom task');
+                    alert(`Error creating custom task: ${error.message || 'Unknown error'}`);
                 }
             };
 
@@ -1929,13 +1952,13 @@
                                                 background: theme.surface,
                                                 borderRadius: '12px'
                                             }}>
-                                                <div style={{ fontSize: '1.5rem' }}>{chore.chores.icon}</div>
+                                                <div style={{ fontSize: '1.5rem' }}>{chore.chores?.icon || '❓'}</div>
                                                 <div style={{ flex: 1 }}>
                                                     <div style={{
                                                         fontWeight: '500',
                                                         color: theme.cardText
                                                     }}>
-                                                        {chore.chores.name}
+                                                        {chore.chores?.name || 'Unknown Chore'}
                                                     </div>
                                                     <div style={{
                                                         fontSize: '0.75rem',
@@ -2017,7 +2040,7 @@
                                                     fontSize: '0.875rem',
                                                     color: theme.textSecondary
                                                 }}>
-                                                    {day.chores.map(c => c.chores.name).join(', ')}
+                                                    {day.chores.map(c => c.chores?.name || 'Unknown Chore').join(', ')}
                                                 </div>
                                             </div>
                                         ))}
@@ -3010,7 +3033,7 @@
                                                         alert('✅ Custom task deleted!');
                                                     } catch (error) {
                                                         console.error('Error deleting task:', error);
-                                                        alert('Error deleting custom task');
+                                                        alert(`Error deleting custom task: ${error.message || 'Unknown error'}`);
                                                     }
                                                 }}
                                                 className="ripple"
@@ -3168,7 +3191,7 @@
                                                 alert('✅ All chores approved!');
                                             } catch (error) {
                                                 console.error('Error approving all:', error);
-                                                alert('Error approving chores');
+                                                alert(`Error approving chores: ${error.message || 'Unknown error'}`);
                                             }
                                         }}
                                         style={{
@@ -3208,7 +3231,7 @@
                                                 alert('✅ Pending chores cleared');
                                             } catch (error) {
                                                 console.error('Error clearing pending:', error);
-                                                alert('Error clearing pending chores');
+                                                alert(`Error clearing pending chores: ${error.message || 'Unknown error'}`);
                                             }
                                         }}
                                         style={{
