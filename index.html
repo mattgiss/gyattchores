@@ -2534,8 +2534,7 @@
                                             <div style={{
                                                 display: 'flex',
                                                 alignItems: 'center',
-                                                gap: '16px',
-                                                marginBottom: '16px'
+                                                gap: '16px'
                                             }}>
                                                 <div style={{
                                                     fontSize: '2.25rem',
@@ -2607,31 +2606,31 @@
                                                         return null;
                                                     })()}
                                                 </div>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                    {players.map(player => (
+                                                        <button
+                                                            key={player.id}
+                                                            onClick={() => claimChore(player.id, chore)}
+                                                            className="ripple"
+                                                            style={{
+                                                                padding: '12px 20px',
+                                                                background: theme.primary,
+                                                                color: theme.onPrimary,
+                                                                border: 'none',
+                                                                cursor: 'pointer',
+                                                                fontSize: '0.875rem',
+                                                                fontWeight: '600',
+                                                                textTransform: 'uppercase',
+                                                                letterSpacing: '0.5px',
+                                                                borderRadius: '8px',
+                                                                whiteSpace: 'nowrap'
+                                                            }}
+                                                        >
+                                                            {player.name}
+                                                        </button>
+                                                    ))}
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div style={{ display: 'flex', gap: '1px', background: theme.outline }}>
-                                            {players.map(player => (
-                                                <button
-                                                    key={player.id}
-                                                    onClick={() => claimChore(player.id, chore)}
-                                                    className="ripple"
-                                                    style={{
-                                                        flex: 1,
-                                                        padding: '18px',
-                                                        background: theme.primary,
-                                                        color: theme.onPrimary,
-                                                        border: 'none',
-                                                        cursor: 'pointer',
-                                                        fontSize: '1.125rem',
-                                                        fontWeight: '600',
-                                                        textTransform: 'uppercase',
-                                                        letterSpacing: '0.5px',
-                                                        borderRadius: '8px'
-                                                    }}
-                                                >
-                                                    {player.name}
-                                                </button>
-                                            ))}
                                         </div>
                                         {isCustomTask && (
                                             <button
