@@ -430,12 +430,13 @@
 
                     if (pendingError) throw pendingError;
 
-                    // Load all completions from past 7 days for cooldown checking
+                    // Load all APPROVED completions from past 7 days for cooldown checking
                     const sevenDaysAgo = new Date();
                     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
                     const { data: allCompletionsData } = await supabase
                         .from('chore_completions')
                         .select('chore_id, completed_at')
+                        .eq('status', 'approved')
                         .gte('completed_at', sevenDaysAgo.toISOString())
                         .order('completed_at', { ascending: false });
 
