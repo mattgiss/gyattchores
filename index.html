@@ -1731,7 +1731,7 @@
                             gap: '16px',
                             padding: '12px 20px',
                             marginBottom: '24px',
-                            maxWidth: '1200px',
+                            
                             margin: '0 auto 24px',
                             background: theme.surface,
                             borderRadius: '16px',
@@ -1763,7 +1763,7 @@
                             </h1>
                         </div>
 
-                        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                        <div style={{  margin: '0 auto' }}>
                             {/* Add Backfill Entry */}
                             <div className="material-card elevation-1" style={{
                                 padding: '20px',
@@ -1999,7 +1999,7 @@
                             gap: '16px',
                             padding: '12px 20px',
                             marginBottom: '24px',
-                            maxWidth: '1200px',
+                            
                             margin: '0 auto 24px',
                             background: theme.surface,
                             borderRadius: '16px',
@@ -2028,7 +2028,7 @@
                             </h1>
                         </div>
 
-                        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                        <div style={{  margin: '0 auto' }}>
                             {dates.length === 0 ? (
                                 <div className="material-card elevation-1" style={{
                                     padding: '48px',
@@ -2166,7 +2166,7 @@
                             gap: '16px',
                             padding: '12px 20px',
                             marginBottom: '24px',
-                            maxWidth: '1200px',
+                            
                             margin: '0 auto 24px',
                             background: theme.surface,
                             borderRadius: '16px',
@@ -2198,7 +2198,7 @@
                             </div>
                         </div>
 
-                        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                        <div style={{  margin: '0 auto' }}>
                             {/* Stats Grid */}
                             <div style={{
                                 display: 'grid',
@@ -2769,55 +2769,65 @@
                     minHeight: '100vh',
                     background: theme.bg,
                     color: theme.text,
-                    padding: '16px',
-                    fontFamily: "'Google Sans', -apple-system, BlinkMacSystemFont, sans-serif"
+                    padding: '12px',
+                    fontFamily: "'Google Sans', -apple-system, BlinkMacSystemFont, sans-serif",
+                    width: '100%',
+                    maxWidth: '100vw',
+                    overflow: 'hidden'
                 }}>
                     {/* Material Top App Bar */}
                     <div className="elevation-2" style={{
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        padding: '12px 20px',
-                        marginBottom: '20px',
-                        maxWidth: '1600px',
-                        margin: '0 auto 20px',
+                        padding: '8px 12px',
+                        marginBottom: '16px',
                         background: theme.surface,
-                        borderRadius: '16px',
-                        height: '56px'
+                        borderRadius: '12px',
+                        minHeight: '56px'
                     }}>
                         <div style={{
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '12px'
+                            gap: '8px',
+                            minWidth: 0,
+                            flex: '0 1 auto'
                         }}>
                             {/* Logo */}
                             <div style={{
-                                width: '40px',
-                                height: '40px',
+                                width: '36px',
+                                height: '36px',
                                 borderRadius: '50%',
                                 overflow: 'hidden',
                                 flexShrink: 0
                             }}>
-                                <svg width="40" height="40" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                                <svg width="36" height="36" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
                                     <circle cx="256" cy="256" r="230" fill={darkMode ? '#FFFFFF' : '#000000'}/>
-                                    <path d="M 180 140 Q 140 140, 140 180 L 140 332 Q 140 372, 180 372 L 260 372 L 260 312 L 200 312 L 200 200 L 260 200 L 260 266 L 300 266 L 300 170 Q 300 140, 270 140 Z" 
+                                    <path d="M 180 140 Q 140 140, 140 180 L 140 332 Q 140 372, 180 372 L 260 372 L 260 312 L 200 312 L 200 200 L 260 200 L 260 266 L 300 266 L 300 170 Q 300 140, 270 140 Z"
                                           fill={darkMode ? '#000000' : '#FFFFFF'}/>
-                                    <path d="M 360 140 Q 320 140, 320 180 L 320 332 Q 320 372, 360 372 L 372 372 L 372 312 L 360 312 Q 360 312, 360 302 L 360 210 Q 360 200, 372 200 L 372 140 Z" 
+                                    <path d="M 360 140 Q 320 140, 320 180 L 320 332 Q 320 372, 360 372 L 372 372 L 372 312 L 360 312 Q 360 312, 360 302 L 360 210 Q 360 200, 372 200 L 372 140 Z"
                                           fill={darkMode ? '#000000' : '#FFFFFF'}/>
                                 </svg>
                             </div>
                             <h1 style={{
-                                fontSize: '1.375rem',
+                                fontSize: '1.125rem',
                                 fontWeight: '500',
                                 margin: 0,
                                 color: theme.text,
                                 fontFamily: "'Google Sans Display', sans-serif",
-                                letterSpacing: '0'
+                                letterSpacing: '0',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap'
                             }}>
                                 GyattChores
                             </h1>
                         </div>
-                        <div style={{ display: 'flex', gap: '12px' }}>
+                        <div style={{
+                            display: 'flex',
+                            gap: '6px',
+                            flexShrink: 0
+                        }}>
                             <button
                                 className="fab elevation-2 ripple"
                                 onClick={async () => {
