@@ -511,8 +511,11 @@
 
         // Get daily quote (same quote for everyone on the same day)
         const getDailyQuote = () => {
-            const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
-            return MOTIVATIONAL_QUOTES[dayOfYear % MOTIVATIONAL_QUOTES.length];
+            const now = new Date();
+            const start = new Date(now.getFullYear(), 0, 0);
+            const dayOfYear = Math.max(0, Math.floor((now - start) / (1000 * 60 * 60 * 24)));
+            const safeIndex = Math.floor(Math.abs(dayOfYear) % MOTIVATIONAL_QUOTES.length);
+            return MOTIVATIONAL_QUOTES[safeIndex] || MOTIVATIONAL_QUOTES[0];
         };
 
         const getLastFridayOfMonth = () => {
@@ -1634,7 +1637,7 @@
                                         fontWeight: '600',
                                         color: theme.accent
                                     }}>
-                                        {selectedPlayer.best_week_total.toLocaleString()}
+                                        {(selectedPlayer.best_week_total || 0).toLocaleString()}
                                     </div>
                                     <div style={{ fontSize: '0.875rem', color: theme.textSecondary }}>points</div>
                                 </div>
@@ -2163,6 +2166,7 @@
                                     justifyContent: 'center'
                                 }}
                                 title="Family Guide"
+                                aria-label="Open Family Guide"
                             >
                                 📚
                             </a>
@@ -2179,12 +2183,14 @@
                                     justifyContent: 'center'
                                 }}
                                 title="Development Story"
+                                aria-label="Open Development Story"
                             >
                                 📖
                             </a>
                             <button
                                 className="fab elevation-2 ripple"
                                 onClick={handleLogout}
+                                aria-label="Logout"
                                 style={{
                                     background: theme.error || '#f44336',
                                     color: '#FFFFFF',
@@ -2197,6 +2203,8 @@
                             <button
                                 className="fab elevation-2 ripple"
                                 onClick={() => setDarkMode(!darkMode)}
+                                aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+                                title={darkMode ? 'Light Mode' : 'Dark Mode'}
                                 style={{
                                     background: theme.primary,
                                     color: theme.onPrimary
@@ -2504,13 +2512,16 @@
                                         >
                                             {player.avatar}
                                         </div>
-                                        <div style={{ flex: 1 }}>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
                                             <div style={{
                                                 fontSize: '1.75rem',
                                                 fontWeight: '600',
                                                 marginBottom: '6px',
                                                 color: theme.cardText,
-                                                fontFamily: "'Google Sans Display', sans-serif"
+                                                fontFamily: "'Google Sans Display', sans-serif",
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap'
                                             }}>
                                                 {player.name}
                                             </div>
@@ -2566,17 +2577,17 @@
                                             color: theme.success,
                                             fontWeight: '500'
                                         }}>
-                                            💰 ${(player.points / 250).toFixed(2)}
+                                            💰 ${(Math.max(0, player.points || 0) / 250).toFixed(2)}
                                         </div>
                                     )}
 
-                                    {player.best_week_total > 0 && (
+                                    {(player.best_week_total || 0) > 0 && (
                                         <div style={{
                                             fontSize: '0.75rem',
                                             color: theme.textSecondary,
                                             marginTop: '8px'
                                         }}>
-                                            🚀 Personal Best: {player.best_week_total.toLocaleString()} pts
+                                            🚀 Personal Best: {(player.best_week_total || 0).toLocaleString()} pts
                                         </div>
                                     )}
 
@@ -2830,13 +2841,16 @@
                                                 }}>
                                                     {chore.icon}
                                                 </div>
-                                                <div style={{ flex: 1 }}>
+                                                <div style={{ flex: 1, minWidth: 0 }}>
                                                     <span className="text-wrap" style={{
                                                         fontSize: '1.375rem',
                                                         fontWeight: '600',
                                                         color: theme.cardText,
                                                         display: 'block',
-                                                        marginBottom: '6px'
+                                                        marginBottom: '6px',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap'
                                                     }}>
                                                         {chore.name}
                                                     </span>
