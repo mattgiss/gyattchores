@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>GyattChores</title>
     <link rel="icon" type="image/svg+xml" href="gyattchores-logo-transparent.svg">
     <link rel="apple-touch-icon" href="gyattchores-logo-transparent.svg">
@@ -206,6 +208,233 @@
             to {
                 transform: translateX(0);
                 opacity: 1;
+            }
+        }
+
+        /* Responsive Design for Mobile Devices */
+
+        /* Small Phones (iPhone SE, iPhone 12 mini, etc.) */
+        @media (max-width: 430px) {
+            body {
+                font-size: 14px;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+                padding: 0 12px;
+            }
+
+            .material-card {
+                padding: 16px !important;
+                margin-bottom: 8px !important;
+            }
+
+            /* Header adjustments */
+            .fab {
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+            }
+
+            /* Reduce massive tablet-sized fonts for phones */
+            h1 {
+                font-size: 1.25rem !important;
+            }
+
+            /* Player cards - scale down from tablet size */
+            div[style*="fontSize: '1.75rem'"] {
+                font-size: 1rem !important;
+            }
+
+            div[style*="fontSize: '3.5rem'"] {
+                font-size: 2rem !important;
+            }
+
+            /* Chore items - scale down */
+            div[style*="fontSize: '1.375rem'"] {
+                font-size: 0.875rem !important;
+            }
+
+            div[style*="fontSize: '2.25rem'"] {
+                font-size: 1.25rem !important;
+            }
+
+            /* Buttons - make more reasonable size */
+            .material-button {
+                padding: 10px 16px !important;
+                font-size: 0.875rem !important;
+            }
+
+            button[style*="fontSize: '1.125rem'"] {
+                font-size: 0.875rem !important;
+                padding: 10px 14px !important;
+            }
+
+            /* Chips and badges */
+            .chip {
+                font-size: 0.7rem !important;
+                padding: 3px 8px !important;
+            }
+
+            /* Touch targets should still be big enough */
+            button {
+                min-height: 44px;
+            }
+        }
+
+        /* Standard Phones (iPhone 15 Pro, iPhone 16, etc.) */
+        @media (min-width: 431px) and (max-width: 768px) {
+            body {
+                font-size: 15px;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+                padding: 0 16px;
+            }
+
+            .material-card {
+                padding: 20px !important;
+                margin-bottom: 10px !important;
+            }
+
+            .fab {
+                width: 44px;
+                height: 44px;
+                font-size: 18px;
+            }
+
+            /* Scale down tablet fonts for phone */
+            h1 {
+                font-size: 1.5rem !important;
+            }
+
+            /* Player names */
+            div[style*="fontSize: '1.75rem'"] {
+                font-size: 1.125rem !important;
+            }
+
+            /* Player avatars */
+            div[style*="fontSize: '3.5rem'"] {
+                font-size: 2.5rem !important;
+            }
+
+            /* Chore names */
+            div[style*="fontSize: '1.375rem'"] {
+                font-size: 1rem !important;
+            }
+
+            /* Chore icons */
+            div[style*="fontSize: '2.25rem'"] {
+                font-size: 1.5rem !important;
+            }
+
+            /* Buttons */
+            .material-button {
+                padding: 12px 18px !important;
+                font-size: 1rem !important;
+            }
+
+            button[style*="fontSize: '1.125rem'"] {
+                font-size: 1rem !important;
+                padding: 12px 16px !important;
+            }
+
+            .chip {
+                font-size: 0.75rem !important;
+            }
+
+            button {
+                min-height: 44px;
+            }
+        }
+
+        /* iPads in Portrait (iPad 5th gen, iPad Air, etc.) */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .dashboard-grid {
+                grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+                gap: 18px;
+                padding: 0 18px;
+            }
+
+            .material-card {
+                padding: 24px !important;
+            }
+
+            .fab {
+                width: 46px;
+                height: 46px;
+            }
+
+            /* Slightly reduce tablet fonts for iPad */
+            h1 {
+                font-size: 1.75rem !important;
+            }
+
+            div[style*="fontSize: '1.75rem'"] {
+                font-size: 1.5rem !important;
+            }
+
+            div[style*="fontSize: '3.5rem'"] {
+                font-size: 3rem !important;
+            }
+
+            div[style*="fontSize: '1.375rem'"] {
+                font-size: 1.25rem !important;
+            }
+
+            div[style*="fontSize: '2.25rem'"] {
+                font-size: 2rem !important;
+            }
+
+            button[style*="fontSize: '1.125rem'"] {
+                font-size: 1.0625rem !important;
+            }
+        }
+
+        /* Wall-mounted tablets and desktop (1024px+) - Keep current large sizes */
+        @media (min-width: 1025px) {
+            .dashboard-grid {
+                grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+                gap: 20px;
+                padding: 0 20px;
+                width: 100%;
+            }
+
+            /* Current large sizes are perfect for wall-mounted displays */
+        }
+
+        /* Landscape phone adjustments */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .material-card {
+                padding: 12px !important;
+                margin-bottom: 8px !important;
+            }
+
+            h1 {
+                font-size: 1.125rem !important;
+            }
+
+            .fab {
+                width: 36px;
+                height: 36px;
+                font-size: 14px;
+            }
+
+            button {
+                min-height: 36px;
+            }
+        }
+
+        /* Safe area padding for modern iPhones (notch/Dynamic Island) */
+        @supports (padding: max(0px)) {
+            body {
+                padding-left: max(12px, env(safe-area-inset-left));
+                padding-right: max(12px, env(safe-area-inset-right));
+                padding-top: max(0px, env(safe-area-inset-top));
+                padding-bottom: max(0px, env(safe-area-inset-bottom));
             }
         }
     </style>
