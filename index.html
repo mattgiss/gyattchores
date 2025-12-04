@@ -294,6 +294,19 @@
             button {
                 min-height: 44px;
             }
+
+            /* Player name truncation on mobile */
+            div[style*="fontSize: '1.75rem'"] {
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+                white-space: nowrap !important;
+            }
+
+            /* Ensure all text content respects container width */
+            .material-card > * {
+                max-width: 100%;
+                overflow-wrap: break-word;
+            }
         }
 
         /* Standard Phones (iPhone 15 Pro, iPhone 16, etc.) */
@@ -361,6 +374,14 @@
 
             button {
                 min-height: 44px;
+            }
+
+            /* Text truncation for longer content */
+            div[style*="fontSize: '1.75rem'"],
+            div[style*="fontSize: '1.375rem'"] {
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+                white-space: nowrap !important;
             }
         }
 
@@ -1384,6 +1405,7 @@
                         }]);
 
                     setNeedsWeeklyReset(false);
+                    await loadAllCompletions();
                     await loadData(); // Refresh data
 
                     console.log('Weekly reset completed for week starting:', currentWeekStart);
@@ -2823,108 +2845,115 @@
                                 GyattChores
                             </h1>
                         </div>
-                        <div style={{
-                            display: 'flex',
-                            gap: '6px',
-                            flexShrink: 0
-                        }}>
-                            <button
-                                className="fab elevation-2 ripple"
-                                onClick={async () => {
-                                    await loadMonthlyChores();
-                                    setShowMonthlyView(true);
-                                }}
-                                style={{
-                                    background: theme.accent,
-                                    color: '#FFFFFF',
-                                    fontSize: '1rem'
-                                }}
-                                title="Monthly View"
-                                aria-label="View monthly chores"
-                            >
-                                📅
-                            </button>
-                            <a
-                                href="ebook.html"
-                                className="fab elevation-2 ripple"
-                                style={{
-                                    background: theme.accent,
-                                    color: '#FFFFFF',
-                                    fontSize: '1rem',
-                                    textDecoration: 'none',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}
-                                title="Family Guide"
-                                aria-label="Open Family Guide"
-                            >
-                                📚
-                            </a>
-                            <a
-                                href="development-story.html"
-                                className="fab elevation-2 ripple"
-                                style={{
-                                    background: '#9C27B0',
-                                    color: '#FFFFFF',
-                                    fontSize: '1rem',
-                                    textDecoration: 'none',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}
-                                title="Development Story"
-                                aria-label="Open Development Story"
-                            >
-                                📖
-                            </a>
-                            <button
-                                className="fab elevation-2 ripple"
-                                onClick={async () => {
-                                    const code = prompt('Enter admin code:');
-                                    if (code === APPROVAL_CODE) {
-                                        await loadAllCompletions();
-                                        setShowAdminMenu(true);
-                                    } else if (code !== null) {
-                                        alert('❌ Invalid admin code');
-                                    }
-                                }}
-                                style={{
-                                    background: '#FF9800',
-                                    color: '#FFFFFF',
-                                    fontSize: '1rem'
-                                }}
-                                title="Admin Menu"
-                                aria-label="Open admin menu"
-                            >
-                                ⚙️
-                            </button>
-                            <button
-                                className="fab elevation-2 ripple"
-                                onClick={handleLogout}
-                                aria-label="Logout"
-                                style={{
-                                    background: theme.error || '#f44336',
-                                    color: '#FFFFFF',
-                                    fontSize: '1rem'
-                                }}
-                                title="Logout"
-                            >
-                                🚪
-                            </button>
-                            <button
-                                className="fab elevation-2 ripple"
-                                onClick={() => setDarkMode(!darkMode)}
-                                aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-                                title={darkMode ? 'Light Mode' : 'Dark Mode'}
-                                style={{
-                                    background: theme.primary,
-                                    color: theme.onPrimary
-                                }}
-                            >
-                                {darkMode ? '☀️' : '🌙'}
-                            </button>
-                        </div>
+                    </div>
+
+                    {/* Navigation Buttons */}
+                    <div className="elevation-1" style={{
+                        display: 'flex',
+                        gap: '8px',
+                        padding: '12px',
+                        marginBottom: '16px',
+                        background: theme.surface,
+                        borderRadius: '12px',
+                        flexWrap: 'wrap'
+                    }}>
+                        <button
+                            className="material-button elevation-1 ripple"
+                            onClick={async () => {
+                                await loadMonthlyChores();
+                                setShowMonthlyView(true);
+                            }}
+                            style={{
+                                flex: '1 1 auto',
+                                minWidth: '120px',
+                                background: theme.accent,
+                                color: '#FFFFFF'
+                            }}
+                            aria-label="View monthly chores"
+                        >
+                            Monthly View
+                        </button>
+                        <a
+                            href="ebook.html"
+                            className="material-button elevation-1 ripple"
+                            style={{
+                                flex: '1 1 auto',
+                                minWidth: '120px',
+                                background: theme.accent,
+                                color: '#FFFFFF',
+                                textDecoration: 'none',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}
+                            aria-label="Open Family Guide"
+                        >
+                            Family Guide
+                        </a>
+                        <a
+                            href="development-story.html"
+                            className="material-button elevation-1 ripple"
+                            style={{
+                                flex: '1 1 auto',
+                                minWidth: '120px',
+                                background: '#9C27B0',
+                                color: '#FFFFFF',
+                                textDecoration: 'none',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}
+                            aria-label="Open Development Story"
+                        >
+                            Development Story
+                        </a>
+                        <button
+                            className="material-button elevation-1 ripple"
+                            onClick={async () => {
+                                const code = prompt('Enter admin code:');
+                                if (code === APPROVAL_CODE) {
+                                    await loadAllCompletions();
+                                    setShowAdminMenu(true);
+                                } else if (code !== null) {
+                                    alert('❌ Invalid admin code');
+                                }
+                            }}
+                            style={{
+                                flex: '1 1 auto',
+                                minWidth: '120px',
+                                background: '#FF9800',
+                                color: '#FFFFFF'
+                            }}
+                            aria-label="Open admin menu"
+                        >
+                            Admin Menu
+                        </button>
+                        <button
+                            className="material-button elevation-1 ripple"
+                            onClick={handleLogout}
+                            aria-label="Logout"
+                            style={{
+                                flex: '1 1 auto',
+                                minWidth: '120px',
+                                background: theme.error || '#f44336',
+                                color: '#FFFFFF'
+                            }}
+                        >
+                            Logout
+                        </button>
+                        <button
+                            className="material-button elevation-1 ripple"
+                            onClick={() => setDarkMode(!darkMode)}
+                            aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+                            style={{
+                                flex: '1 1 auto',
+                                minWidth: '120px',
+                                background: theme.primary,
+                                color: theme.onPrimary
+                            }}
+                        >
+                            {darkMode ? 'Light Mode' : 'Dark Mode'}
+                        </button>
                     </div>
 
                     {/* Achievement Unlock Notifications */}
@@ -3785,11 +3814,14 @@
                                                     gap: '12px'
                                                 }}>
                                                     <div style={{ fontSize: '1.25rem' }}>{chore.icon}</div>
-                                                    <div style={{ flex: 1 }}>
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
                                                         <div style={{
                                                             fontSize: '0.875rem',
                                                             fontWeight: '500',
-                                                            color: theme.cardText
+                                                            color: theme.cardText,
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis',
+                                                            whiteSpace: 'nowrap'
                                                         }}>
                                                             {chore.name}
                                                         </div>
@@ -3867,6 +3899,7 @@
                                                 if (error) throw error;
 
                                                 setPendingChores([]);
+                                                await loadAllCompletions();
                                                 await loadData();
                                                 alert('✅ All chores approved!');
                                             } catch (error) {
@@ -3908,6 +3941,8 @@
                                                 if (error) throw error;
 
                                                 setPendingChores([]);
+                                                await loadAllCompletions();
+                                                await loadData();
                                                 alert('✅ Pending chores cleared');
                                             } catch (error) {
                                                 console.error('Error clearing pending:', error);
