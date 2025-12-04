@@ -3649,7 +3649,7 @@
                                     const isCustomTask = chore.icon === '⭐';
                                     return (
                                     <div key={chore.id || idx} className="material-card elevation-1" style={{
-                                        marginBottom: '8px',
+                                        marginBottom: '6px',
                                         overflow: 'hidden',
                                         background: theme.cardBg,
                                         border: isCustomTask ? `2px solid ${theme.accent}` : 'none',
@@ -3657,32 +3657,32 @@
                                             ? `0 0 12px ${darkMode ? 'rgba(18, 10, 204, 0.3)' : 'rgba(235, 112, 30, 0.3)'}, 0 2px 8px 0 rgba(0,0,0,.1)`
                                             : undefined
                                     }}>
-                                        <div style={{ padding: '12px' }}>
+                                        <div style={{ padding: '8px' }}>
                                             <div style={{
                                                 display: 'flex',
                                                 alignItems: 'center',
-                                                gap: '8px',
-                                                marginBottom: '8px'
+                                                gap: '6px',
+                                                marginBottom: '6px'
                                             }}>
                                                 <div style={{
-                                                    fontSize: '1.5rem',
-                                                    width: '40px',
-                                                    height: '40px',
+                                                    fontSize: '1.25rem',
+                                                    width: '32px',
+                                                    height: '32px',
                                                     flexShrink: 0,
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     justifyContent: 'center',
-                                                    borderRadius: '8px',
+                                                    borderRadius: '6px',
                                                     background: darkMode ? 'rgba(71, 178, 196, 0.1)' : 'rgba(208, 165, 0, 0.1)'
                                                 }}>
                                                     {chore.icon}
                                                 </div>
                                                 <div style={{ flex: 1, minWidth: 0 }}>
                                                     <div style={{
-                                                        fontSize: '0.9375rem',
+                                                        fontSize: '0.875rem',
                                                         fontWeight: '600',
                                                         color: theme.cardText,
-                                                        marginBottom: '2px',
+                                                        marginBottom: '1px',
                                                         overflow: 'hidden',
                                                         textOverflow: 'ellipsis',
                                                         whiteSpace: 'nowrap'
@@ -3690,7 +3690,7 @@
                                                         {chore.name}
                                                     </div>
                                                     <div style={{
-                                                        fontSize: '0.8125rem',
+                                                        fontSize: '0.75rem',
                                                         fontWeight: '600',
                                                         color: theme.primary
                                                     }}>
@@ -3741,7 +3741,7 @@
                                             <div style={{
                                                 display: 'flex',
                                                 flexWrap: 'wrap',
-                                                gap: '6px'
+                                                gap: '4px'
                                             }}>
                                                 {players.map(player => (
                                                     <button
@@ -3750,23 +3750,22 @@
                                                         className="ripple"
                                                         style={{
                                                             flex: '1 1 auto',
-                                                            minWidth: 'calc(50% - 3px)',
-                                                            padding: '8px 12px',
+                                                            minWidth: '48px',
+                                                            padding: '8px',
                                                             background: theme.primary,
                                                             color: theme.onPrimary,
                                                             border: 'none',
                                                             cursor: 'pointer',
-                                                            fontSize: '0.75rem',
-                                                            fontWeight: '600',
-                                                            textTransform: 'uppercase',
-                                                            letterSpacing: '0.5px',
-                                                            borderRadius: '6px',
-                                                            overflow: 'hidden',
-                                                            textOverflow: 'ellipsis',
-                                                            whiteSpace: 'nowrap'
+                                                            fontSize: '1.25rem',
+                                                            borderRadius: '8px',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center'
                                                         }}
+                                                        title={player.name}
+                                                        aria-label={`${player.name} claim chore`}
                                                     >
-                                                        {player.name}
+                                                        {player.avatar}
                                                     </button>
                                                 ))}
                                             </div>
