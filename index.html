@@ -222,6 +222,7 @@
             'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrc2h4ZG9xZ3dveG9iamRjbHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3MjI2NDEsImV4cCI6MjA4MDI5ODY0MX0.UGNrsfG6goEA0PPWG4x7gxBueA7D5Oe9uWI-iCXIar0'
         );
 
+        const LOGIN_PASSWORD = "0413";
         const APPROVAL_CODE = "1214";
 
         // Daily motivational quotes from kid-friendly characters
@@ -338,7 +339,7 @@
             // Login handler
             const handleLogin = (e) => {
                 e.preventDefault();
-                if (loginPassword === APPROVAL_CODE) {
+                if (loginPassword === LOGIN_PASSWORD) {
                     localStorage.setItem('gyatt_session', 'active');
                     setIsLoggedIn(true);
                     setLoginError('');
