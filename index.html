@@ -602,6 +602,11 @@
             const [showMonthlyView, setShowMonthlyView] = useState(false);
             const [monthlyChores, setMonthlyChores] = useState([]);
 
+            // Admin menu states
+            const [showAdminMenu, setShowAdminMenu] = useState(false);
+            const [allCompletions, setAllCompletions] = useState([]);
+            const [editingChore, setEditingChore] = useState(null);
+
             // Bonus system states
             const [playerBonuses, setPlayerBonuses] = useState({});
 
@@ -1388,6 +1393,73 @@
                 }
             };
 
+            // Load all completions for admin menu
+            const loadAllCompletions = async () => {
+                try {
+                    const thirtyDaysAgo = new Date();
+                    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+                    const { data, error } = await supabase
+                        .from('chore_completions')
+                        .select(`
+                            *,
+                            chores(name, icon),
+                            players(name, avatar_url)
+                        `)
+                        .gte('completed_date', thirtyDaysAgo.toISOString().split('T')[0])
+                        .order('completed_date', { ascending: false });
+
+                    if (error) throw error;
+                    setAllCompletions(data || []);
+                } catch (error) {
+                    console.error('Error loading completions:', error);
+                }
+            };
+
+            // Update chore completion date
+            const updateChoreDate = async (completionId, newDate) => {
+                try {
+                    const { error } = await supabase
+                        .from('chore_completions')
+                        .update({ completed_date: newDate })
+                        .eq('id', completionId);
+
+                    if (error) throw error;
+
+                    alert('✅ Chore date updated!');
+                    await loadAllCompletions();
+                    await loadData();
+                } catch (error) {
+                    console.error('Error updating chore date:', error);
+                    alert(`Error updating date: ${error.message || 'Unknown error'}`);
+                }
+            };
+
+            // Add backfill chore entry
+            const addBackfillChore = async (playerId, choreId, date, points) => {
+                try {
+                    const { error } = await supabase
+                        .from('chore_completions')
+                        .insert([{
+                            player_id: playerId,
+                            chore_id: choreId,
+                            completed_date: date,
+                            value_awarded: points,
+                            status: 'approved', // Auto-approve backfilled entries
+                            completed_at: new Date().toISOString()
+                        }]);
+
+                    if (error) throw error;
+
+                    alert('✅ Backfill entry added!');
+                    await loadAllCompletions();
+                    await loadData();
+                } catch (error) {
+                    console.error('Error adding backfill:', error);
+                    alert(`Error adding backfill: ${error.message || 'Unknown error'}`);
+                }
+            };
+
             // Check if chore is available based on cooldown
             const getChoreAvailability = (chore) => {
                 // Find the most recent completion of this chore by anyone
@@ -1640,6 +1712,259 @@
                         fontSize: '1.5rem'
                     }}>
                         Loading...
+                    </div>
+                );
+            }
+
+            // Admin Menu View
+            if (showAdminMenu) {
+                return (
+                    <div style={{
+                        minHeight: '100vh',
+                        background: theme.bg,
+                        color: theme.text,
+                        padding: '16px'
+                    }}>
+                        {/* Header with Back Button */}
+                        <div className="elevation-2" style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '16px',
+                            padding: '12px 20px',
+                            marginBottom: '24px',
+                            maxWidth: '1200px',
+                            margin: '0 auto 24px',
+                            background: theme.surface,
+                            borderRadius: '16px',
+                            height: '56px'
+                        }}>
+                            <button
+                                onClick={() => {
+                                    setShowAdminMenu(false);
+                                    setEditingChore(null);
+                                }}
+                                className="fab elevation-1 ripple"
+                                style={{
+                                    background: theme.primary,
+                                    color: theme.onPrimary,
+                                    width: '48px',
+                                    height: '48px',
+                                    fontSize: '1.25rem'
+                                }}
+                            >
+                                ←
+                            </button>
+                            <h1 style={{
+                                fontSize: '1.375rem',
+                                fontWeight: '500',
+                                margin: 0,
+                                fontFamily: "'Google Sans Display', sans-serif"
+                            }}>
+                                ⚙️ Admin Menu
+                            </h1>
+                        </div>
+
+                        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                            {/* Add Backfill Entry */}
+                            <div className="material-card elevation-1" style={{
+                                padding: '20px',
+                                background: theme.cardBg,
+                                marginBottom: '24px'
+                            }}>
+                                <h2 style={{
+                                    fontSize: '1.125rem',
+                                    fontWeight: '500',
+                                    marginBottom: '16px',
+                                    color: theme.cardText
+                                }}>
+                                    ➕ Add Backfill Entry
+                                </h2>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                    <select
+                                        id="backfill-player"
+                                        style={{
+                                            padding: '12px',
+                                            borderRadius: '8px',
+                                            border: `1px solid ${theme.outline}`,
+                                            background: theme.surface,
+                                            color: theme.text,
+                                            fontSize: '1rem'
+                                        }}
+                                    >
+                                        <option value="">Select Player</option>
+                                        {players.map(player => (
+                                            <option key={player.id} value={player.id}>
+                                                {player.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <select
+                                        id="backfill-chore"
+                                        style={{
+                                            padding: '12px',
+                                            borderRadius: '8px',
+                                            border: `1px solid ${theme.outline}`,
+                                            background: theme.surface,
+                                            color: theme.text,
+                                            fontSize: '1rem'
+                                        }}
+                                    >
+                                        <option value="">Select Chore</option>
+                                        {chores.map(chore => (
+                                            <option key={chore.id} value={JSON.stringify({id: chore.id, points: chore.points})}>
+                                                {chore.icon} {chore.name} ({chore.points} pts)
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <input
+                                        id="backfill-date"
+                                        type="date"
+                                        max={new Date().toISOString().split('T')[0]}
+                                        style={{
+                                            padding: '12px',
+                                            borderRadius: '8px',
+                                            border: `1px solid ${theme.outline}`,
+                                            background: theme.surface,
+                                            color: theme.text,
+                                            fontSize: '1rem'
+                                        }}
+                                    />
+                                    <button
+                                        className="material-button ripple"
+                                        onClick={() => {
+                                            const playerId = document.getElementById('backfill-player').value;
+                                            const choreData = document.getElementById('backfill-chore').value;
+                                            const date = document.getElementById('backfill-date').value;
+
+                                            if (!playerId || !choreData || !date) {
+                                                alert('❌ Please fill in all fields');
+                                                return;
+                                            }
+
+                                            const {id: choreId, points} = JSON.parse(choreData);
+
+                                            if (confirm(`Add backfill entry for ${date}?`)) {
+                                                addBackfillChore(playerId, choreId, date, points);
+                                            }
+                                        }}
+                                        style={{
+                                            background: theme.success,
+                                            color: '#FFFFFF',
+                                            padding: '12px'
+                                        }}
+                                    >
+                                        Add Backfill Entry
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Recent Completions */}
+                            <div className="material-card elevation-1" style={{
+                                padding: '20px',
+                                background: theme.cardBg
+                            }}>
+                                <h2 style={{
+                                    fontSize: '1.125rem',
+                                    fontWeight: '500',
+                                    marginBottom: '16px',
+                                    color: theme.cardText
+                                }}>
+                                    📝 Recent Completions (Last 30 Days)
+                                </h2>
+                                {allCompletions.length === 0 ? (
+                                    <div style={{
+                                        textAlign: 'center',
+                                        padding: '32px',
+                                        color: theme.textSecondary
+                                    }}>
+                                        No completions found
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                        {allCompletions.map(completion => (
+                                            <div key={completion.id} className="material-card" style={{
+                                                padding: '16px',
+                                                background: theme.surface,
+                                                borderLeft: `4px solid ${
+                                                    completion.status === 'pending' ? '#FFA726' :
+                                                    completion.status === 'approved' ? '#66BB6A' : '#EF5350'
+                                                }`
+                                            }}>
+                                                <div style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'flex-start',
+                                                    gap: '12px'
+                                                }}>
+                                                    <div style={{ flex: 1 }}>
+                                                        <div style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '8px',
+                                                            marginBottom: '8px'
+                                                        }}>
+                                                            <span style={{ fontSize: '1.5rem' }}>
+                                                                {completion.players?.avatar_url || '👤'}
+                                                            </span>
+                                                            <span style={{ fontSize: '1.25rem' }}>
+                                                                {completion.chores?.icon || '❓'}
+                                                            </span>
+                                                            <div>
+                                                                <div style={{
+                                                                    fontWeight: '500',
+                                                                    color: theme.cardText
+                                                                }}>
+                                                                    {completion.players?.name || 'Unknown'}: {completion.chores?.name || 'Unknown'}
+                                                                </div>
+                                                                <div style={{
+                                                                    fontSize: '0.875rem',
+                                                                    color: theme.textSecondary
+                                                                }}>
+                                                                    {completion.value_awarded} pts • {completion.status}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div style={{
+                                                            fontSize: '0.875rem',
+                                                            color: theme.textSecondary
+                                                        }}>
+                                                            Date: {new Date(completion.completed_date).toLocaleDateString('en-US', {
+                                                                weekday: 'short',
+                                                                month: 'short',
+                                                                day: 'numeric',
+                                                                year: 'numeric'
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        className="material-button ripple"
+                                                        onClick={() => {
+                                                            const newDate = prompt(
+                                                                'Enter new date (YYYY-MM-DD):',
+                                                                completion.completed_date
+                                                            );
+                                                            if (newDate && newDate !== completion.completed_date) {
+                                                                if (confirm(`Change date from ${completion.completed_date} to ${newDate}?`)) {
+                                                                    updateChoreDate(completion.id, newDate);
+                                                                }
+                                                            }
+                                                        }}
+                                                        style={{
+                                                            background: theme.primary,
+                                                            color: theme.onPrimary,
+                                                            padding: '8px 16px',
+                                                            fontSize: '0.875rem'
+                                                        }}
+                                                    >
+                                                        Edit Date
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 );
             }
@@ -2544,6 +2869,27 @@
                             >
                                 📖
                             </a>
+                            <button
+                                className="fab elevation-2 ripple"
+                                onClick={async () => {
+                                    const code = prompt('Enter admin code:');
+                                    if (code === APPROVAL_CODE) {
+                                        await loadAllCompletions();
+                                        setShowAdminMenu(true);
+                                    } else if (code !== null) {
+                                        alert('❌ Invalid admin code');
+                                    }
+                                }}
+                                style={{
+                                    background: '#FF9800',
+                                    color: '#FFFFFF',
+                                    fontSize: '1rem'
+                                }}
+                                title="Admin Menu"
+                                aria-label="Open admin menu"
+                            >
+                                ⚙️
+                            </button>
                             <button
                                 className="fab elevation-2 ripple"
                                 onClick={handleLogout}
