@@ -458,6 +458,32 @@
         div[style*="maxWidth"] {
             max-width: 100% !important;
         }
+
+        /* Keyboard focus indicators for accessibility */
+        button:focus-visible,
+        a:focus-visible,
+        input:focus-visible,
+        select:focus-visible {
+            outline: 3px solid #1a73e8;
+            outline-offset: 2px;
+            border-radius: 4px;
+        }
+
+        /* Reduce motion for users who prefer it */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* Improve input font size on mobile to prevent zoom */
+        @media (max-width: 768px) {
+            input, textarea, select {
+                font-size: 16px !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -2547,8 +2573,8 @@
                                             })()}
                                             {isGoat(player.id) && (
                                                 <div className="chip" style={{
-                                                    background: darkMode ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255, 215, 0, 0.3)',
-                                                    color: '#FFD700',
+                                                    background: darkMode ? 'rgba(255, 215, 0, 0.25)' : 'rgba(255, 215, 0, 0.35)',
+                                                    color: darkMode ? '#FDB022' : '#8B6914',
                                                     marginTop: '8px',
                                                     fontSize: '0.75rem',
                                                     fontWeight: '600',
@@ -3344,6 +3370,9 @@
                                     placeholder="Task name"
                                     value={newTaskName}
                                     onChange={(e) => setNewTaskName(e.target.value)}
+                                    maxLength={100}
+                                    required
+                                    aria-label="Task name"
                                     className="material-input"
                                     style={{
                                         marginBottom: '12px',
@@ -3356,7 +3385,15 @@
                                     type="number"
                                     placeholder="Points"
                                     value={newTaskPoints}
-                                    onChange={(e) => setNewTaskPoints(e.target.value)}
+                                    onChange={(e) => {
+                                        const value = parseInt(e.target.value) || 0;
+                                        setNewTaskPoints(Math.max(1, Math.min(10000, value)));
+                                    }}
+                                    min="1"
+                                    max="10000"
+                                    step="25"
+                                    required
+                                    aria-label="Points value"
                                     className="material-input"
                                     style={{
                                         marginBottom: '12px',
@@ -3379,6 +3416,9 @@
                                         type="date"
                                         value={newTaskDueDate}
                                         onChange={(e) => setNewTaskDueDate(e.target.value)}
+                                        min={new Date().toISOString().split('T')[0]}
+                                        max={new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0]}
+                                        aria-label="Due date (optional)"
                                         className="material-input"
                                         style={{
                                             background: theme.surface,
@@ -3390,10 +3430,19 @@
                                 <button
                                     className="material-button ripple"
                                     onClick={createTask}
+                                    disabled={!newTaskName.trim() || !newTaskPoints || newTaskPoints <= 0}
                                     style={{
                                         width: '100%',
-                                        background: theme.secondary,
-                                        color: '#FFFFFF'
+                                        background: (!newTaskName.trim() || !newTaskPoints || newTaskPoints <= 0)
+                                            ? theme.outline
+                                            : theme.secondary,
+                                        color: '#FFFFFF',
+                                        opacity: (!newTaskName.trim() || !newTaskPoints || newTaskPoints <= 0)
+                                            ? 0.5
+                                            : 1,
+                                        cursor: (!newTaskName.trim() || !newTaskPoints || newTaskPoints <= 0)
+                                            ? 'not-allowed'
+                                            : 'pointer'
                                     }}
                                 >
                                     Add Task
