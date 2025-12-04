@@ -93,17 +93,29 @@
         }
         
         .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 20px;
-            padding: 0 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 0 12px;
             width: 100%;
         }
-        
-        @media (max-width: 600px) {
+
+        .dashboard-grid > div {
+            flex: 1 1 300px;
+            min-width: 0;
+        }
+
+        @media (max-width: 768px) {
             .dashboard-grid {
-                grid-template-columns: 1fr;
+                flex-direction: column;
+                gap: 8px;
+                padding: 0 8px;
             }
+
+            /* Reorder for mobile: Available Chores first, Players second, Pending third */
+            .dashboard-grid > div:nth-child(1) { order: 2; }
+            .dashboard-grid > div:nth-child(2) { order: 1; }
+            .dashboard-grid > div:nth-child(3) { order: 3; }
         }
         
         .text-wrap {
@@ -3255,27 +3267,27 @@
                         {/* Players Column */}
                         <div>
                             <div style={{
-                                fontSize: '0.875rem',
+                                fontSize: '0.75rem',
                                 fontWeight: '600',
-                                marginBottom: '20px',
+                                marginBottom: '8px',
                                 textTransform: 'uppercase',
-                                letterSpacing: '1.5px',
+                                letterSpacing: '1px',
                                 color: theme.textSecondary,
-                                paddingLeft: '8px'
+                                paddingLeft: '4px'
                             }}>
                                 Players
                             </div>
                             {players.map(player => (
                                 <div key={player.id} className="material-card elevation-1" style={{
-                                    padding: '24px',
-                                    marginBottom: '16px',
+                                    padding: '12px',
+                                    marginBottom: '8px',
                                     background: theme.cardBg,
                                     border: isGoat(player.id) ? '2px solid #FFD700' : 'none',
                                     boxShadow: isGoat(player.id)
-                                        ? '0 0 16px rgba(255, 215, 0, 0.2), 0 2px 8px 0 rgba(0,0,0,.1)'
+                                        ? '0 0 12px rgba(255, 215, 0, 0.2), 0 2px 8px 0 rgba(0,0,0,.1)'
                                         : undefined
                                 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                                         <div
                                             onClick={async () => {
                                                 const newEmoji = prompt(`Pick a new emoji for ${player.name}:`, player.avatar);
@@ -3301,19 +3313,20 @@
                                                 }
                                             }}
                                             style={{
-                                            fontSize: '3.5rem',
-                                            width: '80px',
-                                            height: '80px',
+                                            fontSize: '2rem',
+                                            width: '48px',
+                                            height: '48px',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
                                             borderRadius: '50%',
                                             background: darkMode ? 'rgba(71, 178, 196, 0.1)' : 'rgba(208, 165, 0, 0.1)',
                                             cursor: 'pointer',
-                                            transition: 'transform 0.2s, background 0.2s'
+                                            transition: 'transform 0.2s, background 0.2s',
+                                            flexShrink: 0
                                         }}
                                         onMouseEnter={(e) => {
-                                            e.currentTarget.style.transform = 'scale(1.1)';
+                                            e.currentTarget.style.transform = 'scale(1.05)';
                                             e.currentTarget.style.background = darkMode ? 'rgba(71, 178, 196, 0.2)' : 'rgba(208, 165, 0, 0.2)';
                                         }}
                                         onMouseLeave={(e) => {
@@ -3326,9 +3339,9 @@
                                         </div>
                                         <div style={{ flex: 1, minWidth: 0 }}>
                                             <div style={{
-                                                fontSize: '1.75rem',
+                                                fontSize: '1rem',
                                                 fontWeight: '600',
-                                                marginBottom: '6px',
+                                                marginBottom: '2px',
                                                 color: theme.cardText,
                                                 fontFamily: "'Google Sans Display', sans-serif",
                                                 overflow: 'hidden',
@@ -3338,21 +3351,21 @@
                                                 {player.name}
                                             </div>
                                             <div style={{
-                                                fontSize: '1.125rem',
+                                                fontSize: '0.8125rem',
                                                 color: theme.textSecondary
                                             }}>
-                                                {player.completedChores} chores completed
+                                                {player.completedChores} chores
                                             </div>
                                             {(() => {
                                                 const pendingCount = pendingChores.filter(c => c.player_id === player.id).length;
                                                 if (pendingCount > 0) {
                                                     return (
                                                         <div style={{
-                                                            fontSize: '1rem',
+                                                            fontSize: '0.75rem',
                                                             color: theme.accent,
                                                             fontWeight: '500'
                                                         }}>
-                                                            ⏳ {pendingCount} pending approval
+                                                            ⏳ {pendingCount} pending
                                                         </div>
                                                     );
                                                 }
@@ -3361,14 +3374,15 @@
                                                 <div className="chip" style={{
                                                     background: darkMode ? 'rgba(255, 215, 0, 0.25)' : 'rgba(255, 215, 0, 0.35)',
                                                     color: darkMode ? '#FDB022' : '#8B6914',
-                                                    marginTop: '8px',
-                                                    fontSize: '0.75rem',
+                                                    marginTop: '4px',
+                                                    fontSize: '0.625rem',
                                                     fontWeight: '600',
                                                     display: 'inline-flex',
                                                     alignItems: 'center',
-                                                    gap: '4px'
+                                                    gap: '3px',
+                                                    padding: '2px 6px'
                                                 }}>
-                                                    🐐 {weeklyGoats.length > 1 ? 'CO-GOAT' : 'GOAT'} OF THE WEEK
+                                                    🐐 {weeklyGoats.length > 1 ? 'CO-GOAT' : 'GOAT'}
                                                 </div>
                                             )}
                                         </div>
@@ -3377,17 +3391,19 @@
                                     <div className="chip" style={{
                                         background: darkMode ? 'rgba(71, 178, 196, 0.15)' : 'rgba(208, 165, 0, 0.15)',
                                         color: theme.primary,
-                                        marginBottom: '12px',
-                                        fontWeight: '500'
+                                        marginBottom: '6px',
+                                        fontWeight: '500',
+                                        fontSize: '0.75rem'
                                     }}>
-                                        {player.points.toLocaleString()} points
+                                        {player.points.toLocaleString()} pts
                                     </div>
-                                    
+
                                     {player.completedChores >= 5 && (
                                         <div className="chip" style={{
                                             background: darkMode ? 'rgba(129, 201, 149, 0.15)' : 'rgba(15, 157, 88, 0.15)',
                                             color: theme.success,
-                                            fontWeight: '500'
+                                            fontWeight: '500',
+                                            fontSize: '0.6875rem'
                                         }}>
                                             💰 ${(Math.max(0, player.points || 0) / 250).toFixed(2)}
                                         </div>
@@ -3395,17 +3411,17 @@
 
                                     {(player.best_week_total || 0) > 0 && (
                                         <div style={{
-                                            fontSize: '0.75rem',
+                                            fontSize: '0.6875rem',
                                             color: theme.textSecondary,
-                                            marginTop: '8px'
+                                            marginTop: '4px'
                                         }}>
-                                            🚀 Personal Best: {(player.best_week_total || 0).toLocaleString()} pts
+                                            🚀 Best: {(player.best_week_total || 0).toLocaleString()} pts
                                         </div>
                                     )}
 
                                     {/* Bonuses */}
                                     {playerBonuses[player.id] && playerBonuses[player.id].length > 0 && (
-                                        <div style={{ marginTop: '12px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                        <div style={{ marginTop: '6px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                                             {playerBonuses[player.id].map((bonus) => (
                                                 <div key={bonus.id || `${bonus.bonus_type}-${bonus.awarded_at}`} className="chip" style={{
                                                     background: bonus.bonus_type === 'beat_goat'
@@ -3413,9 +3429,10 @@
                                                         : (darkMode ? 'rgba(76, 175, 80, 0.2)' : 'rgba(76, 175, 80, 0.15)'),
                                                     color: bonus.bonus_type === 'beat_goat' ? '#FF5722' : '#4CAF50',
                                                     fontWeight: '600',
-                                                    fontSize: '0.75rem'
+                                                    fontSize: '0.6875rem',
+                                                    padding: '2px 6px'
                                                 }}>
-                                                    {bonus.bonus_type === 'beat_goat' ? '🔥' : '🚀'} +{bonus.bonus_amount} pts
+                                                    {bonus.bonus_type === 'beat_goat' ? '🔥' : '🚀'} +{bonus.bonus_amount}
                                                 </div>
                                             ))}
                                         </div>
@@ -3434,24 +3451,27 @@
                                             if (achievement) {
                                                 return (
                                                     <div style={{
-                                                        marginTop: '12px',
-                                                        padding: '8px',
+                                                        marginTop: '6px',
+                                                        padding: '6px',
                                                         background: theme.surface,
-                                                        borderRadius: '8px',
+                                                        borderRadius: '6px',
                                                         display: 'flex',
                                                         alignItems: 'center',
-                                                        gap: '8px',
-                                                        fontSize: '0.75rem'
+                                                        gap: '6px',
+                                                        fontSize: '0.6875rem'
                                                     }}>
-                                                        <span style={{ fontSize: '1.25rem' }}>{achievement.icon}</span>
-                                                        <div style={{ flex: 1 }}>
+                                                        <span style={{ fontSize: '1rem' }}>{achievement.icon}</span>
+                                                        <div style={{ flex: 1, minWidth: 0 }}>
                                                             <div style={{
                                                                 fontWeight: '600',
-                                                                color: theme.cardText
+                                                                color: theme.cardText,
+                                                                overflow: 'hidden',
+                                                                textOverflow: 'ellipsis',
+                                                                whiteSpace: 'nowrap'
                                                             }}>
                                                                 {achievement.name}
                                                             </div>
-                                                            <div style={{ color: theme.textSecondary, fontSize: '0.6875rem' }}>
+                                                            <div style={{ color: theme.textSecondary, fontSize: '0.625rem' }}>
                                                                 {playerAchs.length} {playerAchs.length === 1 ? 'achievement' : 'achievements'}
                                                             </div>
                                                         </div>
@@ -3471,9 +3491,11 @@
                                         }}
                                         style={{
                                             width: '100%',
-                                            marginTop: '12px',
+                                            marginTop: '6px',
+                                            padding: '8px 12px',
                                             background: theme.primary,
-                                            color: theme.onPrimary
+                                            color: theme.onPrimary,
+                                            fontSize: '0.75rem'
                                         }}
                                     >
                                         View Profile
@@ -3484,10 +3506,10 @@
                             {/* Last Week's GOAT */}
                             {lastWeekGoat && lastWeekGoat.length > 0 && (
                                 <div className="material-card elevation-1" style={{
-                                    padding: '20px',
+                                    padding: '12px',
                                     background: theme.cardBg,
                                     textAlign: 'center',
-                                    marginBottom: '12px'
+                                    marginBottom: '8px'
                                 }}>
                                     <div style={{
                                         fontSize: '0.6875rem',
@@ -3599,13 +3621,13 @@
                         {/* Available Chores Column */}
                         <div>
                             <div style={{
-                                fontSize: '0.875rem',
+                                fontSize: '0.75rem',
                                 fontWeight: '600',
-                                marginBottom: '20px',
+                                marginBottom: '8px',
                                 textTransform: 'uppercase',
-                                letterSpacing: '1.5px',
+                                letterSpacing: '1px',
                                 color: theme.textSecondary,
-                                paddingLeft: '8px'
+                                paddingLeft: '4px'
                             }}>
                                 Available Chores
                             </div>
@@ -3627,51 +3649,48 @@
                                     const isCustomTask = chore.icon === '⭐';
                                     return (
                                     <div key={chore.id || idx} className="material-card elevation-1" style={{
-                                        marginBottom: '16px',
+                                        marginBottom: '8px',
                                         overflow: 'hidden',
                                         background: theme.cardBg,
-                                        border: isCustomTask ? `3px solid ${theme.accent}` : 'none',
+                                        border: isCustomTask ? `2px solid ${theme.accent}` : 'none',
                                         boxShadow: isCustomTask
-                                            ? `0 0 20px ${darkMode ? 'rgba(18, 10, 204, 0.4)' : 'rgba(235, 112, 30, 0.4)'}, 0 2px 8px 0 rgba(0,0,0,.1)`
+                                            ? `0 0 12px ${darkMode ? 'rgba(18, 10, 204, 0.3)' : 'rgba(235, 112, 30, 0.3)'}, 0 2px 8px 0 rgba(0,0,0,.1)`
                                             : undefined
                                     }}>
-                                        <div style={{ padding: '20px' }}>
+                                        <div style={{ padding: '12px' }}>
                                             <div style={{
                                                 display: 'flex',
-                                                alignItems: 'flex-start',
-                                                gap: '12px',
-                                                marginBottom: '16px'
+                                                alignItems: 'center',
+                                                gap: '8px',
+                                                marginBottom: '8px'
                                             }}>
                                                 <div style={{
-                                                    fontSize: '2.25rem',
-                                                    width: '56px',
-                                                    height: '56px',
+                                                    fontSize: '1.5rem',
+                                                    width: '40px',
+                                                    height: '40px',
                                                     flexShrink: 0,
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     justifyContent: 'center',
-                                                    borderRadius: '14px',
+                                                    borderRadius: '8px',
                                                     background: darkMode ? 'rgba(71, 178, 196, 0.1)' : 'rgba(208, 165, 0, 0.1)'
                                                 }}>
                                                     {chore.icon}
                                                 </div>
                                                 <div style={{ flex: 1, minWidth: 0 }}>
                                                     <div style={{
-                                                        fontSize: '1.125rem',
+                                                        fontSize: '0.9375rem',
                                                         fontWeight: '600',
                                                         color: theme.cardText,
-                                                        marginBottom: '4px',
+                                                        marginBottom: '2px',
                                                         overflow: 'hidden',
                                                         textOverflow: 'ellipsis',
-                                                        display: '-webkit-box',
-                                                        WebkitLineClamp: 2,
-                                                        WebkitBoxOrient: 'vertical',
-                                                        lineHeight: '1.3'
+                                                        whiteSpace: 'nowrap'
                                                     }}>
                                                         {chore.name}
                                                     </div>
                                                     <div style={{
-                                                        fontSize: '0.9375rem',
+                                                        fontSize: '0.8125rem',
                                                         fontWeight: '600',
                                                         color: theme.primary
                                                     }}>
@@ -3722,7 +3741,7 @@
                                             <div style={{
                                                 display: 'flex',
                                                 flexWrap: 'wrap',
-                                                gap: '8px'
+                                                gap: '6px'
                                             }}>
                                                 {players.map(player => (
                                                     <button
@@ -3731,17 +3750,17 @@
                                                         className="ripple"
                                                         style={{
                                                             flex: '1 1 auto',
-                                                            minWidth: 'calc(50% - 4px)',
-                                                            padding: '10px 16px',
+                                                            minWidth: 'calc(50% - 3px)',
+                                                            padding: '8px 12px',
                                                             background: theme.primary,
                                                             color: theme.onPrimary,
                                                             border: 'none',
                                                             cursor: 'pointer',
-                                                            fontSize: '0.8125rem',
+                                                            fontSize: '0.75rem',
                                                             fontWeight: '600',
                                                             textTransform: 'uppercase',
                                                             letterSpacing: '0.5px',
-                                                            borderRadius: '8px',
+                                                            borderRadius: '6px',
                                                             overflow: 'hidden',
                                                             textOverflow: 'ellipsis',
                                                             whiteSpace: 'nowrap'
@@ -3888,21 +3907,21 @@
                         {/* Pending Approval Column */}
                         <div>
                             <div style={{
-                                fontSize: '0.6875rem',
-                                fontWeight: '500',
-                                marginBottom: '16px',
+                                fontSize: '0.75rem',
+                                fontWeight: '600',
+                                marginBottom: '8px',
                                 textTransform: 'uppercase',
                                 letterSpacing: '1px',
                                 color: theme.textSecondary,
-                                paddingLeft: '8px'
+                                paddingLeft: '4px'
                             }}>
                                 Pending Approval
                             </div>
-                            
+
                             {pendingChores.length > 0 && (
                                 <div className="material-card elevation-2" style={{
-                                    marginBottom: '16px',
-                                    padding: '16px',
+                                    marginBottom: '8px',
+                                    padding: '12px',
                                     background: theme.cardBg
                                 }}>
                                     <div style={{
