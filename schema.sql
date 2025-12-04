@@ -44,8 +44,8 @@ CREATE INDEX idx_completions_status ON chore_completions(status);
 
 -- Insert default players
 INSERT INTO players (name, avatar_url) VALUES
-    ('Iris', '👧'),
-    ('Mateo', '👦');
+    ('BeKindHearted', '👧'),
+    ('MegoDinoLava', '👦');
 
 -- Insert default chores
 INSERT INTO chores (name, base_value, max_per_day, icon) VALUES
