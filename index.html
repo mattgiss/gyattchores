@@ -1519,9 +1519,12 @@
             };
 
             // Check if chore is available based on cooldown
-            const getChoreAvailability = (chore) => {
-                // Find the most recent completion of this chore by anyone
-                const lastCompletion = allCompletions.find(c => c.chore_id === chore.id);
+            const getChoreAvailability = (chore, playerId = null) => {
+                // Find the most recent completion of this chore
+                // If playerId provided, check per-player cooldown; otherwise check global
+                const lastCompletion = playerId
+                    ? allCompletions.find(c => c.chore_id === chore.id && c.player_id === playerId)
+                    : allCompletions.find(c => c.chore_id === chore.id);
 
                 if (!lastCompletion) {
                     return { available: true, hoursRemaining: 0 };
@@ -1542,8 +1545,8 @@
 
             const claimChore = async (playerId, chore) => {
                 try {
-                    // Check cooldown first
-                    const availability = getChoreAvailability(chore);
+                    // Check cooldown first (per-player cooldown)
+                    const availability = getChoreAvailability(chore, playerId);
                     if (!availability.available) {
                         const days = Math.floor(availability.hoursRemaining / 24);
                         const hours = availability.hoursRemaining % 24;
@@ -1573,7 +1576,8 @@
                     }
 
                     // High-value chores (>500 pts) can't be done more than once every 3 days
-                    if (chore.points > 500) {
+                    // Exception: "Clean Room" can be done daily per player
+                    if (chore.points > 500 && chore.name !== 'Clean Room') {
                         const threeDaysAgo = new Date();
                         threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
                         const threeDaysAgoStr = threeDaysAgo.toISOString().split('T')[0];
