@@ -1,6 +1,6 @@
 # Building GyattChores: A Development Journey
 
-**From Concept to Production in 5 Phases**
+**From Concept to Production Over Several Weeks**
 
 *A case study in building a family gamification app with React, Supabase, and iterative problem-solving*
 
@@ -17,7 +17,7 @@ I needed something different. Something that would:
 - Require minimal parent intervention
 - Actually engage my two kids: BeKindHearted and MegoDinoLava
 
-This is the story of how GyattChores was built, the problems encountered, and the lessons learned along the way.
+This is the story of how GyattChores was built over several weeks of iterative development, the problems encountered, and the lessons learned along the way.
 
 ---
 

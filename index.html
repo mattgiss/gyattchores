@@ -598,6 +598,10 @@
             const [selectedPlayer, setSelectedPlayer] = useState(null);
             const [playerHistory, setPlayerHistory] = useState([]);
 
+            // Monthly view states
+            const [showMonthlyView, setShowMonthlyView] = useState(false);
+            const [monthlyChores, setMonthlyChores] = useState([]);
+
             // Bonus system states
             const [playerBonuses, setPlayerBonuses] = useState({});
 
@@ -1257,11 +1261,28 @@
                     else if (tempF < 80) clothing = 'Perfect weather, dress comfortably!';
                     else clothing = 'Stay cool, light clothing!';
 
+                    // Get tomorrow's forecast
+                    let tomorrowForecast = null;
+                    if (data.weather && data.weather[1]) {
+                        const tomorrow = data.weather[1];
+                        const tomorrowMaxF = Math.round(parseFloat(tomorrow.maxtempF));
+                        const tomorrowMinF = Math.round(parseFloat(tomorrow.mintempF));
+                        const tomorrowDesc = tomorrow.hourly?.[4]?.weatherDesc?.[0]?.value || 'Conditions vary';
+
+                        tomorrowForecast = {
+                            maxTemp: tomorrowMaxF,
+                            minTemp: tomorrowMinF,
+                            description: tomorrowDesc,
+                            icon: getWeatherIcon(tomorrowDesc)
+                        };
+                    }
+
                     const weatherData = {
                         temp: tempF,
                         description: description,
                         icon: getWeatherIcon(description),
-                        clothing
+                        clothing,
+                        tomorrow: tomorrowForecast
                     };
 
                     // Cache for 30 minutes
@@ -1318,6 +1339,33 @@
                     setPlayerHistory(data || []);
                 } catch (error) {
                     console.error('Error loading player profile:', error);
+                }
+            };
+
+            // Load monthly chores for all players
+            const loadMonthlyChores = async () => {
+                try {
+                    // Get first day of current month
+                    const now = new Date();
+                    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                    const firstDayStr = firstDayOfMonth.toISOString().split('T')[0];
+
+                    const { data, error } = await supabase
+                        .from('chore_completions')
+                        .select(`
+                            *,
+                            chores(name, icon),
+                            players(name, avatar_url)
+                        `)
+                        .eq('status', 'approved')
+                        .gte('completed_date', firstDayStr)
+                        .order('completed_date', { ascending: false });
+
+                    if (error) throw error;
+
+                    setMonthlyChores(data || []);
+                } catch (error) {
+                    console.error('Error loading monthly chores:', error);
                 }
             };
 
@@ -1592,6 +1640,170 @@
                         fontSize: '1.5rem'
                     }}>
                         Loading...
+                    </div>
+                );
+            }
+
+            // Monthly View
+            if (showMonthlyView) {
+                // Group chores by date
+                const choresByDate = {};
+                monthlyChores.forEach(chore => {
+                    const date = chore.completed_date;
+                    if (!choresByDate[date]) {
+                        choresByDate[date] = [];
+                    }
+                    choresByDate[date].push(chore);
+                });
+
+                const dates = Object.keys(choresByDate).sort((a, b) => new Date(b) - new Date(a));
+
+                // Get current month name
+                const monthName = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+                return (
+                    <div style={{
+                        minHeight: '100vh',
+                        background: theme.bg,
+                        color: theme.text,
+                        padding: '16px'
+                    }}>
+                        {/* Header with Back Button */}
+                        <div className="elevation-2" style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '16px',
+                            padding: '12px 20px',
+                            marginBottom: '24px',
+                            maxWidth: '1200px',
+                            margin: '0 auto 24px',
+                            background: theme.surface,
+                            borderRadius: '16px',
+                            height: '56px'
+                        }}>
+                            <button
+                                onClick={() => setShowMonthlyView(false)}
+                                className="fab elevation-1 ripple"
+                                style={{
+                                    background: theme.primary,
+                                    color: theme.onPrimary,
+                                    width: '48px',
+                                    height: '48px',
+                                    fontSize: '1.25rem'
+                                }}
+                            >
+                                ←
+                            </button>
+                            <h1 style={{
+                                fontSize: '1.375rem',
+                                fontWeight: '500',
+                                margin: 0,
+                                fontFamily: "'Google Sans Display', sans-serif"
+                            }}>
+                                📅 {monthName}
+                            </h1>
+                        </div>
+
+                        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                            {dates.length === 0 ? (
+                                <div className="material-card elevation-1" style={{
+                                    padding: '48px',
+                                    background: theme.cardBg,
+                                    textAlign: 'center'
+                                }}>
+                                    <div style={{
+                                        fontSize: '3rem',
+                                        marginBottom: '16px'
+                                    }}>
+                                        📭
+                                    </div>
+                                    <div style={{
+                                        fontSize: '1.125rem',
+                                        color: theme.textSecondary
+                                    }}>
+                                        No chores completed this month yet
+                                    </div>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                    {dates.map(date => {
+                                        const dayChores = choresByDate[date];
+                                        const totalPoints = dayChores.reduce((sum, c) => sum + c.value_awarded, 0);
+
+                                        return (
+                                            <div key={date} className="material-card elevation-1" style={{
+                                                padding: '20px',
+                                                background: theme.cardBg
+                                            }}>
+                                                <div style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    marginBottom: '16px',
+                                                    paddingBottom: '12px',
+                                                    borderBottom: `2px solid ${theme.outline}`
+                                                }}>
+                                                    <div style={{
+                                                        fontSize: '1.125rem',
+                                                        fontWeight: '600',
+                                                        color: theme.cardText
+                                                    }}>
+                                                        {new Date(date).toLocaleDateString('en-US', {
+                                                            weekday: 'long',
+                                                            month: 'long',
+                                                            day: 'numeric'
+                                                        })}
+                                                    </div>
+                                                    <div style={{
+                                                        fontSize: '1.25rem',
+                                                        fontWeight: '700',
+                                                        color: theme.primary
+                                                    }}>
+                                                        {totalPoints} pts
+                                                    </div>
+                                                </div>
+
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                                    {dayChores.map(chore => (
+                                                        <div key={chore.id} style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '12px',
+                                                            padding: '12px',
+                                                            background: theme.surface,
+                                                            borderRadius: '12px'
+                                                        }}>
+                                                            <div style={{ fontSize: '2rem' }}>
+                                                                {chore.players?.avatar_url || '👤'}
+                                                            </div>
+                                                            <div style={{ fontSize: '1.5rem' }}>
+                                                                {chore.chores?.icon || '❓'}
+                                                            </div>
+                                                            <div style={{ flex: 1 }}>
+                                                                <div style={{
+                                                                    fontWeight: '500',
+                                                                    color: theme.cardText,
+                                                                    marginBottom: '2px'
+                                                                }}>
+                                                                    {chore.players?.name || 'Unknown'}: {chore.chores?.name || 'Unknown Chore'}
+                                                                </div>
+                                                            </div>
+                                                            <div style={{
+                                                                fontWeight: '600',
+                                                                fontSize: '1.125rem',
+                                                                color: theme.primary
+                                                            }}>
+                                                                +{chore.value_awarded}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 );
             }
@@ -2166,6 +2378,76 @@
                             </form>
                         </div>
 
+                        {/* Development Story */}
+                        <div className="material-card elevation-2" style={{
+                            marginTop: '24px',
+                            padding: '24px',
+                            maxWidth: '600px',
+                            width: '90%',
+                            background: darkMode ? '#1E1E1E' : '#FFFFFF',
+                            borderRadius: '16px',
+                            textAlign: 'left'
+                        }}>
+                            <h2 style={{
+                                fontSize: '1.25rem',
+                                fontWeight: '500',
+                                marginBottom: '16px',
+                                color: darkMode ? '#E0E0E0' : '#202124'
+                            }}>
+                                📖 How This App Was Built
+                            </h2>
+
+                            <div style={{
+                                fontSize: '0.9375rem',
+                                lineHeight: '1.6',
+                                color: darkMode ? '#B0B0B0' : '#5F6368'
+                            }}>
+                                <p style={{ marginBottom: '12px' }}>
+                                    This app started as a family project to make chores more engaging and fair. Rather than nagging kids to do tasks, I wanted to build a system where they could see their progress, earn points, and get paid transparently.
+                                </p>
+
+                                <p style={{ marginBottom: '12px' }}>
+                                    The game rules weren't just my idea—my kids helped design the point system, cooldown timers, and the GOAT competition. Their input shaped how the app actually works in practice.
+                                </p>
+
+                                <p style={{ marginBottom: '12px' }}>
+                                    Development took several weeks of iterative work. I'd build a feature, the family would use it, we'd discover what didn't work, and I'd refine it. Key lessons learned:
+                                </p>
+
+                                <ul style={{
+                                    marginLeft: '20px',
+                                    marginBottom: '12px',
+                                    listStyleType: 'disc'
+                                }}>
+                                    <li style={{ marginBottom: '8px' }}>
+                                        <strong>Simple beats perfect:</strong> Early versions were over-engineered. The version that worked best was the simplest one.
+                                    </li>
+                                    <li style={{ marginBottom: '8px' }}>
+                                        <strong>Real users find real bugs:</strong> Testing with actual family use revealed edge cases I never would have thought of.
+                                    </li>
+                                    <li style={{ marginBottom: '8px' }}>
+                                        <strong>Motivation matters more than features:</strong> The GOAT competition and visible progress drove more engagement than any clever feature I added.
+                                    </li>
+                                    <li style={{ marginBottom: '8px' }}>
+                                        <strong>Build for trust:</strong> Transparency in points, approval process, and payout tracking built trust that made the system work.
+                                    </li>
+                                </ul>
+
+                                <p style={{ marginBottom: '12px' }}>
+                                    Built with React, Supabase, and a lot of CSS tweaking to make it work smoothly on phones. No build tools—just one HTML file that does everything.
+                                </p>
+
+                                <p style={{
+                                    fontSize: '0.875rem',
+                                    fontStyle: 'italic',
+                                    color: darkMode ? '#888' : '#999',
+                                    marginTop: '16px'
+                                }}>
+                                    The best part? My kids now argue over who gets to do which chores.
+                                </p>
+                            </div>
+                        </div>
+
                         <div style={{
                             marginTop: '32px',
                             fontSize: '0.75rem',
@@ -2231,6 +2513,22 @@
                             </h1>
                         </div>
                         <div style={{ display: 'flex', gap: '12px' }}>
+                            <button
+                                className="fab elevation-2 ripple"
+                                onClick={async () => {
+                                    await loadMonthlyChores();
+                                    setShowMonthlyView(true);
+                                }}
+                                style={{
+                                    background: theme.accent,
+                                    color: '#FFFFFF',
+                                    fontSize: '1rem'
+                                }}
+                                title="Monthly View"
+                                aria-label="View monthly chores"
+                            >
+                                📅
+                            </button>
                             <a
                                 href="ebook.html"
                                 className="fab elevation-2 ripple"
@@ -2452,6 +2750,52 @@
                                 }}>
                                     👕 {weather.clothing}
                                 </div>
+
+                                {/* Tomorrow's Forecast */}
+                                {weather.tomorrow && (
+                                    <div style={{
+                                        marginTop: '20px',
+                                        paddingTop: '20px',
+                                        borderTop: `1px solid ${theme.outline}`
+                                    }}>
+                                        <div style={{
+                                            fontSize: '0.75rem',
+                                            fontWeight: '600',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '1px',
+                                            color: theme.textSecondary,
+                                            marginBottom: '8px'
+                                        }}>
+                                            📅 Tomorrow
+                                        </div>
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '12px'
+                                        }}>
+                                            <div style={{
+                                                fontSize: '2rem'
+                                            }}>
+                                                {weather.tomorrow.icon}
+                                            </div>
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{
+                                                    fontSize: '1.125rem',
+                                                    fontWeight: '600',
+                                                    color: theme.cardText
+                                                }}>
+                                                    {weather.tomorrow.maxTemp}° / {weather.tomorrow.minTemp}°F
+                                                </div>
+                                                <div style={{
+                                                    fontSize: '0.875rem',
+                                                    color: theme.textSecondary
+                                                }}>
+                                                    {weather.tomorrow.description}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
 
