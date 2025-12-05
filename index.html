@@ -933,7 +933,7 @@
                     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
                     const { data: allCompletionsData } = await supabase
                         .from('chore_completions')
-                        .select('chore_id, completed_at')
+                        .select('chore_id, completed_at, player_id')
                         .eq('status', 'approved')
                         .gte('completed_at', sevenDaysAgo.toISOString())
                         .order('completed_at', { ascending: false });
@@ -4151,8 +4151,8 @@
                                     return 0;
                                 })
                                 .filter(chore => {
-                                    // Check if chore is available based on cooldown
-                                    const availability = getChoreAvailability(chore);
+                                    // Check if chore is available based on per-player cooldown
+                                    const availability = getChoreAvailability(chore, selectedPlayer?.id);
                                     return availability.available;
                                 }).map((chore, idx) => {
                                     const isCustomTask = chore.icon === '⭐';
