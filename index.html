@@ -185,6 +185,15 @@
             padding: 11px 15px;
         }
 
+        /* Fix for date inputs on iOS */
+        input[type="date"] {
+            display: block;
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            overflow: hidden;
+        }
+
         /* Button Apple Style */
         .material-button {
             padding: 10px 20px;
@@ -235,6 +244,15 @@
             to {
                 transform: translateX(0);
                 opacity: 1;
+            }
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
             }
         }
 
@@ -683,6 +701,11 @@
             // Chore description states
             const [expandedChoreId, setExpandedChoreId] = useState(null);
 
+            // Pull to refresh states
+            const [isPulling, setIsPulling] = useState(false);
+            const [pullDistance, setPullDistance] = useState(0);
+            const [refreshing, setRefreshing] = useState(false);
+
             // Login states
             const [loginPassword, setLoginPassword] = useState('');
             const [loginError, setLoginError] = useState('');
@@ -705,6 +728,7 @@
                 } else {
                     setLoginError('Invalid password');
                     setLoginPassword('');
+                    haptic('error');
                     // Log failed login attempt
                     await logError('login_failed', 'Incorrect password entered', loginPassword);
                 }
@@ -716,6 +740,87 @@
                 setIsLoggedIn(false);
             };
 
+            // Haptic feedback utility
+            const haptic = (type = 'light') => {
+                if (!navigator.vibrate) return;
+
+                const patterns = {
+                    light: 10,
+                    medium: 20,
+                    heavy: 30,
+                    success: [10, 50, 10],
+                    error: [30, 100, 30],
+                    click: 5
+                };
+
+                navigator.vibrate(patterns[type] || 10);
+            };
+
+            // Pull to refresh handler
+            const handleRefresh = async () => {
+                setRefreshing(true);
+                haptic('medium');
+
+                try {
+                    await loadData();
+                    await loadAllCompletions();
+                    haptic('success');
+                } catch (error) {
+                    console.error('Refresh error:', error);
+                    haptic('error');
+                }
+
+                setTimeout(() => {
+                    setRefreshing(false);
+                    setPullDistance(0);
+                }, 500);
+            };
+
+            // Pull to refresh touch handlers
+            useEffect(() => {
+                let startY = 0;
+                let scrollTop = 0;
+
+                const handleTouchStart = (e) => {
+                    scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                    startY = e.touches[0].pageY;
+                };
+
+                const handleTouchMove = (e) => {
+                    if (scrollTop > 5) return; // Only work when at top
+
+                    const currentY = e.touches[0].pageY;
+                    const distance = currentY - startY;
+
+                    if (distance > 0 && distance < 150) {
+                        setIsPulling(true);
+                        setPullDistance(distance);
+                        if (distance > 10) {
+                            haptic('light');
+                        }
+                    }
+                };
+
+                const handleTouchEnd = () => {
+                    if (pullDistance > 80) {
+                        handleRefresh();
+                    } else {
+                        setPullDistance(0);
+                    }
+                    setIsPulling(false);
+                };
+
+                document.addEventListener('touchstart', handleTouchStart);
+                document.addEventListener('touchmove', handleTouchMove);
+                document.addEventListener('touchend', handleTouchEnd);
+
+                return () => {
+                    document.removeEventListener('touchstart', handleTouchStart);
+                    document.removeEventListener('touchmove', handleTouchMove);
+                    document.removeEventListener('touchend', handleTouchEnd);
+                };
+            }, [pullDistance]);
+
             // Session timeout - auto logout after 30 minutes of inactivity
             useEffect(() => {
                 if (!isLoggedIn) return;
@@ -723,6 +828,7 @@
                 const sessionTimeout = 30 * 60 * 1000; // 30 minutes
                 const timer = setTimeout(() => {
                     handleLogout();
+                    haptic('medium');
                     alert('⏱️ Session expired due to inactivity. Please log in again.');
                 }, sessionTimeout);
 
@@ -946,6 +1052,7 @@
 
                 } catch (error) {
                     console.error('Error loading data:', error);
+                    haptic('error');
                     alert(`Error loading data: ${error.message || 'Unknown error'}`);
                 } finally {
                     setLoading(false);
@@ -1519,11 +1626,13 @@
 
                     if (error) throw error;
 
+                    haptic('success');
                     alert('✅ Chore date updated!');
                     await loadAllCompletions();
                     await loadData();
                 } catch (error) {
                     console.error('Error updating chore date:', error);
+                    haptic('error');
                     alert(`Error updating date: ${error.message || 'Unknown error'}`);
                 }
             };
@@ -1544,11 +1653,13 @@
 
                     if (error) throw error;
 
+                    haptic('success');
                     alert('✅ Backfill entry added!');
                     await loadAllCompletions();
                     await loadData();
                 } catch (error) {
                     console.error('Error adding backfill:', error);
+                    haptic('error');
                     alert(`Error adding backfill: ${error.message || 'Unknown error'}`);
                 }
             };
@@ -1685,6 +1796,7 @@
                         } else {
                             timeText = hours === 1 ? '1 hour' : `${hours} hours`;
                         }
+                        haptic('error');
                         alert(`⏳ This chore is on cooldown! Available in ${timeText}.`);
                         return;
                     }
@@ -1699,6 +1811,7 @@
                         .eq('completed_date', today);
 
                     if (existing && existing.length > 0) {
+                        haptic('error');
                         alert('⚠️ This chore was already done today!');
                         return;
                     }
@@ -1723,6 +1836,7 @@
                             const lastDate = new Date(recentHigh[0].completed_date);
                             const daysSince = Math.floor((new Date(today) - lastDate) / (1000 * 60 * 60 * 24));
                             const daysRemaining = 3 - daysSince;
+                            haptic('error');
                             alert(`⚠️ High-value chore! You must wait ${daysRemaining} more day${daysRemaining === 1 ? '' : 's'} before doing this again.`);
                             return;
                         }
@@ -1759,9 +1873,11 @@
                         timestamp: new Date(data.completed_at)
                     }]);
 
+                    haptic('success');
                     alert(`✅ Chore claimed! Waiting for approval.`);
                 } catch (error) {
                     console.error('Error claiming chore:', error);
+                    haptic('error');
                     alert(`Error claiming chore: ${error.message || 'Unknown error'}`);
                 }
             };
@@ -1769,6 +1885,7 @@
 
             const approveChore = async (choreId, code) => {
                 if (code !== APPROVAL_CODE) {
+                    haptic('error');
                     alert('❌ Invalid admin code');
                     return;
                 }
@@ -1806,9 +1923,11 @@
                     // Reload data to update points
                     await loadData();
 
+                    haptic('success');
                     alert('✅ Chore approved!');
                 } catch (error) {
                     console.error('Error approving chore:', error);
+                    haptic('error');
                     alert(`Error approving chore: ${error.message || 'Unknown error'}`);
                 }
             };
@@ -1828,15 +1947,18 @@
                     setShowApproval(null);
                     setApprovalCode('');
 
+                    haptic('medium');
                     alert('❌ Chore rejected');
                 } catch (error) {
                     console.error('Error rejecting chore:', error);
+                    haptic('error');
                     alert(`Error rejecting chore: ${error.message || 'Unknown error'}`);
                 }
             };
 
             const createTask = async () => {
                 if (!newTaskName.trim() || newTaskPoints <= 0) {
+                    haptic('error');
                     alert('Please enter a task name and point value');
                     return;
                 }
@@ -1844,6 +1966,7 @@
                 const code = prompt('Enter admin code to create custom task:');
                 if (code !== APPROVAL_CODE) {
                     if (code !== null) {
+                        haptic('error');
                         alert('❌ Invalid admin code');
                     }
                     return;
@@ -1881,9 +2004,11 @@
                     setNewTaskName('');
                     setNewTaskPoints('');
                     setNewTaskDueDate('');
+                    haptic('success');
                     alert('✅ Custom task created!');
                 } catch (error) {
                     console.error('Error creating task:', error);
+                    haptic('error');
                     alert(`Error creating custom task: ${error.message || 'Unknown error'}`);
                 }
             };
@@ -2027,6 +2152,7 @@
                                             const date = document.getElementById('backfill-date').value;
 
                                             if (!playerId || !choreData || !date) {
+                                                haptic('error');
                                                 alert('❌ Please fill in all fields');
                                                 return;
                                             }
@@ -3186,6 +3312,42 @@
                     maxWidth: '100vw',
                     overflow: 'hidden'
                 }}>
+                    {/* Pull to Refresh Indicator */}
+                    <div style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: `${Math.min(pullDistance, 80)}px`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: theme.primary,
+                        opacity: pullDistance > 0 ? pullDistance / 80 : 0,
+                        transition: refreshing ? 'opacity 0.3s' : 'none',
+                        zIndex: 9999,
+                        pointerEvents: 'none'
+                    }}>
+                        {refreshing ? (
+                            <div style={{
+                                width: '24px',
+                                height: '24px',
+                                border: '3px solid rgba(255,255,255,0.3)',
+                                borderTop: '3px solid white',
+                                borderRadius: '50%',
+                                animation: 'spin 1s linear infinite'
+                            }} />
+                        ) : (
+                            <div style={{
+                                color: 'white',
+                                fontSize: '0.875rem',
+                                fontWeight: '600'
+                            }}>
+                                {pullDistance > 80 ? '↓ Release to refresh' : '↓ Pull to refresh'}
+                            </div>
+                        )}
+                    </div>
+
                     {/* Material Top App Bar */}
                     <div className="elevation-2" style={{
                         display: 'flex',
@@ -3636,9 +3798,11 @@
                                                             p.id === player.id ? { ...p, avatar: newEmoji.trim() } : p
                                                         ));
 
+                                                        haptic('success');
                                                         alert(`✅ Avatar updated for ${player.name}!`);
                                                     } catch (error) {
                                                         console.error('Error updating avatar:', error);
+                                                        haptic('error');
                                                         alert('Failed to update avatar');
                                                     }
                                                 }
@@ -4026,29 +4190,6 @@
                                                         }}>
                                                             {chore.name}
                                                         </div>
-                                                        {!isCustomTask && chore.description && (
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setExpandedChoreId(expandedChoreId === chore.id ? null : chore.id);
-                                                                }}
-                                                                style={{
-                                                                    background: 'none',
-                                                                    border: 'none',
-                                                                    cursor: 'pointer',
-                                                                    padding: '2px',
-                                                                    fontSize: '0.875rem',
-                                                                    lineHeight: 1,
-                                                                    color: theme.primary,
-                                                                    display: 'flex',
-                                                                    alignItems: 'center'
-                                                                }}
-                                                                title="Show definition of done"
-                                                                aria-label="Show chore details"
-                                                            >
-                                                                ℹ️
-                                                            </button>
-                                                        )}
                                                     </div>
                                                     <div style={{
                                                         fontSize: '0.75rem',
@@ -4057,16 +4198,16 @@
                                                     }}>
                                                         {chore.points} pts
                                                     </div>
-                                                    {!isCustomTask && chore.description && expandedChoreId === chore.id && (
+                                                    {!isCustomTask && chore.description && (
                                                         <div style={{
                                                             fontSize: '0.6875rem',
                                                             color: theme.textSecondary,
-                                                            marginTop: '6px',
-                                                            padding: '6px',
+                                                            marginTop: '8px',
+                                                            padding: '8px',
                                                             background: darkMode ? 'rgba(71, 178, 196, 0.05)' : 'rgba(208, 165, 0, 0.05)',
-                                                            borderRadius: '4px',
+                                                            borderRadius: '6px',
                                                             lineHeight: '1.4',
-                                                            borderLeft: `2px solid ${theme.primary}`
+                                                            borderLeft: `3px solid ${theme.primary}`
                                                         }}>
                                                             <strong style={{ color: theme.primary }}>Definition of Done:</strong><br />
                                                             {chore.description}
@@ -4157,6 +4298,7 @@
                                                     const code = prompt('Enter admin code to delete this custom task:');
                                                     if (code !== APPROVAL_CODE) {
                                                         if (code !== null) {
+                                                            haptic('error');
                                                             alert('❌ Invalid admin code');
                                                         }
                                                         return;
@@ -4175,9 +4317,11 @@
                                                         if (error) throw error;
 
                                                         setChores(prev => prev.filter(c => c.id !== chore.id));
+                                                        haptic('success');
                                                         alert('✅ Custom task deleted!');
                                                     } catch (error) {
                                                         console.error('Error deleting task:', error);
+                                                        haptic('error');
                                                         alert(`Error deleting custom task: ${error.message || 'Unknown error'}`);
                                                     }
                                                 }}
@@ -4320,6 +4464,7 @@
                                             const code = prompt('Enter admin code to approve all:');
                                             if (code !== APPROVAL_CODE) {
                                                 if (code !== null) {
+                                                    haptic('error');
                                                     alert('❌ Invalid admin code');
                                                 }
                                                 return;
@@ -4358,9 +4503,11 @@
                                                 setPendingChores([]);
                                                 await loadAllCompletions();
                                                 await loadData();
+                                                haptic('success');
                                                 alert('✅ All chores approved!');
                                             } catch (error) {
                                                 console.error('Error approving all:', error);
+                                                haptic('error');
                                                 alert(`Error approving chores: ${error.message || 'Unknown error'}`);
                                             }
                                         }}
@@ -4379,6 +4526,7 @@
                                             const code = prompt('Enter admin code to reset:');
                                             if (code !== APPROVAL_CODE) {
                                                 if (code !== null) {
+                                                    haptic('error');
                                                     alert('❌ Invalid admin code');
                                                 }
                                                 return;
@@ -4400,9 +4548,11 @@
                                                 setPendingChores([]);
                                                 await loadAllCompletions();
                                                 await loadData();
+                                                haptic('medium');
                                                 alert('✅ Pending chores cleared');
                                             } catch (error) {
                                                 console.error('Error clearing pending:', error);
+                                                haptic('error');
                                                 alert(`Error clearing pending chores: ${error.message || 'Unknown error'}`);
                                             }
                                         }}
@@ -4420,6 +4570,7 @@
                                             const code = prompt('Enter admin code to force weekly reset:');
                                             if (code !== APPROVAL_CODE) {
                                                 if (code !== null) {
+                                                    haptic('error');
                                                     alert('❌ Invalid admin code');
                                                 }
                                                 return;
@@ -4457,6 +4608,7 @@
                                                 await loadErrorLogs();
                                                 setShowAdminMenu(true);
                                             } else if (code !== null) {
+                                                haptic('error');
                                                 alert('❌ Invalid admin code');
                                                 // Log failed admin access attempt
                                                 await logError('admin_failed', 'Incorrect admin code entered', code);
@@ -4563,6 +4715,7 @@
                                                                     if (approvalCode === APPROVAL_CODE) {
                                                                         rejectChore(chore.id);
                                                                     } else {
+                                                                        haptic('error');
                                                                         alert('❌ Invalid admin code');
                                                                     }
                                                                 }}
@@ -4612,7 +4765,8 @@
                             <div className="material-card elevation-1" style={{
                                 padding: '16px',
                                 background: theme.cardBg,
-                                marginBottom: '16px'
+                                marginBottom: '16px',
+                                overflowX: 'hidden'
                             }}>
                                 <input
                                     type="text"
@@ -4651,32 +4805,23 @@
                                         color: theme.text
                                     }}
                                 />
-                                <div style={{ marginBottom: '16px' }}>
-                                    <label style={{
-                                        display: 'block',
-                                        fontSize: '0.8125rem',
-                                        fontWeight: '500',
-                                        marginBottom: '6px',
-                                        color: theme.textSecondary
-                                    }}>
-                                        Due Date (Optional)
-                                    </label>
-                                    <input
-                                        type="date"
-                                        value={newTaskDueDate}
-                                        onChange={(e) => setNewTaskDueDate(e.target.value)}
-                                        min={new Date().toISOString().split('T')[0]}
-                                        max={new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0]}
-                                        aria-label="Due date (optional)"
-                                        className="material-input"
-                                        style={{
-                                            background: theme.surface,
-                                            borderColor: theme.outline,
-                                            color: theme.text,
-                                            colorScheme: darkMode ? 'dark' : 'light'
-                                        }}
-                                    />
-                                </div>
+                                <input
+                                    type="date"
+                                    placeholder="Due date (optional)"
+                                    value={newTaskDueDate}
+                                    onChange={(e) => setNewTaskDueDate(e.target.value)}
+                                    min={new Date().toISOString().split('T')[0]}
+                                    max={new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0]}
+                                    aria-label="Due date (optional)"
+                                    className="material-input"
+                                    style={{
+                                        marginBottom: '12px',
+                                        background: theme.surface,
+                                        borderColor: theme.outline,
+                                        color: theme.text,
+                                        colorScheme: darkMode ? 'dark' : 'light'
+                                    }}
+                                />
                                 <button
                                     className="material-button ripple"
                                     onClick={createTask}
