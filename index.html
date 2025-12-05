@@ -4805,23 +4805,25 @@
                                         color: theme.text
                                     }}
                                 />
-                                <input
-                                    type="date"
-                                    placeholder="Due date (optional)"
-                                    value={newTaskDueDate}
-                                    onChange={(e) => setNewTaskDueDate(e.target.value)}
-                                    min={new Date().toISOString().split('T')[0]}
-                                    max={new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0]}
-                                    aria-label="Due date (optional)"
-                                    className="material-input"
-                                    style={{
-                                        marginBottom: '12px',
-                                        background: theme.surface,
-                                        borderColor: theme.outline,
-                                        color: theme.text,
-                                        colorScheme: darkMode ? 'dark' : 'light'
-                                    }}
-                                />
+                                <div style={{ width: '100%', overflow: 'hidden', marginBottom: '12px' }}>
+                                    <input
+                                        type="date"
+                                        placeholder="Due date (optional)"
+                                        value={newTaskDueDate}
+                                        onChange={(e) => setNewTaskDueDate(e.target.value)}
+                                        min={new Date().toISOString().split('T')[0]}
+                                        max={new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0]}
+                                        aria-label="Due date (optional)"
+                                        className="material-input"
+                                        style={{
+                                            marginBottom: '0',
+                                            background: theme.surface,
+                                            borderColor: theme.outline,
+                                            color: theme.text,
+                                            colorScheme: darkMode ? 'dark' : 'light'
+                                        }}
+                                    />
+                                </div>
                                 <button
                                     className="material-button ripple"
                                     onClick={createTask}
