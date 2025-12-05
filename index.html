@@ -1831,7 +1831,7 @@
                                 margin: 0,
                                 fontFamily: "'Google Sans Display', sans-serif"
                             }}>
-                                ⚙️ Admin Menu
+                                ✏️ Edit Approved Task
                             </h1>
                         </div>
 
@@ -2959,27 +2959,6 @@
                         </a>
                         <button
                             className="material-button elevation-1 ripple"
-                            onClick={async () => {
-                                const code = prompt('Enter admin code:');
-                                if (code === APPROVAL_CODE) {
-                                    await loadAllCompletions();
-                                    setShowAdminMenu(true);
-                                } else if (code !== null) {
-                                    alert('❌ Invalid admin code');
-                                }
-                            }}
-                            style={{
-                                flex: '1 1 auto',
-                                minWidth: '120px',
-                                background: '#FF9800',
-                                color: '#FFFFFF'
-                            }}
-                            aria-label="Open admin menu"
-                        >
-                            Admin Menu
-                        </button>
-                        <button
-                            className="material-button elevation-1 ripple"
                             onClick={handleLogout}
                             aria-label="Logout"
                             style={{
@@ -3788,7 +3767,9 @@
                                                                         marginTop: '2px',
                                                                         overflow: 'hidden',
                                                                         textOverflow: 'ellipsis',
-                                                                        whiteSpace: 'nowrap'
+                                                                        whiteSpace: 'nowrap',
+                                                                        maxWidth: '100%',
+                                                                        width: 'fit-content'
                                                                     }}>
                                                                         📅 {dueDateText}
                                                                     </div>
@@ -4127,6 +4108,26 @@
                                         }}
                                     >
                                         Force Weekly Reset
+                                    </button>
+                                    <button
+                                        className="material-button elevation-1 ripple"
+                                        onClick={async () => {
+                                            const code = prompt('Enter admin code:');
+                                            if (code === APPROVAL_CODE) {
+                                                await loadAllCompletions();
+                                                setShowAdminMenu(true);
+                                            } else if (code !== null) {
+                                                alert('❌ Invalid admin code');
+                                            }
+                                        }}
+                                        style={{
+                                            width: '100%',
+                                            marginTop: '8px',
+                                            background: '#FF9800',
+                                            color: '#FFFFFF'
+                                        }}
+                                    >
+                                        Edit Approved Task
                                     </button>
                                 </div>
                             )}
