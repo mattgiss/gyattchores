@@ -188,20 +188,24 @@
         /* Fix for date inputs on iOS */
         input[type="date"] {
             display: block;
-            width: 100% !important;
-            max-width: 100% !important;
+            width: calc(100% - 32px) !important;
+            max-width: calc(100% - 32px) !important;
             min-width: 0 !important;
+            padding: 8px 12px !important;
             overflow: hidden;
+            font-size: 0.875rem !important;
         }
 
         input[type="date"]::-webkit-calendar-picker-indicator {
             flex-shrink: 0;
-            margin-left: auto;
+            margin-left: 4px;
+            width: 16px;
+            height: 16px;
         }
 
         input[type="date"]::-webkit-datetime-edit {
-            flex-grow: 1;
             overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         /* Button Apple Style */
