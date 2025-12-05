@@ -1796,6 +1796,14 @@
                 return { available: false, hoursRemaining };
             };
 
+            const resetCooldowns = () => {
+                if (confirm('Reset all chore cooldowns? This will make all chores available again for all players.')) {
+                    setAllCompletions([]);
+                    haptic('success');
+                    alert('✅ All cooldowns have been reset! All chores are now available.');
+                }
+            };
+
             const claimChore = async (playerId, chore) => {
                 try {
                     // Check cooldown first (per-player cooldown)
@@ -3497,6 +3505,19 @@
                             }}
                         >
                             {darkMode ? 'Light Mode' : 'Dark Mode'}
+                        </button>
+                        <button
+                            className="material-button elevation-1 ripple"
+                            onClick={resetCooldowns}
+                            aria-label="Reset all chore cooldowns"
+                            style={{
+                                flex: '1 1 auto',
+                                minWidth: '120px',
+                                background: theme.secondary || '#FFA726',
+                                color: theme.onSecondary || '#000000'
+                            }}
+                        >
+                            🔄 Reset Cooldowns
                         </button>
                     </div>
 
