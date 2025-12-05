@@ -4326,12 +4326,17 @@
                                         min={new Date().toISOString().split('T')[0]}
                                         max={new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0]}
                                         aria-label="Due date (optional)"
-                                        className="material-input"
                                         style={{
                                             width: '100%',
+                                            padding: '12px 16px',
+                                            borderRadius: '10px',
+                                            border: `1px solid ${theme.outline}`,
+                                            fontSize: '1rem',
+                                            outline: 'none',
                                             background: theme.surface,
-                                            borderColor: theme.outline,
-                                            color: theme.text
+                                            color: theme.text,
+                                            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                                            colorScheme: darkMode ? 'dark' : 'light'
                                         }}
                                     />
                                 </div>
