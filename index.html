@@ -677,6 +677,9 @@
             const [playerStats, setPlayerStats] = useState({});
             const [newAchievements, setNewAchievements] = useState([]);
 
+            // Chore description states
+            const [expandedChoreId, setExpandedChoreId] = useState(null);
+
             // Login states
             const [loginPassword, setLoginPassword] = useState('');
             const [loginError, setLoginError] = useState('');
@@ -3689,15 +3692,45 @@
                                                 </div>
                                                 <div style={{ flex: 1, minWidth: 0 }}>
                                                     <div style={{
-                                                        fontSize: '0.875rem',
-                                                        fontWeight: '600',
-                                                        color: theme.cardText,
-                                                        marginBottom: '1px',
-                                                        overflow: 'hidden',
-                                                        textOverflow: 'ellipsis',
-                                                        whiteSpace: 'nowrap'
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '4px',
+                                                        marginBottom: '1px'
                                                     }}>
-                                                        {chore.name}
+                                                        <div style={{
+                                                            fontSize: '0.875rem',
+                                                            fontWeight: '600',
+                                                            color: theme.cardText,
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis',
+                                                            whiteSpace: 'nowrap',
+                                                            flex: 1
+                                                        }}>
+                                                            {chore.name}
+                                                        </div>
+                                                        {!isCustomTask && chore.description && (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setExpandedChoreId(expandedChoreId === chore.id ? null : chore.id);
+                                                                }}
+                                                                style={{
+                                                                    background: 'none',
+                                                                    border: 'none',
+                                                                    cursor: 'pointer',
+                                                                    padding: '2px',
+                                                                    fontSize: '0.875rem',
+                                                                    lineHeight: 1,
+                                                                    color: theme.primary,
+                                                                    display: 'flex',
+                                                                    alignItems: 'center'
+                                                                }}
+                                                                title="Show definition of done"
+                                                                aria-label="Show chore details"
+                                                            >
+                                                                ℹ️
+                                                            </button>
+                                                        )}
                                                     </div>
                                                     <div style={{
                                                         fontSize: '0.75rem',
@@ -3706,6 +3739,21 @@
                                                     }}>
                                                         {chore.points} pts
                                                     </div>
+                                                    {!isCustomTask && chore.description && expandedChoreId === chore.id && (
+                                                        <div style={{
+                                                            fontSize: '0.6875rem',
+                                                            color: theme.textSecondary,
+                                                            marginTop: '6px',
+                                                            padding: '6px',
+                                                            background: darkMode ? 'rgba(71, 178, 196, 0.05)' : 'rgba(208, 165, 0, 0.05)',
+                                                            borderRadius: '4px',
+                                                            lineHeight: '1.4',
+                                                            borderLeft: `2px solid ${theme.primary}`
+                                                        }}>
+                                                            <strong style={{ color: theme.primary }}>Definition of Done:</strong><br />
+                                                            {chore.description}
+                                                        </div>
+                                                    )}
                                                     {isCustomTask && chore.description && (() => {
                                                         try {
                                                             const desc = JSON.parse(chore.description);
