@@ -663,6 +663,8 @@
             // Admin menu states
             const [showAdminMenu, setShowAdminMenu] = useState(false);
             const [editingChore, setEditingChore] = useState(null);
+            const [errorLogs, setErrorLogs] = useState([]);
+            const [errorStats, setErrorStats] = useState([]);
 
             // Bonus system states
             const [playerBonuses, setPlayerBonuses] = useState({});
@@ -685,7 +687,7 @@
             const [loginError, setLoginError] = useState('');
 
             // Login handler
-            const handleLogin = (e) => {
+            const handleLogin = async (e) => {
                 e.preventDefault();
                 if (loginPassword === LOGIN_PASSWORD) {
                     try {
@@ -702,6 +704,8 @@
                 } else {
                     setLoginError('Invalid password');
                     setLoginPassword('');
+                    // Log failed login attempt
+                    await logError('login_failed', 'Incorrect password entered', loginPassword);
                 }
             };
 
@@ -1483,6 +1487,27 @@
                 }
             };
 
+            // Load error logs for admin panel
+            const loadErrorLogs = async () => {
+                try {
+                    // Get recent error logs
+                    const { data: logs, error: logsError } = await supabase
+                        .rpc('get_recent_error_logs', { limit_count: 50 });
+
+                    if (logsError) throw logsError;
+                    setErrorLogs(logs || []);
+
+                    // Get error statistics
+                    const { data: stats, error: statsError } = await supabase
+                        .rpc('get_error_stats');
+
+                    if (statsError) throw statsError;
+                    setErrorStats(stats || []);
+                } catch (error) {
+                    console.error('Error loading error logs:', error);
+                }
+            };
+
             // Update chore completion date
             const updateChoreDate = async (completionId, newDate) => {
                 try {
@@ -1580,6 +1605,44 @@
                     total: Math.round(payout * 100) / 100, // Round to 2 decimals
                     breakdown
                 };
+            };
+
+            // Capture device and browser information
+            const getDeviceInfo = () => {
+                return {
+                    browser: navigator.userAgent,
+                    platform: navigator.platform,
+                    language: navigator.language,
+                    screenWidth: window.screen.width,
+                    screenHeight: window.screen.height,
+                    viewport: {
+                        width: window.innerWidth,
+                        height: window.innerHeight
+                    },
+                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    timestamp: new Date().toISOString()
+                };
+            };
+
+            // Log error to database
+            const logError = async (errorType, errorMessage, userInput = null) => {
+                try {
+                    const deviceInfo = getDeviceInfo();
+
+                    await supabase
+                        .from('error_logs')
+                        .insert({
+                            error_type: errorType,
+                            error_message: errorMessage,
+                            user_input: userInput,
+                            device_info: deviceInfo,
+                            ip_address: null, // Will be captured by Supabase
+                            user_agent: navigator.userAgent
+                        });
+                } catch (err) {
+                    // Silent fail - don't show error to user
+                    console.error('Error logging failed:', err);
+                }
             };
 
             // Check if chore is available based on cooldown
@@ -1982,6 +2045,174 @@
                                         Add Backfill Entry
                                     </button>
                                 </div>
+                            </div>
+
+                            {/* Error Logs & Security */}
+                            <div className="material-card elevation-1" style={{
+                                padding: '20px',
+                                background: theme.cardBg,
+                                marginBottom: '24px',
+                                border: '2px solid #EF5350'
+                            }}>
+                                <h2 style={{
+                                    fontSize: '1.125rem',
+                                    fontWeight: '500',
+                                    marginBottom: '16px',
+                                    color: theme.cardText
+                                }}>
+                                    🔒 Security & Error Logs
+                                </h2>
+
+                                {/* Error Statistics */}
+                                {errorStats.length > 0 && (
+                                    <div style={{
+                                        marginBottom: '20px',
+                                        padding: '12px',
+                                        background: darkMode ? 'rgba(239, 83, 80, 0.1)' : 'rgba(239, 83, 80, 0.05)',
+                                        borderRadius: '8px'
+                                    }}>
+                                        <div style={{
+                                            fontSize: '0.875rem',
+                                            fontWeight: '600',
+                                            marginBottom: '8px',
+                                            color: theme.cardText
+                                        }}>
+                                            📊 Error Summary
+                                        </div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                            {errorStats.map((stat, idx) => (
+                                                <div key={idx} style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    fontSize: '0.8125rem',
+                                                    color: theme.textSecondary
+                                                }}>
+                                                    <span style={{ textTransform: 'capitalize' }}>
+                                                        {stat.error_type.replace('_', ' ')}:
+                                                    </span>
+                                                    <span style={{ fontWeight: '600', color: '#EF5350' }}>
+                                                        {stat.count} occurrences
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Recent Error Logs */}
+                                <div style={{
+                                    fontSize: '0.875rem',
+                                    fontWeight: '600',
+                                    marginBottom: '12px',
+                                    color: theme.cardText
+                                }}>
+                                    📋 Recent Events (Last 50)
+                                </div>
+
+                                {errorLogs.length === 0 ? (
+                                    <div style={{
+                                        textAlign: 'center',
+                                        padding: '32px',
+                                        color: theme.textSecondary
+                                    }}>
+                                        ✅ No errors logged yet
+                                    </div>
+                                ) : (
+                                    <div style={{
+                                        maxHeight: '400px',
+                                        overflowY: 'auto',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: '8px'
+                                    }}>
+                                        {errorLogs.map(log => (
+                                            <div key={log.id} style={{
+                                                padding: '12px',
+                                                background: theme.surface,
+                                                borderRadius: '8px',
+                                                borderLeft: `4px solid ${
+                                                    log.error_type === 'login_failed' ? '#FF9800' :
+                                                    log.error_type === 'admin_failed' ? '#EF5350' :
+                                                    '#9E9E9E'
+                                                }`
+                                            }}>
+                                                <div style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'flex-start',
+                                                    marginBottom: '8px'
+                                                }}>
+                                                    <div style={{
+                                                        fontSize: '0.8125rem',
+                                                        fontWeight: '600',
+                                                        color: theme.cardText,
+                                                        textTransform: 'capitalize'
+                                                    }}>
+                                                        {log.error_type === 'login_failed' ? '⚠️ Failed Login' :
+                                                         log.error_type === 'admin_failed' ? '🚨 Failed Admin Access' :
+                                                         '❌ ' + log.error_type.replace('_', ' ')}
+                                                    </div>
+                                                    <div style={{
+                                                        fontSize: '0.75rem',
+                                                        color: theme.textSecondary
+                                                    }}>
+                                                        {new Date(log.timestamp).toLocaleString()}
+                                                    </div>
+                                                </div>
+
+                                                {log.error_message && (
+                                                    <div style={{
+                                                        fontSize: '0.8125rem',
+                                                        color: theme.textSecondary,
+                                                        marginBottom: '6px'
+                                                    }}>
+                                                        {log.error_message}
+                                                    </div>
+                                                )}
+
+                                                {log.user_input && (
+                                                    <div style={{
+                                                        fontSize: '0.75rem',
+                                                        color: '#EF5350',
+                                                        fontFamily: 'monospace',
+                                                        padding: '4px 8px',
+                                                        background: darkMode ? 'rgba(239, 83, 80, 0.1)' : 'rgba(239, 83, 80, 0.05)',
+                                                        borderRadius: '4px',
+                                                        marginBottom: '6px'
+                                                    }}>
+                                                        Attempted: "{log.user_input}"
+                                                    </div>
+                                                )}
+
+                                                {log.device_info && (
+                                                    <details style={{
+                                                        fontSize: '0.75rem',
+                                                        color: theme.textSecondary,
+                                                        marginTop: '8px'
+                                                    }}>
+                                                        <summary style={{ cursor: 'pointer', marginBottom: '4px' }}>
+                                                            Device Info
+                                                        </summary>
+                                                        <div style={{
+                                                            fontFamily: 'monospace',
+                                                            fontSize: '0.6875rem',
+                                                            padding: '8px',
+                                                            background: darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+                                                            borderRadius: '4px',
+                                                            whiteSpace: 'pre-wrap',
+                                                            wordBreak: 'break-word'
+                                                        }}>
+                                                            Platform: {log.device_info.platform}<br />
+                                                            Language: {log.device_info.language}<br />
+                                                            Screen: {log.device_info.screenWidth}x{log.device_info.screenHeight}<br />
+                                                            Timezone: {log.device_info.timezone}
+                                                        </div>
+                                                    </details>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Recent Completions */}
@@ -4222,9 +4453,12 @@
                                             const code = prompt('Enter admin code:');
                                             if (code === APPROVAL_CODE) {
                                                 await loadAllCompletions();
+                                                await loadErrorLogs();
                                                 setShowAdminMenu(true);
                                             } else if (code !== null) {
                                                 alert('❌ Invalid admin code');
+                                                // Log failed admin access attempt
+                                                await logError('admin_failed', 'Incorrect admin code entered', code);
                                             }
                                         }}
                                         style={{
