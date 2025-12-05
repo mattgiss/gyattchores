@@ -34,3 +34,6 @@ UPDATE chores SET cooldown_hours = 6 WHERE name = 'Clear Table';
 
 -- Pet feeding already set to 8 hours (no change needed)
 -- Feed Alfred and Feed Chevy remain at 8 hours
+
+
+

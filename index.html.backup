@@ -93,29 +93,17 @@
         }
         
         .dashboard-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            padding: 0 12px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            padding: 0 20px;
             width: 100%;
         }
-
-        .dashboard-grid > div {
-            flex: 1 1 300px;
-            min-width: 0;
-        }
-
-        @media (max-width: 768px) {
+        
+        @media (max-width: 600px) {
             .dashboard-grid {
-                flex-direction: column;
-                gap: 8px;
-                padding: 0 8px;
+                grid-template-columns: 1fr;
             }
-
-            /* Reorder for mobile: Available Chores first, Players second, Pending third */
-            .dashboard-grid > div:nth-child(1) { order: 2; }
-            .dashboard-grid > div:nth-child(2) { order: 1; }
-            .dashboard-grid > div:nth-child(3) { order: 3; }
         }
         
         .text-wrap {
@@ -596,7 +584,7 @@
         // Get daily quote (same quote for everyone on the same day)
         const getDailyQuote = () => {
             const now = new Date();
-            const start = new Date(now.getFullYear(), 0, 1);
+            const start = new Date(now.getFullYear(), 0, 0);
             const dayOfYear = Math.max(0, Math.floor((now - start) / (1000 * 60 * 60 * 24)));
             const safeIndex = Math.floor(Math.abs(dayOfYear) % MOTIVATIONAL_QUOTES.length);
             return MOTIVATIONAL_QUOTES[safeIndex] || MOTIVATIONAL_QUOTES[0];
@@ -677,9 +665,6 @@
             const [playerStats, setPlayerStats] = useState({});
             const [newAchievements, setNewAchievements] = useState([]);
 
-            // Chore description states
-            const [expandedChoreId, setExpandedChoreId] = useState(null);
-
             // Login states
             const [loginPassword, setLoginPassword] = useState('');
             const [loginError, setLoginError] = useState('');
@@ -754,9 +739,7 @@
 
                     // Check current week and if reset is needed
                     const monday = new Date();
-                    const dayOfWeek = monday.getDay();
-                    const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-                    monday.setDate(monday.getDate() + daysToMonday);
+                    monday.setDate(monday.getDate() - monday.getDay() + 1);
                     monday.setHours(0, 0, 0, 0);
                     const weekStartDate = monday.toISOString().split('T')[0];
 
@@ -823,9 +806,7 @@
 
                         // Get current week's points
                         const monday = new Date();
-                        const dayOfWeek = monday.getDay();
-                        const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-                        monday.setDate(monday.getDate() + daysToMonday);
+                        monday.setDate(monday.getDate() - monday.getDay() + 1);
                         monday.setHours(0, 0, 0, 0);
                         const weekStartDate = monday.toISOString().split('T')[0];
 
@@ -1015,9 +996,7 @@
             const checkAndAwardBonuses = async () => {
                 try {
                     const monday = new Date();
-                    const dayOfWeek = monday.getDay();
-                    const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-                    monday.setDate(monday.getDate() + daysToMonday);
+                    monday.setDate(monday.getDate() - monday.getDay() + 1);
                     monday.setHours(0, 0, 0, 0);
                     const weekStartDate = monday.toISOString().split('T')[0];
 
@@ -1527,68 +1506,10 @@
                 }
             };
 
-            // Calculate tiered payout (Option B)
-            const calculateTieredPayout = (weeklyPoints, payoutTier = 'B') => {
-                if (payoutTier !== 'B') {
-                    // Option C will be implemented later
-                    return { total: 0, breakdown: [] };
-                }
-
-                let payout = 0;
-                const breakdown = [];
-
-                // Tier 1: First 500 points at $0.01 per point (max $5.00)
-                const tier1Points = Math.min(weeklyPoints, 500);
-                if (tier1Points > 0) {
-                    const tier1Payout = tier1Points * 0.01;
-                    payout += tier1Payout;
-                    breakdown.push({
-                        tier: 1,
-                        points: tier1Points,
-                        rate: '$0.01/pt',
-                        amount: tier1Payout
-                    });
-                }
-
-                // Tier 2: Points 501-1000 at $0.008 per point (max $4.00)
-                if (weeklyPoints > 500) {
-                    const tier2Points = Math.min(weeklyPoints - 500, 500);
-                    const tier2Payout = tier2Points * 0.008;
-                    payout += tier2Payout;
-                    breakdown.push({
-                        tier: 2,
-                        points: tier2Points,
-                        rate: '$0.008/pt',
-                        amount: tier2Payout
-                    });
-                }
-
-                // Tier 3: Points 1000+ at $0.005 per point (no cap)
-                if (weeklyPoints > 1000) {
-                    const tier3Points = weeklyPoints - 1000;
-                    const tier3Payout = tier3Points * 0.005;
-                    payout += tier3Payout;
-                    breakdown.push({
-                        tier: 3,
-                        points: tier3Points,
-                        rate: '$0.005/pt',
-                        amount: tier3Payout
-                    });
-                }
-
-                return {
-                    total: Math.round(payout * 100) / 100, // Round to 2 decimals
-                    breakdown
-                };
-            };
-
             // Check if chore is available based on cooldown
-            const getChoreAvailability = (chore, playerId = null) => {
-                // Find the most recent completion of this chore
-                // If playerId provided, check per-player cooldown; otherwise check global
-                const lastCompletion = playerId
-                    ? allCompletions.find(c => c.chore_id === chore.id && c.player_id === playerId)
-                    : allCompletions.find(c => c.chore_id === chore.id);
+            const getChoreAvailability = (chore) => {
+                // Find the most recent completion of this chore by anyone
+                const lastCompletion = allCompletions.find(c => c.chore_id === chore.id);
 
                 if (!lastCompletion) {
                     return { available: true, hoursRemaining: 0 };
@@ -1609,8 +1530,8 @@
 
             const claimChore = async (playerId, chore) => {
                 try {
-                    // Check cooldown first (per-player cooldown)
-                    const availability = getChoreAvailability(chore, playerId);
+                    // Check cooldown first
+                    const availability = getChoreAvailability(chore);
                     if (!availability.available) {
                         const days = Math.floor(availability.hoursRemaining / 24);
                         const hours = availability.hoursRemaining % 24;
@@ -1640,8 +1561,7 @@
                     }
 
                     // High-value chores (>500 pts) can't be done more than once every 3 days
-                    // Exception: "Clean Room" can be done daily per player
-                    if (chore.points > 500 && chore.name !== 'Clean Room') {
+                    if (chore.points > 500) {
                         const threeDaysAgo = new Date();
                         threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
                         const threeDaysAgoStr = threeDaysAgo.toISOString().split('T')[0];
@@ -1886,7 +1806,7 @@
                                 margin: 0,
                                 fontFamily: "'Google Sans Display', sans-serif"
                             }}>
-                                ✏️ Edit Approved Task
+                                ⚙️ Admin Menu
                             </h1>
                         </div>
 
@@ -2408,7 +2328,7 @@
                                     <div style={{ fontSize: '0.875rem', color: theme.textSecondary }}>completed</div>
                                 </div>
 
-                                {/* Weekly Payout */}
+                                {/* Next Payout */}
                                 <div className="material-card elevation-1" style={{
                                     padding: '16px',
                                     background: theme.cardBg,
@@ -2421,69 +2341,17 @@
                                         color: theme.textSecondary,
                                         marginBottom: '8px'
                                     }}>
-                                        Weekly Payout
+                                        Next Payout
                                     </div>
                                     <div style={{
-                                        fontSize: '2rem',
-                                        fontWeight: '600',
-                                        color: '#2E7D32'
-                                    }}>
-                                        ${calculateTieredPayout(selectedPlayer.points).total.toFixed(2)}
-                                    </div>
-                                    <div style={{
-                                        fontSize: '0.75rem',
-                                        color: theme.textSecondary,
-                                        marginTop: '4px'
+                                        fontSize: '1rem',
+                                        fontWeight: '500',
+                                        color: theme.cardText
                                     }}>
                                         {payoutDate}
                                     </div>
                                 </div>
                             </div>
-
-                            {/* Payout Breakdown */}
-                            {(() => {
-                                const payout = calculateTieredPayout(selectedPlayer.points);
-                                if (payout.breakdown.length > 0) {
-                                    return (
-                                        <div className="material-card elevation-1" style={{
-                                            padding: '16px',
-                                            background: theme.cardBg,
-                                            marginBottom: '16px'
-                                        }}>
-                                            <div style={{
-                                                fontSize: '1rem',
-                                                fontWeight: '600',
-                                                marginBottom: '12px',
-                                                color: theme.cardText
-                                            }}>
-                                                💵 Payout Breakdown
-                                            </div>
-                                            {payout.breakdown.map((tier, idx) => (
-                                                <div key={idx} style={{
-                                                    display: 'flex',
-                                                    justifyContent: 'space-between',
-                                                    alignItems: 'center',
-                                                    padding: '8px',
-                                                    marginBottom: '4px',
-                                                    background: darkMode ? 'rgba(71, 178, 196, 0.05)' : 'rgba(208, 165, 0, 0.05)',
-                                                    borderRadius: '6px'
-                                                }}>
-                                                    <div style={{ fontSize: '0.875rem', color: theme.cardText }}>
-                                                        <strong>Tier {tier.tier}:</strong> {tier.points.toLocaleString()} pts @ {tier.rate}
-                                                    </div>
-                                                    <div style={{
-                                                        fontSize: '0.875rem',
-                                                        fontWeight: '600',
-                                                        color: '#2E7D32'
-                                                    }}>
-                                                        ${tier.amount.toFixed(2)}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    );
-                                }
-                            })()}
 
                             {/* Achievements */}
                             <div className="material-card elevation-1" style={{
@@ -3066,6 +2934,27 @@
                         </a>
                         <button
                             className="material-button elevation-1 ripple"
+                            onClick={async () => {
+                                const code = prompt('Enter admin code:');
+                                if (code === APPROVAL_CODE) {
+                                    await loadAllCompletions();
+                                    setShowAdminMenu(true);
+                                } else if (code !== null) {
+                                    alert('❌ Invalid admin code');
+                                }
+                            }}
+                            style={{
+                                flex: '1 1 auto',
+                                minWidth: '120px',
+                                background: '#FF9800',
+                                color: '#FFFFFF'
+                            }}
+                            aria-label="Open admin menu"
+                        >
+                            Admin Menu
+                        </button>
+                        <button
+                            className="material-button elevation-1 ripple"
                             onClick={handleLogout}
                             aria-label="Logout"
                             style={{
@@ -3456,7 +3345,7 @@
                                                 {player.completedChores} chores
                                             </div>
                                             {(() => {
-                                                const pendingCount = pendingChores.filter(c => c.playerId === player.id).length;
+                                                const pendingCount = pendingChores.filter(c => c.player_id === player.id).length;
                                                 if (pendingCount > 0) {
                                                     return (
                                                         <div style={{
@@ -3748,7 +3637,7 @@
                                     const isCustomTask = chore.icon === '⭐';
                                     return (
                                     <div key={chore.id || idx} className="material-card elevation-1" style={{
-                                        marginBottom: '6px',
+                                        marginBottom: '8px',
                                         overflow: 'hidden',
                                         background: theme.cardBg,
                                         border: isCustomTask ? `2px solid ${theme.accent}` : 'none',
@@ -3756,90 +3645,45 @@
                                             ? `0 0 12px ${darkMode ? 'rgba(18, 10, 204, 0.3)' : 'rgba(235, 112, 30, 0.3)'}, 0 2px 8px 0 rgba(0,0,0,.1)`
                                             : undefined
                                     }}>
-                                        <div style={{ padding: '8px' }}>
+                                        <div style={{ padding: '12px' }}>
                                             <div style={{
                                                 display: 'flex',
                                                 alignItems: 'center',
-                                                gap: '6px',
-                                                marginBottom: '6px'
+                                                gap: '8px',
+                                                marginBottom: '8px'
                                             }}>
                                                 <div style={{
-                                                    fontSize: '1.25rem',
-                                                    width: '32px',
-                                                    height: '32px',
+                                                    fontSize: '1.5rem',
+                                                    width: '40px',
+                                                    height: '40px',
                                                     flexShrink: 0,
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     justifyContent: 'center',
-                                                    borderRadius: '6px',
+                                                    borderRadius: '8px',
                                                     background: darkMode ? 'rgba(71, 178, 196, 0.1)' : 'rgba(208, 165, 0, 0.1)'
                                                 }}>
                                                     {chore.icon}
                                                 </div>
                                                 <div style={{ flex: 1, minWidth: 0 }}>
                                                     <div style={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: '4px',
-                                                        marginBottom: '1px'
+                                                        fontSize: '0.9375rem',
+                                                        fontWeight: '600',
+                                                        color: theme.cardText,
+                                                        marginBottom: '2px',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap'
                                                     }}>
-                                                        <div style={{
-                                                            fontSize: '0.875rem',
-                                                            fontWeight: '600',
-                                                            color: theme.cardText,
-                                                            overflow: 'hidden',
-                                                            textOverflow: 'ellipsis',
-                                                            whiteSpace: 'nowrap',
-                                                            flex: 1
-                                                        }}>
-                                                            {chore.name}
-                                                        </div>
-                                                        {!isCustomTask && chore.description && (
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setExpandedChoreId(expandedChoreId === chore.id ? null : chore.id);
-                                                                }}
-                                                                style={{
-                                                                    background: 'none',
-                                                                    border: 'none',
-                                                                    cursor: 'pointer',
-                                                                    padding: '2px',
-                                                                    fontSize: '0.875rem',
-                                                                    lineHeight: 1,
-                                                                    color: theme.primary,
-                                                                    display: 'flex',
-                                                                    alignItems: 'center'
-                                                                }}
-                                                                title="Show definition of done"
-                                                                aria-label="Show chore details"
-                                                            >
-                                                                ℹ️
-                                                            </button>
-                                                        )}
+                                                        {chore.name}
                                                     </div>
                                                     <div style={{
-                                                        fontSize: '0.75rem',
+                                                        fontSize: '0.8125rem',
                                                         fontWeight: '600',
                                                         color: theme.primary
                                                     }}>
                                                         {chore.points} pts
                                                     </div>
-                                                    {!isCustomTask && chore.description && expandedChoreId === chore.id && (
-                                                        <div style={{
-                                                            fontSize: '0.6875rem',
-                                                            color: theme.textSecondary,
-                                                            marginTop: '6px',
-                                                            padding: '6px',
-                                                            background: darkMode ? 'rgba(71, 178, 196, 0.05)' : 'rgba(208, 165, 0, 0.05)',
-                                                            borderRadius: '4px',
-                                                            lineHeight: '1.4',
-                                                            borderLeft: `2px solid ${theme.primary}`
-                                                        }}>
-                                                            <strong style={{ color: theme.primary }}>Definition of Done:</strong><br />
-                                                            {chore.description}
-                                                        </div>
-                                                    )}
                                                     {isCustomTask && chore.description && (() => {
                                                         try {
                                                             const desc = JSON.parse(chore.description);
@@ -3868,15 +3712,10 @@
 
                                                                 return (
                                                                     <div style={{
-                                                                        fontSize: '0.6875rem',
+                                                                        fontSize: '0.75rem',
                                                                         fontWeight: '500',
                                                                         color: dueDateColor,
-                                                                        marginTop: '2px',
-                                                                        overflow: 'hidden',
-                                                                        textOverflow: 'ellipsis',
-                                                                        whiteSpace: 'nowrap',
-                                                                        maxWidth: '100%',
-                                                                        width: 'fit-content'
+                                                                        marginTop: '4px'
                                                                     }}>
                                                                         📅 {dueDateText}
                                                                     </div>
@@ -3890,7 +3729,7 @@
                                             <div style={{
                                                 display: 'flex',
                                                 flexWrap: 'wrap',
-                                                gap: '4px'
+                                                gap: '6px'
                                             }}>
                                                 {players.map(player => (
                                                     <button
@@ -3899,22 +3738,23 @@
                                                         className="ripple"
                                                         style={{
                                                             flex: '1 1 auto',
-                                                            minWidth: '48px',
-                                                            padding: '8px',
+                                                            minWidth: 'calc(50% - 3px)',
+                                                            padding: '8px 12px',
                                                             background: theme.primary,
                                                             color: theme.onPrimary,
                                                             border: 'none',
                                                             cursor: 'pointer',
-                                                            fontSize: '1.25rem',
-                                                            borderRadius: '8px',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center'
+                                                            fontSize: '0.75rem',
+                                                            fontWeight: '600',
+                                                            textTransform: 'uppercase',
+                                                            letterSpacing: '0.5px',
+                                                            borderRadius: '6px',
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis',
+                                                            whiteSpace: 'nowrap'
                                                         }}
-                                                        title={player.name}
-                                                        aria-label={`${player.name} claim chore`}
                                                     >
-                                                        {player.avatar}
+                                                        {player.name}
                                                     </button>
                                                 ))}
                                             </div>
@@ -4094,14 +3934,6 @@
                                             }
 
                                             try {
-                                                // Get all pending chores before approving
-                                                const { data: pendingToApprove, error: fetchError } = await supabase
-                                                    .from('chore_completions')
-                                                    .select('player_id, completed_at, value_awarded')
-                                                    .eq('status', 'pending');
-
-                                                if (fetchError) throw fetchError;
-
                                                 // Approve all pending chores in database
                                                 const { error } = await supabase
                                                     .from('chore_completions')
@@ -4109,19 +3941,6 @@
                                                     .eq('status', 'pending');
 
                                                 if (error) throw error;
-
-                                                // Update stats for each approval
-                                                if (pendingToApprove && pendingToApprove.length > 0) {
-                                                    for (const chore of pendingToApprove) {
-                                                        await updatePlayerStats(chore.player_id, chore.completed_at, chore.value_awarded);
-                                                    }
-
-                                                    // Check achievements for all affected players
-                                                    const uniquePlayers = [...new Set(pendingToApprove.map(c => c.player_id))];
-                                                    for (const playerId of uniquePlayers) {
-                                                        await checkAndAwardAchievements(playerId);
-                                                    }
-                                                }
 
                                                 setPendingChores([]);
                                                 await loadAllCompletions();
@@ -4198,9 +4017,7 @@
                                             }
 
                                             const monday = new Date();
-                                            const dayOfWeek = monday.getDay();
-                                            const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-                                            monday.setDate(monday.getDate() + daysToMonday);
+                                            monday.setDate(monday.getDate() - monday.getDay() + 1);
                                             monday.setHours(0, 0, 0, 0);
 
                                             setCurrentWeekStart(monday.toISOString().split('T')[0]);
@@ -4215,26 +4032,6 @@
                                         }}
                                     >
                                         Force Weekly Reset
-                                    </button>
-                                    <button
-                                        className="material-button elevation-1 ripple"
-                                        onClick={async () => {
-                                            const code = prompt('Enter admin code:');
-                                            if (code === APPROVAL_CODE) {
-                                                await loadAllCompletions();
-                                                setShowAdminMenu(true);
-                                            } else if (code !== null) {
-                                                alert('❌ Invalid admin code');
-                                            }
-                                        }}
-                                        style={{
-                                            width: '100%',
-                                            marginTop: '8px',
-                                            background: '#FF9800',
-                                            color: '#FFFFFF'
-                                        }}
-                                    >
-                                        Edit Approved Task
                                     </button>
                                 </div>
                             )}
@@ -4433,17 +4230,11 @@
                                         min={new Date().toISOString().split('T')[0]}
                                         max={new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0]}
                                         aria-label="Due date (optional)"
+                                        className="material-input"
                                         style={{
-                                            width: '100%',
-                                            padding: '12px 16px',
-                                            borderRadius: '10px',
-                                            border: `1px solid ${theme.outline}`,
-                                            fontSize: '1rem',
-                                            outline: 'none',
                                             background: theme.surface,
-                                            color: theme.text,
-                                            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                                            colorScheme: darkMode ? 'dark' : 'light'
+                                            borderColor: theme.outline,
+                                            color: theme.text
                                         }}
                                     />
                                 </div>
