@@ -2097,7 +2097,7 @@
                                 margin: 0,
                                 fontFamily: "'Google Sans Display', sans-serif"
                             }}>
-                                ✏️ Edit Approved Task
+                                ⚙️ Admin Panel
                             </h1>
                         </div>
 
@@ -2194,6 +2194,42 @@
                                         Add Backfill Entry
                                     </button>
                                 </div>
+                            </div>
+
+                            {/* Reset Cooldowns */}
+                            <div className="material-card elevation-1" style={{
+                                padding: '20px',
+                                background: theme.cardBg,
+                                marginBottom: '24px'
+                            }}>
+                                <h2 style={{
+                                    fontSize: '1.125rem',
+                                    fontWeight: '500',
+                                    marginBottom: '16px',
+                                    color: theme.cardText
+                                }}>
+                                    🔄 Reset Cooldowns
+                                </h2>
+                                <p style={{
+                                    fontSize: '0.875rem',
+                                    color: theme.textSecondary,
+                                    marginBottom: '12px',
+                                    lineHeight: '1.5'
+                                }}>
+                                    Clear all current chore cooldowns to make all chores available for all players.
+                                </p>
+                                <button
+                                    className="material-button ripple"
+                                    onClick={resetCooldowns}
+                                    style={{
+                                        background: theme.secondary || '#FFA726',
+                                        color: theme.onSecondary || '#000000',
+                                        padding: '12px',
+                                        width: '100%'
+                                    }}
+                                >
+                                    🔄 Reset All Cooldowns
+                                </button>
                             </div>
 
                             {/* Error Logs & Security */}
@@ -3446,40 +3482,30 @@
                         >
                             Monthly View
                         </button>
-                        <a
-                            href="ebook.html"
+                        <button
                             className="material-button elevation-1 ripple"
+                            onClick={async () => {
+                                const code = prompt('Enter admin password:');
+                                if (code === APPROVAL_CODE) {
+                                    await loadAllCompletions();
+                                    await loadErrorLogs();
+                                    setShowAdminMenu(true);
+                                } else if (code !== null) {
+                                    haptic('error');
+                                    alert('❌ Invalid admin password');
+                                    await logError('admin_failed', 'Incorrect admin password entered from navigation', code);
+                                }
+                            }}
+                            aria-label="Open Admin Panel"
                             style={{
                                 flex: '1 1 auto',
                                 minWidth: '120px',
-                                background: theme.accent,
-                                color: '#FFFFFF',
-                                textDecoration: 'none',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
+                                background: '#FF9800',
+                                color: '#FFFFFF'
                             }}
-                            aria-label="Open Family Guide"
                         >
-                            Family Guide
-                        </a>
-                        <a
-                            href="development-story.html"
-                            className="material-button elevation-1 ripple"
-                            style={{
-                                flex: '1 1 auto',
-                                minWidth: '120px',
-                                background: '#9C27B0',
-                                color: '#FFFFFF',
-                                textDecoration: 'none',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                            }}
-                            aria-label="Open Development Story"
-                        >
-                            Development Story
-                        </a>
+                            ⚙️ Admin
+                        </button>
                         <button
                             className="material-button elevation-1 ripple"
                             onClick={handleLogout}
@@ -3505,19 +3531,6 @@
                             }}
                         >
                             {darkMode ? 'Light Mode' : 'Dark Mode'}
-                        </button>
-                        <button
-                            className="material-button elevation-1 ripple"
-                            onClick={resetCooldowns}
-                            aria-label="Reset all chore cooldowns"
-                            style={{
-                                flex: '1 1 auto',
-                                minWidth: '120px',
-                                background: theme.secondary || '#FFA726',
-                                color: theme.onSecondary || '#000000'
-                            }}
-                        >
-                            🔄 Reset Cooldowns
                         </button>
                     </div>
 
