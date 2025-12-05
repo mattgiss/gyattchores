@@ -10,13 +10,13 @@ CREATE TABLE IF NOT EXISTS error_logs (
     device_info JSONB,
     ip_address TEXT,
     user_agent TEXT,
-    timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    logged_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Create indexes for performance
 CREATE INDEX idx_error_logs_type ON error_logs(error_type);
-CREATE INDEX idx_error_logs_timestamp ON error_logs(timestamp);
+CREATE INDEX idx_error_logs_logged_at ON error_logs(logged_at);
 CREATE INDEX idx_error_logs_ip ON error_logs(ip_address);
 
 -- Add comment for documentation
@@ -67,7 +67,7 @@ RETURNS TABLE (
     device_info JSONB,
     ip_address TEXT,
     user_agent TEXT,
-    timestamp TIMESTAMP WITH TIME ZONE
+    logged_at TIMESTAMP WITH TIME ZONE
 ) AS $$
 BEGIN
     RETURN QUERY
@@ -79,10 +79,10 @@ BEGIN
         el.device_info,
         el.ip_address,
         el.user_agent,
-        el.timestamp
+        el.logged_at
     FROM error_logs el
     WHERE (error_type_filter IS NULL OR el.error_type = error_type_filter)
-    ORDER BY el.timestamp DESC
+    ORDER BY el.logged_at DESC
     LIMIT limit_count;
 END;
 $$ LANGUAGE plpgsql;
@@ -99,7 +99,7 @@ BEGIN
     SELECT
         el.error_type,
         COUNT(*) as count,
-        MAX(el.timestamp) as last_occurrence
+        MAX(el.logged_at) as last_occurrence
     FROM error_logs el
     GROUP BY el.error_type
     ORDER BY count DESC;
