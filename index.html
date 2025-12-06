@@ -1796,11 +1796,26 @@
                 return { available: false, hoursRemaining };
             };
 
-            const resetCooldowns = () => {
+            const resetCooldowns = async () => {
                 if (confirm('Reset all chore cooldowns? This will make all chores available again for all players.')) {
-                    setAllCompletions([]);
-                    haptic('success');
-                    alert('✅ All cooldowns have been reset! All chores are now available.');
+                    try {
+                        // Delete all chore completions from the database
+                        const { error } = await supabase
+                            .from('chore_completions')
+                            .delete()
+                            .neq('id', 0); // Delete all records (neq with impossible condition)
+
+                        if (error) throw error;
+
+                        // Update local state
+                        setAllCompletions([]);
+                        haptic('success');
+                        alert('✅ All cooldowns have been reset! All chores are now available.');
+                    } catch (error) {
+                        console.error('Error resetting cooldowns:', error);
+                        haptic('error');
+                        alert('❌ Failed to reset cooldowns. Please try again.');
+                    }
                 }
             };
 
