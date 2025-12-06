@@ -1803,12 +1803,17 @@
                         const { error } = await supabase
                             .from('chore_completions')
                             .delete()
-                            .neq('id', 0); // Delete all records (neq with impossible condition)
+                            .gte('id', 0); // Delete all records
 
                         if (error) throw error;
 
                         // Update local state
                         setAllCompletions([]);
+                        setPendingChores([]);
+
+                        // Reload data to ensure everything is in sync
+                        await loadData();
+
                         haptic('success');
                         alert('✅ All cooldowns have been reset! All chores are now available.');
                     } catch (error) {
