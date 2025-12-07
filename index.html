@@ -654,8 +654,38 @@
         // Changelog - Updates and Bug Fixes
         const CHANGELOG = [
             {
+                version: "2.8.0",
+                date: "Dec 7, 2024",
+                time: "11:30 PM",
+                type: "feature",
+                changes: [
+                    "📊 Simplified Admin Panel - Combined logs into tabbed interface",
+                    "🔒 Error Logs & 📝 Activity Logs now in single System Logs section",
+                    "✏️ Enhanced Recent Completions with inline editing",
+                    "🔍 Added filters: player, status, date range",
+                    "💾 Edit chore type and date directly in completion list",
+                    "Saved ~190 lines of code by eliminating duplication"
+                ]
+            },
+            {
+                version: "2.7.0",
+                date: "Dec 7, 2024",
+                time: "10:00 PM",
+                type: "fix",
+                changes: [
+                    "🐐 Fixed GOAT display: Current Week Leader vs Last Week Winner",
+                    "🏆 Purple border for current week leader (still competing)",
+                    "🥇 Gold border for GOAT of the Week (last week's winner)",
+                    "🔧 Fixed week calculation to include Sunday in current week",
+                    "✅ Week resets at midnight Sunday/Monday",
+                    "🛠️ Fixed toLocaleString errors with defensive type checking",
+                    "🔐 Fixed Supabase search_path security warnings"
+                ]
+            },
+            {
                 version: "2.6.0",
                 date: "Dec 7, 2024",
+                time: "12:00 PM",
                 type: "feature",
                 changes: [
                     "💚 Redesigned Custom Task system with player emoji selection",
@@ -4840,7 +4870,7 @@
                                             fontSize: '0.75rem',
                                             color: darkMode ? '#9E9E9E' : '#5F6368'
                                         }}>
-                                            {update.date}
+                                            {update.date}{update.time ? ` • ${update.time}` : ''}
                                         </span>
                                     </div>
 
@@ -4872,19 +4902,48 @@
 
                             <div style={{
                                 marginTop: '20px',
-                                padding: '12px',
+                                padding: '16px',
                                 background: darkMode ? 'rgba(71, 178, 196, 0.1)' : 'rgba(208, 165, 0, 0.1)',
                                 borderRadius: '8px',
                                 textAlign: 'center'
                             }}>
                                 <p style={{
-                                    margin: 0,
+                                    margin: '0 0 12px 0',
                                     fontSize: '0.8125rem',
                                     color: darkMode ? '#47B2C4' : '#D0A500',
                                     fontWeight: '500'
                                 }}>
                                     💡 {CHANGELOG.length} updates total • Showing latest 3
                                 </p>
+                                <a
+                                    href="https://github.com/mattgiss/gyattchores"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        fontSize: '0.8125rem',
+                                        color: darkMode ? '#47B2C4' : '#D0A500',
+                                        textDecoration: 'none',
+                                        fontWeight: '500',
+                                        padding: '6px 12px',
+                                        borderRadius: '6px',
+                                        border: `1px solid ${darkMode ? '#47B2C4' : '#D0A500'}`,
+                                        transition: 'all 0.2s ease'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.target.style.background = darkMode ? 'rgba(71, 178, 196, 0.2)' : 'rgba(208, 165, 0, 0.2)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.background = 'transparent';
+                                    }}
+                                >
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+                                    </svg>
+                                    View on GitHub
+                                </a>
                             </div>
                         </div>
 
