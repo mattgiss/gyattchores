@@ -807,9 +807,11 @@
         };
 
         function FamilyChores() {
-            // Auto-detect dark mode based on time of day (6 AM - 6 PM = light, else dark)
+            // Auto-detect dark mode based on time of day in Mountain Time (6 AM - 6 PM = light, else dark)
             const getInitialDarkMode = () => {
-                const hour = new Date().getHours();
+                // Get current time in Mountain Time (America/Denver)
+                const mountainTime = new Date().toLocaleString("en-US", {timeZone: "America/Denver"});
+                const hour = new Date(mountainTime).getHours();
                 return hour < 6 || hour >= 18;
             };
 
