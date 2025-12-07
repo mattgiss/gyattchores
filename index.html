@@ -1277,9 +1277,9 @@
                 [darkMode]
             );
 
-            // Helper function to check if player is GOAT
+            // Helper function to check if player is GOAT (last week's winner)
             const isGoat = (playerId) => {
-                return weeklyGoats.some(goat => goat.player_id === playerId);
+                return lastWeekGoat && lastWeekGoat.some(goat => goat.player_id === playerId);
             };
 
             // Check and award bonuses
