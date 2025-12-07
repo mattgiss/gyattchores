@@ -1458,6 +1458,15 @@
                 }
             };
 
+            // TODO: FUTURE FEATURE - Streak Multiplier System
+            // Implement this function to calculate point multipliers based on streak
+            // const calculateStreakMultiplier = (currentStreak) => {
+            //     if (currentStreak >= 14) return 1.5;  // 14+ days: 1.5x points
+            //     if (currentStreak >= 7) return 1.25;  // 7-13 days: 1.25x points
+            //     if (currentStreak >= 3) return 1.1;   // 3-6 days: 1.1x points
+            //     return 1.0; // No bonus
+            // };
+
             // Update player stats when chore is completed
             const updatePlayerStats = async (playerId, choreCompletedAt, pointsAwarded) => {
                 try {
@@ -1471,7 +1480,7 @@
                     const completedHour = new Date(choreCompletedAt).getHours();
                     const today = new Date().toISOString().split('T')[0];
 
-                    // Calculate streak
+                    // Calculate streak (TODO: Use this for multiplier when implementing feature above)
                     let newStreak = 1;
                     if (stats.last_activity_date) {
                         const lastDate = new Date(stats.last_activity_date);
@@ -2014,13 +2023,16 @@
                     }
 
                     // Insert chore completion
+                    // TODO: Add streak multiplier here in the future
+                    // Example: const multiplier = calculateStreakMultiplier(currentStreak);
+                    // const pointsWithBonus = chore.points * multiplier;
                     const { data, error } = await supabase
                         .from('chore_completions')
                         .insert([{
                             player_id: playerId,
                             chore_id: chore.id,
                             completed_date: today,
-                            value_awarded: chore.points,
+                            value_awarded: chore.points, // TODO: Apply streak multiplier
                             status: 'pending'
                         }])
                         .select(`
