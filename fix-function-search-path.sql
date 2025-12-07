@@ -99,11 +99,16 @@ DECLARE
     current_monday date;
     max_total integer;
 BEGIN
-    -- Get current week's Monday
+    -- Get current week's Monday (week runs Monday-Sunday)
+    -- DATE_TRUNC('week') returns Sunday, so add 1 day to get Monday
+    -- On Sunday, we need to include it in the current week
     current_monday := CASE
-        WHEN EXTRACT(DOW FROM CURRENT_DATE) = 0
-        THEN (DATE_TRUNC('week', CURRENT_DATE)::date + INTERVAL '1 day' - INTERVAL '7 days')::date
-        ELSE (DATE_TRUNC('week', CURRENT_DATE)::date + INTERVAL '1 day')::date
+        WHEN EXTRACT(DOW FROM CURRENT_DATE) = 0 THEN
+            -- On Sunday, go back 6 days to get this week's Monday
+            CURRENT_DATE - INTERVAL '6 days'
+        ELSE
+            -- Other days: use DATE_TRUNC('week') + 1 day
+            DATE_TRUNC('week', CURRENT_DATE)::date + INTERVAL '1 day'
     END;
 
     -- Get max total for this week
