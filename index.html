@@ -4710,157 +4710,157 @@
                 }}>
                     {/* Top Navigation Bar */}
                     <nav style={{
-                            position: 'sticky',
-                            top: 0,
-                            zIndex: 1000,
-                            background: darkMode ? '#1E1E1E' : '#FFFFFF',
-                            borderBottom: `1px solid ${darkMode ? '#333' : '#e0e0e0'}`,
-                            padding: '12px 24px',
+                        position: 'sticky',
+                        top: 0,
+                        zIndex: 1000,
+                        background: darkMode ? '#1E1E1E' : '#FFFFFF',
+                        borderBottom: `1px solid ${darkMode ? '#333' : '#e0e0e0'}`,
+                        padding: '12px 24px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                    }}>
+                        <div style={{
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'space-between',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                            gap: '16px'
                         }}>
-                            <div style={{
+                            <img
+                                src={darkMode ? 'gyattchores-logo-white.svg' : 'gyattchores-logo.svg'}
+                                alt="GyattChores Logo"
+                                style={{
+                                    width: '48px',
+                                    height: '48px'
+                                }}
+                            />
+                            <div>
+                                <h1 style={{
+                                    fontSize: '1.5rem',
+                                    fontWeight: '500',
+                                    margin: 0,
+                                    color: darkMode ? '#E0E0E0' : '#202124'
+                                }}>
+                                    GyattChores
+                                </h1>
+                                <p style={{
+                                    fontSize: '0.75rem',
+                                    margin: 0,
+                                    color: darkMode ? '#9E9E9E' : '#5F6368'
+                                }}>
+                                    Family Chore Tracker
+                                </p>
+                            </div>
+                        </div>
+
+                        {!isLoggedIn ? (
+                            <form onSubmit={handleLogin} style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '16px'
+                                gap: '12px'
                             }}>
-                                <img
-                                    src={darkMode ? 'gyattchores-logo-white.svg' : 'gyattchores-logo.svg'}
-                                    alt="GyattChores Logo"
+                                <input
+                                    type="password"
+                                    value={loginPassword}
+                                    onChange={(e) => setLoginPassword(e.target.value)}
+                                    placeholder="Enter password"
                                     style={{
-                                        width: '48px',
-                                        height: '48px'
+                                        padding: '10px 16px',
+                                        fontSize: '0.9375rem',
+                                        border: `1px solid ${darkMode ? '#333' : '#dadce0'}`,
+                                        borderRadius: '8px',
+                                        background: darkMode ? '#2C2C2C' : '#FFFFFF',
+                                        color: darkMode ? '#E0E0E0' : '#202124',
+                                        outline: 'none',
+                                        transition: 'border-color 0.2s',
+                                        minWidth: '200px'
+                                    }}
+                                    onFocus={(e) => {
+                                        e.target.style.borderColor = '#1a73e8';
+                                    }}
+                                    onBlur={(e) => {
+                                        e.target.style.borderColor = darkMode ? '#333' : '#dadce0';
                                     }}
                                 />
-                                <div>
-                                    <h1 style={{
-                                        fontSize: '1.5rem',
-                                        fontWeight: '500',
-                                        margin: 0,
-                                        color: darkMode ? '#E0E0E0' : '#202124'
-                                    }}>
-                                        GyattChores
-                                    </h1>
-                                    <p style={{
-                                        fontSize: '0.75rem',
-                                        margin: 0,
-                                        color: darkMode ? '#9E9E9E' : '#5F6368'
-                                    }}>
-                                        Family Chore Tracker
-                                    </p>
-                                </div>
-                            </div>
-
-                            {!isLoggedIn ? (
-                                <form onSubmit={handleLogin} style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '12px'
-                                }}>
-                                    <input
-                                        type="password"
-                                        value={loginPassword}
-                                        onChange={(e) => setLoginPassword(e.target.value)}
-                                        placeholder="Enter password"
-                                        style={{
-                                            padding: '10px 16px',
-                                            fontSize: '0.9375rem',
-                                            border: `1px solid ${darkMode ? '#333' : '#dadce0'}`,
-                                            borderRadius: '8px',
-                                            background: darkMode ? '#2C2C2C' : '#FFFFFF',
-                                            color: darkMode ? '#E0E0E0' : '#202124',
-                                            outline: 'none',
-                                            transition: 'border-color 0.2s',
-                                            minWidth: '200px'
-                                        }}
-                                        onFocus={(e) => {
-                                            e.target.style.borderColor = '#1a73e8';
-                                        }}
-                                        onBlur={(e) => {
-                                            e.target.style.borderColor = darkMode ? '#333' : '#dadce0';
-                                        }}
-                                    />
-                                    <button
-                                        type="submit"
-                                        className="material-button elevation-1 ripple"
-                                        style={{
-                                            padding: '10px 24px',
-                                            fontSize: '0.9375rem',
-                                            fontWeight: '500',
-                                            background: '#1a73e8',
-                                            color: '#FFFFFF',
-                                            border: 'none',
-                                            borderRadius: '8px',
-                                            cursor: 'pointer',
-                                            transition: 'background 0.2s',
-                                            whiteSpace: 'nowrap'
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.target.style.background = '#1557b0';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.target.style.background = '#1a73e8';
-                                        }}
-                                    >
-                                        Login
-                                    </button>
-                                </form>
-                            ) : (
                                 <button
-                                    onClick={() => {
-                                        localStorage.removeItem('gyatt_session');
-                                        setIsLoggedIn(false);
-                                    }}
-                                    className="material-button"
+                                    type="submit"
+                                    className="material-button elevation-1 ripple"
                                     style={{
                                         padding: '10px 24px',
                                         fontSize: '0.9375rem',
                                         fontWeight: '500',
-                                        background: 'transparent',
-                                        color: darkMode ? '#E0E0E0' : '#202124',
-                                        border: `1px solid ${darkMode ? '#333' : '#dadce0'}`,
+                                        background: '#1a73e8',
+                                        color: '#FFFFFF',
+                                        border: 'none',
                                         borderRadius: '8px',
                                         cursor: 'pointer',
-                                        transition: 'all 0.2s'
+                                        transition: 'background 0.2s',
+                                        whiteSpace: 'nowrap'
                                     }}
                                     onMouseEnter={(e) => {
-                                        e.target.style.background = darkMode ? '#2C2C2C' : '#f5f5f5';
+                                        e.target.style.background = '#1557b0';
                                     }}
                                     onMouseLeave={(e) => {
-                                        e.target.style.background = 'transparent';
+                                        e.target.style.background = '#1a73e8';
                                     }}
                                 >
-                                    Logout
+                                    Login
                                 </button>
-                            )}
-                        </nav>
-
-                        {!isLoggedIn && loginError && (
-                            <div style={{
-                                margin: '16px 24px 0',
-                                padding: '12px',
-                                background: 'rgba(244, 67, 54, 0.1)',
-                                border: '1px solid rgba(244, 67, 54, 0.3)',
-                                borderRadius: '8px',
-                                color: '#f44336',
-                                fontSize: '0.875rem'
-                            }}>
-                                {loginError}
-                            </div>
+                            </form>
+                        ) : (
+                            <button
+                                onClick={() => {
+                                    localStorage.removeItem('gyatt_session');
+                                    setIsLoggedIn(false);
+                                }}
+                                className="material-button"
+                                style={{
+                                    padding: '10px 24px',
+                                    fontSize: '0.9375rem',
+                                    fontWeight: '500',
+                                    background: 'transparent',
+                                    color: darkMode ? '#E0E0E0' : '#202124',
+                                    border: `1px solid ${darkMode ? '#333' : '#dadce0'}`,
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.target.style.background = darkMode ? '#2C2C2C' : '#f5f5f5';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.target.style.background = 'transparent';
+                                }}
+                            >
+                                Logout
+                            </button>
                         )}
+                    </nav>
 
-                        {/* Homepage - visible to everyone when not logged in */}
-                        {!isLoggedIn && (
+                    {!isLoggedIn && loginError && (
                         <div style={{
-                            maxWidth: '800px',
-                            margin: '0 auto',
-                            padding: '32px 24px',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '32px'
+                            margin: '16px 24px 0',
+                            padding: '12px',
+                            background: 'rgba(244, 67, 54, 0.1)',
+                            border: '1px solid rgba(244, 67, 54, 0.3)',
+                            borderRadius: '8px',
+                            color: '#f44336',
+                            fontSize: '0.875rem'
                         }}>
+                            {loginError}
+                        </div>
+                    )}
+
+                    {/* Homepage - visible to everyone when not logged in */}
+                    {!isLoggedIn && (
+                    <div style={{
+                        maxWidth: '800px',
+                        margin: '0 auto',
+                        padding: '32px 24px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '32px'
+                    }}>
                             {/* The Story */}
                             <div className="material-card elevation-2" style={{
                                 padding: '32px',
