@@ -2185,7 +2185,7 @@
                     return;
                 }
 
-                const code = prompt('Enter your code:\n• Players: 0413 (submits bid for review)\n• Admin: Your admin code (creates task immediately)');
+                const code = prompt('Enter your code:\n• Players: Use your code (submits bid for review)\n• Admin: Use your admin code (creates task immediately)');
 
                 if (code === null) {
                     return; // User cancelled
@@ -2404,7 +2404,7 @@
 
             // Player accepts admin's counter-offer
             const acceptCounterOffer = async (bidId) => {
-                const code = prompt('Enter code 0413 to accept the counter-offer:');
+                const code = prompt('Enter your player code to accept the counter-offer:');
                 if (code !== '0413') {
                     if (code !== null) {
                         haptic('error');
