@@ -653,6 +653,20 @@
         // Changelog - Updates and Bug Fixes
         const CHANGELOG = [
             {
+                version: "2.6.0",
+                date: "Dec 7, 2024",
+                type: "feature",
+                changes: [
+                    "💚 Redesigned Custom Task system with player emoji selection",
+                    "Create custom tasks from dashboard with 'All' or individual player buttons",
+                    "Custom tasks glow green in both the form and Available Chores list",
+                    "Custom tasks automatically appear at the top of Available Chores",
+                    "Tasks available to all players when 'All' is selected",
+                    "Player-specific tasks when individual players are selected",
+                    "Moved custom task creation to dashboard bottom for easy access"
+                ]
+            },
+            {
                 version: "2.5.0",
                 date: "Dec 7, 2024",
                 type: "feature",
@@ -820,6 +834,12 @@
             const [bidPoints, setBidPoints] = useState('');
             const [bidDueDate, setBidDueDate] = useState('');
             const [selectedBidPlayerId, setSelectedBidPlayerId] = useState(null);
+
+            // Custom task form states (dashboard)
+            const [customTaskName, setCustomTaskName] = useState('');
+            const [customTaskPoints, setCustomTaskPoints] = useState('');
+            const [customTaskDueDate, setCustomTaskDueDate] = useState('');
+            const [selectedCustomTaskPlayers, setSelectedCustomTaskPlayers] = useState([]);
 
             // Pull to refresh states
             const [isPulling, setIsPulling] = useState(false);
@@ -2509,6 +2529,178 @@
                 }
             };
 
+            // Submit custom task from dashboard (supports multiple players or all)
+            const submitDashboardCustomTask = async () => {
+                if (!customTaskName.trim() || !customTaskPoints || customTaskPoints <= 0) {
+                    haptic('error');
+                    alert('Please enter a task name and point value');
+                    return;
+                }
+
+                if (selectedCustomTaskPlayers.length === 0) {
+                    haptic('error');
+                    alert('Please select at least one player or "All"');
+                    return;
+                }
+
+                const code = prompt('Enter your code:\n• Players: Submit bid for review\n• Admin: Create task immediately');
+
+                if (code === null) {
+                    return; // User cancelled
+                }
+
+                const isPlayerCode = code === '0413';
+                const isAdminCode = code === APPROVAL_CODE;
+
+                if (!isPlayerCode && !isAdminCode) {
+                    haptic('error');
+                    alert('❌ Invalid code');
+                    return;
+                }
+
+                // Determine which players this task is for
+                const isAllPlayers = selectedCustomTaskPlayers.includes('all');
+                const targetPlayers = isAllPlayers ? players : players.filter(p => selectedCustomTaskPlayers.includes(p.id));
+
+                if (isPlayerCode) {
+                    // Create bids for each selected player
+                    try {
+                        const bids = await Promise.all(
+                            targetPlayers.map(async (player) => {
+                                const { data, error } = await supabase
+                                    .from('chore_bids')
+                                    .insert([{
+                                        player_id: player.id,
+                                        chore_name: customTaskName,
+                                        proposed_points: parseInt(customTaskPoints),
+                                        due_date: customTaskDueDate || null,
+                                        status: 'pending'
+                                    }])
+                                    .select('*, players(name, avatar_url)')
+                                    .single();
+
+                                if (error) throw error;
+                                return data;
+                            })
+                        );
+
+                        setChoreBids(prev => [...bids, ...prev]);
+                        setCustomTaskName('');
+                        setCustomTaskPoints('');
+                        setCustomTaskDueDate('');
+                        setSelectedCustomTaskPlayers([]);
+                        haptic('success');
+                        alert(`✅ ${bids.length} task bid(s) submitted for admin review!`);
+                    } catch (error) {
+                        console.error('Error submitting bids:', error);
+                        haptic('error');
+                        alert(`Error submitting bids: ${error.message || 'Unknown error'}`);
+                    }
+                } else {
+                    // Admin creates task(s) immediately
+                    try {
+                        const description = customTaskDueDate ? JSON.stringify({ due_date: customTaskDueDate }) : null;
+
+                        if (isAllPlayers) {
+                            // Create one task available to everyone (no assigned_player_id)
+                            const { data, error } = await supabase
+                                .from('chores')
+                                .insert([{
+                                    name: customTaskName,
+                                    base_value: parseInt(customTaskPoints),
+                                    description: description,
+                                    icon: '⭐',
+                                    is_active: true,
+                                    max_per_day: 1,
+                                    assigned_player_id: null,
+                                    is_from_bid: false
+                                }])
+                                .select()
+                                .single();
+
+                            if (error) throw error;
+
+                            setChores(prev => [...prev, {
+                                id: data.id,
+                                name: data.name,
+                                points: data.base_value,
+                                icon: data.icon,
+                                max_per_day: data.max_per_day,
+                                description: data.description,
+                                assigned_player_id: null,
+                                is_from_bid: false
+                            }]);
+
+                            haptic('success');
+                            alert('✅ Custom task created for all players!');
+                        } else {
+                            // Create separate task for each selected player
+                            const tasks = await Promise.all(
+                                targetPlayers.map(async (player) => {
+                                    const { data, error } = await supabase
+                                        .from('chores')
+                                        .insert([{
+                                            name: customTaskName,
+                                            base_value: parseInt(customTaskPoints),
+                                            description: description,
+                                            icon: '⭐',
+                                            is_active: true,
+                                            max_per_day: 1,
+                                            assigned_player_id: player.id,
+                                            is_from_bid: false
+                                        }])
+                                        .select()
+                                        .single();
+
+                                    if (error) throw error;
+                                    return {
+                                        id: data.id,
+                                        name: data.name,
+                                        points: data.base_value,
+                                        icon: data.icon,
+                                        max_per_day: data.max_per_day,
+                                        description: data.description,
+                                        assigned_player_id: data.assigned_player_id,
+                                        is_from_bid: false
+                                    };
+                                })
+                            );
+
+                            setChores(prev => [...prev, ...tasks]);
+                            haptic('success');
+                            alert(`✅ ${tasks.length} custom task(s) created!`);
+                        }
+
+                        setCustomTaskName('');
+                        setCustomTaskPoints('');
+                        setCustomTaskDueDate('');
+                        setSelectedCustomTaskPlayers([]);
+                    } catch (error) {
+                        console.error('Error creating tasks:', error);
+                        haptic('error');
+                        alert(`Error creating tasks: ${error.message || 'Unknown error'}`);
+                    }
+                }
+            };
+
+            // Toggle player selection for custom task
+            const toggleCustomTaskPlayer = (playerId) => {
+                if (playerId === 'all') {
+                    setSelectedCustomTaskPlayers(prev =>
+                        prev.includes('all') ? [] : ['all']
+                    );
+                } else {
+                    setSelectedCustomTaskPlayers(prev => {
+                        const filtered = prev.filter(id => id !== 'all');
+                        if (filtered.includes(playerId)) {
+                            return filtered.filter(id => id !== playerId);
+                        } else {
+                            return [...filtered, playerId];
+                        }
+                    });
+                }
+            };
+
             const payoutDate = getLastFridayOfMonth();
 
             if (loading) {
@@ -3870,127 +4062,6 @@
                                         </div>
                                     );
                                 })()}
-                            </div>
-
-                            {/* Unified Custom Task Menu */}
-                            <div className="material-card elevation-1 player-bid-glow" style={{
-                                padding: '16px',
-                                background: theme.cardBg,
-                                marginBottom: '16px'
-                            }}>
-                                <h2 style={{
-                                    fontSize: '1.25rem',
-                                    fontWeight: '500',
-                                    marginBottom: '12px',
-                                    color: theme.cardText
-                                }}>
-                                    💚 Custom Task for {selectedPlayer.name}
-                                </h2>
-                                <p style={{
-                                    fontSize: '0.875rem',
-                                    color: theme.textSecondary,
-                                    marginBottom: '16px',
-                                    lineHeight: '1.5'
-                                }}>
-                                    <strong>Players (Code 0413):</strong> Submit a bid for admin review<br />
-                                    <strong>Admin (Your Code):</strong> Create task immediately
-                                </p>
-
-                                {showBidForm ? (
-                                    <div>
-                                        <input
-                                            type="text"
-                                            placeholder="Task name (e.g., Clean garage)"
-                                            value={bidChoreName}
-                                            onChange={(e) => setBidChoreName(e.target.value)}
-                                            maxLength={100}
-                                            className="material-input"
-                                            style={{
-                                                marginBottom: '12px',
-                                                background: theme.surface,
-                                                borderColor: theme.outline,
-                                                color: theme.text
-                                            }}
-                                        />
-                                        <input
-                                            type="number"
-                                            placeholder="Points you're asking for"
-                                            value={bidPoints}
-                                            onChange={(e) => {
-                                                const value = parseInt(e.target.value) || 0;
-                                                setBidPoints(Math.max(1, Math.min(10000, value)));
-                                            }}
-                                            min="1"
-                                            max="10000"
-                                            step="25"
-                                            className="material-input"
-                                            style={{
-                                                marginBottom: '12px',
-                                                background: theme.surface,
-                                                borderColor: theme.outline,
-                                                color: theme.text
-                                            }}
-                                        />
-                                        <input
-                                            type="date"
-                                            placeholder="Due date (optional)"
-                                            value={bidDueDate}
-                                            onChange={(e) => setBidDueDate(e.target.value)}
-                                            className="material-input"
-                                            style={{
-                                                marginBottom: '12px',
-                                                background: theme.surface,
-                                                borderColor: theme.outline,
-                                                color: theme.text
-                                            }}
-                                        />
-                                        <div style={{ display: 'flex', gap: '8px' }}>
-                                            <button
-                                                className="material-button ripple"
-                                                onClick={submitUnifiedCustomTask}
-                                                disabled={!bidChoreName.trim() || !bidPoints || bidPoints <= 0}
-                                                style={{
-                                                    flex: 1,
-                                                    background: (!bidChoreName.trim() || !bidPoints || bidPoints <= 0)
-                                                        ? theme.outline
-                                                        : '#4CAF50',
-                                                    color: '#FFFFFF',
-                                                    opacity: (!bidChoreName.trim() || !bidPoints || bidPoints <= 0) ? 0.5 : 1,
-                                                    cursor: (!bidChoreName.trim() || !bidPoints || bidPoints <= 0) ? 'not-allowed' : 'pointer'
-                                                }}
-                                            >
-                                                Submit Custom Task
-                                            </button>
-                                            <button
-                                                className="material-button ripple"
-                                                onClick={() => {
-                                                    setShowBidForm(false);
-                                                    setBidChoreName('');
-                                                    setBidPoints('');
-                                                    setBidDueDate('');
-                                                }}
-                                                style={{
-                                                    background: theme.outline,
-                                                    color: theme.text
-                                                }}
-                                            >
-                                                Cancel
-                                            </button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <button
-                                        className="material-button ripple"
-                                        onClick={() => setShowBidForm(true)}
-                                        style={{
-                                            width: '100%',
-                                            background: '#4CAF50',
-                                            color: '#FFFFFF'
-                                        }}
-                                    >
-                                        + Create Custom Task
-                                    </button>
-                                )}
                             </div>
 
                             {/* Player's Bids */}
@@ -5421,14 +5492,10 @@
                                 }).map((chore, idx) => {
                                     const isCustomTask = chore.icon === '⭐';
                                     return (
-                                    <div key={chore.id || idx} className="material-card elevation-1" style={{
+                                    <div key={chore.id || idx} className={`material-card elevation-1 ${isCustomTask ? 'player-bid-glow' : ''}`} style={{
                                         marginBottom: '6px',
                                         overflow: 'hidden',
-                                        background: theme.cardBg,
-                                        border: isCustomTask ? `2px solid ${theme.accent}` : 'none',
-                                        boxShadow: isCustomTask
-                                            ? `0 0 12px ${darkMode ? 'rgba(18, 10, 204, 0.3)' : 'rgba(235, 112, 30, 0.3)'}, 0 2px 8px 0 rgba(0,0,0,.1)`
-                                            : undefined
+                                        background: theme.cardBg
                                     }}>
                                         <div style={{ padding: '8px' }}>
                                             <div style={{
@@ -6034,7 +6101,7 @@
                             </div>
                         </div>
 
-                        {/* Custom Task Info */}
+                        {/* Custom Task */}
                         <div>
                             <div style={{
                                 fontSize: '0.6875rem',
@@ -6045,50 +6112,151 @@
                                 color: theme.textSecondary,
                                 paddingLeft: '8px'
                             }}>
-                                💚 Custom Tasks
+                                Custom Task
                             </div>
                             <div className="material-card elevation-1 player-bid-glow" style={{
-                                padding: '20px',
+                                padding: '16px',
                                 background: theme.cardBg,
-                                marginBottom: '16px',
-                                textAlign: 'center'
+                                marginBottom: '16px'
                             }}>
+                                <input
+                                    type="text"
+                                    placeholder="Task name"
+                                    value={customTaskName}
+                                    onChange={(e) => setCustomTaskName(e.target.value)}
+                                    maxLength={100}
+                                    className="material-input"
+                                    style={{
+                                        marginBottom: '12px',
+                                        background: theme.surface,
+                                        borderColor: theme.outline,
+                                        color: theme.text
+                                    }}
+                                />
+                                <input
+                                    type="number"
+                                    placeholder="Points"
+                                    value={customTaskPoints}
+                                    onChange={(e) => {
+                                        const value = parseInt(e.target.value) || 0;
+                                        setCustomTaskPoints(Math.max(1, Math.min(10000, value)));
+                                    }}
+                                    min="1"
+                                    max="10000"
+                                    step="25"
+                                    className="material-input"
+                                    style={{
+                                        marginBottom: '12px',
+                                        background: theme.surface,
+                                        borderColor: theme.outline,
+                                        color: theme.text
+                                    }}
+                                />
+                                <input
+                                    type="date"
+                                    placeholder="Due date (optional)"
+                                    value={customTaskDueDate}
+                                    onChange={(e) => setCustomTaskDueDate(e.target.value)}
+                                    className="material-input"
+                                    style={{
+                                        marginBottom: '16px',
+                                        background: theme.surface,
+                                        borderColor: theme.outline,
+                                        color: theme.text
+                                    }}
+                                />
+
+                                {/* Player Selection */}
                                 <div style={{
-                                    fontSize: '2.5rem',
                                     marginBottom: '12px'
                                 }}>
-                                    💚
+                                    <div style={{
+                                        fontSize: '0.875rem',
+                                        fontWeight: '500',
+                                        marginBottom: '8px',
+                                        color: theme.cardText
+                                    }}>
+                                        Select Players:
+                                    </div>
+                                    <div style={{
+                                        display: 'flex',
+                                        flexWrap: 'wrap',
+                                        gap: '8px'
+                                    }}>
+                                        {/* All button */}
+                                        <button
+                                            type="button"
+                                            onClick={() => toggleCustomTaskPlayer('all')}
+                                            className="ripple"
+                                            style={{
+                                                padding: '10px 16px',
+                                                borderRadius: '12px',
+                                                border: selectedCustomTaskPlayers.includes('all')
+                                                    ? '2px solid #4CAF50'
+                                                    : `2px solid ${theme.outline}`,
+                                                background: selectedCustomTaskPlayers.includes('all')
+                                                    ? 'rgba(76, 175, 80, 0.15)'
+                                                    : theme.surface,
+                                                color: selectedCustomTaskPlayers.includes('all')
+                                                    ? '#4CAF50'
+                                                    : theme.cardText,
+                                                fontSize: '0.875rem',
+                                                fontWeight: '600',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            👥 All
+                                        </button>
+
+                                        {/* Individual player buttons */}
+                                        {players.map(player => (
+                                            <button
+                                                key={player.id}
+                                                type="button"
+                                                onClick={() => toggleCustomTaskPlayer(player.id)}
+                                                disabled={selectedCustomTaskPlayers.includes('all')}
+                                                className="ripple"
+                                                style={{
+                                                    padding: '10px',
+                                                    borderRadius: '12px',
+                                                    border: selectedCustomTaskPlayers.includes(player.id)
+                                                        ? '2px solid #4CAF50'
+                                                        : `2px solid ${theme.outline}`,
+                                                    background: selectedCustomTaskPlayers.includes(player.id)
+                                                        ? 'rgba(76, 175, 80, 0.15)'
+                                                        : theme.surface,
+                                                    fontSize: '1.5rem',
+                                                    cursor: selectedCustomTaskPlayers.includes('all') ? 'not-allowed' : 'pointer',
+                                                    opacity: selectedCustomTaskPlayers.includes('all') ? 0.5 : 1,
+                                                    transition: 'all 0.2s',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px'
+                                                }}
+                                            >
+                                                {player.avatar}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
-                                <h3 style={{
-                                    fontSize: '1.125rem',
-                                    fontWeight: '600',
-                                    marginBottom: '12px',
-                                    color: theme.cardText
-                                }}>
-                                    Unified Custom Task Menu
-                                </h3>
-                                <p style={{
-                                    fontSize: '0.875rem',
-                                    color: theme.textSecondary,
-                                    lineHeight: '1.6',
-                                    marginBottom: '16px'
-                                }}>
-                                    To create custom tasks, click on a player's avatar to view their profile.
-                                </p>
-                                <div style={{
-                                    padding: '12px',
-                                    background: darkMode ? 'rgba(76, 175, 80, 0.1)' : 'rgba(76, 175, 80, 0.05)',
-                                    borderRadius: '8px',
-                                    fontSize: '0.8125rem',
-                                    color: theme.textSecondary,
-                                    textAlign: 'left',
-                                    lineHeight: '1.6'
-                                }}>
-                                    <strong style={{ color: '#4CAF50' }}>Players (Code 0413):</strong><br />
-                                    Submit bid for admin review<br /><br />
-                                    <strong style={{ color: '#4CAF50' }}>Admin (Your Code):</strong><br />
-                                    Create task immediately
-                                </div>
+
+                                <button
+                                    className="material-button ripple"
+                                    onClick={submitDashboardCustomTask}
+                                    disabled={!customTaskName.trim() || !customTaskPoints || customTaskPoints <= 0 || selectedCustomTaskPlayers.length === 0}
+                                    style={{
+                                        width: '100%',
+                                        background: (!customTaskName.trim() || !customTaskPoints || customTaskPoints <= 0 || selectedCustomTaskPlayers.length === 0)
+                                            ? theme.outline
+                                            : '#4CAF50',
+                                        color: '#FFFFFF',
+                                        opacity: (!customTaskName.trim() || !customTaskPoints || customTaskPoints <= 0 || selectedCustomTaskPlayers.length === 0) ? 0.5 : 1,
+                                        cursor: (!customTaskName.trim() || !customTaskPoints || customTaskPoints <= 0 || selectedCustomTaskPlayers.length === 0) ? 'not-allowed' : 'pointer'
+                                    }}
+                                >
+                                    Create Custom Task
+                                </button>
                             </div>
                         </div>
 
