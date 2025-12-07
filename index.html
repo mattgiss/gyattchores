@@ -4821,37 +4821,12 @@
                             gap: '32px',
                             alignItems: 'start'
                         }}>
-                            {/* Left Column - Built in 3 Days + Full Changelog */}
+                            {/* Left Column - Full Changelog */}
                             <div style={{
                                 display: 'flex',
                                 flexDirection: 'column',
                                 gap: '24px'
                             }}>
-                                {/* Built in 3 Days Header */}
-                                <div className="material-card elevation-2" style={{
-                                    padding: '32px',
-                                    background: darkMode ? '#1E1E1E' : '#FFFFFF',
-                                    borderRadius: '16px'
-                                }}>
-                                    <h2 style={{
-                                        fontSize: '2rem',
-                                        fontWeight: '600',
-                                        margin: '0 0 16px 0',
-                                        color: darkMode ? '#E0E0E0' : '#202124',
-                                        lineHeight: '1.2'
-                                    }}>
-                                        📖 Built in 3 Days with My Kids
-                                    </h2>
-                                    <p style={{
-                                        fontSize: '1rem',
-                                        lineHeight: '1.6',
-                                        margin: 0,
-                                        color: darkMode ? '#B0B0B0' : '#5F6368'
-                                    }}>
-                                        We built this app together over a weekend. My kids helped design the point system, cooldown timers, and the GOAT competition while I coded it. It's a work in progress—just our family building something for ourselves.
-                                    </p>
-                                </div>
-
                                 {/* What's New - Full Changelog */}
                                 <div className="material-card elevation-2" style={{
                                     padding: '32px',
@@ -5011,6 +4986,27 @@
                                 position: window.innerWidth > 900 ? 'sticky' : 'relative',
                                 top: window.innerWidth > 900 ? '88px' : '0'
                             }}>
+                                {/* Built in 3 Days Header */}
+                                <h2 style={{
+                                    fontSize: '2rem',
+                                    fontWeight: '600',
+                                    margin: '0 0 16px 0',
+                                    color: darkMode ? '#E0E0E0' : '#202124',
+                                    lineHeight: '1.2'
+                                }}>
+                                    📖 Built in 3 Days with My Kids
+                                </h2>
+                                <p style={{
+                                    fontSize: '1rem',
+                                    lineHeight: '1.6',
+                                    margin: '0 0 32px 0',
+                                    color: darkMode ? '#B0B0B0' : '#5F6368',
+                                    paddingBottom: '32px',
+                                    borderBottom: `1px solid ${darkMode ? '#333' : '#E0E0E0'}`
+                                }}>
+                                    We built this app together over a weekend. My kids helped design the point system, cooldown timers, and the GOAT competition while I coded it. It's a work in progress—just our family building something for ourselves.
+                                </p>
+
                                 <h2 style={{
                                     fontSize: '1.5rem',
                                     fontWeight: '600',
