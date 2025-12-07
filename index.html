@@ -815,6 +815,7 @@
             const [activityLogs, setActivityLogs] = useState([]);
             const [approvedChores, setApprovedChores] = useState([]);
             const [editChoreFilter, setEditChoreFilter] = useState({ playerId: '', startDate: '', endDate: '', status: '' });
+            const [activeLogTab, setActiveLogTab] = useState('errors'); // 'errors' or 'activity'
 
             // Bonus system states
             const [playerBonuses, setPlayerBonuses] = useState({});
@@ -3082,12 +3083,11 @@
                                 </button>
                             </div>
 
-                            {/* Error Logs & Security */}
+                            {/* Combined Logs Section */}
                             <div className="material-card elevation-1" style={{
                                 padding: '20px',
                                 background: theme.cardBg,
-                                marginBottom: '24px',
-                                border: '2px solid #EF5350'
+                                marginBottom: '24px'
                             }}>
                                 <h2 style={{
                                     fontSize: '1.125rem',
@@ -3095,8 +3095,48 @@
                                     marginBottom: '16px',
                                     color: theme.cardText
                                 }}>
-                                    🔒 Security & Error Logs
+                                    📊 System Logs
                                 </h2>
+
+                                {/* Tab Buttons */}
+                                <div style={{
+                                    display: 'flex',
+                                    gap: '8px',
+                                    marginBottom: '16px',
+                                    borderBottom: `2px solid ${theme.outline}`,
+                                    paddingBottom: '8px'
+                                }}>
+                                    <button
+                                        className="material-button ripple"
+                                        onClick={() => setActiveLogTab('errors')}
+                                        style={{
+                                            background: activeLogTab === 'errors' ? theme.primary : 'transparent',
+                                            color: activeLogTab === 'errors' ? theme.onPrimary : theme.text,
+                                            padding: '8px 16px',
+                                            fontSize: '0.875rem',
+                                            border: activeLogTab === 'errors' ? 'none' : `1px solid ${theme.outline}`
+                                        }}
+                                    >
+                                        🔒 Error Logs
+                                    </button>
+                                    <button
+                                        className="material-button ripple"
+                                        onClick={() => setActiveLogTab('activity')}
+                                        style={{
+                                            background: activeLogTab === 'activity' ? theme.primary : 'transparent',
+                                            color: activeLogTab === 'activity' ? theme.onPrimary : theme.text,
+                                            padding: '8px 16px',
+                                            fontSize: '0.875rem',
+                                            border: activeLogTab === 'activity' ? 'none' : `1px solid ${theme.outline}`
+                                        }}
+                                    >
+                                        📝 Activity Logs
+                                    </button>
+                                </div>
+
+                                {/* Error Logs Tab Content */}
+                                {activeLogTab === 'errors' && (
+                                    <div>
 
                                 {/* Error Statistics */}
                                 {errorStats.length > 0 && (
@@ -3248,24 +3288,12 @@
                                         ))}
                                     </div>
                                 )}
-                            </div>
+                                    </div>
+                                )}
 
-                            {/* Admin Activity Logs */}
-                            <div className="material-card elevation-1" style={{
-                                padding: '20px',
-                                background: theme.cardBg,
-                                marginBottom: '24px',
-                                border: `2px solid ${theme.primary}`
-                            }}>
-                                <h2 style={{
-                                    fontSize: '1.125rem',
-                                    fontWeight: '500',
-                                    marginBottom: '16px',
-                                    color: theme.cardText
-                                }}>
-                                    📝 Admin Activity Logs
-                                </h2>
-
+                                {/* Activity Logs Tab Content */}
+                                {activeLogTab === 'activity' && (
+                                    <div>
                                 <div style={{
                                     fontSize: '0.875rem',
                                     fontWeight: '600',
@@ -3366,6 +3394,8 @@
                                                 )}
                                             </div>
                                         ))}
+                                    </div>
+                                )}
                                     </div>
                                 )}
                             </div>
