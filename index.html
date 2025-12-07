@@ -771,8 +771,10 @@
                 return hour < 6 || hour >= 18;
             };
 
-            // Force login on each page load
-            const [isLoggedIn, setIsLoggedIn] = useState(false);
+            // Temporarily allow session persistence for testing
+            const [isLoggedIn, setIsLoggedIn] = useState(() => {
+                return localStorage.getItem('gyatt_session') === 'active';
+            });
             const [darkMode, setDarkMode] = useState(getInitialDarkMode);
             const [loading, setLoading] = useState(true);
             const [players, setPlayers] = useState([]);
@@ -1005,16 +1007,24 @@
                     const weekStartDate = monday.toISOString().split('T')[0];
 
                     // Check if we've already reset this week
-                    const { data: resetData } = await supabase
-                        .from('weekly_resets')
-                        .select('*')
-                        .eq('week_start_date', weekStartDate)
-                        .single();
+                    try {
+                        const { data: resetData, error: resetError } = await supabase
+                            .from('weekly_resets')
+                            .select('*')
+                            .eq('week_start_date', weekStartDate)
+                            .maybeSingle();
 
-                    // If no reset record for this week exists, we need to reset
-                    if (!resetData) {
-                        setNeedsWeeklyReset(true);
-                        setCurrentWeekStart(weekStartDate);
+                        // If error (like 406), table might not exist - skip weekly reset check
+                        if (!resetError) {
+                            // If no reset record for this week exists, we need to reset
+                            if (!resetData) {
+                                setNeedsWeeklyReset(true);
+                                setCurrentWeekStart(weekStartDate);
+                            }
+                        }
+                    } catch (err) {
+                        // Silently handle weekly_resets table not existing
+                        console.log('Weekly resets table not available:', err);
                     }
 
                     // Load players
@@ -1806,6 +1816,15 @@
             // Add backfill chore entry
             const addBackfillChore = async (playerId, choreId, date, points) => {
                 try {
+                    // Fetch player and chore details for logging
+                    const player = players.find(p => p.id === playerId);
+                    const chore = chores.find(c => c.id === choreId);
+
+                    if (!player || !chore) {
+                        throw new Error('Player or chore not found');
+                    }
+
+                    // Insert the backfill entry
                     const { error } = await supabase
                         .from('chore_completions')
                         .insert([{
@@ -1813,18 +1832,54 @@
                             chore_id: choreId,
                             completed_date: date,
                             value_awarded: points,
-                            status: 'approved', // Auto-approve backfilled entries
-                            completed_at: new Date().toISOString()
+                            status: 'approved' // Auto-approve backfilled entries
+                            // Note: completed_at will be set by database default
                         }]);
 
                     if (error) throw error;
 
-                    haptic('success');
-                    alert('✅ Backfill entry added!');
+                    // Update player stats
+                    await updatePlayerStats(playerId, date, points);
+
+                    // Log to admin activity logs
+                    await supabase
+                        .from('admin_activity_logs')
+                        .insert([{
+                            activity_type: 'backfill_entry',
+                            player_id: playerId,
+                            old_value: null,
+                            new_value: `${chore.name} - ${points} pts`,
+                            description: `Backfill entry added for ${player.name}: ${chore.name} (${points} pts) on ${date}`
+                        }]);
+
+                    // Reload all data to ensure everything is in sync BEFORE showing alert
                     await loadAllCompletions();
                     await loadData();
+                    await loadMonthlyChores();
+
+                    // Refresh player profile if currently viewing any player
+                    if (showProfile && selectedPlayer) {
+                        await loadPlayerProfile(selectedPlayer.id);
+                    }
+
+                    // Show success AFTER all data is reloaded
+                    haptic('success');
+                    alert('✅ Backfill entry added!');
                 } catch (error) {
                     console.error('Error adding backfill:', error);
+
+                    // Log error to console (could be extended to error_logs table if needed)
+                    await supabase
+                        .from('admin_activity_logs')
+                        .insert([{
+                            activity_type: 'other',
+                            player_id: playerId,
+                            old_value: null,
+                            new_value: null,
+                            description: `ERROR: Failed to add backfill entry - ${error.message || 'Unknown error'}`
+                        }])
+                        .catch(logError => console.error('Failed to log error:', logError));
+
                     haptic('error');
                     alert(`Error adding backfill: ${error.message || 'Unknown error'}`);
                 }
@@ -1930,6 +1985,13 @@
                     return { available: false, hoursRemaining: 0, playerSpecific: true };
                 }
 
+                // Special case: "Take Trash to Curb" is always available on Sundays
+                const now = new Date();
+                const isSunday = now.getDay() === 0;
+                if (chore.name === 'Take Trash to Curb' && isSunday) {
+                    return { available: true, hoursRemaining: 0 };
+                }
+
                 // Find the most recent completion of this chore
                 // For single-claim chores (e.g., Feed Alfred), check if ANY player has done it
                 // For shared chores (e.g., Wash Dishes), check if THIS player has done it
@@ -1942,7 +2004,6 @@
                 }
 
                 const lastCompletedAt = new Date(lastCompletion.completed_at);
-                const now = new Date();
                 const hoursSinceCompletion = (now - lastCompletedAt) / (1000 * 60 * 60);
                 const cooldownHours = chore.cooldown_hours || 24;
 
@@ -2826,7 +2887,7 @@
                                         }}
                                     >
                                         <option value="">Select Player</option>
-                                        {players.map(player => (
+                                        {(players || []).map(player => (
                                             <option key={player.id} value={player.id}>
                                                 {player.name}
                                             </option>
@@ -3038,7 +3099,7 @@
                                                         fontSize: '0.75rem',
                                                         color: theme.textSecondary
                                                     }}>
-                                                        {new Date(log.logged_at).toLocaleString()}
+                                                        {log.logged_at ? new Date(log.logged_at).toLocaleString() : 'N/A'}
                                                     </div>
                                                 </div>
 
@@ -3169,7 +3230,7 @@
                                                         fontSize: '0.75rem',
                                                         color: theme.textSecondary
                                                     }}>
-                                                        {new Date(log.logged_at).toLocaleString()}
+                                                        {log.logged_at ? new Date(log.logged_at).toLocaleString() : 'N/A'}
                                                     </div>
                                                 </div>
 
@@ -3318,7 +3379,7 @@
                                                             color: theme.textSecondary,
                                                             marginTop: '4px'
                                                         }}>
-                                                            {new Date(bid.created_at).toLocaleString()}
+                                                            {bid.created_at ? new Date(bid.created_at).toLocaleString() : 'N/A'}
                                                         </div>
                                                         {bid.status === 'counter_offered' && (
                                                             <div style={{
@@ -3813,7 +3874,7 @@
                                         fontWeight: '600',
                                         color: theme.primary
                                     }}>
-                                        {selectedPlayer.points.toLocaleString()}
+                                        {(typeof selectedPlayer?.points === 'number' ? selectedPlayer.points : 0).toLocaleString()}
                                     </div>
                                     <div style={{ fontSize: '0.875rem', color: theme.textSecondary }}>points</div>
                                 </div>
@@ -3838,7 +3899,7 @@
                                         fontWeight: '600',
                                         color: theme.accent
                                     }}>
-                                        {(selectedPlayer.best_week_total || 0).toLocaleString()}
+                                        {(typeof selectedPlayer?.best_week_total === 'number' ? selectedPlayer.best_week_total : 0).toLocaleString()}
                                     </div>
                                     <div style={{ fontSize: '0.875rem', color: theme.textSecondary }}>points</div>
                                 </div>
@@ -3929,7 +3990,7 @@
                                                     borderRadius: '6px'
                                                 }}>
                                                     <div style={{ fontSize: '0.875rem', color: theme.cardText }}>
-                                                        <strong>Tier {tier.tier}:</strong> {tier.points.toLocaleString()} pts @ {tier.rate}
+                                                        <strong>Tier {tier.tier}:</strong> {(typeof tier.points === 'number' ? tier.points : 0).toLocaleString()} pts @ {tier.rate}
                                                     </div>
                                                     <div style={{
                                                         fontSize: '0.875rem',
@@ -5088,7 +5149,12 @@
                                     fontSize: '0.875rem',
                                     color: theme.textSecondary
                                 }}>
-                                    {weeklyGoats[0].weekly_total.toLocaleString()} points
+                                    {(() => {
+                                        const goat = weeklyGoats[0];
+                                        const points = typeof goat?.weekly_total === 'number' ? goat.weekly_total :
+                                                      typeof goat?.points === 'number' ? goat.points : 0;
+                                        return points.toLocaleString();
+                                    })()} points
                                 </div>
                             </div>
                         )}
@@ -5109,7 +5175,7 @@
                             }}>
                                 Players
                             </div>
-                            {players.map(player => (
+                            {(players || []).filter(player => player && player.id).map(player => (
                                 <div key={player.id} className="material-card elevation-1" style={{
                                     padding: '12px',
                                     marginBottom: '8px',
@@ -5238,7 +5304,8 @@
                                                 {player.completedChores} chores
                                             </div>
                                             {(() => {
-                                                const pendingCount = pendingChores.filter(c => c.playerId === player.id).length;
+                                                if (!pendingChores || !player?.id) return null;
+                                                const pendingCount = pendingChores.filter(c => c?.playerId === player.id).length;
                                                 if (pendingCount > 0) {
                                                     return (
                                                         <div style={{
@@ -5250,6 +5317,7 @@
                                                         </div>
                                                     );
                                                 }
+                                                return null;
                                             })()}
                                             {isGoat(player.id) && (
                                                 <div className="chip" style={{
@@ -5276,7 +5344,7 @@
                                         fontWeight: '500',
                                         fontSize: '0.75rem'
                                     }}>
-                                        {player.points.toLocaleString()} pts
+                                        {(typeof player?.points === 'number' ? player.points : 0).toLocaleString()} pts
                                     </div>
 
                                     {player.completedChores >= 5 && (
@@ -5296,7 +5364,7 @@
                                             color: theme.textSecondary,
                                             marginTop: '4px'
                                         }}>
-                                            🚀 Best: {(player.best_week_total || 0).toLocaleString()} pts
+                                            🚀 Best: {(typeof player?.best_week_total === 'number' ? player.best_week_total : 0).toLocaleString()} pts
                                         </div>
                                     )}
 
@@ -5414,7 +5482,12 @@
                                         color: theme.textSecondary,
                                         marginTop: '4px'
                                     }}>
-                                        {lastWeekGoat[0].weekly_total.toLocaleString()} points
+                                        {(() => {
+                                            const goat = lastWeekGoat[0];
+                                            const points = typeof goat?.weekly_total === 'number' ? goat.weekly_total :
+                                                          typeof goat?.points === 'number' ? goat.points : 0;
+                                            return points.toLocaleString();
+                                        })()} points
                                     </div>
                                 </div>
                             )}
@@ -6267,7 +6340,7 @@
                                         </button>
 
                                         {/* Individual player buttons */}
-                                        {players.map(player => (
+                                        {(players || []).map(player => (
                                             <button
                                                 key={player.id}
                                                 type="button"

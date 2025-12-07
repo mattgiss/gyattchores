@@ -1,0 +1,52 @@
+-- Create chore_bids table for custom task bidding system
+-- This enables players to propose custom tasks with code 0413
+
+-- Create chore_bids table
+CREATE TABLE IF NOT EXISTS chore_bids (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    player_id UUID NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+    chore_name TEXT NOT NULL,
+    proposed_points INTEGER NOT NULL,
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'rejected', 'counter_offered', 'completed')),
+    admin_counter_points INTEGER,
+    admin_notes TEXT,
+    due_date DATE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Add assigned_player_id to chores table (for player-specific tasks)
+ALTER TABLE chores
+ADD COLUMN IF NOT EXISTS assigned_player_id UUID REFERENCES players(id) ON DELETE CASCADE;
+
+-- Add is_from_bid flag to chores table
+ALTER TABLE chores
+ADD COLUMN IF NOT EXISTS is_from_bid BOOLEAN DEFAULT FALSE;
+
+-- Create indexes for performance
+CREATE INDEX IF NOT EXISTS idx_chore_bids_player ON chore_bids(player_id);
+CREATE INDEX IF NOT EXISTS idx_chore_bids_status ON chore_bids(status);
+CREATE INDEX IF NOT EXISTS idx_chores_assigned_player ON chores(assigned_player_id);
+
+-- Enable RLS
+ALTER TABLE chore_bids ENABLE ROW LEVEL SECURITY;
+
+-- Create RLS policy
+DROP POLICY IF EXISTS "Allow all access to chore_bids" ON chore_bids;
+CREATE POLICY "Allow all access to chore_bids"
+    ON chore_bids
+    FOR ALL
+    USING (true)
+    WITH CHECK (true);
+
+-- Grant permissions
+GRANT ALL ON chore_bids TO authenticated, anon;
+
+-- Add comments
+COMMENT ON TABLE chore_bids IS 'Player-proposed custom tasks awaiting admin review';
+COMMENT ON COLUMN chores.assigned_player_id IS 'If set, this chore is only available to this specific player';
+COMMENT ON COLUMN chores.is_from_bid IS 'True if this chore was created from an accepted player bid';
+
+-- Verify
+SELECT 'chore_bids table created' as status;
+SELECT COUNT(*) as column_count FROM information_schema.columns WHERE table_name = 'chore_bids';
