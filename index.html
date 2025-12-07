@@ -1144,9 +1144,13 @@
                     setAllCompletions(allCompletionsData || []);
 
                     // Get current week's GOAT(s)
-                    const { data: goatData } = await supabase
+                    const { data: goatData, error: goatError } = await supabase
                         .rpc('get_weekly_goat');
 
+                    if (goatError) {
+                        console.error('Error fetching weekly GOAT:', goatError);
+                    }
+                    console.log('Weekly GOAT data:', goatData);
                     setWeeklyGoats(goatData || []);
 
                     // Load achievements data
@@ -5144,7 +5148,7 @@
                                     color: '#FFD700',
                                     marginBottom: '4px'
                                 }}>
-                                    {weeklyGoats.map(g => g.player_name).join(' & ')}
+                                    {weeklyGoats.map(g => g.player_name || g.name || 'Unknown').join(' & ')}
                                 </div>
                                 <div style={{
                                     fontSize: '0.875rem',
