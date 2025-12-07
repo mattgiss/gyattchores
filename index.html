@@ -281,6 +281,17 @@
             }
         }
 
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.7;
+                transform: scale(1.1);
+            }
+        }
+
         .player-bid-glow {
             animation: greenGlow 2s ease-in-out infinite;
             border: 2px solid #4CAF50 !important;
@@ -4820,6 +4831,94 @@
                             flexDirection: 'column',
                             gap: '32px'
                         }}>
+                            {/* The Story */}
+                            <div className="material-card elevation-2" style={{
+                                padding: '32px',
+                                background: darkMode ? '#1E1E1E' : '#FFFFFF',
+                                borderRadius: '16px',
+                                textAlign: 'center',
+                                position: 'relative'
+                            }}>
+                                {/* Status Orb */}
+                                <div style={{
+                                    position: 'absolute',
+                                    top: '20px',
+                                    right: '20px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '8px 16px',
+                                    background: darkMode ? 'rgba(76, 175, 80, 0.15)' : 'rgba(76, 175, 80, 0.1)',
+                                    borderRadius: '20px',
+                                    border: `1px solid ${darkMode ? '#4CAF50' : '#66BB6A'}`
+                                }}>
+                                    <div style={{
+                                        width: '10px',
+                                        height: '10px',
+                                        borderRadius: '50%',
+                                        background: '#4CAF50',
+                                        boxShadow: '0 0 8px rgba(76, 175, 80, 0.6)',
+                                        animation: 'pulse 2s ease-in-out infinite'
+                                    }}></div>
+                                    <span style={{
+                                        fontSize: '0.75rem',
+                                        fontWeight: '600',
+                                        color: darkMode ? '#81C784' : '#4CAF50',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.5px'
+                                    }}>
+                                        Online
+                                    </span>
+                                </div>
+
+                                <h2 style={{
+                                    fontSize: '1.5rem',
+                                    fontWeight: '600',
+                                    margin: '0 0 24px 0',
+                                    color: darkMode ? '#E0E0E0' : '#202124'
+                                }}>
+                                    The Story
+                                </h2>
+
+                                <p style={{
+                                    fontSize: '1.125rem',
+                                    fontWeight: '600',
+                                    lineHeight: '1.6',
+                                    margin: '0 0 20px 0',
+                                    color: darkMode ? '#47B2C4' : '#1a73e8'
+                                }}>
+                                    🏠 Made by a Family, for Our Family
+                                </p>
+
+                                <p style={{
+                                    fontSize: '1rem',
+                                    lineHeight: '1.7',
+                                    margin: '0 0 16px 0',
+                                    color: darkMode ? '#B0B0B0' : '#5F6368'
+                                }}>
+                                    3 days. 2 kids. 1 goal: make chores suck less.
+                                </p>
+
+                                <p style={{
+                                    fontSize: '1rem',
+                                    lineHeight: '1.7',
+                                    margin: '0 0 16px 0',
+                                    color: darkMode ? '#B0B0B0' : '#5F6368'
+                                }}>
+                                    My kids designed the rules. I wrote the code. Now we compete for GOAT status every week and nobody argues about whose turn it is to take out the trash.
+                                </p>
+
+                                <p style={{
+                                    fontSize: '1rem',
+                                    lineHeight: '1.7',
+                                    margin: 0,
+                                    color: darkMode ? '#B0B0B0' : '#5F6368',
+                                    fontStyle: 'italic'
+                                }}>
+                                    Still a work in progress. We find bugs at dinner and fix them after homework.
+                                </p>
+                            </div>
+
                                 {/* What's New - Full Changelog */}
                                 <div className="material-card elevation-2" style={{
                                     padding: '32px',
@@ -4968,61 +5067,6 @@
                                         </a>
                                     </div>
                                 </div>
-
-                            {/* The Story */}
-                            <div className="material-card elevation-2" style={{
-                                padding: '32px',
-                                background: darkMode ? '#1E1E1E' : '#FFFFFF',
-                                borderRadius: '16px',
-                                textAlign: 'center'
-                            }}>
-                                <h2 style={{
-                                    fontSize: '1.5rem',
-                                    fontWeight: '600',
-                                    margin: '0 0 24px 0',
-                                    color: darkMode ? '#E0E0E0' : '#202124'
-                                }}>
-                                    The Story
-                                </h2>
-
-                                <p style={{
-                                    fontSize: '1.125rem',
-                                    fontWeight: '600',
-                                    lineHeight: '1.6',
-                                    margin: '0 0 20px 0',
-                                    color: darkMode ? '#47B2C4' : '#1a73e8'
-                                }}>
-                                    🏠 Made by a Family, for Our Family
-                                </p>
-
-                                <p style={{
-                                    fontSize: '1rem',
-                                    lineHeight: '1.7',
-                                    margin: '0 0 16px 0',
-                                    color: darkMode ? '#B0B0B0' : '#5F6368'
-                                }}>
-                                    3 days. 2 kids. 1 goal: make chores suck less.
-                                </p>
-
-                                <p style={{
-                                    fontSize: '1rem',
-                                    lineHeight: '1.7',
-                                    margin: '0 0 16px 0',
-                                    color: darkMode ? '#B0B0B0' : '#5F6368'
-                                }}>
-                                    My kids designed the rules. I wrote the code. Now we compete for GOAT status every week and nobody argues about whose turn it is to take out the trash.
-                                </p>
-
-                                <p style={{
-                                    fontSize: '1rem',
-                                    lineHeight: '1.7',
-                                    margin: 0,
-                                    color: darkMode ? '#B0B0B0' : '#5F6368',
-                                    fontStyle: 'italic'
-                                }}>
-                                    Still a work in progress. We find bugs at dinner and fix them after homework.
-                                </p>
-                            </div>
                         </div>
                     </div>
                 );
