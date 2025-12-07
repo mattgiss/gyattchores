@@ -1877,6 +1877,19 @@
                         throw new Error('Player or chore not found');
                     }
 
+                    // Check for existing entry first
+                    const { data: existing } = await supabase
+                        .from('chore_completions')
+                        .select('id')
+                        .eq('player_id', playerId)
+                        .eq('chore_id', choreId)
+                        .eq('completed_date', date)
+                        .maybeSingle();
+
+                    if (existing) {
+                        throw new Error('This chore completion already exists for this date. Cannot add duplicate entry.');
+                    }
+
                     // Insert the backfill entry
                     const { error } = await supabase
                         .from('chore_completions')
@@ -1921,8 +1934,8 @@
                 } catch (error) {
                     console.error('Error adding backfill:', error);
 
-                    // Log error to console (could be extended to error_logs table if needed)
-                    await supabase
+                    // Log error to admin activity logs
+                    const { error: logError } = await supabase
                         .from('admin_activity_logs')
                         .insert([{
                             activity_type: 'other',
@@ -1930,8 +1943,11 @@
                             old_value: null,
                             new_value: null,
                             description: `ERROR: Failed to add backfill entry - ${error.message || 'Unknown error'}`
-                        }])
-                        .catch(logError => console.error('Failed to log error:', logError));
+                        }]);
+
+                    if (logError) {
+                        console.error('Failed to log error:', logError);
+                    }
 
                     haptic('error');
                     alert(`Error adding backfill: ${error.message || 'Unknown error'}`);
