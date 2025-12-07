@@ -46,7 +46,7 @@ const supabase = window.supabase.createClient(
 
 ```javascript
 const LOGIN_PASSWORD = "0413";  // Visible in browser source
-const APPROVAL_CODE = "1214";   // Visible in browser source
+const APPROVAL_CODE = "7874";   // Visible in browser source
 ```
 
 **Risk:** Passwords are visible in browser source code.

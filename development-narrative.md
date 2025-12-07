@@ -392,7 +392,7 @@ Anyone with DevTools could:
 
 ```javascript
 const LOGIN_PASSWORD = "0413";  // Visible in browser source
-const APPROVAL_CODE = "1214";   // Visible in browser source
+const APPROVAL_CODE = "7874";   // Visible in browser source
 ```
 
 These "passwords" provided zero security. View source, see password. Simple as that.
