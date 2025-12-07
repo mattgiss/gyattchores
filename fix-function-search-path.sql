@@ -2,7 +2,8 @@
 -- This sets an explicit search_path for SECURITY DEFINER functions to prevent privilege escalation
 
 -- Fix get_recent_error_logs
-CREATE OR REPLACE FUNCTION get_recent_error_logs(limit_count integer DEFAULT 50)
+DROP FUNCTION IF EXISTS get_recent_error_logs(integer);
+CREATE FUNCTION get_recent_error_logs(limit_count integer DEFAULT 50)
 RETURNS TABLE (
     id uuid,
     error_type text,
@@ -29,11 +30,12 @@ END;
 $$;
 
 -- Fix get_error_stats
-CREATE OR REPLACE FUNCTION get_error_stats()
+DROP FUNCTION IF EXISTS get_error_stats();
+CREATE FUNCTION get_error_stats()
 RETURNS TABLE (
     error_type text,
     count bigint,
-    last_occurred timestamp with time zone
+    latest_occurrence timestamp with time zone
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -43,16 +45,18 @@ BEGIN
     RETURN QUERY
     SELECT
         el.error_type,
-        COUNT(*)::bigint as count,
-        MAX(el.logged_at) as last_occurred
+        COUNT(*) as count,
+        MAX(el.logged_at) as latest_occurrence
     FROM error_logs el
+    WHERE el.logged_at >= NOW() - INTERVAL '7 days'
     GROUP BY el.error_type
     ORDER BY count DESC;
 END;
 $$;
 
 -- Fix get_weekly_totals
-CREATE OR REPLACE FUNCTION get_weekly_totals(week_start date)
+DROP FUNCTION IF EXISTS get_weekly_totals(date);
+CREATE FUNCTION get_weekly_totals(week_start date)
 RETURNS TABLE (
     player_id uuid,
     player_name text,
@@ -79,7 +83,8 @@ END;
 $$;
 
 -- Fix get_weekly_goat
-CREATE OR REPLACE FUNCTION get_weekly_goat()
+DROP FUNCTION IF EXISTS get_weekly_goat();
+CREATE FUNCTION get_weekly_goat()
 RETURNS TABLE (
     player_id uuid,
     player_name text,
