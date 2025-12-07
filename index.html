@@ -650,6 +650,89 @@
             return MOTIVATIONAL_QUOTES[safeIndex] || MOTIVATIONAL_QUOTES[0];
         };
 
+        // Changelog - Updates and Bug Fixes
+        const CHANGELOG = [
+            {
+                version: "2.5.0",
+                date: "Dec 7, 2024",
+                type: "feature",
+                changes: [
+                    "💚 Unified Custom Task Menu - Players and admins use the same green glowing form",
+                    "Players use code 0413 to submit task bids for admin review",
+                    "Admins use their code to create tasks instantly",
+                    "Added animated green glow to all custom task interactions",
+                    "Player-specific task assignments - tasks only visible to assigned player",
+                    "Admin bid management - accept, counter-offer, or reject player bids",
+                    "Counter-offer negotiation flow between players and admins"
+                ]
+            },
+            {
+                version: "2.4.0",
+                date: "Dec 7, 2024",
+                type: "feature",
+                changes: [
+                    "🔐 Login required on each page load for enhanced security",
+                    "📋 Changelog display on login screen showing latest updates",
+                    "Removed session persistence for better privacy"
+                ]
+            },
+            {
+                version: "2.3.0",
+                date: "Dec 6, 2024",
+                type: "feature",
+                changes: [
+                    "🎯 Single-claim chores - certain tasks can only be done once per cooldown period",
+                    "Added emojis to dog feeding chores for better visual appeal",
+                    "Enhanced chore availability system with per-player cooldowns"
+                ]
+            },
+            {
+                version: "2.2.0",
+                date: "Dec 5, 2024",
+                type: "feature",
+                changes: [
+                    "📊 Enhanced admin panel with error logging and security monitoring",
+                    "🔒 Admin activity tracking for name/avatar changes",
+                    "📝 Recent completions view in admin panel (last 30 days)",
+                    "🐾 Pet feeding cooldowns to prevent over-claiming"
+                ]
+            },
+            {
+                version: "2.1.0",
+                date: "Dec 4, 2024",
+                type: "feature",
+                changes: [
+                    "📈 Tiered payout system based on weekly performance",
+                    "🎮 Leveling system with Option A and Option B progression paths",
+                    "📝 Chore descriptions with 'Definition of Done' guidelines",
+                    "✨ Improved task clarity for players"
+                ]
+            },
+            {
+                version: "2.0.0",
+                date: "Dec 3, 2024",
+                type: "feature",
+                changes: [
+                    "🏆 Achievement system with multiple categories",
+                    "🎖️ Milestone achievements for chores and points",
+                    "⭐ Weekly performance achievements",
+                    "🔥 Streak tracking and rewards",
+                    "🌟 Special achievements for unique accomplishments"
+                ]
+            },
+            {
+                version: "1.5.0",
+                date: "Dec 2, 2024",
+                type: "improvement",
+                changes: [
+                    "🎨 Improved mobile responsiveness",
+                    "🌓 Auto dark mode based on time of day (6 AM - 6 PM)",
+                    "✨ Material Design UI enhancements",
+                    "📱 Better touch interactions and haptic feedback"
+                ]
+            }
+        ];
+
         const getLastFridayOfMonth = () => {
             const now = new Date();
             const year = now.getFullYear();
@@ -674,9 +757,8 @@
                 return hour < 6 || hour >= 18;
             };
 
-            const [isLoggedIn, setIsLoggedIn] = useState(() => {
-                return localStorage.getItem('gyatt_session') === 'active';
-            });
+            // Force login on each page load
+            const [isLoggedIn, setIsLoggedIn] = useState(false);
             const [darkMode, setDarkMode] = useState(getInitialDarkMode);
             const [loading, setLoading] = useState(true);
             const [players, setPlayers] = useState([]);
@@ -748,19 +830,10 @@
             const [loginPassword, setLoginPassword] = useState('');
             const [loginError, setLoginError] = useState('');
 
-            // Login handler
+            // Login handler (no session persistence - forces login each time)
             const handleLogin = async (e) => {
                 e.preventDefault();
                 if (loginPassword === LOGIN_PASSWORD) {
-                    try {
-                        localStorage.setItem('gyatt_session', 'active');
-                    } catch (e) {
-                        if (e.name === 'QuotaExceededError') {
-                            console.warn('localStorage quota exceeded, clearing old data');
-                            localStorage.clear();
-                            localStorage.setItem('gyatt_session', 'active');
-                        }
-                    }
                     setIsLoggedIn(true);
                     setLoginError('');
                 } else {
@@ -774,8 +847,10 @@
 
             // Logout handler
             const handleLogout = () => {
-                localStorage.removeItem('gyatt_session');
                 setIsLoggedIn(false);
+                setSelectedPlayer(null);
+                setShowProfile(false);
+                setShowAdminMenu(false);
             };
 
             // Haptic feedback utility
@@ -4286,6 +4361,122 @@
                                     Login
                                 </button>
                             </form>
+                        </div>
+
+                        {/* Changelog - Latest Updates */}
+                        <div className="material-card elevation-2" style={{
+                            marginTop: '24px',
+                            padding: '24px',
+                            maxWidth: '600px',
+                            width: '90%',
+                            background: darkMode ? '#1E1E1E' : '#FFFFFF',
+                            borderRadius: '16px',
+                            textAlign: 'left',
+                            maxHeight: '500px',
+                            overflowY: 'auto'
+                        }}>
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '12px',
+                                marginBottom: '20px'
+                            }}>
+                                <div style={{ fontSize: '2rem' }}>📋</div>
+                                <h2 style={{
+                                    fontSize: '1.5rem',
+                                    fontWeight: '600',
+                                    margin: 0,
+                                    color: darkMode ? '#E0E0E0' : '#202124'
+                                }}>
+                                    What's New
+                                </h2>
+                            </div>
+
+                            {CHANGELOG.slice(0, 3).map((update, index) => (
+                                <div key={index} style={{
+                                    marginBottom: index < 2 ? '24px' : '0',
+                                    paddingBottom: index < 2 ? '24px' : '0',
+                                    borderBottom: index < 2 ? `1px solid ${darkMode ? '#333' : '#e0e0e0'}` : 'none'
+                                }}>
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '12px',
+                                        marginBottom: '12px'
+                                    }}>
+                                        <span style={{
+                                            padding: '4px 12px',
+                                            background: update.type === 'feature'
+                                                ? 'rgba(76, 175, 80, 0.15)'
+                                                : 'rgba(33, 150, 243, 0.15)',
+                                            color: update.type === 'feature'
+                                                ? '#4CAF50'
+                                                : '#2196F3',
+                                            borderRadius: '12px',
+                                            fontSize: '0.75rem',
+                                            fontWeight: '600',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.5px'
+                                        }}>
+                                            {update.type === 'feature' ? '✨ New' : '⚡ Improvement'}
+                                        </span>
+                                        <span style={{
+                                            fontSize: '0.875rem',
+                                            fontWeight: '600',
+                                            color: darkMode ? '#E0E0E0' : '#202124'
+                                        }}>
+                                            v{update.version}
+                                        </span>
+                                        <span style={{
+                                            fontSize: '0.75rem',
+                                            color: darkMode ? '#9E9E9E' : '#5F6368'
+                                        }}>
+                                            {update.date}
+                                        </span>
+                                    </div>
+
+                                    <ul style={{
+                                        margin: 0,
+                                        paddingLeft: '20px',
+                                        listStyle: 'none'
+                                    }}>
+                                        {update.changes.map((change, changeIndex) => (
+                                            <li key={changeIndex} style={{
+                                                fontSize: '0.875rem',
+                                                lineHeight: '1.6',
+                                                marginBottom: '8px',
+                                                color: darkMode ? '#B0B0B0' : '#3C4043',
+                                                paddingLeft: '8px',
+                                                position: 'relative'
+                                            }}>
+                                                <span style={{
+                                                    position: 'absolute',
+                                                    left: '-12px',
+                                                    color: darkMode ? '#666' : '#999'
+                                                }}>•</span>
+                                                {change}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            ))}
+
+                            <div style={{
+                                marginTop: '20px',
+                                padding: '12px',
+                                background: darkMode ? 'rgba(71, 178, 196, 0.1)' : 'rgba(208, 165, 0, 0.1)',
+                                borderRadius: '8px',
+                                textAlign: 'center'
+                            }}>
+                                <p style={{
+                                    margin: 0,
+                                    fontSize: '0.8125rem',
+                                    color: darkMode ? '#47B2C4' : '#D0A500',
+                                    fontWeight: '500'
+                                }}>
+                                    💡 {CHANGELOG.length} updates total • Showing latest 3
+                                </p>
+                            </div>
                         </div>
 
                         {/* Development Story */}
