@@ -4811,22 +4811,15 @@
                             </div>
                         )}
 
-                        {/* Two Column Layout */}
+                        {/* Single Column Layout */}
                         <div style={{
-                            maxWidth: '1400px',
+                            maxWidth: '800px',
                             margin: '0 auto',
                             padding: '32px 24px',
-                            display: 'grid',
-                            gridTemplateColumns: window.innerWidth > 900 ? '1fr 1fr' : '1fr',
-                            gap: '32px',
-                            alignItems: 'start'
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '32px'
                         }}>
-                            {/* Left Column - Full Changelog */}
-                            <div style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '24px'
-                            }}>
                                 {/* What's New - Full Changelog */}
                                 <div className="material-card elevation-2" style={{
                                     padding: '32px',
@@ -4977,108 +4970,59 @@
                                 </div>
                             </div>
 
-                            {/* Right Column - Development Story */}
+                            {/* The Story */}
                             <div className="material-card elevation-2" style={{
                                 padding: '32px',
                                 background: darkMode ? '#1E1E1E' : '#FFFFFF',
                                 borderRadius: '16px',
-                                height: 'fit-content',
-                                position: window.innerWidth > 900 ? 'sticky' : 'relative',
-                                top: window.innerWidth > 900 ? '88px' : '0'
+                                textAlign: 'center'
                             }}>
-                                {/* Built in 3 Days Header */}
-                                <h2 style={{
-                                    fontSize: '2rem',
-                                    fontWeight: '600',
-                                    margin: '0 0 16px 0',
-                                    color: darkMode ? '#E0E0E0' : '#202124',
-                                    lineHeight: '1.2'
-                                }}>
-                                    📖 Built in 3 Days with My Kids
-                                </h2>
-                                <p style={{
-                                    fontSize: '1rem',
-                                    lineHeight: '1.6',
-                                    margin: '0 0 32px 0',
-                                    color: darkMode ? '#B0B0B0' : '#5F6368',
-                                    paddingBottom: '32px',
-                                    borderBottom: `1px solid ${darkMode ? '#333' : '#E0E0E0'}`
-                                }}>
-                                    We built this app together over a weekend. My kids helped design the point system, cooldown timers, and the GOAT competition while I coded it. It's a work in progress—just our family building something for ourselves.
-                                </p>
-
                                 <h2 style={{
                                     fontSize: '1.5rem',
                                     fontWeight: '600',
-                                    marginBottom: '24px',
+                                    margin: '0 0 24px 0',
                                     color: darkMode ? '#E0E0E0' : '#202124'
                                 }}>
-                                    🚀 The Story
+                                    The Story
                                 </h2>
 
-                                <div style={{
-                                    fontSize: '0.9375rem',
+                                <p style={{
+                                    fontSize: '1.125rem',
+                                    fontWeight: '600',
+                                    lineHeight: '1.6',
+                                    margin: '0 0 20px 0',
+                                    color: darkMode ? '#47B2C4' : '#1a73e8'
+                                }}>
+                                    🏠 Made by a Family, for Our Family
+                                </p>
+
+                                <p style={{
+                                    fontSize: '1rem',
                                     lineHeight: '1.7',
+                                    margin: '0 0 16px 0',
                                     color: darkMode ? '#B0B0B0' : '#5F6368'
                                 }}>
-                                    <p style={{ marginBottom: '16px' }}>
-                                        We're a small product team—just our family—building something for ourselves. We find bugs, report them to each other, and fix them together.
-                                    </p>
+                                    3 days. 2 kids. 1 goal: make chores suck less.
+                                </p>
 
-                                    <p style={{ marginBottom: '16px' }}>
-                                        Tech: React + Supabase in a single HTML file. No build tools, no complexity. Just what we needed to make chores less painful.
-                                    </p>
+                                <p style={{
+                                    fontSize: '1rem',
+                                    lineHeight: '1.7',
+                                    margin: '0 0 16px 0',
+                                    color: darkMode ? '#B0B0B0' : '#5F6368'
+                                }}>
+                                    My kids designed the rules. I wrote the code. Now we compete for GOAT status every week and nobody argues about whose turn it is to take out the trash.
+                                </p>
 
-                                    <div style={{
-                                        marginTop: '24px',
-                                        padding: '20px',
-                                        background: darkMode ? 'rgba(76, 175, 80, 0.1)' : 'rgba(76, 175, 80, 0.08)',
-                                        borderRadius: '12px',
-                                        borderLeft: `4px solid ${darkMode ? '#4CAF50' : '#66BB6A'}`
-                                    }}>
-                                        <p style={{
-                                            fontSize: '0.875rem',
-                                            fontWeight: '600',
-                                            color: darkMode ? '#81C784' : '#4CAF50',
-                                            margin: '0 0 12px 0'
-                                        }}>
-                                            📊 Project Stats
-                                        </p>
-                                        <p style={{
-                                            fontSize: '0.875rem',
-                                            margin: '6px 0',
-                                            color: darkMode ? '#B0B0B0' : '#5F6368'
-                                        }}>
-                                            <strong style={{ color: darkMode ? '#E0E0E0' : '#202124' }}>Status:</strong> In active development 🚧
-                                        </p>
-                                        <p style={{
-                                            fontSize: '0.875rem',
-                                            margin: '6px 0',
-                                            color: darkMode ? '#B0B0B0' : '#5F6368'
-                                        }}>
-                                            <strong style={{ color: darkMode ? '#E0E0E0' : '#202124' }}>Team:</strong> Dad + 2 kids
-                                        </p>
-                                        <p style={{
-                                            fontSize: '0.875rem',
-                                            margin: '6px 0',
-                                            color: darkMode ? '#B0B0B0' : '#5F6368'
-                                        }}>
-                                            <strong style={{ color: darkMode ? '#E0E0E0' : '#202124' }}>Goal:</strong> Make chores not suck
-                                        </p>
-                                    </div>
-
-                                    <div style={{
-                                        marginTop: '24px',
-                                        paddingTop: '24px',
-                                        borderTop: `1px solid ${darkMode ? '#333' : '#E0E0E0'}`,
-                                        fontSize: '0.8125rem',
-                                        fontStyle: 'italic',
-                                        color: darkMode ? '#888' : '#999',
-                                        textAlign: 'center'
-                                    }}>
-                                        Created by Matthew Gissentanna
-                                    </div>
-                                </div>
+                                <p style={{
+                                    fontSize: '1rem',
+                                    lineHeight: '1.7',
+                                    margin: 0,
+                                    color: darkMode ? '#B0B0B0' : '#5F6368',
+                                    fontStyle: 'italic'
+                                }}>
+                                    Still a work in progress. We find bugs at dinner and fix them after homework.
+                                </p>
                             </div>
                         </div>
                     </div>
