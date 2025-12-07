@@ -1900,7 +1900,7 @@
                         .select(`
                             *,
                             players(name),
-                            chores(name, icon, points)
+                            chores(name, icon, base_value)
                         `)
                         .eq('status', 'approved')
                         .order('completed_date', { ascending: false })
