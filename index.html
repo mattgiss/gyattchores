@@ -270,6 +270,21 @@
             }
         }
 
+        /* Green glow animation for player bids */
+        @keyframes greenGlow {
+            0%, 100% {
+                box-shadow: 0 0 8px rgba(76, 175, 80, 0.5), 0 0 16px rgba(76, 175, 80, 0.3), 0 2px 8px 0 rgba(0,0,0,.1);
+            }
+            50% {
+                box-shadow: 0 0 16px rgba(76, 175, 80, 0.8), 0 0 24px rgba(76, 175, 80, 0.5), 0 2px 8px 0 rgba(0,0,0,.1);
+            }
+        }
+
+        .player-bid-glow {
+            animation: greenGlow 2s ease-in-out infinite;
+            border: 2px solid #4CAF50 !important;
+        }
+
         /* Responsive Design for Mobile Devices */
 
         /* Small Phones (iPhone SE, iPhone 12 mini, etc.) */
@@ -716,6 +731,14 @@
             // Chore description states
             const [expandedChoreId, setExpandedChoreId] = useState(null);
 
+            // Chore bidding states
+            const [choreBids, setChoreBids] = useState([]);
+            const [showBidForm, setShowBidForm] = useState(false);
+            const [bidChoreName, setBidChoreName] = useState('');
+            const [bidPoints, setBidPoints] = useState('');
+            const [bidDueDate, setBidDueDate] = useState('');
+            const [selectedBidPlayerId, setSelectedBidPlayerId] = useState(null);
+
             // Pull to refresh states
             const [isPulling, setIsPulling] = useState(false);
             const [pullDistance, setPullDistance] = useState(0);
@@ -992,7 +1015,9 @@
                         max_per_day: chore.max_per_day,
                         description: chore.description,
                         cooldown_hours: chore.cooldown_hours || 24,
-                        single_claim: chore.single_claim || false
+                        single_claim: chore.single_claim || false,
+                        assigned_player_id: chore.assigned_player_id || null,
+                        is_from_bid: chore.is_from_bid || false
                     }));
 
                     // Format pending chores
@@ -1065,6 +1090,14 @@
                         const lastWeekWinners = prevWeekData.filter(p => p.weekly_total === maxTotal && maxTotal > 0);
                         setLastWeekGoat(lastWeekWinners.length > 0 ? lastWeekWinners : null);
                     }
+
+                    // Load chore bids
+                    const { data: bidsData } = await supabase
+                        .from('chore_bids')
+                        .select('*, players(name, avatar_url)')
+                        .order('created_at', { ascending: false });
+
+                    setChoreBids(bidsData || []);
 
                 } catch (error) {
                     console.error('Error loading data:', error);
@@ -1786,8 +1819,13 @@
                 }
             };
 
-            // Check if chore is available based on cooldown
+            // Check if chore is available based on cooldown and player assignment
             const getChoreAvailability = (chore, playerId = null) => {
+                // If chore is assigned to a specific player, only that player can see it
+                if (chore.assigned_player_id && playerId && chore.assigned_player_id !== playerId) {
+                    return { available: false, hoursRemaining: 0, playerSpecific: true };
+                }
+
                 // Find the most recent completion of this chore
                 // For single-claim chores (e.g., Feed Alfred), check if ANY player has done it
                 // For shared chores (e.g., Wash Dishes), check if THIS player has done it
@@ -2055,6 +2093,344 @@
                     console.error('Error creating task:', error);
                     haptic('error');
                     alert(`Error creating custom task: ${error.message || 'Unknown error'}`);
+                }
+            };
+
+            // Submit a unified custom task (handles both player bids and admin direct creation)
+            const submitUnifiedCustomTask = async () => {
+                if (!selectedPlayer) {
+                    haptic('error');
+                    alert('Please select a player first');
+                    return;
+                }
+
+                if (!bidChoreName.trim() || !bidPoints || bidPoints <= 0) {
+                    haptic('error');
+                    alert('Please enter a task name and point value');
+                    return;
+                }
+
+                const code = prompt('Enter your code:\n• Players: 0413 (submits bid for review)\n• Admin: Your admin code (creates task immediately)');
+
+                if (code === null) {
+                    return; // User cancelled
+                }
+
+                // Check if it's the player code
+                if (code === '0413') {
+                    // Player bid submission
+                    try {
+                        const { data, error } = await supabase
+                            .from('chore_bids')
+                            .insert([{
+                                player_id: selectedPlayer.id,
+                                chore_name: bidChoreName,
+                                proposed_points: parseInt(bidPoints),
+                                due_date: bidDueDate || null,
+                                status: 'pending'
+                            }])
+                            .select('*, players(name, avatar_url)')
+                            .single();
+
+                        if (error) throw error;
+
+                        setChoreBids(prev => [data, ...prev]);
+                        setBidChoreName('');
+                        setBidPoints('');
+                        setBidDueDate('');
+                        setShowBidForm(false);
+                        haptic('success');
+                        alert('✅ Your custom task bid has been submitted! An admin will review it.');
+                    } catch (error) {
+                        console.error('Error submitting bid:', error);
+                        haptic('error');
+                        alert(`Error submitting bid: ${error.message || 'Unknown error'}`);
+                    }
+                } else if (code === APPROVAL_CODE) {
+                    // Admin direct creation (assigned to selected player)
+                    try {
+                        const description = bidDueDate ? JSON.stringify({ due_date: bidDueDate }) : null;
+
+                        const { data, error } = await supabase
+                            .from('chores')
+                            .insert([{
+                                name: bidChoreName,
+                                base_value: parseInt(bidPoints),
+                                description: description,
+                                icon: '⭐',
+                                is_active: true,
+                                max_per_day: 1,
+                                assigned_player_id: selectedPlayer.id,
+                                is_from_bid: false
+                            }])
+                            .select()
+                            .single();
+
+                        if (error) throw error;
+
+                        // Add to chores list
+                        setChores(prev => [...prev, {
+                            id: data.id,
+                            name: data.name,
+                            points: data.base_value,
+                            icon: data.icon,
+                            max_per_day: data.max_per_day,
+                            description: data.description,
+                            assigned_player_id: data.assigned_player_id,
+                            is_from_bid: false
+                        }]);
+
+                        setBidChoreName('');
+                        setBidPoints('');
+                        setBidDueDate('');
+                        setShowBidForm(false);
+                        haptic('success');
+                        alert(`✅ Custom task created and assigned to ${selectedPlayer.name}!`);
+                    } catch (error) {
+                        console.error('Error creating task:', error);
+                        haptic('error');
+                        alert(`Error creating custom task: ${error.message || 'Unknown error'}`);
+                    }
+                } else {
+                    haptic('error');
+                    alert('❌ Invalid code');
+                }
+            };
+
+            // Admin accepts a bid and creates the chore
+            const acceptBid = async (bidId) => {
+                const code = prompt('Enter admin code to accept this bid:');
+                if (code !== APPROVAL_CODE) {
+                    if (code !== null) {
+                        haptic('error');
+                        alert('❌ Invalid admin code');
+                    }
+                    return;
+                }
+
+                try {
+                    const bid = choreBids.find(b => b.id === bidId);
+                    if (!bid) throw new Error('Bid not found');
+
+                    // Use counter-offered points if available, otherwise use proposed points
+                    const points = bid.admin_counter_points || bid.proposed_points;
+
+                    // Create the chore with player assignment
+                    const description = bid.due_date ? JSON.stringify({ due_date: bid.due_date }) : null;
+
+                    const { data: choreData, error: choreError } = await supabase
+                        .from('chores')
+                        .insert([{
+                            name: bid.chore_name,
+                            base_value: points,
+                            description: description,
+                            icon: '⭐',
+                            is_active: true,
+                            max_per_day: 1,
+                            assigned_player_id: bid.player_id,
+                            is_from_bid: true
+                        }])
+                        .select()
+                        .single();
+
+                    if (choreError) throw choreError;
+
+                    // Update bid status
+                    const { error: bidError } = await supabase
+                        .from('chore_bids')
+                        .update({ status: 'accepted', updated_at: new Date().toISOString() })
+                        .eq('id', bidId);
+
+                    if (bidError) throw bidError;
+
+                    // Add to chores list
+                    setChores(prev => [...prev, {
+                        id: choreData.id,
+                        name: choreData.name,
+                        points: choreData.base_value,
+                        icon: choreData.icon,
+                        max_per_day: choreData.max_per_day,
+                        description: choreData.description,
+                        assigned_player_id: choreData.assigned_player_id,
+                        is_from_bid: true
+                    }]);
+
+                    // Update bid in state
+                    setChoreBids(prev => prev.map(b =>
+                        b.id === bidId ? { ...b, status: 'accepted' } : b
+                    ));
+
+                    haptic('success');
+                    alert('✅ Bid accepted! Custom task created.');
+                } catch (error) {
+                    console.error('Error accepting bid:', error);
+                    haptic('error');
+                    alert(`Error accepting bid: ${error.message || 'Unknown error'}`);
+                }
+            };
+
+            // Admin proposes a counter bid
+            const counterBid = async (bidId) => {
+                const code = prompt('Enter admin code to counter-offer:');
+                if (code !== APPROVAL_CODE) {
+                    if (code !== null) {
+                        haptic('error');
+                        alert('❌ Invalid admin code');
+                    }
+                    return;
+                }
+
+                const bid = choreBids.find(b => b.id === bidId);
+                if (!bid) {
+                    haptic('error');
+                    alert('Bid not found');
+                    return;
+                }
+
+                const counterPoints = prompt(`Current bid: ${bid.proposed_points} pts\nEnter your counter-offer (points):`);
+                if (!counterPoints || isNaN(counterPoints) || counterPoints <= 0) {
+                    if (counterPoints !== null) {
+                        haptic('error');
+                        alert('Invalid point value');
+                    }
+                    return;
+                }
+
+                const notes = prompt('Optional note to player:') || '';
+
+                try {
+                    const { error } = await supabase
+                        .from('chore_bids')
+                        .update({
+                            status: 'counter_offered',
+                            admin_counter_points: parseInt(counterPoints),
+                            admin_notes: notes,
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('id', bidId);
+
+                    if (error) throw error;
+
+                    // Update bid in state
+                    setChoreBids(prev => prev.map(b =>
+                        b.id === bidId
+                            ? { ...b, status: 'counter_offered', admin_counter_points: parseInt(counterPoints), admin_notes: notes }
+                            : b
+                    ));
+
+                    haptic('success');
+                    alert('✅ Counter-offer sent!');
+                } catch (error) {
+                    console.error('Error sending counter-offer:', error);
+                    haptic('error');
+                    alert(`Error: ${error.message || 'Unknown error'}`);
+                }
+            };
+
+            // Player accepts admin's counter-offer
+            const acceptCounterOffer = async (bidId) => {
+                const code = prompt('Enter code 0413 to accept the counter-offer:');
+                if (code !== '0413') {
+                    if (code !== null) {
+                        haptic('error');
+                        alert('❌ Invalid code');
+                    }
+                    return;
+                }
+
+                try {
+                    const bid = choreBids.find(b => b.id === bidId);
+                    if (!bid || !bid.admin_counter_points) {
+                        throw new Error('Counter-offer not found');
+                    }
+
+                    // Create the chore with player assignment
+                    const description = bid.due_date ? JSON.stringify({ due_date: bid.due_date }) : null;
+
+                    const { data: choreData, error: choreError } = await supabase
+                        .from('chores')
+                        .insert([{
+                            name: bid.chore_name,
+                            base_value: bid.admin_counter_points,
+                            description: description,
+                            icon: '⭐',
+                            is_active: true,
+                            max_per_day: 1,
+                            assigned_player_id: bid.player_id,
+                            is_from_bid: true
+                        }])
+                        .select()
+                        .single();
+
+                    if (choreError) throw choreError;
+
+                    // Update bid status
+                    const { error: bidError } = await supabase
+                        .from('chore_bids')
+                        .update({ status: 'accepted', updated_at: new Date().toISOString() })
+                        .eq('id', bidId);
+
+                    if (bidError) throw bidError;
+
+                    // Add to chores list
+                    setChores(prev => [...prev, {
+                        id: choreData.id,
+                        name: choreData.name,
+                        points: choreData.base_value,
+                        icon: choreData.icon,
+                        max_per_day: choreData.max_per_day,
+                        description: choreData.description,
+                        assigned_player_id: choreData.assigned_player_id,
+                        is_from_bid: true
+                    }]);
+
+                    // Update bid in state
+                    setChoreBids(prev => prev.map(b =>
+                        b.id === bidId ? { ...b, status: 'accepted' } : b
+                    ));
+
+                    haptic('success');
+                    alert('✅ Counter-offer accepted! Your custom task is now available.');
+                } catch (error) {
+                    console.error('Error accepting counter-offer:', error);
+                    haptic('error');
+                    alert(`Error: ${error.message || 'Unknown error'}`);
+                }
+            };
+
+            // Reject a bid
+            const rejectBid = async (bidId) => {
+                const code = prompt('Enter admin code to reject this bid:');
+                if (code !== APPROVAL_CODE) {
+                    if (code !== null) {
+                        haptic('error');
+                        alert('❌ Invalid admin code');
+                    }
+                    return;
+                }
+
+                if (!confirm('Are you sure you want to reject this bid?')) {
+                    return;
+                }
+
+                try {
+                    const { error } = await supabase
+                        .from('chore_bids')
+                        .update({ status: 'rejected', updated_at: new Date().toISOString() })
+                        .eq('id', bidId);
+
+                    if (error) throw error;
+
+                    setChoreBids(prev => prev.map(b =>
+                        b.id === bidId ? { ...b, status: 'rejected' } : b
+                    ));
+
+                    haptic('success');
+                    alert('Bid rejected');
+                } catch (error) {
+                    console.error('Error rejecting bid:', error);
+                    haptic('error');
+                    alert(`Error: ${error.message || 'Unknown error'}`);
                 }
             };
 
@@ -2539,6 +2915,227 @@
                                                 )}
                                             </div>
                                         ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Chore Bid Management */}
+                            <div className="material-card elevation-1" style={{
+                                padding: '20px',
+                                background: theme.cardBg,
+                                marginBottom: '24px',
+                                border: `2px solid #4CAF50`
+                            }}>
+                                <h2 style={{
+                                    fontSize: '1.125rem',
+                                    fontWeight: '500',
+                                    marginBottom: '16px',
+                                    color: theme.cardText
+                                }}>
+                                    💚 Player Chore Bids
+                                </h2>
+
+                                {choreBids.filter(bid => bid.status === 'pending' || bid.status === 'counter_offered').length === 0 ? (
+                                    <div style={{
+                                        textAlign: 'center',
+                                        padding: '32px',
+                                        color: theme.textSecondary
+                                    }}>
+                                        No pending bids
+                                    </div>
+                                ) : (
+                                    <div style={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: '12px'
+                                    }}>
+                                        {choreBids
+                                            .filter(bid => bid.status === 'pending' || bid.status === 'counter_offered')
+                                            .map(bid => (
+                                            <div key={bid.id} className="player-bid-glow" style={{
+                                                padding: '16px',
+                                                background: theme.surface,
+                                                borderRadius: '12px'
+                                            }}>
+                                                <div style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'flex-start',
+                                                    marginBottom: '12px'
+                                                }}>
+                                                    <div style={{ flex: 1 }}>
+                                                        <div style={{
+                                                            fontSize: '1rem',
+                                                            fontWeight: '600',
+                                                            color: theme.cardText,
+                                                            marginBottom: '4px'
+                                                        }}>
+                                                            {bid.chore_name}
+                                                        </div>
+                                                        <div style={{
+                                                            fontSize: '0.875rem',
+                                                            color: theme.primary,
+                                                            fontWeight: '600',
+                                                            marginBottom: '4px'
+                                                        }}>
+                                                            {bid.players?.avatar_url || '👤'} {bid.players?.name || 'Unknown Player'}
+                                                        </div>
+                                                        <div style={{
+                                                            fontSize: '0.875rem',
+                                                            color: theme.textSecondary
+                                                        }}>
+                                                            Proposed: {bid.proposed_points} pts
+                                                        </div>
+                                                        {bid.admin_counter_points && (
+                                                            <div style={{
+                                                                fontSize: '0.875rem',
+                                                                color: '#FFA726',
+                                                                fontWeight: '600',
+                                                                marginTop: '4px'
+                                                            }}>
+                                                                Counter-offer: {bid.admin_counter_points} pts
+                                                            </div>
+                                                        )}
+                                                        {bid.admin_notes && (
+                                                            <div style={{
+                                                                fontSize: '0.75rem',
+                                                                color: theme.textSecondary,
+                                                                marginTop: '4px',
+                                                                fontStyle: 'italic'
+                                                            }}>
+                                                                Note: {bid.admin_notes}
+                                                            </div>
+                                                        )}
+                                                        {bid.due_date && (
+                                                            <div style={{
+                                                                fontSize: '0.75rem',
+                                                                color: theme.accent,
+                                                                marginTop: '4px'
+                                                            }}>
+                                                                📅 Due: {new Date(bid.due_date).toLocaleDateString()}
+                                                            </div>
+                                                        )}
+                                                        <div style={{
+                                                            fontSize: '0.75rem',
+                                                            color: theme.textSecondary,
+                                                            marginTop: '4px'
+                                                        }}>
+                                                            {new Date(bid.created_at).toLocaleString()}
+                                                        </div>
+                                                        {bid.status === 'counter_offered' && (
+                                                            <div style={{
+                                                                fontSize: '0.75rem',
+                                                                color: '#FFA726',
+                                                                fontWeight: '600',
+                                                                marginTop: '8px',
+                                                                padding: '6px 10px',
+                                                                background: 'rgba(255, 167, 38, 0.1)',
+                                                                borderRadius: '6px',
+                                                                display: 'inline-block'
+                                                            }}>
+                                                                ⏳ Awaiting player response
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div style={{
+                                                    display: 'flex',
+                                                    gap: '8px',
+                                                    marginTop: '12px'
+                                                }}>
+                                                    <button
+                                                        className="material-button ripple"
+                                                        onClick={() => acceptBid(bid.id)}
+                                                        style={{
+                                                            flex: 1,
+                                                            background: theme.success,
+                                                            color: '#FFFFFF',
+                                                            fontSize: '0.875rem',
+                                                            padding: '8px 12px'
+                                                        }}
+                                                    >
+                                                        ✅ Accept
+                                                    </button>
+                                                    {bid.status !== 'counter_offered' && (
+                                                        <button
+                                                            className="material-button ripple"
+                                                            onClick={() => counterBid(bid.id)}
+                                                            style={{
+                                                                flex: 1,
+                                                                background: '#FFA726',
+                                                                color: '#FFFFFF',
+                                                                fontSize: '0.875rem',
+                                                                padding: '8px 12px'
+                                                            }}
+                                                        >
+                                                            💬 Counter
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        className="material-button ripple"
+                                                        onClick={() => rejectBid(bid.id)}
+                                                        style={{
+                                                            flex: 1,
+                                                            background: theme.error,
+                                                            color: '#FFFFFF',
+                                                            fontSize: '0.875rem',
+                                                            padding: '8px 12px'
+                                                        }}
+                                                    >
+                                                        ❌ Reject
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Show accepted and rejected bids */}
+                                {choreBids.filter(bid => bid.status === 'accepted' || bid.status === 'rejected').length > 0 && (
+                                    <div style={{ marginTop: '24px' }}>
+                                        <h3 style={{
+                                            fontSize: '0.875rem',
+                                            fontWeight: '600',
+                                            marginBottom: '12px',
+                                            color: theme.textSecondary,
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '1px'
+                                        }}>
+                                            Processed Bids
+                                        </h3>
+                                        <div style={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: '8px',
+                                            maxHeight: '300px',
+                                            overflowY: 'auto'
+                                        }}>
+                                            {choreBids
+                                                .filter(bid => bid.status === 'accepted' || bid.status === 'rejected')
+                                                .map(bid => (
+                                                <div key={bid.id} style={{
+                                                    padding: '12px',
+                                                    background: theme.surface,
+                                                    borderRadius: '8px',
+                                                    borderLeft: `4px solid ${bid.status === 'accepted' ? theme.success : theme.error}`,
+                                                    opacity: 0.7
+                                                }}>
+                                                    <div style={{
+                                                        fontSize: '0.875rem',
+                                                        fontWeight: '600',
+                                                        color: theme.cardText
+                                                    }}>
+                                                        {bid.chore_name}
+                                                    </div>
+                                                    <div style={{
+                                                        fontSize: '0.75rem',
+                                                        color: theme.textSecondary
+                                                    }}>
+                                                        {bid.players?.name} • {bid.proposed_points} pts • {bid.status}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -3199,6 +3796,250 @@
                                     );
                                 })()}
                             </div>
+
+                            {/* Unified Custom Task Menu */}
+                            <div className="material-card elevation-1 player-bid-glow" style={{
+                                padding: '16px',
+                                background: theme.cardBg,
+                                marginBottom: '16px'
+                            }}>
+                                <h2 style={{
+                                    fontSize: '1.25rem',
+                                    fontWeight: '500',
+                                    marginBottom: '12px',
+                                    color: theme.cardText
+                                }}>
+                                    💚 Custom Task for {selectedPlayer.name}
+                                </h2>
+                                <p style={{
+                                    fontSize: '0.875rem',
+                                    color: theme.textSecondary,
+                                    marginBottom: '16px',
+                                    lineHeight: '1.5'
+                                }}>
+                                    <strong>Players (Code 0413):</strong> Submit a bid for admin review<br />
+                                    <strong>Admin (Your Code):</strong> Create task immediately
+                                </p>
+
+                                {showBidForm ? (
+                                    <div>
+                                        <input
+                                            type="text"
+                                            placeholder="Task name (e.g., Clean garage)"
+                                            value={bidChoreName}
+                                            onChange={(e) => setBidChoreName(e.target.value)}
+                                            maxLength={100}
+                                            className="material-input"
+                                            style={{
+                                                marginBottom: '12px',
+                                                background: theme.surface,
+                                                borderColor: theme.outline,
+                                                color: theme.text
+                                            }}
+                                        />
+                                        <input
+                                            type="number"
+                                            placeholder="Points you're asking for"
+                                            value={bidPoints}
+                                            onChange={(e) => {
+                                                const value = parseInt(e.target.value) || 0;
+                                                setBidPoints(Math.max(1, Math.min(10000, value)));
+                                            }}
+                                            min="1"
+                                            max="10000"
+                                            step="25"
+                                            className="material-input"
+                                            style={{
+                                                marginBottom: '12px',
+                                                background: theme.surface,
+                                                borderColor: theme.outline,
+                                                color: theme.text
+                                            }}
+                                        />
+                                        <input
+                                            type="date"
+                                            placeholder="Due date (optional)"
+                                            value={bidDueDate}
+                                            onChange={(e) => setBidDueDate(e.target.value)}
+                                            className="material-input"
+                                            style={{
+                                                marginBottom: '12px',
+                                                background: theme.surface,
+                                                borderColor: theme.outline,
+                                                color: theme.text
+                                            }}
+                                        />
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <button
+                                                className="material-button ripple"
+                                                onClick={submitUnifiedCustomTask}
+                                                disabled={!bidChoreName.trim() || !bidPoints || bidPoints <= 0}
+                                                style={{
+                                                    flex: 1,
+                                                    background: (!bidChoreName.trim() || !bidPoints || bidPoints <= 0)
+                                                        ? theme.outline
+                                                        : '#4CAF50',
+                                                    color: '#FFFFFF',
+                                                    opacity: (!bidChoreName.trim() || !bidPoints || bidPoints <= 0) ? 0.5 : 1,
+                                                    cursor: (!bidChoreName.trim() || !bidPoints || bidPoints <= 0) ? 'not-allowed' : 'pointer'
+                                                }}
+                                            >
+                                                Submit Custom Task
+                                            </button>
+                                            <button
+                                                className="material-button ripple"
+                                                onClick={() => {
+                                                    setShowBidForm(false);
+                                                    setBidChoreName('');
+                                                    setBidPoints('');
+                                                    setBidDueDate('');
+                                                }}
+                                                style={{
+                                                    background: theme.outline,
+                                                    color: theme.text
+                                                }}
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <button
+                                        className="material-button ripple"
+                                        onClick={() => setShowBidForm(true)}
+                                        style={{
+                                            width: '100%',
+                                            background: '#4CAF50',
+                                            color: '#FFFFFF'
+                                        }}
+                                    >
+                                        + Create Custom Task
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Player's Bids */}
+                            {choreBids.filter(bid => bid.player_id === selectedPlayer.id).length > 0 && (
+                                <div className="material-card elevation-1" style={{
+                                    padding: '16px',
+                                    background: theme.cardBg,
+                                    marginBottom: '16px'
+                                }}>
+                                    <h2 style={{
+                                        fontSize: '1.25rem',
+                                        fontWeight: '500',
+                                        marginBottom: '16px',
+                                        color: theme.cardText
+                                    }}>
+                                        📋 Your Task Bids
+                                    </h2>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                        {choreBids
+                                            .filter(bid => bid.player_id === selectedPlayer.id)
+                                            .map(bid => (
+                                            <div key={bid.id}
+                                                className={bid.status === 'pending' || bid.status === 'counter_offered' ? 'player-bid-glow' : ''}
+                                                style={{
+                                                    padding: '12px',
+                                                    background: theme.surface,
+                                                    borderRadius: '12px',
+                                                    borderLeft: `4px solid ${
+                                                        bid.status === 'accepted' ? theme.success :
+                                                        bid.status === 'rejected' ? theme.error :
+                                                        bid.status === 'counter_offered' ? '#FFA726' :
+                                                        '#4CAF50'
+                                                    }`
+                                                }}>
+                                                <div style={{
+                                                    fontSize: '1rem',
+                                                    fontWeight: '600',
+                                                    color: theme.cardText,
+                                                    marginBottom: '4px'
+                                                }}>
+                                                    {bid.chore_name}
+                                                </div>
+                                                <div style={{
+                                                    fontSize: '0.875rem',
+                                                    color: theme.textSecondary,
+                                                    marginBottom: '4px'
+                                                }}>
+                                                    Your bid: {bid.proposed_points} pts
+                                                </div>
+                                                {bid.admin_counter_points && (
+                                                    <div style={{
+                                                        fontSize: '0.875rem',
+                                                        color: '#FFA726',
+                                                        fontWeight: '600',
+                                                        marginBottom: '4px'
+                                                    }}>
+                                                        Admin counter-offer: {bid.admin_counter_points} pts
+                                                    </div>
+                                                )}
+                                                {bid.admin_notes && (
+                                                    <div style={{
+                                                        fontSize: '0.75rem',
+                                                        color: theme.textSecondary,
+                                                        marginBottom: '4px',
+                                                        fontStyle: 'italic',
+                                                        padding: '8px',
+                                                        background: darkMode ? 'rgba(255, 167, 38, 0.1)' : 'rgba(255, 167, 38, 0.05)',
+                                                        borderRadius: '6px'
+                                                    }}>
+                                                        Admin note: {bid.admin_notes}
+                                                    </div>
+                                                )}
+                                                {bid.due_date && (
+                                                    <div style={{
+                                                        fontSize: '0.75rem',
+                                                        color: theme.accent,
+                                                        marginBottom: '4px'
+                                                    }}>
+                                                        📅 Due: {new Date(bid.due_date).toLocaleDateString()}
+                                                    </div>
+                                                )}
+                                                <div style={{
+                                                    display: 'inline-block',
+                                                    fontSize: '0.75rem',
+                                                    padding: '4px 10px',
+                                                    borderRadius: '12px',
+                                                    marginTop: '8px',
+                                                    background:
+                                                        bid.status === 'accepted' ? 'rgba(129, 201, 149, 0.2)' :
+                                                        bid.status === 'rejected' ? 'rgba(242, 139, 130, 0.2)' :
+                                                        bid.status === 'counter_offered' ? 'rgba(255, 167, 38, 0.2)' :
+                                                        'rgba(76, 175, 80, 0.2)',
+                                                    color:
+                                                        bid.status === 'accepted' ? theme.success :
+                                                        bid.status === 'rejected' ? theme.error :
+                                                        bid.status === 'counter_offered' ? '#FFA726' :
+                                                        '#4CAF50',
+                                                    fontWeight: '600'
+                                                }}>
+                                                    {bid.status === 'pending' ? '⏳ Pending Review' :
+                                                     bid.status === 'counter_offered' ? '💬 Counter-Offer' :
+                                                     bid.status === 'accepted' ? '✅ Accepted' :
+                                                     '❌ Rejected'}
+                                                </div>
+                                                {bid.status === 'counter_offered' && (
+                                                    <button
+                                                        className="material-button ripple"
+                                                        onClick={() => acceptCounterOffer(bid.id)}
+                                                        style={{
+                                                            width: '100%',
+                                                            marginTop: '12px',
+                                                            background: '#4CAF50',
+                                                            color: '#FFFFFF',
+                                                            fontSize: '0.875rem'
+                                                        }}
+                                                    >
+                                                        ✅ Accept Counter-Offer ({bid.admin_counter_points} pts)
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Last 7 Days */}
                             <div className="material-card elevation-1" style={{
@@ -5002,7 +5843,7 @@
                             </div>
                         </div>
 
-                        {/* Create Task Column */}
+                        {/* Custom Task Info */}
                         <div>
                             <div style={{
                                 fontSize: '0.6875rem',
@@ -5013,96 +5854,50 @@
                                 color: theme.textSecondary,
                                 paddingLeft: '8px'
                             }}>
-                                Create Custom Task
+                                💚 Custom Tasks
                             </div>
-                            <div className="material-card elevation-1" style={{
-                                padding: '16px',
+                            <div className="material-card elevation-1 player-bid-glow" style={{
+                                padding: '20px',
                                 background: theme.cardBg,
                                 marginBottom: '16px',
-                                overflowX: 'hidden'
-                            }}>
-                                <input
-                                    type="text"
-                                    placeholder="Task name"
-                                    value={newTaskName}
-                                    onChange={(e) => setNewTaskName(e.target.value)}
-                                    maxLength={100}
-                                    required
-                                    aria-label="Task name"
-                                    className="material-input"
-                                    style={{
-                                        marginBottom: '12px',
-                                        background: theme.surface,
-                                        borderColor: theme.outline,
-                                        color: theme.text
-                                    }}
-                                />
-                                <input
-                                    type="number"
-                                    placeholder="Points"
-                                    value={newTaskPoints}
-                                    onChange={(e) => {
-                                        const value = parseInt(e.target.value) || 0;
-                                        setNewTaskPoints(Math.max(1, Math.min(10000, value)));
-                                    }}
-                                    min="1"
-                                    max="10000"
-                                    step="25"
-                                    required
-                                    aria-label="Points value"
-                                    className="material-input"
-                                    style={{
-                                        marginBottom: '12px',
-                                        background: theme.surface,
-                                        borderColor: theme.outline,
-                                        color: theme.text
-                                    }}
-                                />
-                                <input
-                                    type="text"
-                                    placeholder="Due date (optional) - YYYY-MM-DD"
-                                    value={newTaskDueDate}
-                                    onChange={(e) => setNewTaskDueDate(e.target.value)}
-                                    pattern="\d{4}-\d{2}-\d{2}"
-                                    aria-label="Due date (optional)"
-                                    className="material-input"
-                                    style={{
-                                        marginBottom: '12px',
-                                        background: theme.surface,
-                                        borderColor: theme.outline,
-                                        color: theme.text
-                                    }}
-                                />
-                                <button
-                                    className="material-button ripple"
-                                    onClick={createTask}
-                                    disabled={!newTaskName.trim() || !newTaskPoints || newTaskPoints <= 0}
-                                    style={{
-                                        width: '100%',
-                                        background: (!newTaskName.trim() || !newTaskPoints || newTaskPoints <= 0)
-                                            ? theme.outline
-                                            : theme.secondary,
-                                        color: '#FFFFFF',
-                                        opacity: (!newTaskName.trim() || !newTaskPoints || newTaskPoints <= 0)
-                                            ? 0.5
-                                            : 1,
-                                        cursor: (!newTaskName.trim() || !newTaskPoints || newTaskPoints <= 0)
-                                            ? 'not-allowed'
-                                            : 'pointer'
-                                    }}
-                                >
-                                    Add Task
-                                </button>
-                            </div>
-                            <div style={{
-                                padding: '16px',
-                                background: theme.cardBg,
-                                borderRadius: '12px',
-                                fontSize: '0.875rem',
-                                color: theme.textSecondary,
                                 textAlign: 'center'
                             }}>
-                                Custom tasks appear in Available Chores
+                                <div style={{
+                                    fontSize: '2.5rem',
+                                    marginBottom: '12px'
+                                }}>
+                                    💚
+                                </div>
+                                <h3 style={{
+                                    fontSize: '1.125rem',
+                                    fontWeight: '600',
+                                    marginBottom: '12px',
+                                    color: theme.cardText
+                                }}>
+                                    Unified Custom Task Menu
+                                </h3>
+                                <p style={{
+                                    fontSize: '0.875rem',
+                                    color: theme.textSecondary,
+                                    lineHeight: '1.6',
+                                    marginBottom: '16px'
+                                }}>
+                                    To create custom tasks, click on a player's avatar to view their profile.
+                                </p>
+                                <div style={{
+                                    padding: '12px',
+                                    background: darkMode ? 'rgba(76, 175, 80, 0.1)' : 'rgba(76, 175, 80, 0.05)',
+                                    borderRadius: '8px',
+                                    fontSize: '0.8125rem',
+                                    color: theme.textSecondary,
+                                    textAlign: 'left',
+                                    lineHeight: '1.6'
+                                }}>
+                                    <strong style={{ color: '#4CAF50' }}>Players (Code 0413):</strong><br />
+                                    Submit bid for admin review<br /><br />
+                                    <strong style={{ color: '#4CAF50' }}>Admin (Your Code):</strong><br />
+                                    Create task immediately
+                                </div>
                             </div>
                         </div>
 
