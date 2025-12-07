@@ -813,6 +813,8 @@
             const [errorLogs, setErrorLogs] = useState([]);
             const [errorStats, setErrorStats] = useState([]);
             const [activityLogs, setActivityLogs] = useState([]);
+            const [approvedChores, setApprovedChores] = useState([]);
+            const [editChoreFilter, setEditChoreFilter] = useState({ playerId: '', startDate: '', endDate: '' });
 
             // Bonus system states
             const [playerBonuses, setPlayerBonuses] = useState({});
@@ -1887,6 +1889,91 @@
 
                     haptic('error');
                     alert(`Error adding backfill: ${error.message || 'Unknown error'}`);
+                }
+            };
+
+            // Load approved chores for editing
+            const loadApprovedChores = async (playerId = '', startDate = '', endDate = '') => {
+                try {
+                    let query = supabase
+                        .from('chore_completions')
+                        .select(`
+                            *,
+                            players(name),
+                            chores(name, icon, points)
+                        `)
+                        .eq('status', 'approved')
+                        .order('completed_date', { ascending: false })
+                        .limit(100);
+
+                    if (playerId) {
+                        query = query.eq('player_id', playerId);
+                    }
+                    if (startDate) {
+                        query = query.gte('completed_date', startDate);
+                    }
+                    if (endDate) {
+                        query = query.lte('completed_date', endDate);
+                    }
+
+                    const { data, error } = await query;
+                    if (error) throw error;
+                    setApprovedChores(data || []);
+                } catch (error) {
+                    console.error('Error loading approved chores:', error);
+                    alert(`Error loading chores: ${error.message}`);
+                }
+            };
+
+            // Edit approved chore
+            const editApprovedChore = async (completionId, newChoreId, newDate) => {
+                try {
+                    // Get the completion details
+                    const { data: completion, error: fetchError } = await supabase
+                        .from('chore_completions')
+                        .select('*, players(name), chores(name)')
+                        .eq('id', completionId)
+                        .single();
+
+                    if (fetchError) throw fetchError;
+
+                    // Get new chore details
+                    const newChore = chores.find(c => c.id === newChoreId);
+                    if (!newChore) throw new Error('New chore not found');
+
+                    // Update the completion
+                    const { error: updateError } = await supabase
+                        .from('chore_completions')
+                        .update({
+                            chore_id: newChoreId,
+                            completed_date: newDate,
+                            value_awarded: newChore.points
+                        })
+                        .eq('id', completionId);
+
+                    if (updateError) throw updateError;
+
+                    // Log the change
+                    await supabase
+                        .from('admin_activity_logs')
+                        .insert([{
+                            activity_type: 'edit_completion',
+                            player_id: completion.player_id,
+                            old_value: `${completion.chores.name} on ${completion.completed_date}`,
+                            new_value: `${newChore.name} on ${newDate}`,
+                            description: `Edited ${completion.players.name}'s completion from "${completion.chores.name}" (${completion.completed_date}) to "${newChore.name}" (${newDate})`
+                        }]);
+
+                    haptic('success');
+                    alert('✅ Chore updated successfully!');
+
+                    // Reload data
+                    await loadApprovedChores(editChoreFilter.playerId, editChoreFilter.startDate, editChoreFilter.endDate);
+                    await loadData();
+                } catch (error) {
+                    console.error('Error editing chore:', error);
+                    haptic('error');
+                    alert(`Error: ${error.message}`);
                 }
             };
 
@@ -2993,6 +3080,174 @@
                                 >
                                     🔄 Reset All Cooldowns
                                 </button>
+                            </div>
+
+                            {/* Edit Approved Chores */}
+                            <div className="material-card elevation-1" style={{
+                                padding: '20px',
+                                background: theme.cardBg,
+                                marginBottom: '24px'
+                            }}>
+                                <h2 style={{
+                                    fontSize: '1.125rem',
+                                    fontWeight: '500',
+                                    marginBottom: '16px',
+                                    color: theme.cardText
+                                }}>
+                                    ✏️ Edit Approved Chores
+                                </h2>
+                                <p style={{
+                                    fontSize: '0.875rem',
+                                    color: theme.textSecondary,
+                                    marginBottom: '16px',
+                                    lineHeight: '1.5'
+                                }}>
+                                    Fix mistakes in approved completions by changing the chore or date.
+                                </p>
+
+                                {/* Filters */}
+                                <div style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: '1fr 1fr 1fr auto',
+                                    gap: '12px',
+                                    marginBottom: '16px'
+                                }}>
+                                    <select
+                                        value={editChoreFilter.playerId}
+                                        onChange={(e) => setEditChoreFilter({...editChoreFilter, playerId: e.target.value})}
+                                        style={{
+                                            padding: '12px',
+                                            borderRadius: '8px',
+                                            border: `1px solid ${theme.outline}`,
+                                            background: theme.surface,
+                                            color: theme.text,
+                                            fontSize: '1rem'
+                                        }}
+                                    >
+                                        <option value="">All Players</option>
+                                        {players.map(p => (
+                                            <option key={p.id} value={p.id}>{p.name}</option>
+                                        ))}
+                                    </select>
+                                    <input
+                                        type="date"
+                                        value={editChoreFilter.startDate}
+                                        onChange={(e) => setEditChoreFilter({...editChoreFilter, startDate: e.target.value})}
+                                        placeholder="Start Date"
+                                        style={{
+                                            padding: '12px',
+                                            borderRadius: '8px',
+                                            border: `1px solid ${theme.outline}`,
+                                            background: theme.surface,
+                                            color: theme.text,
+                                            fontSize: '1rem'
+                                        }}
+                                    />
+                                    <input
+                                        type="date"
+                                        value={editChoreFilter.endDate}
+                                        onChange={(e) => setEditChoreFilter({...editChoreFilter, endDate: e.target.value})}
+                                        placeholder="End Date"
+                                        style={{
+                                            padding: '12px',
+                                            borderRadius: '8px',
+                                            border: `1px solid ${theme.outline}`,
+                                            background: theme.surface,
+                                            color: theme.text,
+                                            fontSize: '1rem'
+                                        }}
+                                    />
+                                    <button
+                                        className="material-button ripple"
+                                        onClick={() => loadApprovedChores(editChoreFilter.playerId, editChoreFilter.startDate, editChoreFilter.endDate)}
+                                        style={{
+                                            background: theme.primary,
+                                            color: theme.onPrimary,
+                                            padding: '12px 20px'
+                                        }}
+                                    >
+                                        🔍 Search
+                                    </button>
+                                </div>
+
+                                {/* Results */}
+                                {approvedChores.length > 0 && (
+                                    <div style={{
+                                        maxHeight: '400px',
+                                        overflowY: 'auto',
+                                        marginTop: '16px'
+                                    }}>
+                                        {approvedChores.map(completion => (
+                                            <div key={completion.id} style={{
+                                                padding: '12px',
+                                                marginBottom: '8px',
+                                                background: theme.surface,
+                                                borderRadius: '8px',
+                                                border: `1px solid ${theme.outline}`
+                                            }}>
+                                                <div style={{
+                                                    display: 'grid',
+                                                    gridTemplateColumns: '1fr 2fr 1fr auto',
+                                                    gap: '12px',
+                                                    alignItems: 'center'
+                                                }}>
+                                                    <div style={{ fontSize: '0.875rem', color: theme.text }}>
+                                                        <strong>{completion.players?.name}</strong>
+                                                    </div>
+                                                    <select
+                                                        defaultValue={completion.chore_id}
+                                                        id={`chore-${completion.id}`}
+                                                        style={{
+                                                            padding: '8px',
+                                                            borderRadius: '6px',
+                                                            border: `1px solid ${theme.outline}`,
+                                                            background: theme.surface,
+                                                            color: theme.text,
+                                                            fontSize: '0.875rem'
+                                                        }}
+                                                    >
+                                                        {chores.map(chore => (
+                                                            <option key={chore.id} value={chore.id}>
+                                                                {chore.icon} {chore.name} ({chore.points} pts)
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                    <input
+                                                        type="date"
+                                                        defaultValue={completion.completed_date}
+                                                        id={`date-${completion.id}`}
+                                                        style={{
+                                                            padding: '8px',
+                                                            borderRadius: '6px',
+                                                            border: `1px solid ${theme.outline}`,
+                                                            background: theme.surface,
+                                                            color: theme.text,
+                                                            fontSize: '0.875rem'
+                                                        }}
+                                                    />
+                                                    <button
+                                                        className="material-button ripple"
+                                                        onClick={() => {
+                                                            const newChoreId = document.getElementById(`chore-${completion.id}`).value;
+                                                            const newDate = document.getElementById(`date-${completion.id}`).value;
+                                                            if (confirm(`Update this completion?`)) {
+                                                                editApprovedChore(completion.id, newChoreId, newDate);
+                                                            }
+                                                        }}
+                                                        style={{
+                                                            background: theme.success,
+                                                            color: '#FFFFFF',
+                                                            padding: '8px 16px',
+                                                            fontSize: '0.875rem'
+                                                        }}
+                                                    >
+                                                        💾 Save
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Error Logs & Security */}
