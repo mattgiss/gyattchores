@@ -4701,16 +4701,15 @@
                 );
             }
 
-            // If not logged in, show login screen
-            if (!isLoggedIn) {
-                return (
-                    <div style={{
-                        minHeight: '100vh',
-                        background: darkMode ? '#121212' : '#f5f5f5',
-                        fontFamily: "'Google Sans', -apple-system, BlinkMacSystemFont, sans-serif"
-                    }}>
-                        {/* Top Navigation Bar with Password */}
-                        <nav style={{
+            // Main app wrapper - always shows navigation and content based on login state
+            return (
+                <div style={{
+                    minHeight: '100vh',
+                    background: darkMode ? '#121212' : '#f5f5f5',
+                    fontFamily: "'Google Sans', -apple-system, BlinkMacSystemFont, sans-serif"
+                }}>
+                    {/* Top Navigation Bar */}
+                    <nav style={{
                             position: 'sticky',
                             top: 0,
                             zIndex: 1000,
@@ -4754,63 +4753,91 @@
                                 </div>
                             </div>
 
-                            <form onSubmit={handleLogin} style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '12px'
-                            }}>
-                                <input
-                                    type="password"
-                                    value={loginPassword}
-                                    onChange={(e) => setLoginPassword(e.target.value)}
-                                    placeholder="Enter password"
-                                    autoFocus
-                                    style={{
-                                        padding: '10px 16px',
-                                        fontSize: '0.9375rem',
-                                        border: `1px solid ${darkMode ? '#333' : '#dadce0'}`,
-                                        borderRadius: '8px',
-                                        background: darkMode ? '#2C2C2C' : '#FFFFFF',
-                                        color: darkMode ? '#E0E0E0' : '#202124',
-                                        outline: 'none',
-                                        transition: 'border-color 0.2s',
-                                        minWidth: '200px'
-                                    }}
-                                    onFocus={(e) => {
-                                        e.target.style.borderColor = '#1a73e8';
-                                    }}
-                                    onBlur={(e) => {
-                                        e.target.style.borderColor = darkMode ? '#333' : '#dadce0';
-                                    }}
-                                />
+                            {!isLoggedIn ? (
+                                <form onSubmit={handleLogin} style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '12px'
+                                }}>
+                                    <input
+                                        type="password"
+                                        value={loginPassword}
+                                        onChange={(e) => setLoginPassword(e.target.value)}
+                                        placeholder="Enter password"
+                                        style={{
+                                            padding: '10px 16px',
+                                            fontSize: '0.9375rem',
+                                            border: `1px solid ${darkMode ? '#333' : '#dadce0'}`,
+                                            borderRadius: '8px',
+                                            background: darkMode ? '#2C2C2C' : '#FFFFFF',
+                                            color: darkMode ? '#E0E0E0' : '#202124',
+                                            outline: 'none',
+                                            transition: 'border-color 0.2s',
+                                            minWidth: '200px'
+                                        }}
+                                        onFocus={(e) => {
+                                            e.target.style.borderColor = '#1a73e8';
+                                        }}
+                                        onBlur={(e) => {
+                                            e.target.style.borderColor = darkMode ? '#333' : '#dadce0';
+                                        }}
+                                    />
+                                    <button
+                                        type="submit"
+                                        className="material-button elevation-1 ripple"
+                                        style={{
+                                            padding: '10px 24px',
+                                            fontSize: '0.9375rem',
+                                            fontWeight: '500',
+                                            background: '#1a73e8',
+                                            color: '#FFFFFF',
+                                            border: 'none',
+                                            borderRadius: '8px',
+                                            cursor: 'pointer',
+                                            transition: 'background 0.2s',
+                                            whiteSpace: 'nowrap'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.target.style.background = '#1557b0';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.target.style.background = '#1a73e8';
+                                        }}
+                                    >
+                                        Login
+                                    </button>
+                                </form>
+                            ) : (
                                 <button
-                                    type="submit"
-                                    className="material-button elevation-1 ripple"
+                                    onClick={() => {
+                                        localStorage.removeItem('gyatt_session');
+                                        setIsLoggedIn(false);
+                                    }}
+                                    className="material-button"
                                     style={{
                                         padding: '10px 24px',
                                         fontSize: '0.9375rem',
                                         fontWeight: '500',
-                                        background: '#1a73e8',
-                                        color: '#FFFFFF',
-                                        border: 'none',
+                                        background: 'transparent',
+                                        color: darkMode ? '#E0E0E0' : '#202124',
+                                        border: `1px solid ${darkMode ? '#333' : '#dadce0'}`,
                                         borderRadius: '8px',
                                         cursor: 'pointer',
-                                        transition: 'background 0.2s',
-                                        whiteSpace: 'nowrap'
+                                        transition: 'all 0.2s'
                                     }}
                                     onMouseEnter={(e) => {
-                                        e.target.style.background = '#1557b0';
+                                        e.target.style.background = darkMode ? '#2C2C2C' : '#f5f5f5';
                                     }}
                                     onMouseLeave={(e) => {
-                                        e.target.style.background = '#1a73e8';
+                                        e.target.style.background = 'transparent';
                                     }}
                                 >
-                                    Login
+                                    Logout
                                 </button>
-                            </form>
+                            )}
                         </nav>
 
-                        {loginError && (
+                        {!isLoggedIn && loginError && (
                             <div style={{
                                 margin: '16px 24px 0',
                                 padding: '12px',
@@ -4824,7 +4851,8 @@
                             </div>
                         )}
 
-                        {/* Single Column Layout */}
+                        {/* Homepage - visible to everyone when not logged in */}
+                        {!isLoggedIn && (
                         <div style={{
                             maxWidth: '800px',
                             margin: '0 auto',
@@ -5070,16 +5098,15 @@
                                     </div>
                                 </div>
                         </div>
-                    </div>
-                );
-            }
+                        )}
 
-            return (
-                <div style={{
-                    minHeight: '100vh',
-                    background: theme.bg,
-                    color: theme.text,
-                    padding: '12px',
+                        {/* App Dashboard - only visible when logged in */}
+                        {isLoggedIn && (
+                        <div style={{
+                            minHeight: 'calc(100vh - 73px)',
+                            background: theme.bg,
+                            color: theme.text,
+                            padding: '12px',
                     fontFamily: "'Google Sans', -apple-system, BlinkMacSystemFont, sans-serif",
                     width: '100%',
                     maxWidth: '100vw',
@@ -6757,6 +6784,7 @@
                         </div>
 
                     </div>
+                    )}
                 </div>
             );
         }
