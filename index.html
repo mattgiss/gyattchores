@@ -814,7 +814,7 @@
             const [errorStats, setErrorStats] = useState([]);
             const [activityLogs, setActivityLogs] = useState([]);
             const [approvedChores, setApprovedChores] = useState([]);
-            const [editChoreFilter, setEditChoreFilter] = useState({ playerId: '', startDate: '', endDate: '' });
+            const [editChoreFilter, setEditChoreFilter] = useState({ playerId: '', startDate: '', endDate: '', status: '' });
 
             // Bonus system states
             const [playerBonuses, setPlayerBonuses] = useState({});
@@ -3082,174 +3082,6 @@
                                 </button>
                             </div>
 
-                            {/* Edit Approved Chores */}
-                            <div className="material-card elevation-1" style={{
-                                padding: '20px',
-                                background: theme.cardBg,
-                                marginBottom: '24px'
-                            }}>
-                                <h2 style={{
-                                    fontSize: '1.125rem',
-                                    fontWeight: '500',
-                                    marginBottom: '16px',
-                                    color: theme.cardText
-                                }}>
-                                    ✏️ Edit Approved Chores
-                                </h2>
-                                <p style={{
-                                    fontSize: '0.875rem',
-                                    color: theme.textSecondary,
-                                    marginBottom: '16px',
-                                    lineHeight: '1.5'
-                                }}>
-                                    Fix mistakes in approved completions by changing the chore or date.
-                                </p>
-
-                                {/* Filters */}
-                                <div style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: '1fr 1fr 1fr auto',
-                                    gap: '12px',
-                                    marginBottom: '16px'
-                                }}>
-                                    <select
-                                        value={editChoreFilter.playerId}
-                                        onChange={(e) => setEditChoreFilter({...editChoreFilter, playerId: e.target.value})}
-                                        style={{
-                                            padding: '12px',
-                                            borderRadius: '8px',
-                                            border: `1px solid ${theme.outline}`,
-                                            background: theme.surface,
-                                            color: theme.text,
-                                            fontSize: '1rem'
-                                        }}
-                                    >
-                                        <option value="">All Players</option>
-                                        {players.map(p => (
-                                            <option key={p.id} value={p.id}>{p.name}</option>
-                                        ))}
-                                    </select>
-                                    <input
-                                        type="date"
-                                        value={editChoreFilter.startDate}
-                                        onChange={(e) => setEditChoreFilter({...editChoreFilter, startDate: e.target.value})}
-                                        placeholder="Start Date"
-                                        style={{
-                                            padding: '12px',
-                                            borderRadius: '8px',
-                                            border: `1px solid ${theme.outline}`,
-                                            background: theme.surface,
-                                            color: theme.text,
-                                            fontSize: '1rem'
-                                        }}
-                                    />
-                                    <input
-                                        type="date"
-                                        value={editChoreFilter.endDate}
-                                        onChange={(e) => setEditChoreFilter({...editChoreFilter, endDate: e.target.value})}
-                                        placeholder="End Date"
-                                        style={{
-                                            padding: '12px',
-                                            borderRadius: '8px',
-                                            border: `1px solid ${theme.outline}`,
-                                            background: theme.surface,
-                                            color: theme.text,
-                                            fontSize: '1rem'
-                                        }}
-                                    />
-                                    <button
-                                        className="material-button ripple"
-                                        onClick={() => loadApprovedChores(editChoreFilter.playerId, editChoreFilter.startDate, editChoreFilter.endDate)}
-                                        style={{
-                                            background: theme.primary,
-                                            color: theme.onPrimary,
-                                            padding: '12px 20px'
-                                        }}
-                                    >
-                                        🔍 Search
-                                    </button>
-                                </div>
-
-                                {/* Results */}
-                                {approvedChores.length > 0 && (
-                                    <div style={{
-                                        maxHeight: '400px',
-                                        overflowY: 'auto',
-                                        marginTop: '16px'
-                                    }}>
-                                        {approvedChores.map(completion => (
-                                            <div key={completion.id} style={{
-                                                padding: '12px',
-                                                marginBottom: '8px',
-                                                background: theme.surface,
-                                                borderRadius: '8px',
-                                                border: `1px solid ${theme.outline}`
-                                            }}>
-                                                <div style={{
-                                                    display: 'grid',
-                                                    gridTemplateColumns: '1fr 2fr 1fr auto',
-                                                    gap: '12px',
-                                                    alignItems: 'center'
-                                                }}>
-                                                    <div style={{ fontSize: '0.875rem', color: theme.text }}>
-                                                        <strong>{completion.players?.name}</strong>
-                                                    </div>
-                                                    <select
-                                                        defaultValue={completion.chore_id}
-                                                        id={`chore-${completion.id}`}
-                                                        style={{
-                                                            padding: '8px',
-                                                            borderRadius: '6px',
-                                                            border: `1px solid ${theme.outline}`,
-                                                            background: theme.surface,
-                                                            color: theme.text,
-                                                            fontSize: '0.875rem'
-                                                        }}
-                                                    >
-                                                        {chores.map(chore => (
-                                                            <option key={chore.id} value={chore.id}>
-                                                                {chore.icon} {chore.name} ({chore.points} pts)
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                    <input
-                                                        type="date"
-                                                        defaultValue={completion.completed_date}
-                                                        id={`date-${completion.id}`}
-                                                        style={{
-                                                            padding: '8px',
-                                                            borderRadius: '6px',
-                                                            border: `1px solid ${theme.outline}`,
-                                                            background: theme.surface,
-                                                            color: theme.text,
-                                                            fontSize: '0.875rem'
-                                                        }}
-                                                    />
-                                                    <button
-                                                        className="material-button ripple"
-                                                        onClick={() => {
-                                                            const newChoreId = document.getElementById(`chore-${completion.id}`).value;
-                                                            const newDate = document.getElementById(`date-${completion.id}`).value;
-                                                            if (confirm(`Update this completion?`)) {
-                                                                editApprovedChore(completion.id, newChoreId, newDate);
-                                                            }
-                                                        }}
-                                                        style={{
-                                                            background: theme.success,
-                                                            color: '#FFFFFF',
-                                                            padding: '8px 16px',
-                                                            fontSize: '0.875rem'
-                                                        }}
-                                                    >
-                                                        💾 Save
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-
                             {/* Error Logs & Security */}
                             <div className="material-card elevation-1" style={{
                                 padding: '20px',
@@ -3767,11 +3599,92 @@
                                 <h2 style={{
                                     fontSize: '1.125rem',
                                     fontWeight: '500',
-                                    marginBottom: '16px',
+                                    marginBottom: '4px',
                                     color: theme.cardText
                                 }}>
-                                    📝 Recent Completions (Last 30 Days)
+                                    📝 Recent Completions & Edits
                                 </h2>
+                                <p style={{
+                                    fontSize: '0.875rem',
+                                    color: theme.textSecondary,
+                                    marginBottom: '16px'
+                                }}>
+                                    View, filter, and edit completed chores
+                                </p>
+
+                                {/* Filters */}
+                                <div style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                                    gap: '12px',
+                                    marginBottom: '16px',
+                                    padding: '12px',
+                                    background: theme.surface,
+                                    borderRadius: '8px'
+                                }}>
+                                    <select
+                                        value={editChoreFilter.playerId}
+                                        onChange={(e) => setEditChoreFilter({...editChoreFilter, playerId: e.target.value})}
+                                        style={{
+                                            padding: '8px',
+                                            borderRadius: '6px',
+                                            border: `1px solid ${theme.outline}`,
+                                            background: theme.cardBg,
+                                            color: theme.text,
+                                            fontSize: '0.875rem'
+                                        }}
+                                    >
+                                        <option value="">All Players</option>
+                                        {players.map(p => (
+                                            <option key={p.id} value={p.id}>{p.name}</option>
+                                        ))}
+                                    </select>
+                                    <select
+                                        value={editChoreFilter.status || ''}
+                                        onChange={(e) => setEditChoreFilter({...editChoreFilter, status: e.target.value})}
+                                        style={{
+                                            padding: '8px',
+                                            borderRadius: '6px',
+                                            border: `1px solid ${theme.outline}`,
+                                            background: theme.cardBg,
+                                            color: theme.text,
+                                            fontSize: '0.875rem'
+                                        }}
+                                    >
+                                        <option value="">All Status</option>
+                                        <option value="approved">Approved</option>
+                                        <option value="pending">Pending</option>
+                                        <option value="rejected">Rejected</option>
+                                    </select>
+                                    <input
+                                        type="date"
+                                        value={editChoreFilter.startDate}
+                                        onChange={(e) => setEditChoreFilter({...editChoreFilter, startDate: e.target.value})}
+                                        placeholder="Start Date"
+                                        style={{
+                                            padding: '8px',
+                                            borderRadius: '6px',
+                                            border: `1px solid ${theme.outline}`,
+                                            background: theme.cardBg,
+                                            color: theme.text,
+                                            fontSize: '0.875rem'
+                                        }}
+                                    />
+                                    <input
+                                        type="date"
+                                        value={editChoreFilter.endDate}
+                                        onChange={(e) => setEditChoreFilter({...editChoreFilter, endDate: e.target.value})}
+                                        placeholder="End Date"
+                                        style={{
+                                            padding: '8px',
+                                            borderRadius: '6px',
+                                            border: `1px solid ${theme.outline}`,
+                                            background: theme.cardBg,
+                                            color: theme.text,
+                                            fontSize: '0.875rem'
+                                        }}
+                                    />
+                                </div>
                                 {allCompletions.length === 0 ? (
                                     <div style={{
                                         textAlign: 'center',
@@ -3782,7 +3695,15 @@
                                     </div>
                                 ) : (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                        {allCompletions.map(completion => (
+                                        {allCompletions
+                                            .filter(completion => {
+                                                if (editChoreFilter.playerId && completion.player_id !== editChoreFilter.playerId) return false;
+                                                if (editChoreFilter.status && completion.status !== editChoreFilter.status) return false;
+                                                if (editChoreFilter.startDate && completion.completed_date < editChoreFilter.startDate) return false;
+                                                if (editChoreFilter.endDate && completion.completed_date > editChoreFilter.endDate) return false;
+                                                return true;
+                                            })
+                                            .map(completion => (
                                             <div key={completion.id} className="material-card" style={{
                                                 padding: '16px',
                                                 background: theme.surface,
@@ -3837,28 +3758,57 @@
                                                             })}
                                                         </div>
                                                     </div>
-                                                    <button
-                                                        className="material-button ripple"
-                                                        onClick={() => {
-                                                            const newDate = prompt(
-                                                                'Enter new date (YYYY-MM-DD):',
-                                                                completion.completed_date
-                                                            );
-                                                            if (newDate && newDate !== completion.completed_date) {
-                                                                if (confirm(`Change date from ${completion.completed_date} to ${newDate}?`)) {
-                                                                    updateChoreDate(completion.id, newDate);
+                                                    <div style={{ display: 'flex', gap: '8px', flexDirection: 'column', minWidth: '200px' }}>
+                                                        <select
+                                                            defaultValue={completion.chore_id}
+                                                            id={`edit-chore-${completion.id}`}
+                                                            style={{
+                                                                padding: '6px 8px',
+                                                                borderRadius: '6px',
+                                                                border: `1px solid ${theme.outline}`,
+                                                                background: theme.cardBg,
+                                                                color: theme.text,
+                                                                fontSize: '0.75rem'
+                                                            }}
+                                                        >
+                                                            {chores.map(chore => (
+                                                                <option key={chore.id} value={chore.id}>
+                                                                    {chore.icon} {chore.name}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                        <input
+                                                            type="date"
+                                                            defaultValue={completion.completed_date}
+                                                            id={`edit-date-${completion.id}`}
+                                                            style={{
+                                                                padding: '6px 8px',
+                                                                borderRadius: '6px',
+                                                                border: `1px solid ${theme.outline}`,
+                                                                background: theme.cardBg,
+                                                                color: theme.text,
+                                                                fontSize: '0.75rem'
+                                                            }}
+                                                        />
+                                                        <button
+                                                            className="material-button ripple"
+                                                            onClick={() => {
+                                                                const newChoreId = document.getElementById(`edit-chore-${completion.id}`).value;
+                                                                const newDate = document.getElementById(`edit-date-${completion.id}`).value;
+                                                                if (confirm('Save changes?')) {
+                                                                    editApprovedChore(completion.id, newChoreId, newDate);
                                                                 }
-                                                            }
-                                                        }}
-                                                        style={{
-                                                            background: theme.primary,
-                                                            color: theme.onPrimary,
-                                                            padding: '8px 16px',
-                                                            fontSize: '0.875rem'
-                                                        }}
-                                                    >
-                                                        Edit Date
-                                                    </button>
+                                                            }}
+                                                            style={{
+                                                                background: theme.success,
+                                                                color: '#FFFFFF',
+                                                                padding: '6px 12px',
+                                                                fontSize: '0.75rem'
+                                                            }}
+                                                        >
+                                                            💾 Save
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))}
