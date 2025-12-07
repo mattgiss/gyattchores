@@ -2103,6 +2103,20 @@
                             choreCompletion.completed_at,
                             choreCompletion.value_awarded
                         );
+
+                        // FIX: Immediately refresh player stats for this player to update streak display
+                        const { data: freshStats } = await supabase
+                            .from('player_stats')
+                            .select('*')
+                            .eq('player_id', choreCompletion.player_id)
+                            .single();
+
+                        if (freshStats) {
+                            setPlayerStats(prev => ({
+                                ...prev,
+                                [choreCompletion.player_id]: freshStats
+                            }));
+                        }
                     }
 
                     // Remove from pending list
@@ -2112,6 +2126,11 @@
 
                     // Reload data to update points
                     await loadData();
+
+                    // FIX: If viewing player profile, refresh their history for updated Last 7 Days
+                    if (showProfile && selectedPlayer && choreCompletion.player_id === selectedPlayer.id) {
+                        await loadPlayerProfile(selectedPlayer.id);
+                    }
 
                     haptic('success');
                     alert('✅ Chore approved!');
@@ -3697,9 +3716,15 @@
             // Profile Page View
             if (showProfile && selectedPlayer) {
                 const approvedHistory = playerHistory.filter(h => h.status === 'approved');
-                const last7Days = approvedHistory.slice(0, 7);
 
-                // Group by date for daily totals
+                // FIX: Filter chores from the last 7 calendar days (not just 7 chores)
+                const sevenDaysAgo = new Date();
+                sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
+
+                const last7Days = approvedHistory.filter(h => h.completed_date >= sevenDaysAgoStr);
+
+                // Group by date for daily totals (30-day history)
                 const dailyTotals = {};
                 approvedHistory.forEach(h => {
                     const date = h.completed_date;
@@ -5861,11 +5886,31 @@
                                                     for (const playerId of uniquePlayers) {
                                                         await checkAndAwardAchievements(playerId);
                                                     }
+
+                                                    // FIX: Refresh stats for all affected players immediately
+                                                    const { data: allFreshStats } = await supabase
+                                                        .from('player_stats')
+                                                        .select('*')
+                                                        .in('player_id', uniquePlayers);
+
+                                                    if (allFreshStats) {
+                                                        const statsMap = {};
+                                                        allFreshStats.forEach(stat => {
+                                                            statsMap[stat.player_id] = stat;
+                                                        });
+                                                        setPlayerStats(prev => ({ ...prev, ...statsMap }));
+                                                    }
                                                 }
 
                                                 setPendingChores([]);
                                                 await loadAllCompletions();
                                                 await loadData();
+
+                                                // FIX: If viewing player profile, refresh their history
+                                                if (showProfile && selectedPlayer) {
+                                                    await loadPlayerProfile(selectedPlayer.id);
+                                                }
+
                                                 haptic('success');
                                                 alert('✅ All chores approved!');
                                             } catch (error) {
