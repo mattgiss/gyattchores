@@ -5268,6 +5268,39 @@
                         padding: '0 20px',
                         margin: '0 0 24px 0'
                     }}>
+                        {/* Current Date and Time */}
+                        <div className="material-card elevation-1" style={{
+                            padding: '16px 24px',
+                            background: theme.cardBg,
+                            borderLeft: `4px solid ${theme.accent}`,
+                            marginBottom: '16px'
+                        }}>
+                            <div style={{
+                                fontSize: '1.25rem',
+                                fontWeight: '600',
+                                color: theme.cardText
+                            }}>
+                                📅 {new Date().toLocaleDateString('en-US', {
+                                    weekday: 'long',
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric',
+                                    timeZone: 'America/Denver'
+                                })}
+                            </div>
+                            <div style={{
+                                fontSize: '1rem',
+                                color: theme.textSecondary,
+                                marginTop: '4px'
+                            }}>
+                                🕐 {new Date().toLocaleTimeString('en-US', {
+                                    hour: 'numeric',
+                                    minute: '2-digit',
+                                    timeZone: 'America/Denver'
+                                })} MT
+                            </div>
+                        </div>
+
                         {/* Daily Quote */}
                         {(() => {
                             const dailyQuote = getDailyQuote();
