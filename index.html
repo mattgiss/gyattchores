@@ -5268,122 +5268,136 @@
                         padding: '0 20px',
                         margin: '0 0 24px 0'
                     }}>
-                        {/* Current Date and Time */}
-                        <div className="material-card elevation-1" style={{
-                            padding: '16px 24px',
-                            background: theme.cardBg,
-                            borderLeft: `4px solid ${theme.accent}`,
-                            marginBottom: '16px'
-                        }}>
-                            <div style={{
-                                fontSize: '1.25rem',
-                                fontWeight: '600',
-                                color: theme.cardText
-                            }}>
-                                📅 {new Date().toLocaleDateString('en-US', {
-                                    weekday: 'long',
-                                    year: 'numeric',
-                                    month: 'long',
-                                    day: 'numeric',
-                                    timeZone: 'America/Denver'
-                                })}
-                            </div>
-                            <div style={{
-                                fontSize: '1rem',
-                                color: theme.textSecondary,
-                                marginTop: '4px'
-                            }}>
-                                🕐 {new Date().toLocaleTimeString('en-US', {
-                                    hour: 'numeric',
-                                    minute: '2-digit',
-                                    timeZone: 'America/Denver'
-                                })} MT
-                            </div>
-                        </div>
-
-                        {/* Daily Quote */}
+                        {/* Daily Dashboard - Date, Time, Weather & Inspiration */}
                         {(() => {
                             const dailyQuote = getDailyQuote();
                             return (
-                                <div className="material-card elevation-1" style={{
-                                    padding: '24px',
+                                <div className="material-card elevation-2" style={{
+                                    padding: '0',
                                     background: theme.cardBg,
-                                    borderLeft: `4px solid ${theme.primary}`
+                                    overflow: 'hidden',
+                                    gridColumn: 'span 1'
                                 }}>
+                                    {/* Header with Date & Time */}
                                     <div style={{
-                                        fontSize: '0.875rem',
-                                        fontWeight: '600',
-                                        textTransform: 'uppercase',
-                                        letterSpacing: '1.5px',
-                                        color: theme.textSecondary,
-                                        marginBottom: '12px'
+                                        background: `linear-gradient(135deg, ${theme.primary} 0%, ${theme.accent} 100%)`,
+                                        padding: '20px 24px',
+                                        color: '#FFFFFF'
                                     }}>
-                                        💭 Today's Inspiration
+                                        <div style={{
+                                            fontSize: '1.5rem',
+                                            fontWeight: '700',
+                                            marginBottom: '4px'
+                                        }}>
+                                            {new Date().toLocaleDateString('en-US', {
+                                                weekday: 'long',
+                                                timeZone: 'America/Denver'
+                                            })}
+                                        </div>
+                                        <div style={{
+                                            fontSize: '1rem',
+                                            opacity: 0.9
+                                        }}>
+                                            {new Date().toLocaleDateString('en-US', {
+                                                month: 'long',
+                                                day: 'numeric',
+                                                year: 'numeric',
+                                                timeZone: 'America/Denver'
+                                            })} • {new Date().toLocaleTimeString('en-US', {
+                                                hour: 'numeric',
+                                                minute: '2-digit',
+                                                timeZone: 'America/Denver'
+                                            })} MT
+                                        </div>
                                     </div>
-                                    <div style={{
-                                        fontSize: '1.25rem',
-                                        fontStyle: 'italic',
-                                        color: theme.cardText,
-                                        marginBottom: '8px',
-                                        lineHeight: '1.6'
-                                    }}>
-                                        "{dailyQuote.quote}"
-                                    </div>
-                                    <div style={{
-                                        fontSize: '1.125rem',
-                                        fontWeight: '500',
-                                        color: theme.textSecondary
-                                    }}>
-                                        — {dailyQuote.author}
-                                    </div>
-                                </div>
-                            );
-                        })()}
 
-                        {/* Weather */}
-                        {weather && !weatherLoading && (
-                            <div className="material-card elevation-1" style={{
-                                padding: '24px',
-                                background: theme.cardBg
-                            }}>
-                                <div style={{
-                                    fontSize: '0.875rem',
-                                    fontWeight: '600',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '1.5px',
-                                    color: theme.textSecondary,
-                                    marginBottom: '12px'
-                                }}>
-                                    🌤️ Brighton, CO Weather
-                                </div>
-                                <div style={{
-                                    fontSize: '2.75rem',
-                                    fontWeight: '700',
-                                    color: theme.primary,
-                                    marginBottom: '8px'
-                                }}>
-                                    {Math.round(weather.temp)}°F
-                                </div>
-                                <div style={{
-                                    fontSize: '1.125rem',
-                                    color: theme.cardText,
-                                    marginBottom: '8px'
-                                }}>
-                                    {weather.description}
-                                </div>
-                                <div style={{
-                                    fontSize: '1rem',
-                                    color: theme.textSecondary
-                                }}>
-                                    👕 {weather.clothing}
-                                </div>
+                                    {/* Weather Section */}
+                                    {weather && !weatherLoading && (
+                                        <div style={{
+                                            padding: '20px 24px',
+                                            borderBottom: `1px solid ${theme.outline}`
+                                        }}>
+                                            <div style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                                marginBottom: '12px'
+                                            }}>
+                                                <div>
+                                                    <div style={{
+                                                        fontSize: '0.75rem',
+                                                        fontWeight: '600',
+                                                        textTransform: 'uppercase',
+                                                        letterSpacing: '1px',
+                                                        color: theme.textSecondary,
+                                                        marginBottom: '4px'
+                                                    }}>
+                                                        Brighton, CO
+                                                    </div>
+                                                    <div style={{
+                                                        fontSize: '2.5rem',
+                                                        fontWeight: '700',
+                                                        color: theme.primary,
+                                                        lineHeight: 1
+                                                    }}>
+                                                        {Math.round(weather.temp)}°F
+                                                    </div>
+                                                    <div style={{
+                                                        fontSize: '1rem',
+                                                        color: theme.cardText,
+                                                        marginTop: '4px'
+                                                    }}>
+                                                        {weather.icon} {weather.description}
+                                                    </div>
+                                                </div>
+                                                {weather.tomorrow && (
+                                                    <div style={{
+                                                        textAlign: 'right',
+                                                        padding: '12px 16px',
+                                                        background: darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                                                        borderRadius: '12px'
+                                                    }}>
+                                                        <div style={{
+                                                            fontSize: '0.6875rem',
+                                                            fontWeight: '600',
+                                                            textTransform: 'uppercase',
+                                                            letterSpacing: '0.5px',
+                                                            color: theme.textSecondary,
+                                                            marginBottom: '4px'
+                                                        }}>
+                                                            Tomorrow
+                                                        </div>
+                                                        <div style={{
+                                                            fontSize: '1.25rem',
+                                                            fontWeight: '600',
+                                                            color: theme.cardText
+                                                        }}>
+                                                            {weather.tomorrow.icon} {weather.tomorrow.maxTemp}°/{weather.tomorrow.minTemp}°
+                                                        </div>
+                                                        <div style={{
+                                                            fontSize: '0.75rem',
+                                                            color: theme.textSecondary
+                                                        }}>
+                                                            {weather.tomorrow.description}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div style={{
+                                                fontSize: '0.875rem',
+                                                color: theme.textSecondary,
+                                                padding: '8px 12px',
+                                                background: darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                                                borderRadius: '8px'
+                                            }}>
+                                                👕 {weather.clothing}
+                                            </div>
+                                        </div>
+                                    )}
 
-                                {/* Tomorrow's Forecast */}
-                                {weather.tomorrow && (
+                                    {/* Inspiration Section */}
                                     <div style={{
-                                        marginTop: '20px',
-                                        paddingTop: '20px',
-                                        borderTop: `1px solid ${theme.outline}`
+                                        padding: '20px 24px'
                                     }}>
                                         <div style={{
                                             fontSize: '0.75rem',
@@ -5391,40 +5405,30 @@
                                             textTransform: 'uppercase',
                                             letterSpacing: '1px',
                                             color: theme.textSecondary,
-                                            marginBottom: '8px'
+                                            marginBottom: '12px'
                                         }}>
-                                            📅 Tomorrow
+                                            💭 Today's Inspiration
                                         </div>
                                         <div style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '12px'
+                                            fontSize: '1.125rem',
+                                            fontStyle: 'italic',
+                                            color: theme.cardText,
+                                            marginBottom: '8px',
+                                            lineHeight: '1.6'
                                         }}>
-                                            <div style={{
-                                                fontSize: '2rem'
-                                            }}>
-                                                {weather.tomorrow.icon}
-                                            </div>
-                                            <div style={{ flex: 1 }}>
-                                                <div style={{
-                                                    fontSize: '1.125rem',
-                                                    fontWeight: '600',
-                                                    color: theme.cardText
-                                                }}>
-                                                    {weather.tomorrow.maxTemp}° / {weather.tomorrow.minTemp}°F
-                                                </div>
-                                                <div style={{
-                                                    fontSize: '0.875rem',
-                                                    color: theme.textSecondary
-                                                }}>
-                                                    {weather.tomorrow.description}
-                                                </div>
-                                            </div>
+                                            "{dailyQuote.quote}"
+                                        </div>
+                                        <div style={{
+                                            fontSize: '1rem',
+                                            fontWeight: '500',
+                                            color: theme.textSecondary
+                                        }}>
+                                            — {dailyQuote.author}
                                         </div>
                                     </div>
-                                )}
-                            </div>
-                        )}
+                                </div>
+                            );
+                        })()}
 
                         {/* Next Payout */}
                         <div className="material-card elevation-1" style={{
