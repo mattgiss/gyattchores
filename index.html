@@ -877,6 +877,10 @@
             const [customTaskDueDate, setCustomTaskDueDate] = useState('');
             const [selectedCustomTaskPlayers, setSelectedCustomTaskPlayers] = useState([]);
 
+            // Monthly payout tracking
+            const [playerMonthlyTotals, setPlayerMonthlyTotals] = useState({});
+            const [playerWeeklyHistory, setPlayerWeeklyHistory] = useState({});
+
             // Pull to refresh states
             const [isPulling, setIsPulling] = useState(false);
             const [pullDistance, setPullDistance] = useState(0);
@@ -1175,6 +1179,66 @@
                     setChores(formattedChores);
                     setPendingChores(formattedPending);
                     setAllCompletions(allCompletionsData || []);
+
+                    // Calculate monthly totals and weekly history for each player
+                    const now = new Date();
+                    const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                    const firstOfMonthStr = firstOfMonth.toISOString().split('T')[0];
+
+                    const monthlyTotals = {};
+                    const weeklyHistory = {};
+
+                    for (const player of playersData) {
+                        // Get all completions this month
+                        const { data: monthlyData } = await supabase
+                            .from('chore_completions')
+                            .select('value_awarded, completed_date')
+                            .eq('player_id', player.id)
+                            .eq('status', 'approved')
+                            .gte('completed_date', firstOfMonthStr);
+
+                        // Get bonuses this month
+                        const { data: monthlyBonuses } = await supabase
+                            .from('bonuses')
+                            .select('bonus_amount, week_start_date')
+                            .eq('player_id', player.id)
+                            .gte('week_start_date', firstOfMonthStr);
+
+                        // Calculate total monthly points
+                        const monthlyChorePoints = monthlyData?.reduce((sum, c) => sum + c.value_awarded, 0) || 0;
+                        const monthlyBonusPoints = monthlyBonuses?.reduce((sum, b) => sum + b.bonus_amount, 0) || 0;
+                        monthlyTotals[player.id] = monthlyChorePoints + monthlyBonusPoints;
+
+                        // Group by week for weekly history
+                        const weeks = {};
+                        (monthlyData || []).forEach(c => {
+                            const date = new Date(c.completed_date);
+                            const weekStart = new Date(date);
+                            const dayOfWeek = weekStart.getDay();
+                            const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+                            weekStart.setDate(weekStart.getDate() + daysToMonday);
+                            const weekKey = weekStart.toISOString().split('T')[0];
+
+                            if (!weeks[weekKey]) {
+                                weeks[weekKey] = { chorePoints: 0, bonusPoints: 0 };
+                            }
+                            weeks[weekKey].chorePoints += c.value_awarded;
+                        });
+
+                        // Add bonuses to their respective weeks
+                        (monthlyBonuses || []).forEach(b => {
+                            const weekKey = b.week_start_date;
+                            if (!weeks[weekKey]) {
+                                weeks[weekKey] = { chorePoints: 0, bonusPoints: 0 };
+                            }
+                            weeks[weekKey].bonusPoints += b.bonus_amount;
+                        });
+
+                        weeklyHistory[player.id] = weeks;
+                    }
+
+                    setPlayerMonthlyTotals(monthlyTotals);
+                    setPlayerWeeklyHistory(weeklyHistory);
 
                     // Get current week's GOAT(s)
                     const { data: goatData, error: goatError } = await supabase
@@ -4199,7 +4263,7 @@
                                     <div style={{ fontSize: '0.875rem', color: theme.textSecondary }}>completed</div>
                                 </div>
 
-                                {/* Weekly Payout */}
+                                {/* Monthly Payout */}
                                 <div className="material-card elevation-1" style={{
                                     padding: '16px',
                                     background: theme.cardBg,
@@ -4212,14 +4276,14 @@
                                         color: theme.textSecondary,
                                         marginBottom: '8px'
                                     }}>
-                                        Weekly Payout
+                                        Monthly Payout
                                     </div>
                                     <div style={{
                                         fontSize: '2rem',
                                         fontWeight: '600',
                                         color: '#2E7D32'
                                     }}>
-                                        ${calculateTieredPayout(selectedPlayer.points).total.toFixed(2)}
+                                        ${calculateTieredPayout(playerMonthlyTotals[selectedPlayer.id] || 0).total.toFixed(2)}
                                     </div>
                                     <div style={{
                                         fontSize: '0.75rem',
@@ -4231,49 +4295,124 @@
                                 </div>
                             </div>
 
-                            {/* Payout Breakdown */}
+                            {/* Payout Breakdown - Weekly Totals */}
                             {(() => {
-                                const payout = calculateTieredPayout(selectedPlayer.points);
-                                if (payout.breakdown.length > 0) {
-                                    return (
-                                        <div className="material-card elevation-1" style={{
-                                            padding: '16px',
-                                            background: theme.cardBg,
-                                            marginBottom: '16px'
+                                const weeklyData = playerWeeklyHistory[selectedPlayer.id] || {};
+                                const weeks = Object.keys(weeklyData).sort();
+                                const monthlyTotal = playerMonthlyTotals[selectedPlayer.id] || 0;
+                                const monthlyPayout = calculateTieredPayout(monthlyTotal);
+
+                                return (
+                                    <div className="material-card elevation-1" style={{
+                                        padding: '16px',
+                                        background: theme.cardBg,
+                                        marginBottom: '16px'
+                                    }}>
+                                        <div style={{
+                                            fontSize: '1rem',
+                                            fontWeight: '600',
+                                            marginBottom: '16px',
+                                            color: theme.cardText
+                                        }}>
+                                            💵 Payout Breakdown
+                                        </div>
+
+                                        {/* Monthly Total */}
+                                        <div style={{
+                                            padding: '12px',
+                                            marginBottom: '12px',
+                                            background: darkMode ? 'rgba(46, 125, 50, 0.15)' : 'rgba(46, 125, 50, 0.1)',
+                                            borderRadius: '8px',
+                                            border: '1px solid #2E7D32'
                                         }}>
                                             <div style={{
-                                                fontSize: '1rem',
-                                                fontWeight: '600',
-                                                marginBottom: '12px',
-                                                color: theme.cardText
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center'
                                             }}>
-                                                💵 Payout Breakdown
-                                            </div>
-                                            {payout.breakdown.map((tier, idx) => (
-                                                <div key={idx} style={{
-                                                    display: 'flex',
-                                                    justifyContent: 'space-between',
-                                                    alignItems: 'center',
-                                                    padding: '8px',
-                                                    marginBottom: '4px',
-                                                    background: darkMode ? 'rgba(71, 178, 196, 0.05)' : 'rgba(208, 165, 0, 0.05)',
-                                                    borderRadius: '6px'
-                                                }}>
-                                                    <div style={{ fontSize: '0.875rem', color: theme.cardText }}>
-                                                        <strong>Tier {tier.tier}:</strong> {(typeof tier.points === 'number' ? tier.points : 0).toLocaleString()} pts @ {tier.rate}
+                                                <div>
+                                                    <div style={{ fontSize: '0.75rem', color: theme.textSecondary, marginBottom: '4px' }}>
+                                                        Monthly Total ({new Date().toLocaleDateString('en-US', { month: 'long' })})
                                                     </div>
-                                                    <div style={{
-                                                        fontSize: '0.875rem',
-                                                        fontWeight: '600',
-                                                        color: '#2E7D32'
-                                                    }}>
-                                                        ${tier.amount.toFixed(2)}
+                                                    <div style={{ fontSize: '1rem', fontWeight: '600', color: theme.cardText }}>
+                                                        {monthlyTotal.toLocaleString()} pts
                                                     </div>
                                                 </div>
-                                            ))}
+                                                <div style={{
+                                                    fontSize: '1.5rem',
+                                                    fontWeight: '700',
+                                                    color: '#2E7D32'
+                                                }}>
+                                                    ${monthlyPayout.total.toFixed(2)}
+                                                </div>
+                                            </div>
                                         </div>
-                                    );
-                                }
+
+                                        {/* Weekly Breakdown */}
+                                        {weeks.length > 0 && (
+                                            <div>
+                                                <div style={{
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: '600',
+                                                    textTransform: 'uppercase',
+                                                    letterSpacing: '1px',
+                                                    color: theme.textSecondary,
+                                                    marginBottom: '8px'
+                                                }}>
+                                                    Weekly Breakdown
+                                                </div>
+                                                {weeks.map((weekStart, idx) => {
+                                                    const week = weeklyData[weekStart];
+                                                    const weekTotal = week.chorePoints + week.bonusPoints;
+                                                    const weekPayout = calculateTieredPayout(weekTotal);
+                                                    const weekDate = new Date(weekStart);
+                                                    const weekEndDate = new Date(weekDate);
+                                                    weekEndDate.setDate(weekEndDate.getDate() + 6);
+
+                                                    return (
+                                                        <div key={idx} style={{
+                                                            display: 'flex',
+                                                            justifyContent: 'space-between',
+                                                            alignItems: 'center',
+                                                            padding: '10px',
+                                                            marginBottom: '6px',
+                                                            background: darkMode ? 'rgba(71, 178, 196, 0.05)' : 'rgba(208, 165, 0, 0.05)',
+                                                            borderRadius: '8px'
+                                                        }}>
+                                                            <div>
+                                                                <div style={{ fontSize: '0.875rem', fontWeight: '500', color: theme.cardText }}>
+                                                                    Week of {weekDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                                                </div>
+                                                                <div style={{ fontSize: '0.75rem', color: theme.textSecondary }}>
+                                                                    {week.chorePoints} pts{week.bonusPoints > 0 ? ` + ${week.bonusPoints} bonus` : ''}
+                                                                </div>
+                                                            </div>
+                                                            <div style={{ textAlign: 'right' }}>
+                                                                <div style={{ fontSize: '0.875rem', fontWeight: '600', color: theme.cardText }}>
+                                                                    {weekTotal} pts
+                                                                </div>
+                                                                <div style={{ fontSize: '0.75rem', color: '#2E7D32' }}>
+                                                                    ${weekPayout.total.toFixed(2)}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+
+                                        {weeks.length === 0 && (
+                                            <div style={{
+                                                textAlign: 'center',
+                                                padding: '16px',
+                                                color: theme.textSecondary,
+                                                fontSize: '0.875rem'
+                                            }}>
+                                                No completed chores this month yet.
+                                            </div>
+                                        )}
+                                    </div>
+                                );
                             })()}
 
                             {/* Achievements */}
@@ -5658,14 +5797,15 @@
                                         {(typeof player?.points === 'number' ? player.points : 0).toLocaleString()} pts
                                     </div>
 
-                                    {player.completedChores >= 5 && (
+                                    {/* Monthly Payout Total */}
+                                    {(playerMonthlyTotals[player.id] || 0) > 0 && (
                                         <div className="chip" style={{
                                             background: darkMode ? 'rgba(129, 201, 149, 0.15)' : 'rgba(15, 157, 88, 0.15)',
                                             color: theme.success,
-                                            fontWeight: '500',
-                                            fontSize: '0.6875rem'
+                                            fontWeight: '600',
+                                            fontSize: '0.75rem'
                                         }}>
-                                            💰 ${calculateTieredPayout(player.points).total.toFixed(2)}
+                                            💰 ${calculateTieredPayout(playerMonthlyTotals[player.id] || 0).total.toFixed(2)} this month
                                         </div>
                                     )}
 
