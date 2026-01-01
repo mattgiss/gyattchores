@@ -798,25 +798,34 @@
             });
         };
 
-        // Get the start date for the current payout period
-        // Payout happens on last Friday of each month, period resets the day after
-        const getPayoutPeriodStart = () => {
+        // Get the previous completed payout period (the one that was just paid out)
+        // This is what should be displayed as "Monthly Total"
+        const getPreviousPayoutPeriod = () => {
             const now = new Date();
             const lastFridayThisMonth = getLastFridayOfMonth(now);
 
-            // If we're past the last Friday of this month, new period started day after that Friday
+            let periodEnd, periodStart;
+
+            // If we're past the last Friday of this month, the previous period just ended
             if (now > lastFridayThisMonth) {
-                const startDate = new Date(lastFridayThisMonth);
-                startDate.setDate(startDate.getDate() + 1);
-                return startDate;
+                periodEnd = lastFridayThisMonth;
+                // Period started day after the last Friday of the previous month
+                const prevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+                const lastFridayPrevMonth = getLastFridayOfMonth(prevMonth);
+                periodStart = new Date(lastFridayPrevMonth);
+                periodStart.setDate(periodStart.getDate() + 1);
+            } else {
+                // We're before this month's last Friday, so previous period ended last month
+                const prevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+                periodEnd = getLastFridayOfMonth(prevMonth);
+                // Period started day after the last Friday of two months ago
+                const twoMonthsAgo = new Date(prevMonth.getFullYear(), prevMonth.getMonth(), 0);
+                const lastFridayTwoMonthsAgo = getLastFridayOfMonth(twoMonthsAgo);
+                periodStart = new Date(lastFridayTwoMonthsAgo);
+                periodStart.setDate(periodStart.getDate() + 1);
             }
 
-            // Otherwise, we're still in the period that started after last month's last Friday
-            const prevMonth = new Date(now.getFullYear(), now.getMonth(), 0); // Last day of prev month
-            const lastFridayPrevMonth = getLastFridayOfMonth(prevMonth);
-            const startDate = new Date(lastFridayPrevMonth);
-            startDate.setDate(startDate.getDate() + 1);
-            return startDate;
+            return { start: periodStart, end: periodEnd };
         };
 
         function FamilyChores() {
@@ -1204,29 +1213,31 @@
                     setPendingChores(formattedPending);
                     setAllCompletions(allCompletionsData || []);
 
-                    // Calculate payout period totals and weekly history for each player
-                    // Payout period: day after last Friday of previous month to last Friday of current month
-                    const payoutPeriodStart = getPayoutPeriodStart();
-                    const payoutPeriodStartStr = `${payoutPeriodStart.getFullYear()}-${String(payoutPeriodStart.getMonth() + 1).padStart(2, '0')}-${String(payoutPeriodStart.getDate()).padStart(2, '0')}`;
+                    // Calculate previous payout period totals (the completed period that was just paid out)
+                    const { start: periodStart, end: periodEnd } = getPreviousPayoutPeriod();
+                    const periodStartStr = `${periodStart.getFullYear()}-${String(periodStart.getMonth() + 1).padStart(2, '0')}-${String(periodStart.getDate()).padStart(2, '0')}`;
+                    const periodEndStr = `${periodEnd.getFullYear()}-${String(periodEnd.getMonth() + 1).padStart(2, '0')}-${String(periodEnd.getDate()).padStart(2, '0')}`;
 
                     const monthlyTotals = {};
                     const weeklyHistory = {};
 
                     for (const player of playersData) {
-                        // Get all completions in current payout period
+                        // Get all completions in the previous payout period
                         const { data: monthlyData } = await supabase
                             .from('chore_completions')
                             .select('value_awarded, completed_date')
                             .eq('player_id', player.id)
                             .eq('status', 'approved')
-                            .gte('completed_date', payoutPeriodStartStr);
+                            .gte('completed_date', periodStartStr)
+                            .lte('completed_date', periodEndStr);
 
-                        // Get bonuses in current payout period
+                        // Get bonuses in the previous payout period
                         const { data: monthlyBonuses } = await supabase
                             .from('bonuses')
                             .select('bonus_amount, week_start_date')
                             .eq('player_id', player.id)
-                            .gte('week_start_date', payoutPeriodStartStr);
+                            .gte('week_start_date', periodStartStr)
+                            .lte('week_start_date', periodEndStr);
 
                         // Calculate total monthly points
                         const monthlyChorePoints = monthlyData?.reduce((sum, c) => sum + c.value_awarded, 0) || 0;
@@ -1814,12 +1825,13 @@
                 }
             };
 
-            // Load chores for current payout period
+            // Load chores for the previous completed payout period
             const loadMonthlyChores = async () => {
                 try {
-                    // Get start of current payout period (day after last Friday of previous month)
-                    const payoutStart = getPayoutPeriodStart();
-                    const payoutStartStr = `${payoutStart.getFullYear()}-${String(payoutStart.getMonth() + 1).padStart(2, '0')}-${String(payoutStart.getDate()).padStart(2, '0')}`;
+                    // Get the previous payout period (the one that was just paid out)
+                    const { start: periodStart, end: periodEnd } = getPreviousPayoutPeriod();
+                    const periodStartStr = `${periodStart.getFullYear()}-${String(periodStart.getMonth() + 1).padStart(2, '0')}-${String(periodStart.getDate()).padStart(2, '0')}`;
+                    const periodEndStr = `${periodEnd.getFullYear()}-${String(periodEnd.getMonth() + 1).padStart(2, '0')}-${String(periodEnd.getDate()).padStart(2, '0')}`;
 
                     const { data, error } = await supabase
                         .from('chore_completions')
@@ -1829,7 +1841,8 @@
                             players(name, avatar_url)
                         `)
                         .eq('status', 'approved')
-                        .gte('completed_date', payoutStartStr)
+                        .gte('completed_date', periodStartStr)
+                        .lte('completed_date', periodEndStr)
                         .order('completed_date', { ascending: false });
 
                     if (error) throw error;
