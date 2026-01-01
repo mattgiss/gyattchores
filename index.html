@@ -798,34 +798,26 @@
             });
         };
 
-        // Get the previous completed payout period (the one that was just paid out)
-        // This is what should be displayed as "Monthly Total"
-        const getPreviousPayoutPeriod = () => {
+        // Get the current payout period (accumulating toward next payout)
+        const getCurrentPayoutPeriod = () => {
             const now = new Date();
             const lastFridayThisMonth = getLastFridayOfMonth(now);
 
-            let periodEnd, periodStart;
+            let periodStart;
 
-            // If we're past the last Friday of this month, the previous period just ended
+            // If we're past the last Friday of this month, new period started day after
             if (now > lastFridayThisMonth) {
-                periodEnd = lastFridayThisMonth;
-                // Period started day after the last Friday of the previous month
+                periodStart = new Date(lastFridayThisMonth);
+                periodStart.setDate(periodStart.getDate() + 1);
+            } else {
+                // We're before this month's last Friday, period started after last month's last Friday
                 const prevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
                 const lastFridayPrevMonth = getLastFridayOfMonth(prevMonth);
                 periodStart = new Date(lastFridayPrevMonth);
                 periodStart.setDate(periodStart.getDate() + 1);
-            } else {
-                // We're before this month's last Friday, so previous period ended last month
-                const prevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
-                periodEnd = getLastFridayOfMonth(prevMonth);
-                // Period started day after the last Friday of two months ago
-                const twoMonthsAgo = new Date(prevMonth.getFullYear(), prevMonth.getMonth(), 0);
-                const lastFridayTwoMonthsAgo = getLastFridayOfMonth(twoMonthsAgo);
-                periodStart = new Date(lastFridayTwoMonthsAgo);
-                periodStart.setDate(periodStart.getDate() + 1);
             }
 
-            return { start: periodStart, end: periodEnd };
+            return { start: periodStart };
         };
 
         function FamilyChores() {
@@ -1213,31 +1205,28 @@
                     setPendingChores(formattedPending);
                     setAllCompletions(allCompletionsData || []);
 
-                    // Calculate previous payout period totals (the completed period that was just paid out)
-                    const { start: periodStart, end: periodEnd } = getPreviousPayoutPeriod();
+                    // Calculate current payout period totals (accumulating toward next payout)
+                    const { start: periodStart } = getCurrentPayoutPeriod();
                     const periodStartStr = `${periodStart.getFullYear()}-${String(periodStart.getMonth() + 1).padStart(2, '0')}-${String(periodStart.getDate()).padStart(2, '0')}`;
-                    const periodEndStr = `${periodEnd.getFullYear()}-${String(periodEnd.getMonth() + 1).padStart(2, '0')}-${String(periodEnd.getDate()).padStart(2, '0')}`;
 
                     const monthlyTotals = {};
                     const weeklyHistory = {};
 
                     for (const player of playersData) {
-                        // Get all completions in the previous payout period
+                        // Get all completions in the current payout period (since last payout)
                         const { data: monthlyData } = await supabase
                             .from('chore_completions')
                             .select('value_awarded, completed_date')
                             .eq('player_id', player.id)
                             .eq('status', 'approved')
-                            .gte('completed_date', periodStartStr)
-                            .lte('completed_date', periodEndStr);
+                            .gte('completed_date', periodStartStr);
 
-                        // Get bonuses in the previous payout period
+                        // Get bonuses in the current payout period
                         const { data: monthlyBonuses } = await supabase
                             .from('bonuses')
                             .select('bonus_amount, week_start_date')
                             .eq('player_id', player.id)
-                            .gte('week_start_date', periodStartStr)
-                            .lte('week_start_date', periodEndStr);
+                            .gte('week_start_date', periodStartStr);
 
                         // Calculate total monthly points
                         const monthlyChorePoints = monthlyData?.reduce((sum, c) => sum + c.value_awarded, 0) || 0;
@@ -1825,13 +1814,12 @@
                 }
             };
 
-            // Load chores for the previous completed payout period
+            // Load chores for the current payout period (toward next payout)
             const loadMonthlyChores = async () => {
                 try {
-                    // Get the previous payout period (the one that was just paid out)
-                    const { start: periodStart, end: periodEnd } = getPreviousPayoutPeriod();
+                    // Get the current payout period start (since last payout)
+                    const { start: periodStart } = getCurrentPayoutPeriod();
                     const periodStartStr = `${periodStart.getFullYear()}-${String(periodStart.getMonth() + 1).padStart(2, '0')}-${String(periodStart.getDate()).padStart(2, '0')}`;
-                    const periodEndStr = `${periodEnd.getFullYear()}-${String(periodEnd.getMonth() + 1).padStart(2, '0')}-${String(periodEnd.getDate()).padStart(2, '0')}`;
 
                     const { data, error } = await supabase
                         .from('chore_completions')
@@ -1842,7 +1830,6 @@
                         `)
                         .eq('status', 'approved')
                         .gte('completed_date', periodStartStr)
-                        .lte('completed_date', periodEndStr)
                         .order('completed_date', { ascending: false });
 
                     if (error) throw error;
