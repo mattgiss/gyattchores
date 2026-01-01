@@ -778,21 +778,36 @@
             }
         ];
 
-        const getLastFridayOfMonth = () => {
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = now.getMonth();
+        const getLastFridayOfMonth = (date = new Date()) => {
+            const year = date.getFullYear();
+            const month = date.getMonth();
             const lastDay = new Date(year, month + 1, 0);
-            
+
             while (lastDay.getDay() !== 5) {
                 lastDay.setDate(lastDay.getDate() - 1);
             }
-            
-            return lastDay.toLocaleDateString('en-US', { 
-                month: 'long', 
+
+            return lastDay;
+        };
+
+        const getLastFridayOfMonthFormatted = () => {
+            return getLastFridayOfMonth().toLocaleDateString('en-US', {
+                month: 'long',
                 day: 'numeric',
                 year: 'numeric'
             });
+        };
+
+        // Get the start date for the current payout period (day after last Friday of previous month)
+        const getPayoutPeriodStart = () => {
+            const now = new Date();
+            // Get last Friday of previous month
+            const prevMonth = new Date(now.getFullYear(), now.getMonth(), 0); // Last day of prev month
+            const lastFridayPrevMonth = getLastFridayOfMonth(prevMonth);
+            // Start date is the day after
+            const startDate = new Date(lastFridayPrevMonth);
+            startDate.setDate(startDate.getDate() + 1);
+            return startDate;
         };
 
         function FamilyChores() {
@@ -1180,30 +1195,29 @@
                     setPendingChores(formattedPending);
                     setAllCompletions(allCompletionsData || []);
 
-                    // Calculate monthly totals and weekly history for each player
-                    const now = new Date();
-                    const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-                    // Format as YYYY-MM-DD in local time (avoid UTC conversion issues)
-                    const firstOfMonthStr = `${firstOfMonth.getFullYear()}-${String(firstOfMonth.getMonth() + 1).padStart(2, '0')}-01`;
+                    // Calculate payout period totals and weekly history for each player
+                    // Payout period: day after last Friday of previous month to last Friday of current month
+                    const payoutPeriodStart = getPayoutPeriodStart();
+                    const payoutPeriodStartStr = `${payoutPeriodStart.getFullYear()}-${String(payoutPeriodStart.getMonth() + 1).padStart(2, '0')}-${String(payoutPeriodStart.getDate()).padStart(2, '0')}`;
 
                     const monthlyTotals = {};
                     const weeklyHistory = {};
 
                     for (const player of playersData) {
-                        // Get all completions this month
+                        // Get all completions in current payout period
                         const { data: monthlyData } = await supabase
                             .from('chore_completions')
                             .select('value_awarded, completed_date')
                             .eq('player_id', player.id)
                             .eq('status', 'approved')
-                            .gte('completed_date', firstOfMonthStr);
+                            .gte('completed_date', payoutPeriodStartStr);
 
-                        // Get bonuses this month
+                        // Get bonuses in current payout period
                         const { data: monthlyBonuses } = await supabase
                             .from('bonuses')
                             .select('bonus_amount, week_start_date')
                             .eq('player_id', player.id)
-                            .gte('week_start_date', firstOfMonthStr);
+                            .gte('week_start_date', payoutPeriodStartStr);
 
                         // Calculate total monthly points
                         const monthlyChorePoints = monthlyData?.reduce((sum, c) => sum + c.value_awarded, 0) || 0;
@@ -1791,14 +1805,12 @@
                 }
             };
 
-            // Load monthly chores for all players
+            // Load chores for current payout period
             const loadMonthlyChores = async () => {
                 try {
-                    // Get first day of current month
-                    const now = new Date();
-                    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-                    // Format as YYYY-MM-DD in local time (avoid UTC conversion issues)
-                    const firstDayStr = `${firstDayOfMonth.getFullYear()}-${String(firstDayOfMonth.getMonth() + 1).padStart(2, '0')}-01`;
+                    // Get start of current payout period (day after last Friday of previous month)
+                    const payoutStart = getPayoutPeriodStart();
+                    const payoutStartStr = `${payoutStart.getFullYear()}-${String(payoutStart.getMonth() + 1).padStart(2, '0')}-${String(payoutStart.getDate()).padStart(2, '0')}`;
 
                     const { data, error } = await supabase
                         .from('chore_completions')
@@ -1808,7 +1820,7 @@
                             players(name, avatar_url)
                         `)
                         .eq('status', 'approved')
-                        .gte('completed_date', firstDayStr)
+                        .gte('completed_date', payoutStartStr)
                         .order('completed_date', { ascending: false });
 
                     if (error) throw error;
@@ -2982,7 +2994,7 @@
                 }
             };
 
-            const payoutDate = getLastFridayOfMonth();
+            const payoutDate = getLastFridayOfMonthFormatted();
 
             if (loading) {
                 return (
