@@ -1183,7 +1183,8 @@
                     // Calculate monthly totals and weekly history for each player
                     const now = new Date();
                     const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-                    const firstOfMonthStr = firstOfMonth.toISOString().split('T')[0];
+                    // Format as YYYY-MM-DD in local time (avoid UTC conversion issues)
+                    const firstOfMonthStr = `${firstOfMonth.getFullYear()}-${String(firstOfMonth.getMonth() + 1).padStart(2, '0')}-01`;
 
                     const monthlyTotals = {};
                     const weeklyHistory = {};
@@ -1796,7 +1797,8 @@
                     // Get first day of current month
                     const now = new Date();
                     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-                    const firstDayStr = firstDayOfMonth.toISOString().split('T')[0];
+                    // Format as YYYY-MM-DD in local time (avoid UTC conversion issues)
+                    const firstDayStr = `${firstDayOfMonth.getFullYear()}-${String(firstDayOfMonth.getMonth() + 1).padStart(2, '0')}-01`;
 
                     const { data, error } = await supabase
                         .from('chore_completions')
