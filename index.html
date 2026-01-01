@@ -798,13 +798,22 @@
             });
         };
 
-        // Get the start date for the current payout period (day after last Friday of previous month)
+        // Get the start date for the current payout period
+        // Payout happens on last Friday of each month, period resets the day after
         const getPayoutPeriodStart = () => {
             const now = new Date();
-            // Get last Friday of previous month
+            const lastFridayThisMonth = getLastFridayOfMonth(now);
+
+            // If we're past the last Friday of this month, new period started day after that Friday
+            if (now > lastFridayThisMonth) {
+                const startDate = new Date(lastFridayThisMonth);
+                startDate.setDate(startDate.getDate() + 1);
+                return startDate;
+            }
+
+            // Otherwise, we're still in the period that started after last month's last Friday
             const prevMonth = new Date(now.getFullYear(), now.getMonth(), 0); // Last day of prev month
             const lastFridayPrevMonth = getLastFridayOfMonth(prevMonth);
-            // Start date is the day after
             const startDate = new Date(lastFridayPrevMonth);
             startDate.setDate(startDate.getDate() + 1);
             return startDate;
