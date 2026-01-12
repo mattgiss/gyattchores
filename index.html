@@ -286,6 +286,21 @@
             border: 2px solid #4CAF50 !important;
         }
 
+        /* Red glow animation for stale chores */
+        @keyframes redGlow {
+            0%, 100% {
+                box-shadow: 0 0 8px rgba(244, 67, 54, 0.5), 0 0 16px rgba(244, 67, 54, 0.3), 0 2px 8px 0 rgba(0,0,0,.1);
+            }
+            50% {
+                box-shadow: 0 0 16px rgba(244, 67, 54, 0.8), 0 0 24px rgba(244, 67, 54, 0.5), 0 2px 8px 0 rgba(0,0,0,.1);
+            }
+        }
+
+        .stale-chore-glow {
+            animation: redGlow 2s ease-in-out infinite;
+            border: 2px solid #F44336 !important;
+        }
+
         /* Responsive Design for Mobile Devices */
 
         /* Small Phones (iPhone SE, iPhone 12 mini, etc.) */
@@ -2220,6 +2235,37 @@
 
                 const hoursRemaining = Math.ceil(cooldownHours - hoursSinceCompletion);
                 return { available: false, hoursRemaining };
+            };
+
+            // Check if a chore is "stale" (hasn't been done in 3x its cooldown period)
+            // Returns { isStale: boolean, hoursSinceLastDone: number, cooldownMultiple: number }
+            const getChoreStaleStatus = (chore) => {
+                // Custom tasks (⭐) are never considered stale
+                if (chore.icon === '⭐') {
+                    return { isStale: false, hoursSinceLastDone: 0, cooldownMultiple: 0 };
+                }
+
+                const now = new Date();
+                const cooldownHours = chore.cooldown_hours || 24;
+                const staleThreshold = cooldownHours * 3; // 3x the cooldown = stale
+
+                // Find the most recent completion of this chore (by any player)
+                const lastCompletion = allCompletions.find(c => c.chore_id === chore.id);
+
+                if (!lastCompletion) {
+                    // Never been done - consider it stale (very overdue)
+                    return { isStale: true, hoursSinceLastDone: Infinity, cooldownMultiple: Infinity };
+                }
+
+                const lastCompletedAt = new Date(lastCompletion.completed_at);
+                const hoursSinceLastDone = (now - lastCompletedAt) / (1000 * 60 * 60);
+                const cooldownMultiple = hoursSinceLastDone / cooldownHours;
+
+                return {
+                    isStale: hoursSinceLastDone >= staleThreshold,
+                    hoursSinceLastDone,
+                    cooldownMultiple
+                };
             };
 
             const resetCooldowns = () => {
@@ -6066,7 +6112,19 @@
                             <div>
                                 {chores
                                 .sort((a, b) => {
-                                    // Custom tasks (⭐) first
+                                    // Get stale status for sorting
+                                    const aStale = getChoreStaleStatus(a);
+                                    const bStale = getChoreStaleStatus(b);
+
+                                    // Stale chores first (sorted by how overdue they are)
+                                    if (aStale.isStale && !bStale.isStale) return -1;
+                                    if (!aStale.isStale && bStale.isStale) return 1;
+                                    if (aStale.isStale && bStale.isStale) {
+                                        // Both stale: sort by how overdue (more overdue first)
+                                        return bStale.cooldownMultiple - aStale.cooldownMultiple;
+                                    }
+
+                                    // Then custom tasks (⭐)
                                     const aIsCustom = a.icon === '⭐';
                                     const bIsCustom = b.icon === '⭐';
                                     if (aIsCustom && !bIsCustom) return -1;
@@ -6079,8 +6137,10 @@
                                     return availability.available;
                                 }).map((chore, idx) => {
                                     const isCustomTask = chore.icon === '⭐';
+                                    const staleStatus = getChoreStaleStatus(chore);
+                                    const isStale = staleStatus.isStale;
                                     return (
-                                    <div key={chore.id || idx} className={`material-card elevation-1 ${isCustomTask ? 'player-bid-glow' : ''}`} style={{
+                                    <div key={chore.id || idx} className={`material-card elevation-1 ${isCustomTask ? 'player-bid-glow' : ''} ${isStale ? 'stale-chore-glow' : ''}`} style={{
                                         marginBottom: '6px',
                                         overflow: 'hidden',
                                         background: theme.cardBg
@@ -6127,9 +6187,24 @@
                                                     <div style={{
                                                         fontSize: '0.75rem',
                                                         fontWeight: '600',
-                                                        color: theme.primary
+                                                        color: theme.primary,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '6px'
                                                     }}>
                                                         {chore.points} pts
+                                                        {isStale && (
+                                                            <span style={{
+                                                                fontSize: '0.625rem',
+                                                                fontWeight: '600',
+                                                                color: '#F44336',
+                                                                background: 'rgba(244, 67, 54, 0.15)',
+                                                                padding: '2px 6px',
+                                                                borderRadius: '4px'
+                                                            }}>
+                                                                ⚠️ NEEDS ATTENTION
+                                                            </span>
+                                                        )}
                                                     </div>
                                                     {!isCustomTask && chore.description && (
                                                         <div style={{
