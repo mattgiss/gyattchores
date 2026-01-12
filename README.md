@@ -1,100 +1,142 @@
 # GyattChores
 
-A family chore tracking app with gamified points system and weekly GOAT competition.
+A gamified family chore tracking app with points, competitions, achievements, and weekly payouts.
 
 ## Features
 
 ### Core System
 - **Points System**: Kids earn points for completing chores (250 pts = $1)
-- **Weekly GOAT Competition**: Highest scorer gets the GOAT badge (supports ties/Co-GOATs)
-- **Approval Workflow**: Parents approve completed chores
-- **Weekly Reset**: Automatic reset every Monday at page load
-- **Personal Bests**: Track your best weekly score
-- **Payout**: Last Friday of each month
+- **Approval Workflow**: Parents approve completed chores before points are awarded
+- **Cooldown System**: Chores have configurable cooldown periods (default 24hrs)
+- **Single-Claim Chores**: Some chores (like pet feeding) can only be done by one player per cooldown
+
+### Weekly Competition
+- **Weekly GOAT**: Highest scorer gets the 🐐 GOAT badge (supports ties/Co-GOATs)
+- **Current Leader**: Purple glow and 👑 LEADING badge shows who's ahead this week
+- **Beat Last Week's GOAT Bonus**: 500 points for exceeding last week's winner
+- **Beat Personal Best Bonus**: 750 points for beating your own record
+- **Weekly Reset**: Automatic reset every Monday
+
+### Stale Chore Detection
+- **Red Glow Warning**: Chores not done in 3x their cooldown period glow red
+- **"Needs Attention" Badge**: Visual indicator for overdue chores
+- **Priority Sorting**: Stale chores appear at the top of the Available Chores list
+
+### Achievements System
+- **Chore Milestones**: First Steps, Getting Started, Chore Champion, etc.
+- **Point Milestones**: Point Starter, Point Collector, Point Master, etc.
+- **Streaks**: Daily Dedication, Weekly Warrior, Unstoppable, Legendary
+- **Special**: Early Bird, Night Owl, Speed Demon, Overachiever
+
+### Tiered Payout System
+- **Monthly Payouts**: Last Friday of each month
+- **Tiered Rates**: Higher points = better payout rates
+  - 0-4,999 pts: $0.004/pt
+  - 5,000-9,999 pts: $0.005/pt
+  - 10,000-14,999 pts: $0.006/pt
+  - 15,000+ pts: $0.007/pt
+
+### Custom Tasks & Bidding
+- **Player Bids**: Kids can propose custom tasks with point values
+- **Admin Review**: Parents accept, counter-offer, or reject bids
+- **Custom Tasks**: Green glow on custom/bid tasks for visibility
 
 ### Profile & Stats
-- **Player Profiles**: Detailed stats including total completions, weekly average, and success rate
+- **Player Profiles**: Detailed stats including total completions, weekly average, success rate
 - **7-Day History**: Visual chart showing daily point earnings
 - **30-Day Activity Log**: Complete history of chore completions
+- **Achievement Showcase**: Display earned achievements
 
-### Bonus System
-- **Beat Last Week's GOAT**: 500 point bonus for exceeding last week's winner
-- **Beat Personal Best**: 750 point bonus for beating your own record
-
-### Dashboard Enhancements
-- **Weather Widget**: Brighton, CO weather with clothing suggestions
+### Dashboard
+- **Weather Widget**: Local weather with clothing suggestions and tomorrow's forecast
 - **Daily Quotes**: Motivational quotes from kid-friendly characters
-- **Login Screen**: Password-protected access with auto dark/light mode
-- **Dark/Light Mode**: Toggle between themes, auto-detects time of day on login
+- **Dark/Light Mode**: Toggle themes, auto-detects time of day on login
+- **Definition of Done**: Chore descriptions show what "done" means
 
-### Business Rules
-- One chore completion per player per day per chore
-- High-value chores (>500 pts) can only be done once every 3 days
+### Admin Features
+- **Approve/Reject Chores**: Review pending completions
+- **Backfill Entries**: Add missed chores for past dates
+- **Edit Approved Chores**: Modify or reassign completed chores
+- **Reset Cooldowns**: Clear all cooldowns to make chores available
+- **Activity Logs**: Track admin actions and changes
+
+## Chores
+
+| Chore | Points | Cooldown | Notes |
+|-------|--------|----------|-------|
+| Pick up Poop | 500 | 24hr | |
+| Vacuum Living Room | 500 | 24hr | |
+| Get Mail | 250 | 24hr | |
+| Take Out Trash | 375 | 24hr | |
+| Take Trash to Curb | 375 | 24hr | Sunday special availability |
+| Wash Dishes | 500 | 24hr | |
+| Load Dishwasher | 625 | 24hr | |
+| Unload Dishwasher | 500 | 24hr | |
+| Clean Room | 750 | 24hr | |
+| Clean Bathroom | 750 | 24hr | Full checklist included |
+| Water Plants | 250 | 24hr | |
+| Feed Alfred | 250 | 8hr | Single-claim (dog) |
+| Feed Chevy | 250 | 8hr | Single-claim (cat) |
+| Sweep Floor | 375 | 24hr | |
+| Wipe Counters | 375 | 24hr | |
+| Take Out Recycling | 250 | 24hr | |
+| Fold Laundry | 500 | 24hr | |
+| Set Table | 250 | 24hr | |
+| Clear Table | 250 | 24hr | |
 
 ## Setup
 
-### Initial Setup
+### 1. Database Setup
+Run these SQL files in your Supabase SQL Editor (in order):
+1. `schema.sql` - Core tables and functions
+2. `add-chore-bidding-system.sql` - Custom task bidding
+3. `add-admin-activity-logs.sql` - Admin logging
+4. `add-error-logging-and-option-b-levels.sql` - Error logs and leveling
+5. `enable-rls-policies.sql` - Row Level Security (required for security)
 
-1. **Database**: Run `schema.sql` in your Supabase SQL Editor
-   - Creates all tables: `players`, `chores`, `chore_completions`, `weekly_resets`, `bonuses`
-   - Populates default players (Iris, Mateo) and 16 default chores
-   - Sets up database functions for GOAT calculation and weekly totals
-
-2. **Configure**: Update Supabase credentials in index.html (lines 206-209)
-   ```javascript
-   const supabase = window.supabase.createClient(
-       'YOUR_SUPABASE_URL',
-       'YOUR_SUPABASE_ANON_KEY'
-   );
-   ```
-
-3. **Deploy**:
-   - Open index.html locally in browser, OR
-   - Deploy to GitHub Pages, Netlify, Vercel, or any static host
-   - Custom domain supported (CNAME file included for gyattchores.com)
-
-### Database Migration (If Updating from Phase 1)
-
-If you already have the app running from Phase 1, run this SQL to add Phase 2 features:
-
-```sql
--- Add bonuses table for tracking weekly bonuses
-CREATE TABLE IF NOT EXISTS bonuses (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    player_id UUID NOT NULL REFERENCES players(id) ON DELETE CASCADE,
-    week_start_date DATE NOT NULL,
-    bonus_type TEXT NOT NULL CHECK (bonus_type IN ('beat_goat', 'beat_personal_best')),
-    bonus_amount INTEGER NOT NULL,
-    awarded_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    UNIQUE(player_id, week_start_date, bonus_type)
+### 2. Configure Credentials
+Update Supabase credentials in `index.html` (around line 603):
+```javascript
+const supabase = window.supabase.createClient(
+    'YOUR_SUPABASE_URL',
+    'YOUR_SUPABASE_ANON_KEY'
 );
-
-CREATE INDEX IF NOT EXISTS idx_bonuses_player_week ON bonuses(player_id, week_start_date);
-
-COMMENT ON TABLE bonuses IS 'Weekly bonus awards (beat GOAT, beat personal best)';
 ```
 
-## Configuration
+### 3. Set Passwords
+Update passwords in `index.html` (around line 608-609):
+```javascript
+const LOGIN_PASSWORD = "your_login_password";
+const APPROVAL_CODE = "your_admin_code";
+```
 
-### Login Password
-Default: `1234` (set in `APPROVAL_CODE` constant, line 211)
+### 4. Deploy
+- Open `index.html` locally in browser, OR
+- Deploy to GitHub Pages, Netlify, Vercel, or any static host
 
-### Weather Widget
-- Default location: Brighton, CO (coordinates: 39.9851, -104.8206)
-- Uses mock data by default
-- To use real weather, add OpenWeatherMap API key at line 658
-- Cache duration: 30 minutes (localStorage)
+## Security
 
-### Admin Functions
-- Approve/reject chores: Same password as login (`1234`)
-- Force weekly reset: Available in admin section
-- Add custom chores: Available in admin section
+See `SECURITY.md` for important security information including:
+- How to rotate your Supabase credentials
+- Enabling Row Level Security
+- Future authentication improvements
 
 ## Tech Stack
 
-- React (via CDN)
-- Supabase (PostgreSQL)
-- Material Design UI
+- **Frontend**: React 18 (via CDN), Material Design
+- **Backend**: Supabase (PostgreSQL)
+- **Hosting**: Static (GitHub Pages compatible)
+
+## File Structure
+
+```
+├── index.html              # Main app (single-page application)
+├── schema.sql              # Core database schema
+├── enable-rls-policies.sql # Row Level Security policies
+├── SECURITY.md             # Security guide
+├── README.md               # This file
+└── *.sql                   # Various migration files
+```
 
 ---
 
