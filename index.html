@@ -964,7 +964,6 @@
                     await loadAllCompletions();
                     haptic('success');
                 } catch (error) {
-                    console.error('Refresh error:', error);
                     haptic('error');
                 }
 
@@ -1050,7 +1049,6 @@
             // Auto-refresh for wall-mounted display - refresh every 15 minutes
             useEffect(() => {
                 const interval = setInterval(() => {
-                    console.log('Auto-refreshing data for wall display...');
                     loadData();
                 }, 900000); // 15 minutes
 
@@ -1087,7 +1085,6 @@
                         }
                     } catch (err) {
                         // Silently handle weekly_resets table not existing
-                        console.log('Weekly resets table not available:', err);
                     }
 
                     // Load players
@@ -1268,10 +1265,6 @@
                     const { data: goatData, error: goatError } = await supabase
                         .rpc('get_weekly_goat');
 
-                    if (goatError) {
-                        console.error('Error fetching weekly GOAT:', goatError);
-                    }
-                    console.log('Weekly GOAT data:', goatData);
                     setWeeklyGoats(goatData || []);
 
                     // Load achievements data
@@ -1331,7 +1324,6 @@
                     setChoreBids(bidsData || []);
 
                 } catch (error) {
-                    console.error('Error loading data:', error);
                     haptic('error');
                     alert(`Error loading data: ${error.message || 'Unknown error'}`);
                 } finally {
@@ -1403,6 +1395,17 @@
                 return lastWeekGoat && lastWeekGoat.some(goat => goat.player_id === playerId);
             };
 
+            // Helper function to check if player is currently leading this week
+            const isCurrentWeeklyLeader = (playerId) => {
+                if (!players || players.length === 0) return false;
+                const validPlayers = players.filter(p => p && typeof p.points === 'number');
+                if (validPlayers.length === 0) return false;
+                const maxPoints = Math.max(...validPlayers.map(p => p.points));
+                if (maxPoints === 0) return false; // No leader if everyone has 0 points
+                const player = validPlayers.find(p => p.id === playerId);
+                return player && player.points === maxPoints;
+            };
+
             // Check and award bonuses
             const checkAndAwardBonuses = async () => {
                 try {
@@ -1449,7 +1452,6 @@
                                         bonus_type: 'beat_goat',
                                         bonus_amount: bonusAmount
                                     }]);
-                                console.log(`🔥 Beat GOAT bonus awarded to ${player.name}!`);
                             }
                         }
 
@@ -1480,8 +1482,6 @@
                                     .from('players')
                                     .update({ best_week_total: player.points })
                                     .eq('id', player.id);
-
-                                console.log(`🚀 Personal Best bonus awarded to ${player.name}!`);
                             }
                         }
                     }
@@ -1502,7 +1502,7 @@
                     setPlayerBonuses(bonusMap);
 
                 } catch (error) {
-                    console.error('Error checking bonuses:', error);
+                    // Silently handle bonus checking errors
                 }
             };
 
@@ -1590,7 +1590,7 @@
                         await loadData();
                     }
                 } catch (error) {
-                    console.error('Error checking achievements:', error);
+                    // Silently handle achievement checking errors
                 }
             };
 
@@ -1664,7 +1664,7 @@
                     // Check for achievements
                     await checkAndAwardAchievements(playerId);
                 } catch (error) {
-                    console.error('Error updating player stats:', error);
+                    // Silently handle stats update errors
                 }
             };
 
@@ -1709,7 +1709,11 @@
                         throw new Error('Invalid weather description data');
                     }
 
-                    const tempF = Math.round(parseFloat(currentCondition.temp_F));
+                    const tempF = parseFloat(currentCondition.temp_F);
+                    if (isNaN(tempF)) {
+                        throw new Error('Invalid temperature data');
+                    }
+                    const roundedTempF = Math.round(tempF);
                     const description = currentCondition.weatherDesc[0].value;
 
                     // Weather icon mapping based on weather codes
@@ -1727,30 +1731,33 @@
 
                     // Clothing suggestions based on temp
                     let clothing = '';
-                    if (tempF < 32) clothing = 'Heavy coat, hat, and gloves!';
-                    else if (tempF < 50) clothing = 'Jacket or sweater recommended';
-                    else if (tempF < 65) clothing = 'Light jacket might be nice';
-                    else if (tempF < 80) clothing = 'Perfect weather, dress comfortably!';
+                    if (roundedTempF < 32) clothing = 'Heavy coat, hat, and gloves!';
+                    else if (roundedTempF < 50) clothing = 'Jacket or sweater recommended';
+                    else if (roundedTempF < 65) clothing = 'Light jacket might be nice';
+                    else if (roundedTempF < 80) clothing = 'Perfect weather, dress comfortably!';
                     else clothing = 'Stay cool, light clothing!';
 
                     // Get tomorrow's forecast
                     let tomorrowForecast = null;
                     if (data.weather && data.weather[1]) {
                         const tomorrow = data.weather[1];
-                        const tomorrowMaxF = Math.round(parseFloat(tomorrow.maxtempF));
-                        const tomorrowMinF = Math.round(parseFloat(tomorrow.mintempF));
+                        const tomorrowMaxF = parseFloat(tomorrow.maxtempF);
+                        const tomorrowMinF = parseFloat(tomorrow.mintempF);
                         const tomorrowDesc = tomorrow.hourly?.[4]?.weatherDesc?.[0]?.value || 'Conditions vary';
 
-                        tomorrowForecast = {
-                            maxTemp: tomorrowMaxF,
-                            minTemp: tomorrowMinF,
-                            description: tomorrowDesc,
-                            icon: getWeatherIcon(tomorrowDesc)
-                        };
+                        // Only add tomorrow forecast if temperatures are valid
+                        if (!isNaN(tomorrowMaxF) && !isNaN(tomorrowMinF)) {
+                            tomorrowForecast = {
+                                maxTemp: Math.round(tomorrowMaxF),
+                                minTemp: Math.round(tomorrowMinF),
+                                description: tomorrowDesc,
+                                icon: getWeatherIcon(tomorrowDesc)
+                            };
+                        }
                     }
 
                     const weatherData = {
-                        temp: tempF,
+                        temp: roundedTempF,
                         description: description,
                         icon: getWeatherIcon(description),
                         clothing,
@@ -1765,7 +1772,6 @@
                         }));
                     } catch (e) {
                         if (e.name === 'QuotaExceededError') {
-                            console.warn('localStorage quota exceeded, clearing weather cache');
                             localStorage.removeItem('weather_cache');
                         }
                     }
@@ -1776,7 +1782,6 @@
                         throw fetchError;
                     }
                 } catch (error) {
-                    console.error('Error fetching weather:', error.name === 'AbortError' ? 'Weather API timeout' : error);
                     // Fallback data
                     setWeather({
                         temp: '--',
@@ -1810,7 +1815,7 @@
 
                     setPlayerHistory(data || []);
                 } catch (error) {
-                    console.error('Error loading player profile:', error);
+                    // Silently handle profile loading errors
                 }
             };
 
@@ -1836,7 +1841,7 @@
 
                     setMonthlyChores(data || []);
                 } catch (error) {
-                    console.error('Error loading monthly chores:', error);
+                    // Silently handle monthly chores loading errors
                 }
             };
 
@@ -1853,10 +1858,8 @@
                     setNeedsWeeklyReset(false);
                     await loadAllCompletions();
                     await loadData(); // Refresh data
-
-                    console.log('Weekly reset completed for week starting:', currentWeekStart);
                 } catch (error) {
-                    console.error('Error performing weekly reset:', error);
+                    // Silently handle weekly reset errors
                 }
             };
 
@@ -1879,7 +1882,7 @@
                     if (error) throw error;
                     setAllCompletions(data || []);
                 } catch (error) {
-                    console.error('Error loading completions:', error);
+                    // Silently handle completions loading errors
                 }
             };
 
@@ -1900,7 +1903,7 @@
                     if (statsError) throw statsError;
                     setErrorStats(stats || []);
                 } catch (error) {
-                    console.error('Error loading error logs:', error);
+                    // Silently handle error log loading errors
                 }
             };
 
@@ -1913,7 +1916,7 @@
                     if (error) throw error;
                     setActivityLogs(logs || []);
                 } catch (error) {
-                    console.error('Error loading activity logs:', error);
+                    // Silently handle activity log loading errors
                 }
             };
 
@@ -1932,7 +1935,6 @@
                     await loadAllCompletions();
                     await loadData();
                 } catch (error) {
-                    console.error('Error updating chore date:', error);
                     haptic('error');
                     alert(`Error updating date: ${error.message || 'Unknown error'}`);
                 }
@@ -1991,9 +1993,7 @@
                     haptic('success');
                     alert('✅ Backfill entry added!');
                 } catch (error) {
-                    console.error('Error adding backfill:', error);
-
-                    // Log error to console (could be extended to error_logs table if needed)
+                    // Log error to database
                     await supabase
                         .from('admin_activity_logs')
                         .insert([{
@@ -2003,7 +2003,7 @@
                             new_value: null,
                             description: `ERROR: Failed to add backfill entry - ${error.message || 'Unknown error'}`
                         }])
-                        .catch(logError => console.error('Failed to log error:', logError));
+                        .catch(() => {}); // Silently handle logging errors
 
                     haptic('error');
                     alert(`Error adding backfill: ${error.message || 'Unknown error'}`);
@@ -2038,7 +2038,6 @@
                     if (error) throw error;
                     setApprovedChores(data || []);
                 } catch (error) {
-                    console.error('Error loading approved chores:', error);
                     alert(`Error loading chores: ${error.message}`);
                 }
             };
@@ -2089,7 +2088,6 @@
                     await loadApprovedChores(editChoreFilter.playerId, editChoreFilter.startDate, editChoreFilter.endDate);
                     await loadData();
                 } catch (error) {
-                    console.error('Error editing chore:', error);
                     haptic('error');
                     alert(`Error: ${error.message}`);
                 }
@@ -2184,7 +2182,6 @@
                         });
                 } catch (err) {
                     // Silent fail - don't show error to user
-                    console.error('Error logging failed:', err);
                 }
             };
 
@@ -2337,7 +2334,6 @@
                     haptic('success');
                     alert(`✅ Chore claimed! Waiting for approval.`);
                 } catch (error) {
-                    console.error('Error claiming chore:', error);
                     haptic('error');
                     alert(`Error claiming chore: ${error.message || 'Unknown error'}`);
                 }
@@ -2406,7 +2402,6 @@
                     haptic('success');
                     alert('✅ Chore approved!');
                 } catch (error) {
-                    console.error('Error approving chore:', error);
                     haptic('error');
                     alert(`Error approving chore: ${error.message || 'Unknown error'}`);
                 }
@@ -2430,7 +2425,6 @@
                     haptic('medium');
                     alert('❌ Chore rejected');
                 } catch (error) {
-                    console.error('Error rejecting chore:', error);
                     haptic('error');
                     alert(`Error rejecting chore: ${error.message || 'Unknown error'}`);
                 }
@@ -2487,7 +2481,6 @@
                     haptic('success');
                     alert('✅ Custom task created!');
                 } catch (error) {
-                    console.error('Error creating task:', error);
                     haptic('error');
                     alert(`Error creating custom task: ${error.message || 'Unknown error'}`);
                 }
@@ -2539,7 +2532,6 @@
                         haptic('success');
                         alert('✅ Your custom task bid has been submitted! An admin will review it.');
                     } catch (error) {
-                        console.error('Error submitting bid:', error);
                         haptic('error');
                         alert(`Error submitting bid: ${error.message || 'Unknown error'}`);
                     }
@@ -2584,7 +2576,6 @@
                         haptic('success');
                         alert(`✅ Custom task created and assigned to ${selectedPlayer.name}!`);
                     } catch (error) {
-                        console.error('Error creating task:', error);
                         haptic('error');
                         alert(`Error creating custom task: ${error.message || 'Unknown error'}`);
                     }
@@ -2660,7 +2651,6 @@
                     haptic('success');
                     alert('✅ Bid accepted! Custom task created.');
                 } catch (error) {
-                    console.error('Error accepting bid:', error);
                     haptic('error');
                     alert(`Error accepting bid: ${error.message || 'Unknown error'}`);
                 }
@@ -2718,7 +2708,6 @@
                     haptic('success');
                     alert('✅ Counter-offer sent!');
                 } catch (error) {
-                    console.error('Error sending counter-offer:', error);
                     haptic('error');
                     alert(`Error: ${error.message || 'Unknown error'}`);
                 }
@@ -2789,7 +2778,6 @@
                     haptic('success');
                     alert('✅ Counter-offer accepted! Your custom task is now available.');
                 } catch (error) {
-                    console.error('Error accepting counter-offer:', error);
                     haptic('error');
                     alert(`Error: ${error.message || 'Unknown error'}`);
                 }
@@ -2825,7 +2813,6 @@
                     haptic('success');
                     alert('Bid rejected');
                 } catch (error) {
-                    console.error('Error rejecting bid:', error);
                     haptic('error');
                     alert(`Error: ${error.message || 'Unknown error'}`);
                 }
@@ -2894,7 +2881,6 @@
                         haptic('success');
                         alert(`✅ ${bids.length} task bid(s) submitted for admin review!`);
                     } catch (error) {
-                        console.error('Error submitting bids:', error);
                         haptic('error');
                         alert(`Error submitting bids: ${error.message || 'Unknown error'}`);
                     }
@@ -2978,7 +2964,6 @@
                         setCustomTaskDueDate('');
                         setSelectedCustomTaskPlayers([]);
                     } catch (error) {
-                        console.error('Error creating tasks:', error);
                         haptic('error');
                         alert(`Error creating tasks: ${error.message || 'Unknown error'}`);
                     }
@@ -5502,7 +5487,7 @@
                                                         color: theme.primary,
                                                         lineHeight: 1
                                                     }}>
-                                                        {Math.round(weather.temp)}°F
+                                                        {typeof weather.temp === 'number' ? `${Math.round(weather.temp)}°F` : weather.temp}
                                                     </div>
                                                     <div style={{
                                                         fontSize: '1rem',
@@ -5534,7 +5519,7 @@
                                                             fontWeight: '600',
                                                             color: theme.cardText
                                                         }}>
-                                                            {weather.tomorrow.icon} {weather.tomorrow.maxTemp}°/{weather.tomorrow.minTemp}°
+                                                            {weather.tomorrow.icon} {typeof weather.tomorrow.maxTemp === 'number' ? weather.tomorrow.maxTemp : '--'}°/{typeof weather.tomorrow.minTemp === 'number' ? weather.tomorrow.minTemp : '--'}°
                                                         </div>
                                                         <div style={{
                                                             fontSize: '0.75rem',
@@ -5648,15 +5633,18 @@
                             }}>
                                 Players
                             </div>
-                            {(players || []).filter(player => player && player.id).map(player => (
+                            {(players || []).filter(player => player && player.id).map(player => {
+                                const isLeader = isCurrentWeeklyLeader(player.id);
+                                const isLastWeekGoat = isGoat(player.id);
+                                return (
                                 <div key={player.id} className="material-card elevation-1" style={{
                                     padding: '12px',
                                     marginBottom: '8px',
                                     background: theme.cardBg,
-                                    border: isGoat(player.id) ? '2px solid #FFD700' : 'none',
-                                    boxShadow: isGoat(player.id)
-                                        ? '0 0 12px rgba(255, 215, 0, 0.2), 0 2px 8px 0 rgba(0,0,0,.1)'
-                                        : undefined
+                                    border: isLeader ? '2px solid #9B59B6' : (isLastWeekGoat ? '2px solid #FFD700' : 'none'),
+                                    boxShadow: isLeader
+                                        ? '0 0 16px rgba(155, 89, 182, 0.4), 0 2px 8px 0 rgba(0,0,0,.1)'
+                                        : (isLastWeekGoat ? '0 0 12px rgba(255, 215, 0, 0.2), 0 2px 8px 0 rgba(0,0,0,.1)' : undefined)
                                 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                                         <div
@@ -5679,7 +5667,6 @@
                                                         haptic('success');
                                                         alert(`✅ Avatar updated for ${player.name}!`);
                                                     } catch (error) {
-                                                        console.error('Error updating avatar:', error);
                                                         haptic('error');
                                                         alert('Failed to update avatar');
                                                     }
@@ -5746,7 +5733,6 @@
                                                             haptic('success');
                                                             alert(`✅ Name updated to ${trimmedName}!`);
                                                         } catch (error) {
-                                                            console.error('Error updating name:', error);
                                                             haptic('error');
                                                             alert('Failed to update name');
                                                         }
@@ -5805,6 +5791,21 @@
                                                     padding: '2px 6px'
                                                 }}>
                                                     🐐 {weeklyGoats.length > 1 ? 'CO-GOAT' : 'GOAT'}
+                                                </div>
+                                            )}
+                                            {isLeader && (
+                                                <div className="chip" style={{
+                                                    background: darkMode ? 'rgba(155, 89, 182, 0.25)' : 'rgba(155, 89, 182, 0.2)',
+                                                    color: darkMode ? '#BB8FCE' : '#7D3C98',
+                                                    marginTop: '4px',
+                                                    fontSize: '0.625rem',
+                                                    fontWeight: '600',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '3px',
+                                                    padding: '2px 6px'
+                                                }}>
+                                                    👑 LEADING
                                                 </div>
                                             )}
                                         </div>
@@ -5924,7 +5925,8 @@
                                         View Profile
                                     </button>
                                 </div>
-                            ))}
+                            );
+                            })}
 
                             {/* Last Week's GOAT */}
                             {lastWeekGoat && lastWeekGoat.length > 0 && (
@@ -6257,7 +6259,6 @@
                                                         haptic('success');
                                                         alert('✅ Custom task deleted!');
                                                     } catch (error) {
-                                                        console.error('Error deleting task:', error);
                                                         haptic('error');
                                                         alert(`Error deleting custom task: ${error.message || 'Unknown error'}`);
                                                     }
@@ -6463,7 +6464,6 @@
                                                 haptic('success');
                                                 alert('✅ All chores approved!');
                                             } catch (error) {
-                                                console.error('Error approving all:', error);
                                                 haptic('error');
                                                 alert(`Error approving chores: ${error.message || 'Unknown error'}`);
                                             }
@@ -6508,7 +6508,6 @@
                                                 haptic('medium');
                                                 alert('✅ Pending chores cleared');
                                             } catch (error) {
-                                                console.error('Error clearing pending:', error);
                                                 haptic('error');
                                                 alert(`Error clearing pending chores: ${error.message || 'Unknown error'}`);
                                             }
