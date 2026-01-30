@@ -835,6 +835,20 @@
             return { start: periodStart };
         };
 
+        // Get the previous payout period (the one that already ended)
+        const getPreviousPayoutPeriod = () => {
+            const { start: currentStart } = getCurrentPayoutPeriod();
+            // Previous period ended the day before current period started
+            const prevEnd = new Date(currentStart);
+            prevEnd.setDate(prevEnd.getDate() - 1);
+            // Previous period started the day after the last Friday of the month before that
+            const monthBefore = new Date(prevEnd.getFullYear(), prevEnd.getMonth(), 0);
+            const lastFridayMonthBefore = getLastFridayOfMonth(monthBefore);
+            const prevStart = new Date(lastFridayMonthBefore);
+            prevStart.setDate(prevStart.getDate() + 1);
+            return { start: prevStart, end: prevEnd };
+        };
+
         function FamilyChores() {
             // Auto-detect dark mode based on time of day (6 AM - 6 PM = light, else dark)
             const getInitialDarkMode = () => {
@@ -920,6 +934,10 @@
             // Monthly payout tracking
             const [playerMonthlyTotals, setPlayerMonthlyTotals] = useState({});
             const [playerWeeklyHistory, setPlayerWeeklyHistory] = useState({});
+            // Previous payout period tracking
+            const [prevMonthlyTotals, setPrevMonthlyTotals] = useState({});
+            const [prevWeeklyHistory, setPrevWeeklyHistory] = useState({});
+            const [prevPeriodLabel, setPrevPeriodLabel] = useState('');
 
             // Pull to refresh states
             const [isPulling, setIsPulling] = useState(false);
@@ -1275,6 +1293,58 @@
 
                     setPlayerMonthlyTotals(monthlyTotals);
                     setPlayerWeeklyHistory(weeklyHistory);
+
+                    // Fetch previous payout period data
+                    const { start: prevStart, end: prevEnd } = getPreviousPayoutPeriod();
+                    const prevStartStr = `${prevStart.getFullYear()}-${String(prevStart.getMonth() + 1).padStart(2, '0')}-${String(prevStart.getDate()).padStart(2, '0')}`;
+                    const prevEndStr = `${prevEnd.getFullYear()}-${String(prevEnd.getMonth() + 1).padStart(2, '0')}-${String(prevEnd.getDate()).padStart(2, '0')}`;
+
+                    setPrevPeriodLabel(prevEnd.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }));
+
+                    const prevTotals = {};
+                    const prevWeekly = {};
+
+                    for (const player of playersData) {
+                        const { data: prevData } = await supabase
+                            .from('chore_completions')
+                            .select('value_awarded, completed_date')
+                            .eq('player_id', player.id)
+                            .eq('status', 'approved')
+                            .gte('completed_date', prevStartStr)
+                            .lte('completed_date', prevEndStr);
+
+                        const { data: prevBonuses } = await supabase
+                            .from('bonuses')
+                            .select('bonus_amount, week_start_date')
+                            .eq('player_id', player.id)
+                            .gte('week_start_date', prevStartStr)
+                            .lte('week_start_date', prevEndStr);
+
+                        const prevChorePoints = prevData?.reduce((sum, c) => sum + c.value_awarded, 0) || 0;
+                        const prevBonusPoints = prevBonuses?.reduce((sum, b) => sum + b.bonus_amount, 0) || 0;
+                        prevTotals[player.id] = prevChorePoints + prevBonusPoints;
+
+                        const weeks = {};
+                        (prevData || []).forEach(c => {
+                            const date = new Date(c.completed_date);
+                            const weekStart = new Date(date);
+                            const dayOfWeek = weekStart.getDay();
+                            const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+                            weekStart.setDate(weekStart.getDate() + daysToMonday);
+                            const weekKey = weekStart.toISOString().split('T')[0];
+                            if (!weeks[weekKey]) weeks[weekKey] = { chorePoints: 0, bonusPoints: 0 };
+                            weeks[weekKey].chorePoints += c.value_awarded;
+                        });
+                        (prevBonuses || []).forEach(b => {
+                            const weekKey = b.week_start_date;
+                            if (!weeks[weekKey]) weeks[weekKey] = { chorePoints: 0, bonusPoints: 0 };
+                            weeks[weekKey].bonusPoints += b.bonus_amount;
+                        });
+                        prevWeekly[player.id] = weeks;
+                    }
+
+                    setPrevMonthlyTotals(prevTotals);
+                    setPrevWeeklyHistory(prevWeekly);
 
                     // Get current week's GOAT(s)
                     const { data: goatData, error: goatError } = await supabase
@@ -4463,6 +4533,122 @@
                                                 fontSize: '0.875rem'
                                             }}>
                                                 No completed chores this month yet.
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })()}
+
+                            {/* Previous Month Payout Breakdown */}
+                            {(() => {
+                                const prevWeeklyData = prevWeeklyHistory[selectedPlayer.id] || {};
+                                const prevWeeks = Object.keys(prevWeeklyData).sort();
+                                const prevTotal = prevMonthlyTotals[selectedPlayer.id] || 0;
+                                const prevPayout = calculateTieredPayout(prevTotal);
+
+                                return (
+                                    <div className="material-card elevation-1" style={{
+                                        padding: '16px',
+                                        background: theme.cardBg,
+                                        marginBottom: '16px'
+                                    }}>
+                                        <div style={{
+                                            fontSize: '1rem',
+                                            fontWeight: '600',
+                                            marginBottom: '16px',
+                                            color: theme.cardText
+                                        }}>
+                                            📋 Previous Month Payout
+                                        </div>
+
+                                        <div style={{
+                                            padding: '12px',
+                                            marginBottom: '12px',
+                                            background: darkMode ? 'rgba(156, 39, 176, 0.15)' : 'rgba(156, 39, 176, 0.1)',
+                                            borderRadius: '8px',
+                                            border: '1px solid #9C27B0'
+                                        }}>
+                                            <div style={{
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center'
+                                            }}>
+                                                <div>
+                                                    <div style={{ fontSize: '0.75rem', color: theme.textSecondary, marginBottom: '4px' }}>
+                                                        {prevPeriodLabel || 'Previous Month'} Total
+                                                    </div>
+                                                    <div style={{ fontSize: '1rem', fontWeight: '600', color: theme.cardText }}>
+                                                        {prevTotal.toLocaleString()} pts
+                                                    </div>
+                                                </div>
+                                                <div style={{
+                                                    fontSize: '1.5rem',
+                                                    fontWeight: '700',
+                                                    color: '#9C27B0'
+                                                }}>
+                                                    ${prevPayout.total.toFixed(2)}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {prevWeeks.length > 0 && (
+                                            <div>
+                                                <div style={{
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: '600',
+                                                    textTransform: 'uppercase',
+                                                    letterSpacing: '1px',
+                                                    color: theme.textSecondary,
+                                                    marginBottom: '8px'
+                                                }}>
+                                                    Weekly Breakdown
+                                                </div>
+                                                {prevWeeks.map((weekStart, idx) => {
+                                                    const week = prevWeeklyData[weekStart];
+                                                    const weekTotal = week.chorePoints + week.bonusPoints;
+                                                    const weekPayout = calculateTieredPayout(weekTotal);
+                                                    const weekDate = new Date(weekStart);
+
+                                                    return (
+                                                        <div key={idx} style={{
+                                                            display: 'flex',
+                                                            justifyContent: 'space-between',
+                                                            alignItems: 'center',
+                                                            padding: '10px',
+                                                            marginBottom: '6px',
+                                                            background: darkMode ? 'rgba(156, 39, 176, 0.05)' : 'rgba(156, 39, 176, 0.05)',
+                                                            borderRadius: '8px'
+                                                        }}>
+                                                            <div>
+                                                                <div style={{ fontSize: '0.875rem', fontWeight: '500', color: theme.cardText }}>
+                                                                    Week of {weekDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                                                </div>
+                                                                <div style={{ fontSize: '0.75rem', color: theme.textSecondary }}>
+                                                                    {week.chorePoints} pts{week.bonusPoints > 0 ? ` + ${week.bonusPoints} bonus` : ''}
+                                                                </div>
+                                                            </div>
+                                                            <div style={{ textAlign: 'right' }}>
+                                                                <div style={{ fontSize: '0.875rem', fontWeight: '600', color: theme.cardText }}>
+                                                                    {weekTotal} pts
+                                                                </div>
+                                                                <div style={{ fontSize: '0.75rem', color: '#9C27B0' }}>
+                                                                    ${weekPayout.total.toFixed(2)}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+
+                                        {prevWeeks.length === 0 && (
+                                            <div style={{
+                                                textAlign: 'center',
+                                                padding: '16px',
+                                                color: theme.textSecondary,
+                                                fontSize: '0.875rem'
+                                            }}>
+                                                No data for previous month.
                                             </div>
                                         )}
                                     </div>
