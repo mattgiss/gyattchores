@@ -30,6 +30,7 @@ A gamified family chore tracking app with points, competitions, achievements, an
 
 ### Tiered Payout System
 - **Monthly Payouts**: Last Friday of each month
+- **Previous Month View**: Always see what was owed from the prior payout period
 - **Tiered Rates**: Higher points = better payout rates
   - 0-4,999 pts: $0.004/pt
   - 5,000-9,999 pts: $0.005/pt
@@ -46,6 +47,7 @@ A gamified family chore tracking app with points, competitions, achievements, an
 - **7-Day History**: Visual chart showing daily point earnings
 - **30-Day Activity Log**: Complete history of chore completions
 - **Achievement Showcase**: Display earned achievements
+- **Previous Month Payout**: View last month's total points, payout amount, and weekly breakdown
 
 ### Dashboard
 - **Weather Widget**: Local weather with clothing suggestions and tomorrow's forecast
@@ -126,6 +128,7 @@ See `SECURITY.md` for important security information including:
 - **Frontend**: React 18 (via CDN), Material Design
 - **Backend**: Supabase (PostgreSQL)
 - **Hosting**: Static (GitHub Pages compatible)
+- **PWA**: iOS home screen support with apple-touch-icon
 
 ## File Structure
 
