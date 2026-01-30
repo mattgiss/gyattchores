@@ -669,6 +669,17 @@
         // Changelog - Updates and Bug Fixes
         const CHANGELOG = [
             {
+                version: "3.0.0",
+                date: "Jan 30, 2025",
+                type: "feature",
+                changes: [
+                    "📋 Payout History - Full log of every month's payout with collapsible weekly breakdowns",
+                    "💰 Lifetime Earned - See total dollars earned all-time in your profile",
+                    "🏦 New Achievements - Money Maker ($500) and Thousandaire ($1,000) lifetime earnings milestones",
+                    "📊 Tap any past month to expand its weekly point breakdown"
+                ]
+            },
+            {
                 version: "2.9.0",
                 date: "Jan 30, 2025",
                 type: "feature",
@@ -846,18 +857,30 @@
             return { start: periodStart };
         };
 
-        // Get the previous payout period (the one that already ended)
-        const getPreviousPayoutPeriod = () => {
+        // Get all past payout periods back to app start (Dec 2024)
+        const getAllPayoutPeriods = () => {
+            const periods = [];
             const { start: currentStart } = getCurrentPayoutPeriod();
-            // Previous period ended the day before current period started
-            const prevEnd = new Date(currentStart);
-            prevEnd.setDate(prevEnd.getDate() - 1);
-            // Previous period started the day after the last Friday of the month before that
-            const monthBefore = new Date(prevEnd.getFullYear(), prevEnd.getMonth(), 0);
-            const lastFridayMonthBefore = getLastFridayOfMonth(monthBefore);
-            const prevStart = new Date(lastFridayMonthBefore);
-            prevStart.setDate(prevStart.getDate() + 1);
-            return { start: prevStart, end: prevEnd };
+            const floor = new Date(2024, 10, 1); // Nov 2024 floor (app started Dec 2024)
+
+            let periodEnd = new Date(currentStart);
+            periodEnd.setDate(periodEnd.getDate() - 1);
+
+            while (periodEnd >= floor) {
+                const monthBefore = new Date(periodEnd.getFullYear(), periodEnd.getMonth(), 0);
+                const lastFridayMonthBefore = getLastFridayOfMonth(monthBefore);
+                const periodStart = new Date(lastFridayMonthBefore);
+                periodStart.setDate(periodStart.getDate() + 1);
+
+                const label = periodEnd.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                periods.push({ start: new Date(periodStart), end: new Date(periodEnd), label });
+
+                // Move to previous period
+                periodEnd = new Date(periodStart);
+                periodEnd.setDate(periodEnd.getDate() - 1);
+            }
+
+            return periods; // newest first
         };
 
         function FamilyChores() {
@@ -945,10 +968,10 @@
             // Monthly payout tracking
             const [playerMonthlyTotals, setPlayerMonthlyTotals] = useState({});
             const [playerWeeklyHistory, setPlayerWeeklyHistory] = useState({});
-            // Previous payout period tracking
-            const [prevMonthlyTotals, setPrevMonthlyTotals] = useState({});
-            const [prevWeeklyHistory, setPrevWeeklyHistory] = useState({});
-            const [prevPeriodLabel, setPrevPeriodLabel] = useState('');
+            // Payout history (all past periods) and lifetime earnings
+            const [payoutHistory, setPayoutHistory] = useState([]);
+            const [lifetimeEarnings, setLifetimeEarnings] = useState({});
+            const [expandedPayoutMonth, setExpandedPayoutMonth] = useState(null);
 
             // Pull to refresh states
             const [isPulling, setIsPulling] = useState(false);
@@ -1305,57 +1328,75 @@
                     setPlayerMonthlyTotals(monthlyTotals);
                     setPlayerWeeklyHistory(weeklyHistory);
 
-                    // Fetch previous payout period data
-                    const { start: prevStart, end: prevEnd } = getPreviousPayoutPeriod();
-                    const prevStartStr = `${prevStart.getFullYear()}-${String(prevStart.getMonth() + 1).padStart(2, '0')}-${String(prevStart.getDate()).padStart(2, '0')}`;
-                    const prevEndStr = `${prevEnd.getFullYear()}-${String(prevEnd.getMonth() + 1).padStart(2, '0')}-${String(prevEnd.getDate()).padStart(2, '0')}`;
+                    // Fetch all past payout periods
+                    const allPeriods = getAllPayoutPeriods();
+                    const history = [];
+                    const ltEarnings = {};
 
-                    setPrevPeriodLabel(prevEnd.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }));
-
-                    const prevTotals = {};
-                    const prevWeekly = {};
-
+                    // Initialize lifetime earnings with current period
                     for (const player of playersData) {
-                        const { data: prevData } = await supabase
-                            .from('chore_completions')
-                            .select('value_awarded, completed_date')
-                            .eq('player_id', player.id)
-                            .eq('status', 'approved')
-                            .gte('completed_date', prevStartStr)
-                            .lte('completed_date', prevEndStr);
-
-                        const { data: prevBonuses } = await supabase
-                            .from('bonuses')
-                            .select('bonus_amount, week_start_date')
-                            .eq('player_id', player.id)
-                            .gte('week_start_date', prevStartStr)
-                            .lte('week_start_date', prevEndStr);
-
-                        const prevChorePoints = prevData?.reduce((sum, c) => sum + c.value_awarded, 0) || 0;
-                        const prevBonusPoints = prevBonuses?.reduce((sum, b) => sum + b.bonus_amount, 0) || 0;
-                        prevTotals[player.id] = prevChorePoints + prevBonusPoints;
-
-                        const weeks = {};
-                        (prevData || []).forEach(c => {
-                            const date = new Date(c.completed_date);
-                            const weekStart = new Date(date);
-                            const dayOfWeek = weekStart.getDay();
-                            const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-                            weekStart.setDate(weekStart.getDate() + daysToMonday);
-                            const weekKey = weekStart.toISOString().split('T')[0];
-                            if (!weeks[weekKey]) weeks[weekKey] = { chorePoints: 0, bonusPoints: 0 };
-                            weeks[weekKey].chorePoints += c.value_awarded;
-                        });
-                        (prevBonuses || []).forEach(b => {
-                            const weekKey = b.week_start_date;
-                            if (!weeks[weekKey]) weeks[weekKey] = { chorePoints: 0, bonusPoints: 0 };
-                            weeks[weekKey].bonusPoints += b.bonus_amount;
-                        });
-                        prevWeekly[player.id] = weeks;
+                        const currentTotal = monthlyTotals[player.id] || 0;
+                        ltEarnings[player.id] = calculateTieredPayout(currentTotal).total;
                     }
 
-                    setPrevMonthlyTotals(prevTotals);
-                    setPrevWeeklyHistory(prevWeekly);
+                    for (const period of allPeriods) {
+                        const pStartStr = `${period.start.getFullYear()}-${String(period.start.getMonth() + 1).padStart(2, '0')}-${String(period.start.getDate()).padStart(2, '0')}`;
+                        const pEndStr = `${period.end.getFullYear()}-${String(period.end.getMonth() + 1).padStart(2, '0')}-${String(period.end.getDate()).padStart(2, '0')}`;
+
+                        const periodTotals = {};
+                        const periodWeekly = {};
+
+                        for (const player of playersData) {
+                            const { data: pData } = await supabase
+                                .from('chore_completions')
+                                .select('value_awarded, completed_date')
+                                .eq('player_id', player.id)
+                                .eq('status', 'approved')
+                                .gte('completed_date', pStartStr)
+                                .lte('completed_date', pEndStr);
+
+                            const { data: pBonuses } = await supabase
+                                .from('bonuses')
+                                .select('bonus_amount, week_start_date')
+                                .eq('player_id', player.id)
+                                .gte('week_start_date', pStartStr)
+                                .lte('week_start_date', pEndStr);
+
+                            const chorePoints = pData?.reduce((sum, c) => sum + c.value_awarded, 0) || 0;
+                            const bonusPoints = pBonuses?.reduce((sum, b) => sum + b.bonus_amount, 0) || 0;
+                            periodTotals[player.id] = chorePoints + bonusPoints;
+
+                            // Add to lifetime earnings
+                            ltEarnings[player.id] = (ltEarnings[player.id] || 0) + calculateTieredPayout(chorePoints + bonusPoints).total;
+
+                            const weeks = {};
+                            (pData || []).forEach(c => {
+                                const date = new Date(c.completed_date);
+                                const weekStart = new Date(date);
+                                const dayOfWeek = weekStart.getDay();
+                                const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+                                weekStart.setDate(weekStart.getDate() + daysToMonday);
+                                const weekKey = weekStart.toISOString().split('T')[0];
+                                if (!weeks[weekKey]) weeks[weekKey] = { chorePoints: 0, bonusPoints: 0 };
+                                weeks[weekKey].chorePoints += c.value_awarded;
+                            });
+                            (pBonuses || []).forEach(b => {
+                                const weekKey = b.week_start_date;
+                                if (!weeks[weekKey]) weeks[weekKey] = { chorePoints: 0, bonusPoints: 0 };
+                                weeks[weekKey].bonusPoints += b.bonus_amount;
+                            });
+                            periodWeekly[player.id] = weeks;
+                        }
+
+                        history.push({
+                            label: period.label,
+                            totals: periodTotals,
+                            weekly: periodWeekly
+                        });
+                    }
+
+                    setPayoutHistory(history);
+                    setLifetimeEarnings(ltEarnings);
 
                     // Get current week's GOAT(s)
                     const { data: goatData, error: goatError } = await supabase
@@ -1652,6 +1693,11 @@
                                 } else if (achievement.name === 'Overachiever') {
                                     earned = stats.personal_best_beats >= achievement.requirement_value;
                                 }
+                                break;
+                            case 'lifetime_earnings':
+                                // requirement_value is in cents, lifetimeEarnings is in dollars
+                                const playerLifetime = lifetimeEarnings[playerId] || 0;
+                                earned = (playerLifetime * 100) >= achievement.requirement_value;
                                 break;
                         }
 
@@ -4428,6 +4474,31 @@
                                         {payoutDate}
                                     </div>
                                 </div>
+
+                                {/* Lifetime Earned */}
+                                <div className="material-card elevation-1" style={{
+                                    padding: '16px',
+                                    background: theme.cardBg,
+                                    textAlign: 'center'
+                                }}>
+                                    <div style={{
+                                        fontSize: '0.75rem',
+                                        fontWeight: '500',
+                                        textTransform: 'uppercase',
+                                        color: theme.textSecondary,
+                                        marginBottom: '8px'
+                                    }}>
+                                        Lifetime Earned
+                                    </div>
+                                    <div style={{
+                                        fontSize: '2rem',
+                                        fontWeight: '600',
+                                        color: '#1B5E20'
+                                    }}>
+                                        ${(lifetimeEarnings[selectedPlayer.id] || 0).toFixed(2)}
+                                    </div>
+                                    <div style={{ fontSize: '0.875rem', color: theme.textSecondary }}>all time</div>
+                                </div>
                             </div>
 
                             {/* Payout Breakdown - Weekly Totals */}
@@ -4550,121 +4621,144 @@
                                 );
                             })()}
 
-                            {/* Previous Month Payout Breakdown */}
-                            {(() => {
-                                const prevWeeklyData = prevWeeklyHistory[selectedPlayer.id] || {};
-                                const prevWeeks = Object.keys(prevWeeklyData).sort();
-                                const prevTotal = prevMonthlyTotals[selectedPlayer.id] || 0;
-                                const prevPayout = calculateTieredPayout(prevTotal);
+                            {/* Payout History - All Past Months */}
+                            <div className="material-card elevation-1" style={{
+                                padding: '16px',
+                                background: theme.cardBg,
+                                marginBottom: '16px'
+                            }}>
+                                <div style={{
+                                    fontSize: '1rem',
+                                    fontWeight: '600',
+                                    marginBottom: '16px',
+                                    color: theme.cardText
+                                }}>
+                                    📋 Payout History
+                                </div>
 
-                                return (
-                                    <div className="material-card elevation-1" style={{
+                                {payoutHistory.length === 0 && (
+                                    <div style={{
+                                        textAlign: 'center',
                                         padding: '16px',
-                                        background: theme.cardBg,
-                                        marginBottom: '16px'
+                                        color: theme.textSecondary,
+                                        fontSize: '0.875rem'
                                     }}>
-                                        <div style={{
-                                            fontSize: '1rem',
-                                            fontWeight: '600',
-                                            marginBottom: '16px',
-                                            color: theme.cardText
-                                        }}>
-                                            📋 Previous Month Payout
-                                        </div>
+                                        No payout history yet.
+                                    </div>
+                                )}
 
-                                        <div style={{
-                                            padding: '12px',
-                                            marginBottom: '12px',
-                                            background: darkMode ? 'rgba(156, 39, 176, 0.15)' : 'rgba(156, 39, 176, 0.1)',
-                                            borderRadius: '8px',
-                                            border: '1px solid #9C27B0'
-                                        }}>
-                                            <div style={{
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                alignItems: 'center'
-                                            }}>
-                                                <div>
-                                                    <div style={{ fontSize: '0.75rem', color: theme.textSecondary, marginBottom: '4px' }}>
-                                                        {prevPeriodLabel || 'Previous Month'} Total
-                                                    </div>
-                                                    <div style={{ fontSize: '1rem', fontWeight: '600', color: theme.cardText }}>
-                                                        {prevTotal.toLocaleString()} pts
+                                {payoutHistory.map((period, pIdx) => {
+                                    const pTotal = period.totals[selectedPlayer.id] || 0;
+                                    const pPayout = calculateTieredPayout(pTotal);
+                                    const isExpanded = expandedPayoutMonth === pIdx;
+                                    const weeklyData = period.weekly[selectedPlayer.id] || {};
+                                    const weeks = Object.keys(weeklyData).sort();
+
+                                    return (
+                                        <div key={pIdx} style={{ marginBottom: '8px' }}>
+                                            <div
+                                                onClick={() => setExpandedPayoutMonth(isExpanded ? null : pIdx)}
+                                                style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    padding: '12px',
+                                                    background: darkMode ? 'rgba(156, 39, 176, 0.1)' : 'rgba(156, 39, 176, 0.06)',
+                                                    borderRadius: isExpanded ? '8px 8px 0 0' : '8px',
+                                                    border: '1px solid ' + (isExpanded ? '#9C27B0' : 'transparent'),
+                                                    borderBottom: isExpanded ? 'none' : '1px solid ' + (isExpanded ? '#9C27B0' : 'transparent'),
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <span style={{ fontSize: '0.75rem', color: theme.textSecondary }}>
+                                                        {isExpanded ? '▼' : '▶'}
+                                                    </span>
+                                                    <div>
+                                                        <div style={{ fontSize: '0.875rem', fontWeight: '600', color: theme.cardText }}>
+                                                            {period.label}
+                                                        </div>
+                                                        <div style={{ fontSize: '0.75rem', color: theme.textSecondary }}>
+                                                            {pTotal.toLocaleString()} pts
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div style={{
-                                                    fontSize: '1.5rem',
+                                                    fontSize: '1.125rem',
                                                     fontWeight: '700',
                                                     color: '#9C27B0'
                                                 }}>
-                                                    ${prevPayout.total.toFixed(2)}
+                                                    ${pPayout.total.toFixed(2)}
                                                 </div>
                                             </div>
-                                        </div>
 
-                                        {prevWeeks.length > 0 && (
-                                            <div>
+                                            {isExpanded && (
                                                 <div style={{
-                                                    fontSize: '0.75rem',
-                                                    fontWeight: '600',
-                                                    textTransform: 'uppercase',
-                                                    letterSpacing: '1px',
-                                                    color: theme.textSecondary,
-                                                    marginBottom: '8px'
+                                                    padding: '12px',
+                                                    border: '1px solid #9C27B0',
+                                                    borderTop: 'none',
+                                                    borderRadius: '0 0 8px 8px',
+                                                    background: darkMode ? 'rgba(156, 39, 176, 0.05)' : 'rgba(156, 39, 176, 0.03)'
                                                 }}>
-                                                    Weekly Breakdown
-                                                </div>
-                                                {prevWeeks.map((weekStart, idx) => {
-                                                    const week = prevWeeklyData[weekStart];
-                                                    const weekTotal = week.chorePoints + week.bonusPoints;
-                                                    const weekPayout = calculateTieredPayout(weekTotal);
-                                                    const weekDate = new Date(weekStart);
+                                                    {weeks.length > 0 ? (
+                                                        <div>
+                                                            <div style={{
+                                                                fontSize: '0.7rem',
+                                                                fontWeight: '600',
+                                                                textTransform: 'uppercase',
+                                                                letterSpacing: '1px',
+                                                                color: theme.textSecondary,
+                                                                marginBottom: '8px'
+                                                            }}>
+                                                                Weekly Breakdown
+                                                            </div>
+                                                            {weeks.map((weekStart, wIdx) => {
+                                                                const week = weeklyData[weekStart];
+                                                                const weekTotal = week.chorePoints + week.bonusPoints;
+                                                                const weekPayout = calculateTieredPayout(weekTotal);
+                                                                const weekDate = new Date(weekStart);
 
-                                                    return (
-                                                        <div key={idx} style={{
-                                                            display: 'flex',
-                                                            justifyContent: 'space-between',
-                                                            alignItems: 'center',
-                                                            padding: '10px',
-                                                            marginBottom: '6px',
-                                                            background: darkMode ? 'rgba(156, 39, 176, 0.05)' : 'rgba(156, 39, 176, 0.05)',
-                                                            borderRadius: '8px'
-                                                        }}>
-                                                            <div>
-                                                                <div style={{ fontSize: '0.875rem', fontWeight: '500', color: theme.cardText }}>
-                                                                    Week of {weekDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                                                </div>
-                                                                <div style={{ fontSize: '0.75rem', color: theme.textSecondary }}>
-                                                                    {week.chorePoints} pts{week.bonusPoints > 0 ? ` + ${week.bonusPoints} bonus` : ''}
-                                                                </div>
-                                                            </div>
-                                                            <div style={{ textAlign: 'right' }}>
-                                                                <div style={{ fontSize: '0.875rem', fontWeight: '600', color: theme.cardText }}>
-                                                                    {weekTotal} pts
-                                                                </div>
-                                                                <div style={{ fontSize: '0.75rem', color: '#9C27B0' }}>
-                                                                    ${weekPayout.total.toFixed(2)}
-                                                                </div>
-                                                            </div>
+                                                                return (
+                                                                    <div key={wIdx} style={{
+                                                                        display: 'flex',
+                                                                        justifyContent: 'space-between',
+                                                                        alignItems: 'center',
+                                                                        padding: '8px',
+                                                                        marginBottom: '4px',
+                                                                        background: darkMode ? 'rgba(156, 39, 176, 0.08)' : 'rgba(156, 39, 176, 0.04)',
+                                                                        borderRadius: '6px'
+                                                                    }}>
+                                                                        <div>
+                                                                            <div style={{ fontSize: '0.8125rem', fontWeight: '500', color: theme.cardText }}>
+                                                                                Week of {weekDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                                                            </div>
+                                                                            <div style={{ fontSize: '0.6875rem', color: theme.textSecondary }}>
+                                                                                {week.chorePoints} pts{week.bonusPoints > 0 ? ` + ${week.bonusPoints} bonus` : ''}
+                                                                            </div>
+                                                                        </div>
+                                                                        <div style={{ textAlign: 'right' }}>
+                                                                            <div style={{ fontSize: '0.8125rem', fontWeight: '600', color: theme.cardText }}>
+                                                                                {weekTotal} pts
+                                                                            </div>
+                                                                            <div style={{ fontSize: '0.6875rem', color: '#9C27B0' }}>
+                                                                                ${weekPayout.total.toFixed(2)}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })}
                                                         </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        )}
-
-                                        {prevWeeks.length === 0 && (
-                                            <div style={{
-                                                textAlign: 'center',
-                                                padding: '16px',
-                                                color: theme.textSecondary,
-                                                fontSize: '0.875rem'
-                                            }}>
-                                                No data for previous month.
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })()}
+                                                    ) : (
+                                                        <div style={{ textAlign: 'center', color: theme.textSecondary, fontSize: '0.8125rem' }}>
+                                                            No activity this month.
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
 
                             {/* Achievements */}
                             <div className="material-card elevation-1" style={{

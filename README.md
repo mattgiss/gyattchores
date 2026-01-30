@@ -30,7 +30,8 @@ A gamified family chore tracking app with points, competitions, achievements, an
 
 ### Tiered Payout System
 - **Monthly Payouts**: Last Friday of each month
-- **Previous Month View**: Always see what was owed from the prior payout period
+- **Payout History**: Full log of every past month's payout with collapsible weekly breakdowns
+- **Lifetime Earned**: Total dollars earned all-time displayed in player profile
 - **Tiered Rates**: Higher points = better payout rates
   - 0-4,999 pts: $0.004/pt
   - 5,000-9,999 pts: $0.005/pt
@@ -47,7 +48,8 @@ A gamified family chore tracking app with points, competitions, achievements, an
 - **7-Day History**: Visual chart showing daily point earnings
 - **30-Day Activity Log**: Complete history of chore completions
 - **Achievement Showcase**: Display earned achievements
-- **Previous Month Payout**: View last month's total points, payout amount, and weekly breakdown
+- **Payout History Log**: View every past month's earnings with expandable weekly breakdowns
+- **Lifetime Earned**: Total all-time dollar earnings displayed prominently
 
 ### Dashboard
 - **Weather Widget**: Local weather with clothing suggestions and tomorrow's forecast
@@ -95,6 +97,7 @@ Run these SQL files in your Supabase SQL Editor (in order):
 3. `add-admin-activity-logs.sql` - Admin logging
 4. `add-error-logging-and-option-b-levels.sql` - Error logs and leveling
 5. `enable-rls-policies.sql` - Row Level Security (required for security)
+6. `add-money-achievements.sql` - Lifetime earnings achievements ($500, $1000)
 
 ### 2. Configure Credentials
 Update Supabase credentials in `index.html` (around line 603):
