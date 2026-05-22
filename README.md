@@ -1,106 +1,139 @@
 # GyattChores
 
-A gamified family chore tracking app with points, competitions, achievements, and weekly payouts.
+A premium gamified family chore tracking app with points, competitions, achievements, and weekly payouts. Built for families who want to make chores fun while teaching kids about earning and responsibility.
+
+## Overview
+
+GyattChores transforms household chores into an engaging competition. Kids earn points for completing tasks, compete for the weekly GOAT (Greatest Of All Time) title, unlock achievements, and earn real money through a tiered payout system.
+
+**Live Site:** [gyattchores.com](https://gyattchores.com)
 
 ## Features
 
 ### Core System
-- **Points System**: Kids earn points for completing chores (250 pts = $1)
-- **Approval Workflow**: Parents approve completed chores before points are awarded
-- **Cooldown System**: Chores have configurable cooldown periods (default 24hrs)
-- **Single-Claim Chores**: Some chores (like pet feeding) can only be done by one player per cooldown
+- **Points Economy**: Kids earn points for completing chores (250 pts = $1 USD)
+- **Approval Workflow**: Parents approve completed chores before points are awarded - prevents gaming the system
+- **Cooldown System**: Chores have configurable cooldown periods (default 24hrs) to encourage variety
+- **Single-Claim Chores**: Pet feeding tasks can only be claimed by one player per cooldown
 
 ### Weekly Competition
-- **Weekly GOAT**: Highest scorer gets the 🐐 GOAT badge (supports ties/Co-GOATs)
-- **Current Leader**: Purple glow and 👑 LEADING badge shows who's ahead this week
-- **Beat Last Week's GOAT Bonus**: 500 points for exceeding last week's winner
-- **Beat Personal Best Bonus**: 750 points for beating your own record
-- **Weekly Reset**: Automatic reset every Monday
-
-### Stale Chore Detection
-- **Red Glow Warning**: Chores not done in 3x their cooldown period glow red
-- **"Needs Attention" Badge**: Visual indicator for overdue chores
-- **Priority Sorting**: Stale chores appear at the top of the Available Chores list
+| Feature | Description |
+|---------|-------------|
+| Weekly GOAT | Highest scorer gets the GOAT badge (supports ties as "Co-GOATs") |
+| Current Leader | Purple glow and LEADING badge shows who's ahead this week |
+| Beat GOAT Bonus | +500 points for exceeding last week's winner |
+| Beat Personal Best | +750 points for surpassing your own record |
+| Weekly Reset | Automatic reset every Monday at midnight |
 
 ### Achievements System
-- **Chore Milestones**: First Steps, Getting Started, Chore Champion, etc.
-- **Point Milestones**: Point Starter, Point Collector, Point Master, etc.
-- **Streaks**: Daily Dedication, Weekly Warrior, Unstoppable, Legendary
-- **Special**: Early Bird, Night Owl, Speed Demon, Overachiever
+
+**Chore Milestones**
+- First Steps (1 chore)
+- Getting Started (10 chores)
+- Chore Champion (50 chores)
+- Hundred Club (100 chores)
+- Chore Master (250 chores)
+- Chore Legend (500 chores)
+
+**Point Milestones**
+- Point Starter (1,000 pts)
+- Point Collector (5,000 pts)
+- Point Master (10,000 pts)
+- Point Legend (25,000 pts)
+
+**Streak Achievements**
+- Daily Dedication (3-day streak)
+- Weekly Warrior (7-day streak)
+- Unstoppable (14-day streak)
+- Legendary (30-day streak)
+
+**Money Milestones**
+- Money Maker ($500 lifetime)
+- Thousandaire ($1,000 lifetime)
 
 ### Tiered Payout System
-- **Monthly Payouts**: Last Friday of each month
-- **Payout History**: Full log of every past month's payout with collapsible weekly breakdowns
-- **Lifetime Earned**: Total dollars earned all-time displayed in player profile
-- **Tiered Rates**: Higher points = better payout rates
-  - 0-4,999 pts: $0.004/pt
-  - 5,000-9,999 pts: $0.005/pt
-  - 10,000-14,999 pts: $0.006/pt
-  - 15,000+ pts: $0.007/pt
 
-### Custom Tasks & Bidding
-- **Player Bids**: Kids can propose custom tasks with point values
-- **Admin Review**: Parents accept, counter-offer, or reject bids
-- **Custom Tasks**: Green glow on custom/bid tasks for visibility
+Payouts occur on the last Friday of each month with progressive rates:
 
-### Profile & Stats
-- **Player Profiles**: Detailed stats including total completions, weekly average, success rate
-- **7-Day History**: Visual chart showing daily point earnings
-- **30-Day Activity Log**: Complete history of chore completions
-- **Achievement Showcase**: Display earned achievements
-- **Payout History Log**: View every past month's earnings with expandable weekly breakdowns
-- **Lifetime Earned**: Total all-time dollar earnings displayed prominently
+| Points Earned | Rate per Point | Example Payout |
+|---------------|----------------|----------------|
+| 0 - 4,999 | $0.004 | 4,000 pts = $16 |
+| 5,000 - 9,999 | $0.005 | 7,500 pts = $37.50 |
+| 10,000 - 14,999 | $0.006 | 12,000 pts = $72 |
+| 15,000+ | $0.007 | 20,000 pts = $140 |
 
-### Dashboard
-- **Weather Widget**: Local weather with clothing suggestions and tomorrow's forecast
+### Available Chores
+
+| Chore | Points | Value | Cooldown | Notes |
+|-------|--------|-------|----------|-------|
+| Pick up Poop | 500 | $2.00 | 24hr | |
+| Vacuum Living Room | 500 | $2.00 | 24hr | |
+| Get Mail | 250 | $1.00 | 24hr | |
+| Take Out Trash | 375 | $1.50 | 24hr | |
+| Take Trash to Curb | 375 | $1.50 | 24hr | Sunday availability |
+| Wash Dishes | 500 | $2.00 | 24hr | |
+| Load Dishwasher | 625 | $2.50 | 24hr | |
+| Unload Dishwasher | 500 | $2.00 | 24hr | |
+| Clean Room | 750 | $3.00 | 24hr | |
+| Clean Bathroom | 750 | $3.00 | 24hr | Full checklist |
+| Water Plants | 250 | $1.00 | 24hr | |
+| Feed Alfred | 250 | $1.00 | 8hr | Single-claim |
+| Feed Chevy | 250 | $1.00 | 8hr | Single-claim |
+| Sweep Floor | 375 | $1.50 | 24hr | |
+| Wipe Counters | 375 | $1.50 | 24hr | |
+| Take Out Recycling | 250 | $1.00 | 24hr | |
+| Fold Laundry | 500 | $2.00 | 24hr | |
+| Set Table | 250 | $1.00 | 24hr | |
+| Clear Table | 250 | $1.00 | 24hr | |
+
+### Dashboard Features
+- **Weather Widget**: Local weather with clothing suggestions
 - **Daily Quotes**: Motivational quotes from kid-friendly characters
-- **Dark/Light Mode**: Toggle themes, auto-detects time of day on login
-- **Definition of Done**: Chore descriptions show what "done" means
+- **Dark/Light Mode**: Manual toggle or auto-detect based on time
+- **Definition of Done**: Clear descriptions of what "done" means for each chore
+- **Pull-to-Refresh**: Native mobile gesture support
 
 ### Admin Features
-- **Approve/Reject Chores**: Review pending completions
-- **Backfill Entries**: Add missed chores for past dates
-- **Edit Approved Chores**: Modify or reassign completed chores
-- **Reset Cooldowns**: Clear all cooldowns to make chores available
-- **Activity Logs**: Track admin actions and changes
+- Approve/reject pending chore completions
+- Backfill entries for missed chores
+- Edit approved chores (reassign, change date)
+- Reset all cooldowns
+- View activity and error logs
+- Manage custom task bids
 
-## Chores
+## Tech Stack
 
-| Chore | Points | Cooldown | Notes |
-|-------|--------|----------|-------|
-| Pick up Poop | 500 | 24hr | |
-| Vacuum Living Room | 500 | 24hr | |
-| Get Mail | 250 | 24hr | |
-| Take Out Trash | 375 | 24hr | |
-| Take Trash to Curb | 375 | 24hr | Sunday special availability |
-| Wash Dishes | 500 | 24hr | |
-| Load Dishwasher | 625 | 24hr | |
-| Unload Dishwasher | 500 | 24hr | |
-| Clean Room | 750 | 24hr | |
-| Clean Bathroom | 750 | 24hr | Full checklist included |
-| Water Plants | 250 | 24hr | |
-| Feed Alfred | 250 | 8hr | Single-claim (dog) |
-| Feed Chevy | 250 | 8hr | Single-claim (cat) |
-| Sweep Floor | 375 | 24hr | |
-| Wipe Counters | 375 | 24hr | |
-| Take Out Recycling | 250 | 24hr | |
-| Fold Laundry | 500 | 24hr | |
-| Set Table | 250 | 24hr | |
-| Clear Table | 250 | 24hr | |
+| Layer | Technology |
+|-------|------------|
+| Frontend | React 18 (CDN), Babel Standalone |
+| Backend | Supabase (PostgreSQL) |
+| Hosting | GitHub Pages |
+| PWA | iOS home screen support |
+| Design | Material Design 3 inspired |
 
 ## Setup
 
+### Prerequisites
+- Supabase account (free tier works)
+- Static file host (GitHub Pages, Netlify, Vercel, etc.)
+
 ### 1. Database Setup
-Run these SQL files in your Supabase SQL Editor (in order):
-1. `schema.sql` - Core tables and functions
-2. `add-chore-bidding-system.sql` - Custom task bidding
-3. `add-admin-activity-logs.sql` - Admin logging
-4. `add-error-logging-and-option-b-levels.sql` - Error logs and leveling
-5. `enable-rls-policies.sql` - Row Level Security (required for security)
-6. `add-money-achievements.sql` - Lifetime earnings achievements ($500, $1000)
+
+Run these SQL files in your Supabase SQL Editor in order:
+
+```bash
+1. schema.sql                          # Core tables and functions
+2. add-chore-bidding-system.sql        # Custom task bidding
+3. add-admin-activity-logs.sql         # Admin logging
+4. add-error-logging-and-option-b-levels.sql  # Error logs
+5. enable-rls-policies.sql             # Row Level Security (REQUIRED)
+6. add-money-achievements.sql          # Lifetime earnings achievements
+```
 
 ### 2. Configure Credentials
-Update Supabase credentials in `index.html` (around line 603):
+
+Update Supabase credentials in `index.html` (line ~618):
+
 ```javascript
 const supabase = window.supabase.createClient(
     'YOUR_SUPABASE_URL',
@@ -109,41 +142,82 @@ const supabase = window.supabase.createClient(
 ```
 
 ### 3. Set Passwords
-Update passwords in `index.html` (around line 608-609):
+
+Update passwords in `index.html` (line ~623):
+
 ```javascript
 const LOGIN_PASSWORD = "your_login_password";
 const APPROVAL_CODE = "your_admin_code";
 ```
 
 ### 4. Deploy
-- Open `index.html` locally in browser, OR
-- Deploy to GitHub Pages, Netlify, Vercel, or any static host
+
+**Option A: Local**
+```bash
+open index.html
+```
+
+**Option B: GitHub Pages**
+```bash
+git add .
+git commit -m "Deploy GyattChores"
+git push origin main
+# Enable GitHub Pages in repo settings
+```
+
+## Project Structure
+
+```
+gyattchores/
+├── index.html                 # Main SPA (7,000+ lines)
+├── schema.sql                 # Core database schema
+├── enable-rls-policies.sql    # Security policies
+├── *.sql                      # Migration files
+├── SECURITY.md                # Security documentation
+├── SUPABASE_SETUP.md          # Database setup guide
+├── CNAME                      # Custom domain config
+├── apple-touch-icon.png       # iOS home screen icon
+├── gyattchores-logo*.svg      # Logo variants
+└── GyattChoresApp/            # Native iOS app (SwiftUI)
+    └── GyattChoresApp/
+        ├── Models/            # Data models
+        ├── Views/             # SwiftUI views
+        └── Services/          # API & auth services
+```
 
 ## Security
 
-See `SECURITY.md` for important security information including:
-- How to rotate your Supabase credentials
-- Enabling Row Level Security
-- Future authentication improvements
+See [SECURITY.md](SECURITY.md) for important security information:
+- Row Level Security (RLS) configuration
+- Credential management
+- Known limitations and future improvements
 
-## Tech Stack
+## Native iOS App
 
-- **Frontend**: React 18 (via CDN), Material Design
-- **Backend**: Supabase (PostgreSQL)
-- **Hosting**: Static (GitHub Pages compatible)
-- **PWA**: iOS home screen support with apple-touch-icon
+A native SwiftUI iOS app is included in `GyattChoresApp/`. To build:
 
-## File Structure
+1. Install Xcode from the Mac App Store
+2. Open `GyattChoresApp.xcodeproj`
+3. Configure your development team
+4. Build and run
 
-```
-├── index.html              # Main app (single-page application)
-├── schema.sql              # Core database schema
-├── enable-rls-policies.sql # Row Level Security policies
-├── SECURITY.md             # Security guide
-├── README.md               # This file
-└── *.sql                   # Various migration files
-```
+The iOS app provides a native experience with:
+- Native SwiftUI interface
+- Tab-based navigation
+- Haptic feedback
+- Pull-to-refresh
+- Dark/light mode
+
+## Contributing
+
+This is a family project, but suggestions are welcome! Open an issue to discuss changes.
+
+## License
+
+MIT License - feel free to fork and adapt for your family.
 
 ---
 
-Created by Matthew Gissentanna
+**Created with love for BeKindHearted and MegoDinoLava**
+
+*Built by Matthew Gissentanna*
