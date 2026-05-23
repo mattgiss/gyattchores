@@ -248,15 +248,29 @@
                         alignItems: 'center',
                         borderBottom: '1px solid var(--surface)'
                     }}>
-                        <h1 style={{
-                            fontSize: '1.5rem',
-                            fontWeight: 700,
-                            background: 'linear-gradient(135deg, var(--cyan), var(--purple))',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent'
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px'
                         }}>
-                            GyattChores
-                        </h1>
+                            <img
+                                src="gyattchores-logo-transparent.svg"
+                                alt="GyattChores Logo"
+                                style={{
+                                    width: '32px',
+                                    height: '32px'
+                                }}
+                            />
+                            <h1 style={{
+                                fontSize: '1.5rem',
+                                fontWeight: 700,
+                                background: 'linear-gradient(135deg, var(--cyan), var(--purple))',
+                                WebkitBackgroundClip: 'text',
+                                WebkitTextFillColor: 'transparent'
+                            }}>
+                                GyattChores
+                            </h1>
+                        </div>
                         <button
                             onClick={() => setShowAdmin(true)}
                             style={{
