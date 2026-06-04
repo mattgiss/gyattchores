@@ -15,9 +15,22 @@ Points reset naturally each week (the "This Week" total only counts approved cho
 
 ## Data & storage
 
-GyattChores is **offline-first**. All chore logs are stored in the browser's `localStorage` on the device (key: `gyattchores_logs`) — there is **no backend and no network call to save a chore**, so logging always works, even offline. Tabs/windows on the same device stay in sync via the browser `storage` event.
+GyattChores is **local-first with optional cloud sync**:
 
-> Trade-off: because data is local to each device, there is no cross-device sync. Each device keeps its own history. (A previous version synced via Supabase; that backend was retired — see [History](#history).)
+- **Always saves locally first.** Every chore is written to the browser's `localStorage` (key: `gyattchores_logs`) instantly. Logging never blocks on the network and **can never fail because a server is down** — the bug that earlier showed *"Could not save… reconnecting."*
+- **Syncs across devices when it can.** If the shared Supabase backend is reachable, logs sync in the background so each kid's phone and the parent's admin screen see the same data. New local entries are pushed; shared rows are pulled and merged.
+- **Degrades gracefully.** If the backend is unreachable (e.g. a paused free-tier project), the app keeps working offline, shows a small "Offline — saved on this device" hint, and syncs automatically once the backend is back.
+
+Same-device tabs also stay in sync via the browser `storage` event.
+
+### Enabling cross-device sync (Supabase)
+
+Sync is optional — the app works fully without it. To turn it on:
+
+1. In your Supabase project, open **SQL Editor** and run [`simple-logs-schema.sql`](simple-logs-schema.sql). This creates the `simple_logs` table and the row-level-security policies the app needs.
+2. Set your project URL and **anon public** key near the top of the `<script>` block in `index.html` (`SUPABASE_URL` / `SUPABASE_ANON_KEY`).
+
+If the table is missing or the project is paused, the app simply stays in local-only mode until it's available.
 
 ## Features
 
@@ -49,12 +62,13 @@ GyattChores is **offline-first**. All chore logs are stored in the browser's `lo
 | Layer | Technology |
 |-------|------------|
 | UI | React 18 (via CDN) + Babel Standalone (in-browser JSX) |
-| Storage | Browser `localStorage` — no backend, no database |
+| Storage | Browser `localStorage` (source of truth) |
+| Sync (optional) | Supabase (`simple_logs` table) for cross-device sharing |
 | Styling | Hand-written CSS (Material-inspired dark theme) |
 | Hosting | GitHub Pages (custom domain via `CNAME`) |
 | Mobile | PWA (add-to-home-screen) + a native SwiftUI app (see below) |
 
-There is **no build step and no server**. The entire web app is a single self-contained `index.html`.
+There is **no build step**. The entire web app is a single self-contained `index.html`; Supabase is used only as an optional background sync layer.
 
 ## Running locally
 
@@ -91,6 +105,7 @@ A native SwiftUI app (iPhone + Apple Watch) lives in [`GyattChoresApp/`](GyattCh
 ```
 gyattchores/
 ├── index.html              # The entire web app (self-contained SPA)
+├── simple-logs-schema.sql  # Supabase table + RLS for optional cross-device sync
 ├── CNAME                   # Custom domain for GitHub Pages
 ├── apple-touch-icon.png    # iOS home-screen icon
 ├── gyattchores-logo*.svg   # Logo variants
@@ -103,11 +118,11 @@ gyattchores/
 
 ## Security
 
-GyattChores has no backend and stores nothing on a server — all data lives in the browser's `localStorage` on each device. The admin PIN is a lightweight, client-side "are you a grown-up?" gate, **not** a real security boundary. See [SECURITY.md](SECURITY.md).
+All chore data lives in the browser's `localStorage` on each device; the optional Supabase sync stores only non-sensitive chore logs, written with the project's public anon key under permissive row-level-security policies (it's a private family app). The admin PIN is a lightweight, client-side "are you a grown-up?" gate, **not** a real security boundary. See [SECURITY.md](SECURITY.md).
 
 ## History
 
-This started as a Supabase-backed app, was rewritten into a simple offline-first localStorage app, briefly reconnected to Supabase for cross-device sync, and then returned to offline-first localStorage after that backend was retired. That journey is preserved in [`development-narrative.md`](development-narrative.md) and the [`ebook`](ebook.md).
+This started as a Supabase-backed app, was rewritten into a simple offline-first localStorage app, and is now **local-first with optional Supabase sync** — local storage is always the source of truth, and the cloud is a best-effort sync layer that the app no longer depends on to function. That journey is preserved in [`development-narrative.md`](development-narrative.md) and the [`ebook`](ebook.md).
 
 ## License
 
