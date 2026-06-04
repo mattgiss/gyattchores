@@ -19,3 +19,4 @@ npm-debug.log*
 # Temporary files
 *.tmp
 .cache/
+.logo-export/
