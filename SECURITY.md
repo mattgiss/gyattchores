@@ -1,81 +1,36 @@
-# GyattChores Security Guide
+# Security
 
-## Critical: Rotate Your Supabase Credentials
+## Architecture & threat model
 
-Your Supabase anon key was exposed in the source code. Follow these steps immediately:
+GyattChores is a **fully client-side app**. There is no backend, no database, and no server that stores user data:
 
-### Step 1: Rotate the Anon Key in Supabase
+- All chore logs and points are kept in the browser's `localStorage` (web) or `UserDefaults` (iOS app), on the device only.
+- Nothing is transmitted to or stored by GyattChores servers — there are none. The only network requests are to public CDNs (React, Babel, Google Fonts) to load the app itself.
+- The app is served as static files from GitHub Pages.
 
-1. Go to [Supabase Dashboard](https://supabase.com/dashboard)
-2. Select your project (ukshxdoqgwoxobjdclpx)
-3. Navigate to **Settings** > **API**
-4. Under "Project API keys", click **Regenerate** next to the anon key
-5. Confirm the action - this will invalidate the old key immediately
+Because there is no server and no shared data store, the classic web risks (credential leaks, SQL injection, broken access control, data breaches of a central database) **do not apply** here.
 
-### Step 2: Update Your App
+> Historical note: an earlier version connected to a Supabase project for cross-device sync, with the anon key embedded in the client. That backend has been retired and removed from the app. If you fork an older revision, rotate/disable any exposed Supabase keys.
 
-After rotating the key, update `index.html` line ~603:
+## The admin PIN is not a security boundary
 
-```javascript
-const supabase = window.supabase.createClient(
-    'https://ukshxdoqgwoxobjdclpx.supabase.co',
-    'YOUR_NEW_ANON_KEY_HERE'  // Replace with new key
-);
-```
+The "admin" PIN (the `ADMIN_CODE` constant in `index.html`) gates the approve/reject screen. It is a **convenience lock to keep kids from approving their own chores**, not real security:
 
-### Step 3: Enable Row Level Security (RLS)
+- It is present in the client source and visible to anyone who views source.
+- It protects only the local approval UI; it guards no sensitive data and authorizes no server action.
 
-Run the SQL file to enable RLS on all tables:
+Treat it accordingly. If you fork this app, change the PIN, but don't rely on it to protect anything that actually matters.
 
-1. Go to Supabase Dashboard > SQL Editor
-2. Open `enable-rls-policies.sql`
-3. Run the entire script
-4. Verify by running:
-   ```sql
-   SELECT tablename, rowsecurity FROM pg_tables WHERE schemaname = 'public';
-   ```
+## Data & privacy
 
-### Step 4: Verify Everything Works
+- Chore data never leaves the device. Clearing your browser storage (or deleting the app) erases all data.
+- No accounts, no email, no analytics, no third-party tracking.
+- Since data is local-only, there is no cross-device sync — each device keeps its own history.
 
-1. Refresh the app in your browser
-2. Test logging in
-3. Test claiming a chore
-4. Test admin approval
+## If you want stronger guarantees
 
----
+This app is intentionally simple. If you adapt it for a context that needs real authentication or shared/synced data, you'd need to add a backend and move trust decisions server-side. At that point, standard practices apply: real auth, server-side authorization, secrets kept out of the client, and (for children's data) COPPA-style consent and retention policies.
 
-## Passwords Still Exposed
+## Reporting an issue
 
-The app has hardcoded passwords in the source code:
-- Login password: `0413` (line 608)
-- Admin approval code: `7874` (line 609)
-
-For now, these are visible to anyone who views source. For app store deployment, you should:
-
-1. Implement Supabase Auth (email/password login)
-2. Create admin and player roles
-3. Move password verification to server-side
-
----
-
-## Future Security Improvements
-
-For app store deployment:
-
-1. **Implement Supabase Auth**
-   - User accounts for parents and kids
-   - Proper session management
-   - Role-based access control
-
-2. **Move credentials to environment variables**
-   - Use a build process (Vite, Next.js, etc.)
-   - Keep secrets out of the frontend code
-
-3. **Add COPPA compliance**
-   - Privacy policy for children's data
-   - Parental consent flow
-   - Data retention policies
-
-4. **Enable stricter RLS policies**
-   - Once auth is implemented, update policies to check `auth.uid()`
-   - Restrict admin actions to verified admin users
+This is a small family project. If you find a security problem, please open an issue in the repository describing it. There is no formal disclosure program.
