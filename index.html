@@ -134,22 +134,67 @@
         const ADMIN_CODE = '7874';
 
         // ============================================
+        // SHARED BACKEND (Supabase)
+        // ============================================
+        // Logs are stored in a shared Supabase table so every device (each kid's
+        // phone + the parent's admin screen) sees the same data. Without this,
+        // logs only live in one device's localStorage and never sync.
+
+        const supabase = window.supabase.createClient(
+            'https://ukshxdoqgwoxobjdclpx.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrc2h4ZG9xZ3dveG9iamRjbHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3MjI2NDEsImV4cCI6MjA4MDI5ODY0MX0.UGNrsfG6goEA0PPWG4x7gxBueA7D5Oe9uWI-iCXIar0'
+        );
+
+        // Map a Supabase row (snake_case) to the app's log shape (camelCase).
+        const rowToLog = (r) => ({
+            id: r.id,
+            playerId: r.player_id,
+            playerName: r.player_name,
+            choreId: r.chore_id,
+            choreName: r.chore_name,
+            choreIcon: r.chore_icon,
+            points: r.points,
+            timestamp: r.created_at,
+            status: r.status
+        });
+
+        // ============================================
         // MAIN APP
         // ============================================
 
         function App() {
             const [selectedPlayer, setSelectedPlayer] = useState(null);
-            const [logs, setLogs] = useState(() => {
-                const saved = localStorage.getItem('gyattchores_logs');
-                return saved ? JSON.parse(saved) : [];
-            });
+            const [logs, setLogs] = useState([]);
             const [showSuccess, setShowSuccess] = useState(null);
             const [showAdmin, setShowAdmin] = useState(false);
 
-            // Save logs to localStorage
+            // Pull the shared logs from Supabase so every device stays in sync.
+            const fetchLogs = useCallback(async () => {
+                const { data, error } = await supabase
+                    .from('simple_logs')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                if (error) {
+                    console.error('Failed to load logs:', error.message);
+                    return;
+                }
+                setLogs(data.map(rowToLog));
+            }, []);
+
+            // Initial load + keep in sync: poll periodically and refetch whenever
+            // the tab regains focus (e.g. parent reopens the admin screen).
             useEffect(() => {
-                localStorage.setItem('gyattchores_logs', JSON.stringify(logs));
-            }, [logs]);
+                fetchLogs();
+                const interval = setInterval(fetchLogs, 4000);
+                const onVisible = () => {
+                    if (document.visibilityState === 'visible') fetchLogs();
+                };
+                document.addEventListener('visibilitychange', onVisible);
+                return () => {
+                    clearInterval(interval);
+                    document.removeEventListener('visibilitychange', onVisible);
+                };
+            }, [fetchLogs]);
 
             // Calculate points
             const getWeeklyPoints = (playerId) => {
@@ -188,49 +233,77 @@
             }, null);
 
             // Log a chore
-            const logChore = (chore) => {
+            const logChore = async (chore) => {
                 if (!selectedPlayer) return;
 
-                const newLog = {
-                    id: Date.now().toString(),
-                    playerId: selectedPlayer.id,
-                    playerName: selectedPlayer.name,
-                    choreId: chore.id,
-                    choreName: chore.name,
-                    choreIcon: chore.icon,
-                    points: chore.points,
-                    timestamp: new Date().toISOString(),
-                    status: 'pending'
-                };
-
-                setLogs(prev => [newLog, ...prev]);
+                // Show success immediately for a snappy, frictionless feel.
                 setShowSuccess(chore);
-
-                // Haptic feedback
                 if (navigator.vibrate) navigator.vibrate(10);
-
                 setTimeout(() => setShowSuccess(null), 1500);
+
+                const { data, error } = await supabase
+                    .from('simple_logs')
+                    .insert({
+                        player_id: selectedPlayer.id,
+                        player_name: selectedPlayer.name,
+                        chore_id: chore.id,
+                        chore_name: chore.name,
+                        chore_icon: chore.icon,
+                        points: chore.points,
+                        status: 'pending'
+                    })
+                    .select()
+                    .single();
+
+                if (error) {
+                    console.error('Failed to log chore:', error.message);
+                    alert('Could not save that chore — please check your connection and try again.');
+                    return;
+                }
+
+                // Add the saved row locally right away; polling keeps others in sync.
+                setLogs(prev => [rowToLog(data), ...prev]);
             };
 
-            // Approve/reject
-            const approve = (logId) => {
+            // Approve/reject — update the shared row, then reflect locally.
+            const setStatus = async (logId, status) => {
                 setLogs(prev => prev.map(log =>
-                    log.id === logId ? { ...log, status: 'approved' } : log
+                    log.id === logId ? { ...log, status } : log
                 ));
+                const { error } = await supabase
+                    .from('simple_logs')
+                    .update({ status })
+                    .eq('id', logId);
+                if (error) {
+                    console.error('Failed to update log:', error.message);
+                    fetchLogs(); // revert to server truth on failure
+                }
+            };
+
+            const approve = (logId) => {
                 if (navigator.vibrate) navigator.vibrate([10, 50, 10]);
+                setStatus(logId, 'approved');
             };
 
             const reject = (logId) => {
-                setLogs(prev => prev.map(log =>
-                    log.id === logId ? { ...log, status: 'rejected' } : log
-                ));
+                setStatus(logId, 'rejected');
             };
 
-            const approveAll = () => {
+            const approveAll = async () => {
+                if (navigator.vibrate) navigator.vibrate([10, 50, 10]);
+                const ids = pendingLogs.map(log => log.id);
+                if (ids.length === 0) return;
                 setLogs(prev => prev.map(log =>
                     log.status === 'pending' ? { ...log, status: 'approved' } : log
                 ));
-                if (navigator.vibrate) navigator.vibrate([10, 50, 10]);
+                const { error } = await supabase
+                    .from('simple_logs')
+                    .update({ status: 'approved' })
+                    .in('id', ids);
+                if (error) {
+                    console.error('Failed to approve all:', error.message);
+                    fetchLogs();
+                }
             };
 
             return (
