@@ -167,6 +167,7 @@
             const [logs, setLogs] = useState([]);
             const [showSuccess, setShowSuccess] = useState(null);
             const [showAdmin, setShowAdmin] = useState(false);
+            const [connected, setConnected] = useState(true);
 
             // Pull the shared logs from Supabase so every device stays in sync.
             const fetchLogs = useCallback(async () => {
@@ -176,8 +177,10 @@
                     .order('created_at', { ascending: false });
                 if (error) {
                     console.error('Failed to load logs:', error.message);
+                    setConnected(false);
                     return;
                 }
+                setConnected(true);
                 setLogs(data.map(rowToLog));
             }, []);
 
@@ -257,11 +260,13 @@
 
                 if (error) {
                     console.error('Failed to log chore:', error.message);
-                    alert('Could not save that chore — please check your connection and try again.');
+                    setConnected(false);
+                    alert('Could not save that chore — reconnecting. Please try again in a moment.');
                     return;
                 }
 
                 // Add the saved row locally right away; polling keeps others in sync.
+                setConnected(true);
                 setLogs(prev => [rowToLog(data), ...prev]);
             };
 
@@ -276,7 +281,10 @@
                     .eq('id', logId);
                 if (error) {
                     console.error('Failed to update log:', error.message);
+                    setConnected(false);
                     fetchLogs(); // revert to server truth on failure
+                } else {
+                    setConnected(true);
                 }
             };
 
@@ -302,7 +310,10 @@
                     .in('id', ids);
                 if (error) {
                     console.error('Failed to approve all:', error.message);
+                    setConnected(false);
                     fetchLogs();
+                } else {
+                    setConnected(true);
                 }
             };
 
@@ -380,6 +391,31 @@
                             )}
                         </button>
                     </header>
+
+                    {/* Reconnecting indicator — shown whenever the shared backend is unreachable */}
+                    {!connected && (
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            padding: '8px 16px',
+                            background: 'rgba(245, 158, 11, 0.15)',
+                            color: 'var(--amber, #f59e0b)',
+                            borderBottom: '1px solid rgba(245, 158, 11, 0.3)',
+                            fontSize: '0.85rem',
+                            fontWeight: 600
+                        }}>
+                            <span style={{
+                                width: '8px',
+                                height: '8px',
+                                borderRadius: '50%',
+                                background: 'currentColor',
+                                animation: 'pulse 1.2s ease-in-out infinite'
+                            }} />
+                            Reconnecting…
+                        </div>
+                    )}
 
                     {/* Main Content */}
                     <main style={{
