@@ -1,223 +1,114 @@
 # GyattChores
 
-A premium gamified family chore tracking app with points, competitions, achievements, and weekly payouts. Built for families who want to make chores fun while teaching kids about earning and responsibility.
+A simple, gamified family chore tracker. Kids tap to log the chores they've done, a parent approves them with a PIN, and points roll up into a friendly weekly competition.
 
-## Overview
+**Live site:** [gyattchores.com](https://gyattchores.com)
 
-GyattChores transforms household chores into an engaging competition. Kids earn points for completing tasks, compete for the weekly GOAT (Greatest Of All Time) title, unlock achievements, and earn real money through a tiered payout system.
+## How it works
 
-**Live Site:** [gyattchores.com](https://gyattchores.com)
+1. **Pick a player** — tap a player card (e.g. 🦁 BeKindHearted or 🦖 MegoDinoLava).
+2. **Log a chore** — tap any chore tile. It's recorded as **pending** and earns no points yet.
+3. **Parent approves** — open the ✓ menu, enter the admin PIN, and approve (or reject) pending chores. Approving awards the chore's points.
+4. **Compete** — approved points count toward **Today** and **This Week** totals. The player leading the week gets a 👑.
+
+Points reset naturally each week (the "This Week" total only counts approved chores logged since Monday).
 
 ## Features
 
-### Core System
-- **Points Economy**: Kids earn points for completing chores (250 pts = $1 USD)
-- **Approval Workflow**: Parents approve completed chores before points are awarded - prevents gaming the system
-- **Cooldown System**: Chores have configurable cooldown periods (default 24hrs) to encourage variety
-- **Single-Claim Chores**: Pet feeding tasks can only be claimed by one player per cooldown
+- **Tap-to-log chores** — 17 chores, each worth a set number of points.
+- **Parent approval workflow** — chores stay pending until approved with the admin PIN, so points can't be self-awarded.
+- **Approve all** — clear the whole pending queue in one tap.
+- **Today / This Week totals** — per-player point tallies.
+- **Weekly leader** — the top scorer this week is marked with a crown.
+- **Works offline & installable** — runs entirely in the browser, stores data locally, and can be added to an iOS/Android home screen as a PWA.
 
-### Weekly Competition
-| Feature | Description |
-|---------|-------------|
-| Weekly GOAT | Highest scorer gets the GOAT badge (supports ties as "Co-GOATs") |
-| Current Leader | Purple glow and LEADING badge shows who's ahead this week |
-| Beat GOAT Bonus | +500 points for exceeding last week's winner |
-| Beat Personal Best | +750 points for surpassing your own record |
-| Weekly Reset | Automatic reset every Monday at midnight |
+## Chores & points
 
-### Achievements System
+| Chore | Points | Chore | Points |
+|-------|-------:|-------|-------:|
+| 💩 Pick up Poop | 500 | 🌱 Water Plants | 250 |
+| 🧹 Vacuum | 500 | 🐕 Feed Alfred | 250 |
+| 📬 Get Mail | 250 | 🐱 Feed Chevy | 250 |
+| 🗑️ Trash | 375 | 🧹 Sweep | 375 |
+| 🍽️ Dishes | 500 | 🧽 Wipe Counters | 375 |
+| 🫧 Load Dishwasher | 625 | 👕 Fold Laundry | 500 |
+| ✨ Unload Dishwasher | 500 | 🍴 Set Table | 250 |
+| 🛏️ Clean Room | 750 | 🧹 Clear Table | 250 |
+| 🚿 Clean Bathroom | 750 | | |
 
-**Chore Milestones**
-- First Steps (1 chore)
-- Getting Started (10 chores)
-- Chore Champion (50 chores)
-- Hundred Club (100 chores)
-- Chore Master (250 chores)
-- Chore Legend (500 chores)
+> Players, chores, point values, and the admin PIN are defined at the top of the `<script>` block in `index.html` (the `PLAYERS`, `CHORES`, and `ADMIN_CODE` constants). Edit them there to customize.
 
-**Point Milestones**
-- Point Starter (1,000 pts)
-- Point Collector (5,000 pts)
-- Point Master (10,000 pts)
-- Point Legend (25,000 pts)
-
-**Streak Achievements**
-- Daily Dedication (3-day streak)
-- Weekly Warrior (7-day streak)
-- Unstoppable (14-day streak)
-- Legendary (30-day streak)
-
-**Money Milestones**
-- Money Maker ($500 lifetime)
-- Thousandaire ($1,000 lifetime)
-
-### Tiered Payout System
-
-Payouts occur on the last Friday of each month with progressive rates:
-
-| Points Earned | Rate per Point | Example Payout |
-|---------------|----------------|----------------|
-| 0 - 4,999 | $0.004 | 4,000 pts = $16 |
-| 5,000 - 9,999 | $0.005 | 7,500 pts = $37.50 |
-| 10,000 - 14,999 | $0.006 | 12,000 pts = $72 |
-| 15,000+ | $0.007 | 20,000 pts = $140 |
-
-### Available Chores
-
-| Chore | Points | Value | Cooldown | Notes |
-|-------|--------|-------|----------|-------|
-| Pick up Poop | 500 | $2.00 | 24hr | |
-| Vacuum Living Room | 500 | $2.00 | 24hr | |
-| Get Mail | 250 | $1.00 | 24hr | |
-| Take Out Trash | 375 | $1.50 | 24hr | |
-| Take Trash to Curb | 375 | $1.50 | 24hr | Sunday availability |
-| Wash Dishes | 500 | $2.00 | 24hr | |
-| Load Dishwasher | 625 | $2.50 | 24hr | |
-| Unload Dishwasher | 500 | $2.00 | 24hr | |
-| Clean Room | 750 | $3.00 | 24hr | |
-| Clean Bathroom | 750 | $3.00 | 24hr | Full checklist |
-| Water Plants | 250 | $1.00 | 24hr | |
-| Feed Alfred | 250 | $1.00 | 8hr | Single-claim |
-| Feed Chevy | 250 | $1.00 | 8hr | Single-claim |
-| Sweep Floor | 375 | $1.50 | 24hr | |
-| Wipe Counters | 375 | $1.50 | 24hr | |
-| Take Out Recycling | 250 | $1.00 | 24hr | |
-| Fold Laundry | 500 | $2.00 | 24hr | |
-| Set Table | 250 | $1.00 | 24hr | |
-| Clear Table | 250 | $1.00 | 24hr | |
-
-### Dashboard Features
-- **Weather Widget**: Local weather with clothing suggestions
-- **Daily Quotes**: Motivational quotes from kid-friendly characters
-- **Dark/Light Mode**: Manual toggle or auto-detect based on time
-- **Definition of Done**: Clear descriptions of what "done" means for each chore
-- **Pull-to-Refresh**: Native mobile gesture support
-
-### Admin Features
-- Approve/reject pending chore completions
-- Backfill entries for missed chores
-- Edit approved chores (reassign, change date)
-- Reset all cooldowns
-- View activity and error logs
-- Manage custom task bids
-
-## Tech Stack
+## Tech stack
 
 | Layer | Technology |
 |-------|------------|
-| Frontend | React 18 (CDN), Babel Standalone |
-| Backend | Supabase (PostgreSQL) |
-| Hosting | GitHub Pages |
-| PWA | iOS home screen support |
-| Design | Material Design 3 inspired |
+| UI | React 18 (via CDN) + Babel Standalone (in-browser JSX) |
+| Storage | Browser `localStorage` — no backend, no database |
+| Styling | Hand-written CSS (Material-inspired dark theme) |
+| Hosting | GitHub Pages (custom domain via `CNAME`) |
+| Mobile | PWA (add-to-home-screen) + a native SwiftUI app (see below) |
 
-## Setup
+There is **no build step and no server**. The entire web app is a single self-contained `index.html`.
 
-### Prerequisites
-- Supabase account (free tier works)
-- Static file host (GitHub Pages, Netlify, Vercel, etc.)
+## Running locally
 
-### 1. Database Setup
-
-Run these SQL files in your Supabase SQL Editor in order:
+Because the app loads scripts over HTTPS from a CDN, the simplest way to run it is any static file server:
 
 ```bash
-1. schema.sql                          # Core tables and functions
-2. add-chore-bidding-system.sql        # Custom task bidding
-3. add-admin-activity-logs.sql         # Admin logging
-4. add-error-logging-and-option-b-levels.sql  # Error logs
-5. enable-rls-policies.sql             # Row Level Security (REQUIRED)
-6. add-money-achievements.sql          # Lifetime earnings achievements
+# from the repo root
+python -m http.server 8000
+# then open http://localhost:8000/index.html
 ```
 
-### 2. Configure Credentials
+Opening `index.html` directly via `file://` also works in most browsers.
 
-Update Supabase credentials in `index.html` (line ~618):
+> A ready-to-use preview config lives in `.claude/launch.json` (serves the app on port 8766).
 
-```javascript
-const supabase = window.supabase.createClient(
-    'YOUR_SUPABASE_URL',
-    'YOUR_SUPABASE_ANON_KEY'
-);
-```
+## Deploying
 
-### 3. Set Passwords
+The site is hosted on **GitHub Pages** from `main`, with the custom domain set in `CNAME`. To deploy a change:
 
-Update passwords in `index.html` (line ~623):
-
-```javascript
-const LOGIN_PASSWORD = "your_login_password";
-const APPROVAL_CODE = "your_admin_code";
-```
-
-### 4. Deploy
-
-**Option A: Local**
-```bash
-open index.html
-```
-
-**Option B: GitHub Pages**
 ```bash
 git add .
-git commit -m "Deploy GyattChores"
+git commit -m "Update GyattChores"
 git push origin main
-# Enable GitHub Pages in repo settings
 ```
 
-## Project Structure
+GitHub Pages serves the new `index.html` automatically.
+
+## Native iOS app
+
+A native SwiftUI app (iPhone + Apple Watch) lives in [`GyattChoresApp/`](GyattChoresApp/). It mirrors the web app's design and behavior and uses the same local-storage model (`UserDefaults`, key `gyattchores_logs`), including a Shortcuts/App Intent for logging a chore by voice.
+
+> Note: the Xcode project file is not committed — the directory contains the Swift sources (`Models/`, `Views/`, `Services/`, `Intents/`). To build, create a new Xcode app target and add these sources, or open the folder in Xcode.
+
+## Project structure
 
 ```
 gyattchores/
-├── index.html                 # Main SPA (7,000+ lines)
-├── schema.sql                 # Core database schema
-├── enable-rls-policies.sql    # Security policies
-├── *.sql                      # Migration files
-├── SECURITY.md                # Security documentation
-├── SUPABASE_SETUP.md          # Database setup guide
-├── CNAME                      # Custom domain config
-├── apple-touch-icon.png       # iOS home screen icon
-├── gyattchores-logo*.svg      # Logo variants
-└── GyattChoresApp/            # Native iOS app (SwiftUI)
-    └── GyattChoresApp/
-        ├── Models/            # Data models
-        ├── Views/             # SwiftUI views
-        └── Services/          # API & auth services
+├── index.html              # The entire web app (self-contained SPA)
+├── CNAME                   # Custom domain for GitHub Pages
+├── apple-touch-icon.png    # iOS home-screen icon
+├── gyattchores-logo*.svg   # Logo variants
+├── SECURITY.md             # Security model & disclosure
+├── GyattChoresApp/         # Native SwiftUI app (iPhone + Watch)
+├── development-narrative.md / development-story.html   # The build journey
+├── ebook.md / ebook.html   # Long-form write-up of the project
+└── leveling-progression-examples.md   # Design notes for a future leveling system
 ```
 
 ## Security
 
-See [SECURITY.md](SECURITY.md) for important security information:
-- Row Level Security (RLS) configuration
-- Credential management
-- Known limitations and future improvements
+GyattChores has no backend and stores nothing on a server — all data lives in the browser's `localStorage` on each device. The admin PIN is a lightweight, client-side "are you a grown-up?" gate, **not** a real security boundary. See [SECURITY.md](SECURITY.md) for details and how to report an issue.
 
-## Native iOS App
+## History
 
-A native SwiftUI iOS app is included in `GyattChoresApp/`. To build:
-
-1. Install Xcode from the Mac App Store
-2. Open `GyattChoresApp.xcodeproj`
-3. Configure your development team
-4. Build and run
-
-The iOS app provides a native experience with:
-- Native SwiftUI interface
-- Tab-based navigation
-- Haptic feedback
-- Pull-to-refresh
-- Dark/light mode
-
-## Contributing
-
-This is a family project, but suggestions are welcome! Open an issue to discuss changes.
+This started as a Supabase-backed app and was later rewritten into the simple, self-contained, offline-first version you see today. That journey is preserved in [`development-narrative.md`](development-narrative.md) and the [`ebook`](ebook.md).
 
 ## License
 
-MIT License - feel free to fork and adapt for your family.
+MIT License — feel free to fork and adapt for your family.
 
 ---
 
-**Created with love for BeKindHearted and MegoDinoLava**
-
-*Built by Matthew Gissentanna*
+**Created with love for BeKindHearted and MegoDinoLava** · *Built by Matthew Gissentanna*
