@@ -13,7 +13,6 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -100,7 +99,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useCallback } = React;
+        const { useState, useEffect } = React;
 
         // ============================================
         // DATA
@@ -134,29 +133,42 @@
         const ADMIN_CODE = '7874';
 
         // ============================================
-        // SHARED BACKEND (Supabase)
+        // LOCAL STORAGE (offline-first, no backend)
         // ============================================
-        // Logs are stored in a shared Supabase table so every device (each kid's
-        // phone + the parent's admin screen) sees the same data. Without this,
-        // logs only live in one device's localStorage and never sync.
+        // Chore logs are stored locally on the device. The app works fully
+        // offline and never depends on a network connection to save a chore,
+        // so logging can never fail because a server is unreachable.
 
-        const supabase = window.supabase.createClient(
-            'https://ukshxdoqgwoxobjdclpx.supabase.co',
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrc2h4ZG9xZ3dveG9iamRjbHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3MjI2NDEsImV4cCI6MjA4MDI5ODY0MX0.UGNrsfG6goEA0PPWG4x7gxBueA7D5Oe9uWI-iCXIar0'
-        );
+        const STORAGE_KEY = 'gyattchores_logs';
 
-        // Map a Supabase row (snake_case) to the app's log shape (camelCase).
-        const rowToLog = (r) => ({
-            id: r.id,
-            playerId: r.player_id,
-            playerName: r.player_name,
-            choreId: r.chore_id,
-            choreName: r.chore_name,
-            choreIcon: r.chore_icon,
-            points: r.points,
-            timestamp: r.created_at,
-            status: r.status
-        });
+        // Read logs from localStorage, newest first.
+        const loadLogs = () => {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                const parsed = raw ? JSON.parse(raw) : [];
+                return parsed
+                    .slice()
+                    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            } catch (e) {
+                console.error('Failed to read logs:', e);
+                return [];
+            }
+        };
+
+        // Persist logs to localStorage.
+        const saveLogs = (logs) => {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
+            } catch (e) {
+                console.error('Failed to save logs:', e);
+            }
+        };
+
+        // Generate a unique id for a new log entry.
+        const makeId = () =>
+            (window.crypto && crypto.randomUUID)
+                ? crypto.randomUUID()
+                : Date.now().toString(36) + Math.random().toString(36).slice(2);
 
         // ============================================
         // MAIN APP
@@ -164,40 +176,27 @@
 
         function App() {
             const [selectedPlayer, setSelectedPlayer] = useState(null);
-            const [logs, setLogs] = useState([]);
+            const [logs, setLogs] = useState(loadLogs);
             const [showSuccess, setShowSuccess] = useState(null);
             const [showAdmin, setShowAdmin] = useState(false);
-            const [connected, setConnected] = useState(true);
 
-            // Pull the shared logs from Supabase so every device stays in sync.
-            const fetchLogs = useCallback(async () => {
-                const { data, error } = await supabase
-                    .from('simple_logs')
-                    .select('*')
-                    .order('created_at', { ascending: false });
-                if (error) {
-                    console.error('Failed to load logs:', error.message);
-                    setConnected(false);
-                    return;
-                }
-                setConnected(true);
-                setLogs(data.map(rowToLog));
-            }, []);
-
-            // Initial load + keep in sync: poll periodically and refetch whenever
-            // the tab regains focus (e.g. parent reopens the admin screen).
+            // Keep this tab in sync if another tab/window on the same device
+            // changes the logs, and refresh when the tab regains focus.
             useEffect(() => {
-                fetchLogs();
-                const interval = setInterval(fetchLogs, 4000);
-                const onVisible = () => {
-                    if (document.visibilityState === 'visible') fetchLogs();
+                const refresh = () => setLogs(loadLogs());
+                const onStorage = (e) => {
+                    if (e.key === STORAGE_KEY) refresh();
                 };
+                const onVisible = () => {
+                    if (document.visibilityState === 'visible') refresh();
+                };
+                window.addEventListener('storage', onStorage);
                 document.addEventListener('visibilitychange', onVisible);
                 return () => {
-                    clearInterval(interval);
+                    window.removeEventListener('storage', onStorage);
                     document.removeEventListener('visibilitychange', onVisible);
                 };
-            }, [fetchLogs]);
+            }, []);
 
             // Calculate points
             const getWeeklyPoints = (playerId) => {
@@ -235,8 +234,8 @@
                 return best;
             }, null);
 
-            // Log a chore
-            const logChore = async (chore) => {
+            // Log a chore — saved locally, instantly. Cannot fail on a network.
+            const logChore = (chore) => {
                 if (!selectedPlayer) return;
 
                 // Show success immediately for a snappy, frictionless feel.
@@ -244,48 +243,34 @@
                 if (navigator.vibrate) navigator.vibrate(10);
                 setTimeout(() => setShowSuccess(null), 1500);
 
-                const { data, error } = await supabase
-                    .from('simple_logs')
-                    .insert({
-                        player_id: selectedPlayer.id,
-                        player_name: selectedPlayer.name,
-                        chore_id: chore.id,
-                        chore_name: chore.name,
-                        chore_icon: chore.icon,
-                        points: chore.points,
-                        status: 'pending'
-                    })
-                    .select()
-                    .single();
+                const newLog = {
+                    id: makeId(),
+                    playerId: selectedPlayer.id,
+                    playerName: selectedPlayer.name,
+                    choreId: chore.id,
+                    choreName: chore.name,
+                    choreIcon: chore.icon,
+                    points: chore.points,
+                    timestamp: new Date().toISOString(),
+                    status: 'pending'
+                };
 
-                if (error) {
-                    console.error('Failed to log chore:', error.message);
-                    setConnected(false);
-                    alert('Could not save that chore — reconnecting. Please try again in a moment.');
-                    return;
-                }
-
-                // Add the saved row locally right away; polling keeps others in sync.
-                setConnected(true);
-                setLogs(prev => [rowToLog(data), ...prev]);
+                setLogs(prev => {
+                    const next = [newLog, ...prev];
+                    saveLogs(next);
+                    return next;
+                });
             };
 
-            // Approve/reject — update the shared row, then reflect locally.
-            const setStatus = async (logId, status) => {
-                setLogs(prev => prev.map(log =>
-                    log.id === logId ? { ...log, status } : log
-                ));
-                const { error } = await supabase
-                    .from('simple_logs')
-                    .update({ status })
-                    .eq('id', logId);
-                if (error) {
-                    console.error('Failed to update log:', error.message);
-                    setConnected(false);
-                    fetchLogs(); // revert to server truth on failure
-                } else {
-                    setConnected(true);
-                }
+            // Approve/reject — update the log locally and persist.
+            const setStatus = (logId, status) => {
+                setLogs(prev => {
+                    const next = prev.map(log =>
+                        log.id === logId ? { ...log, status } : log
+                    );
+                    saveLogs(next);
+                    return next;
+                });
             };
 
             const approve = (logId) => {
@@ -297,24 +282,16 @@
                 setStatus(logId, 'rejected');
             };
 
-            const approveAll = async () => {
+            const approveAll = () => {
                 if (navigator.vibrate) navigator.vibrate([10, 50, 10]);
-                const ids = pendingLogs.map(log => log.id);
-                if (ids.length === 0) return;
-                setLogs(prev => prev.map(log =>
-                    log.status === 'pending' ? { ...log, status: 'approved' } : log
-                ));
-                const { error } = await supabase
-                    .from('simple_logs')
-                    .update({ status: 'approved' })
-                    .in('id', ids);
-                if (error) {
-                    console.error('Failed to approve all:', error.message);
-                    setConnected(false);
-                    fetchLogs();
-                } else {
-                    setConnected(true);
-                }
+                if (pendingLogs.length === 0) return;
+                setLogs(prev => {
+                    const next = prev.map(log =>
+                        log.status === 'pending' ? { ...log, status: 'approved' } : log
+                    );
+                    saveLogs(next);
+                    return next;
+                });
             };
 
             return (
@@ -391,31 +368,6 @@
                             )}
                         </button>
                     </header>
-
-                    {/* Reconnecting indicator — shown whenever the shared backend is unreachable */}
-                    {!connected && (
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '8px',
-                            padding: '8px 16px',
-                            background: 'rgba(245, 158, 11, 0.15)',
-                            color: 'var(--amber, #f59e0b)',
-                            borderBottom: '1px solid rgba(245, 158, 11, 0.3)',
-                            fontSize: '0.85rem',
-                            fontWeight: 600
-                        }}>
-                            <span style={{
-                                width: '8px',
-                                height: '8px',
-                                borderRadius: '50%',
-                                background: 'currentColor',
-                                animation: 'pulse 1.2s ease-in-out infinite'
-                            }} />
-                            Reconnecting…
-                        </div>
-                    )}
 
                     {/* Main Content */}
                     <main style={{
