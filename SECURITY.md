@@ -2,15 +2,18 @@
 
 ## Architecture & threat model
 
-GyattChores is a **fully client-side app**. There is no backend, no database, and no server that stores user data:
+GyattChores is a **local-first client-side app** with an **optional** cloud sync layer:
 
-- All chore logs and points are kept in the browser's `localStorage` (web) or `UserDefaults` (iOS app), on the device only.
-- Nothing is transmitted to or stored by GyattChores servers — there are none. The only network requests are to public CDNs (React, Babel, Google Fonts) to load the app itself.
+- The source of truth is the browser's `localStorage` (web) or `UserDefaults` (iOS app), on the device.
+- If configured, chore logs also sync to a **Supabase** table (`simple_logs`) so multiple devices can share data. This is best-effort: the app works fully without it and never depends on it to save a chore.
 - The app is served as static files from GitHub Pages.
 
-Because there is no server and no shared data store, the classic web risks (credential leaks, SQL injection, broken access control, data breaches of a central database) **do not apply** here.
+### About the Supabase sync
 
-> Historical note: an earlier version connected to a Supabase project for cross-device sync, with the anon key embedded in the client. That backend has been retired and removed from the app. If you fork an older revision, rotate/disable any exposed Supabase keys.
+- The client uses the project's **public anon key**, which is embedded in `index.html` (this is the key Supabase designates as safe for browsers). Access is governed by the row-level-security policies in [`simple-logs-schema.sql`](simple-logs-schema.sql).
+- Those policies are intentionally **permissive** (anon can read/insert/update `simple_logs`) because this is a private family app with non-sensitive data and no per-user login. **Do not store anything secret in this table**, and don't reuse these policies for an app with sensitive or multi-tenant data.
+- The anon key only grants what RLS allows. Never put the **service_role** key in the client.
+- If you fork this or rotate projects, update `SUPABASE_URL`/`SUPABASE_ANON_KEY` in `index.html`, and disable/rotate any keys for projects you no longer use.
 
 ## The admin PIN is not a security boundary
 
@@ -23,9 +26,9 @@ Treat it accordingly. If you fork this app, change the PIN, but don't rely on it
 
 ## Data & privacy
 
-- Chore data never leaves the device. Clearing your browser storage (or deleting the app) erases all data.
-- No accounts, no email, no analytics, no third-party tracking.
-- Since data is local-only, there is no cross-device sync — each device keeps its own history.
+- Chore data is always kept on the device; clearing browser storage erases the local copy.
+- With sync enabled, the same chore logs (player name, chore name, points, status, timestamp) are also stored in your Supabase project. Only non-sensitive chore data is stored — no accounts, email, analytics, or third-party tracking.
+- With sync disabled (or the backend unavailable), data stays local to each device.
 
 ## If you want stronger guarantees
 

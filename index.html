@@ -13,6 +13,7 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -99,7 +100,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useCallback } = React;
 
         // ============================================
         // DATA
@@ -133,13 +134,24 @@
         const ADMIN_CODE = '7874';
 
         // ============================================
-        // LOCAL STORAGE (offline-first, no backend)
+        // STORAGE — local-first, with optional Supabase sync
         // ============================================
-        // Chore logs are stored locally on the device. The app works fully
-        // offline and never depends on a network connection to save a chore,
-        // so logging can never fail because a server is unreachable.
+        // Chore logs are ALWAYS written to localStorage first, so logging is
+        // instant and can never fail because a server is unreachable. When the
+        // shared Supabase backend is reachable, logs sync across devices in the
+        // background; when it isn't (e.g. a paused free-tier project), the app
+        // keeps working offline and syncs automatically once it's back.
 
         const STORAGE_KEY = 'gyattchores_logs';
+
+        const SUPABASE_URL = 'https://ukshxdoqgwoxobjdclpx.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrc2h4ZG9xZ3dveG9iamRjbHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3MjI2NDEsImV4cCI6MjA4MDI5ODY0MX0.UGNrsfG6goEA0PPWG4x7gxBueA7D5Oe9uWI-iCXIar0';
+
+        // Create the Supabase client if the library loaded. If it's blocked or
+        // the page is offline, `supabase` is null and the app runs local-only.
+        const supabase = (window.supabase && window.supabase.createClient)
+            ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+            : null;
 
         // Read logs from localStorage, newest first.
         const loadLogs = () => {
@@ -164,11 +176,39 @@
             }
         };
 
-        // Generate a unique id for a new log entry.
+        // Generate a unique local id for a new log entry.
         const makeId = () =>
             (window.crypto && crypto.randomUUID)
                 ? crypto.randomUUID()
                 : Date.now().toString(36) + Math.random().toString(36).slice(2);
+
+        // Convert a Supabase row (snake_case) into a local log a device created
+        // elsewhere. `remoteId` ties it back to the shared row; `synced` true.
+        const rowToLocal = (r) => ({
+            id: 'r_' + r.id,
+            remoteId: r.id,
+            synced: true,
+            statusDirty: false,
+            playerId: r.player_id,
+            playerName: r.player_name,
+            choreId: r.chore_id,
+            choreName: r.chore_name,
+            choreIcon: r.chore_icon,
+            points: r.points,
+            timestamp: r.created_at,
+            status: r.status
+        });
+
+        // The Supabase payload for a locally-created log (no id — the DB makes it).
+        const toRow = (l) => ({
+            player_id: l.playerId,
+            player_name: l.playerName,
+            chore_id: l.choreId,
+            chore_name: l.choreName,
+            chore_icon: l.choreIcon,
+            points: l.points,
+            status: l.status
+        });
 
         // ============================================
         // MAIN APP
@@ -179,24 +219,98 @@
             const [logs, setLogs] = useState(loadLogs);
             const [showSuccess, setShowSuccess] = useState(null);
             const [showAdmin, setShowAdmin] = useState(false);
+            // 'idle' | 'syncing' | 'synced' | 'offline' (offline = backend unreachable)
+            const [syncStatus, setSyncStatus] = useState(supabase ? 'idle' : 'offline');
 
-            // Keep this tab in sync if another tab/window on the same device
-            // changes the logs, and refresh when the tab regains focus.
-            useEffect(() => {
-                const refresh = () => setLogs(loadLogs());
-                const onStorage = (e) => {
-                    if (e.key === STORAGE_KEY) refresh();
-                };
-                const onVisible = () => {
-                    if (document.visibilityState === 'visible') refresh();
-                };
-                window.addEventListener('storage', onStorage);
-                document.addEventListener('visibilitychange', onVisible);
-                return () => {
-                    window.removeEventListener('storage', onStorage);
-                    document.removeEventListener('visibilitychange', onVisible);
-                };
+            // Reconcile local logs with the shared Supabase table:
+            //   1. push locally-created logs that aren't on the server yet,
+            //   2. push local status changes (approve/reject),
+            //   3. pull the shared rows and merge them in.
+            // Everything operates on a working array and writes localStorage
+            // ONCE, so a chore logged mid-sync is never lost. Any failure just
+            // leaves us in 'offline' — local data is untouched and we retry.
+            const sync = useCallback(async () => {
+                if (!supabase) { setSyncStatus('offline'); return; }
+                setSyncStatus('syncing');
+                let work = loadLogs();
+                try {
+                    // 1. Push new local logs (no remoteId yet).
+                    for (const l of work.filter(x => x.remoteId == null)) {
+                        const { data, error } = await supabase
+                            .from('simple_logs').insert(toRow(l)).select().single();
+                        if (error) throw error;
+                        l.remoteId = data.id;
+                        l.synced = true;
+                        l.statusDirty = false;
+                        if (data.created_at) l.timestamp = data.created_at;
+                    }
+
+                    // 2. Push local status changes.
+                    for (const l of work.filter(x => x.remoteId != null && x.statusDirty)) {
+                        const { error } = await supabase
+                            .from('simple_logs').update({ status: l.status }).eq('id', l.remoteId);
+                        if (error) throw error;
+                        l.statusDirty = false;
+                    }
+
+                    // 3. Pull shared rows and merge.
+                    const { data: rows, error: selErr } = await supabase
+                        .from('simple_logs').select('*').order('created_at', { ascending: false });
+                    if (selErr) throw selErr;
+                    const byRemote = {};
+                    work.forEach(l => { if (l.remoteId != null) byRemote[String(l.remoteId)] = l; });
+                    (rows || []).forEach(r => {
+                        const existing = byRemote[String(r.id)];
+                        if (existing) {
+                            // Server is shared truth for status, unless we have an
+                            // un-pushed local change for this row.
+                            if (!existing.statusDirty) existing.status = r.status;
+                        } else {
+                            work.push(rowToLocal(r));
+                        }
+                    });
+
+                    // Re-absorb anything the user logged while we were awaiting
+                    // the network, so concurrent edits are never overwritten.
+                    const latest = loadLogs();
+                    const workById = {};
+                    work.forEach(l => { workById[l.id] = l; });
+                    latest.forEach(l => {
+                        if (!workById[l.id]) work.push(l);
+                        else if (l.statusDirty) {
+                            workById[l.id].status = l.status;
+                            workById[l.id].statusDirty = true;
+                        }
+                    });
+
+                    work.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                    saveLogs(work);
+                    setLogs(work.slice());
+                    setSyncStatus('synced');
+                } catch (e) {
+                    console.warn('Sync deferred — backend unreachable:', e && (e.message || e));
+                    setSyncStatus('offline');
+                }
             }, []);
+
+            // Initial sync + keep in sync: poll, on tab focus, on reconnect, and
+            // when another tab on this device changes the shared localStorage.
+            useEffect(() => {
+                sync();
+                const interval = setInterval(sync, 5000);
+                const onVisible = () => { if (document.visibilityState === 'visible') sync(); };
+                const onOnline = () => sync();
+                const onStorage = (e) => { if (e.key === STORAGE_KEY) setLogs(loadLogs()); };
+                document.addEventListener('visibilitychange', onVisible);
+                window.addEventListener('online', onOnline);
+                window.addEventListener('storage', onStorage);
+                return () => {
+                    clearInterval(interval);
+                    document.removeEventListener('visibilitychange', onVisible);
+                    window.removeEventListener('online', onOnline);
+                    window.removeEventListener('storage', onStorage);
+                };
+            }, [sync]);
 
             // Calculate points
             const getWeeklyPoints = (playerId) => {
@@ -235,6 +349,8 @@
             }, null);
 
             // Log a chore — saved locally, instantly. Cannot fail on a network.
+            // We persist synchronously (via loadLogs/saveLogs) so the follow-up
+            // sync() always sees the new entry, then push it to Supabase.
             const logChore = (chore) => {
                 if (!selectedPlayer) return;
 
@@ -245,6 +361,9 @@
 
                 const newLog = {
                     id: makeId(),
+                    remoteId: null,
+                    synced: false,
+                    statusDirty: false,
                     playerId: selectedPlayer.id,
                     playerName: selectedPlayer.name,
                     choreId: chore.id,
@@ -255,22 +374,23 @@
                     status: 'pending'
                 };
 
-                setLogs(prev => {
-                    const next = [newLog, ...prev];
-                    saveLogs(next);
-                    return next;
-                });
+                const next = [newLog, ...loadLogs()]
+                    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                saveLogs(next);
+                setLogs(next);
+                sync();
             };
 
-            // Approve/reject — update the log locally and persist.
+            // Approve/reject — update locally, mark for push, then sync.
             const setStatus = (logId, status) => {
-                setLogs(prev => {
-                    const next = prev.map(log =>
-                        log.id === logId ? { ...log, status } : log
-                    );
-                    saveLogs(next);
-                    return next;
-                });
+                const next = loadLogs().map(log =>
+                    log.id === logId
+                        ? { ...log, status, statusDirty: log.remoteId != null }
+                        : log
+                );
+                saveLogs(next);
+                setLogs(next);
+                sync();
             };
 
             const approve = (logId) => {
@@ -284,14 +404,16 @@
 
             const approveAll = () => {
                 if (navigator.vibrate) navigator.vibrate([10, 50, 10]);
-                if (pendingLogs.length === 0) return;
-                setLogs(prev => {
-                    const next = prev.map(log =>
-                        log.status === 'pending' ? { ...log, status: 'approved' } : log
-                    );
-                    saveLogs(next);
-                    return next;
-                });
+                const cur = loadLogs();
+                if (!cur.some(log => log.status === 'pending')) return;
+                const next = cur.map(log =>
+                    log.status === 'pending'
+                        ? { ...log, status: 'approved', statusDirty: log.remoteId != null }
+                        : log
+                );
+                saveLogs(next);
+                setLogs(next);
+                sync();
             };
 
             return (
@@ -368,6 +490,31 @@
                             )}
                         </button>
                     </header>
+
+                    {/* Offline hint — non-blocking. Logging still works; data
+                        is saved on this device and syncs when the backend is back. */}
+                    {syncStatus === 'offline' && (
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            padding: '6px 16px',
+                            background: 'rgba(245, 158, 11, 0.12)',
+                            color: '#f59e0b',
+                            borderBottom: '1px solid rgba(245, 158, 11, 0.25)',
+                            fontSize: '0.8rem',
+                            fontWeight: 600
+                        }}>
+                            <span style={{
+                                width: '7px',
+                                height: '7px',
+                                borderRadius: '50%',
+                                background: 'currentColor'
+                            }} />
+                            Offline — saved on this device, will sync later
+                        </div>
+                    )}
 
                     {/* Main Content */}
                     <main style={{
