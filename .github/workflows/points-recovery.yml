@@ -1,0 +1,116 @@
+name: Points Recovery Audit
+
+# Queries Supabase for all approved chore logs, computes all-time
+# and monthly point totals per player, posts the full breakdown to Discord.
+# Run once manually from Actions UI.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: https://ukshxdoqgwoxobjdclpx.supabase.co
+      SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrc2h4ZG9xZ3dveG9iamRjbHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3MjI2NDEsImV4cCI6MjA4MDI5ODY0MX0.UGNrsfG6goEA0PPWG4x7gxBueA7D5Oe9uWI-iCXIar0
+      DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+    steps:
+      - name: Pull all approved logs from Supabase
+        run: |
+          # Fetch all approved logs, all time
+          LOGS=$(curl -s \
+            "${SUPABASE_URL}/rest/v1/simple_logs?select=player_name,chore_name,points,status,created_at&status=eq.approved&order=created_at.asc&limit=10000" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}")
+
+          echo "$LOGS" | head -c 500
+          TOTAL=$(echo "$LOGS" | jq 'length')
+          echo "total approved logs: $TOTAL"
+
+          if [ "$TOTAL" = "0" ] || [ -z "$TOTAL" ]; then
+            echo "no approved logs found in supabase"
+            # post to discord
+            PAYLOAD=$(jq -n '{
+              thread_name: "points recovery — supabase",
+              embeds: [{
+                title: "points recovery",
+                description: "no approved logs found in supabase. data may be local-only on your device. use the localStorage export tool at gyattchores.com/recover to pull from the browser.",
+                color: 16756480,
+                footer: {text: "push // gyattchores ops"}
+              }]
+            }')
+            curl -s -X POST "$DISCORD_WEBHOOK" -H "Content-Type: application/json" -d "$PAYLOAD" || true
+            exit 0
+          fi
+
+          # All-time totals per player
+          ALLTIME=$(echo "$LOGS" | jq -r '
+            group_by(.player_name)[] |
+            {
+              player: .[0].player_name,
+              total_pts: (map(.points) | add),
+              total_chores: length,
+              first_log: (map(.created_at) | min)[:10],
+              last_log:  (map(.created_at) | max)[:10]
+            } |
+            "\(.player) — \(.total_pts) pts across \(.total_chores) chores (\(.first_log) → \(.last_log))"
+          ')
+
+          # Monthly totals per player
+          MONTHLY=$(echo "$LOGS" | jq -r '
+            group_by(.player_name)[] as $player_logs |
+            ($player_logs | .[0].player_name) as $name |
+            ($player_logs | group_by(.created_at[:7])[]) |
+            {
+              player: $name,
+              month: (.[0].created_at[:7]),
+              pts: (map(.points) | add),
+              chores: length
+            } |
+            "\(.month)  \(.player)  \(.pts) pts  \(.chores) chores"
+          ' | sort)
+
+          # Most popular chores all time
+          TOP_CHORES=$(echo "$LOGS" | jq -r '
+            group_by(.chore_name)[] |
+            {name: .[0].chore_name, count: length, total_pts: (map(.points) | add)} |
+            "\(.count)x \(.name) (\(.total_pts) pts)"
+          ' | sort -rn | head -8)
+
+          echo "--- ALL TIME ---"
+          echo "$ALLTIME"
+          echo "--- MONTHLY ---"
+          echo "$MONTHLY"
+          echo "--- TOP CHORES ---"
+          echo "$TOP_CHORES"
+
+          # Post to Discord
+          ALLTIME_FIELD=$(echo "$ALLTIME" | head -c 900)
+          MONTHLY_FIELD=$(echo "$MONTHLY" | head -c 1000)
+          CHORES_FIELD=$(echo "$TOP_CHORES" | head -c 900)
+
+          PAYLOAD=$(jq -n \
+            --arg total    "$TOTAL" \
+            --arg alltime  "$ALLTIME_FIELD" \
+            --arg monthly  "$MONTHLY_FIELD" \
+            --arg chores   "$CHORES_FIELD" \
+            '{
+              thread_name: "points recovery — all time",
+              embeds: [{
+                title: "points recovery audit",
+                description: ("supabase returned " + $total + " approved logs."),
+                color: 5763719,
+                fields: [
+                  {name: "all-time per player", value: $alltime, inline: false},
+                  {name: "monthly breakdown", value: $monthly, inline: false},
+                  {name: "top chores", value: $chores, inline: false}
+                ],
+                footer: {text: "push // gyattchores ops // supabase recovery"}
+              }]
+            }')
+
+          HTTP=$(curl -s -o /tmp/resp.txt -w "%{http_code}" \
+            -X POST "$DISCORD_WEBHOOK" \
+            -H "Content-Type: application/json" -d "$PAYLOAD")
+          echo "discord: $HTTP"
+          cat /tmp/resp.txt || true
