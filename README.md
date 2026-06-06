@@ -120,6 +120,15 @@ gyattchores/
 
 All chore data lives in the browser's `localStorage` on each device; the optional Supabase sync stores only non-sensitive chore logs, written with the project's public anon key under permissive row-level-security policies (it's a private family app). The admin PIN is a lightweight, client-side "are you a grown-up?" gate, **not** a real security boundary. See [SECURITY.md](SECURITY.md).
 
+## Governance & operations
+
+This repository is run under a lightweight, ITIL 4-aligned **Service Management System** in [`docs/governance/`](docs/governance/README.md) — covering change control, incident & problem management, monitoring, security, and a continual-improvement backlog. New contributors should start with [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+- **How changes reach production:** [Change Enablement](docs/governance/change-enablement.md)
+- **When something breaks:** [Incident & Problem Management](docs/governance/incident-and-problem-management.md)
+- **The Discord alerting:** [Monitoring & Event Management](docs/governance/monitoring-and-event-management.md)
+- **Current posture & gaps:** [Governance Audit](docs/governance/governance-audit.md) · [Improvement backlog](docs/governance/continual-improvement.md)
+
 ## History
 
 This started as a Supabase-backed app, was rewritten into a simple offline-first localStorage app, and is now **local-first with optional Supabase sync** — local storage is always the source of truth, and the cloud is a best-effort sync layer that the app no longer depends on to function. That journey is preserved in [`development-narrative.md`](development-narrative.md) and the [`ebook`](ebook.md).
