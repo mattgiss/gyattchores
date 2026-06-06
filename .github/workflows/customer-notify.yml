@@ -1,0 +1,46 @@
+name: Customer Announcement
+
+# Post a plain-language update to the customer-facing Discord channel.
+# Triggered manually — you write the message, you choose when it goes out.
+# Uses DISCORD_ANNOUNCE_WEBHOOK (separate from the dev webhook).
+
+on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: 'Short headline (e.g. "Chore history is now smarter")'
+        required: true
+        type: string
+      body:
+        description: 'The message body — plain language, 1-3 sentences max'
+        required: true
+        type: string
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post to customer Discord
+        env:
+          DISCORD_ANNOUNCE_WEBHOOK: ${{ secrets.DISCORD_ANNOUNCE_WEBHOOK }}
+          TITLE: ${{ github.event.inputs.title }}
+          BODY: ${{ github.event.inputs.body }}
+        run: |
+          PAYLOAD=$(jq -n \
+            --arg title "$TITLE" \
+            --arg body  "$BODY" \
+            '{
+              thread_name: $title,
+              embeds: [{
+                title: $title,
+                description: $body,
+                color: 59391,
+                footer: {text: "GyattChores · gyattchores.com"}
+              }]
+            }')
+
+          HTTP=$(curl -s -o /tmp/resp.txt -w "%{http_code}" \
+            -X POST "$DISCORD_ANNOUNCE_WEBHOOK" \
+            -H "Content-Type: application/json" -d "$PAYLOAD")
+          echo "Discord HTTP: $HTTP"; cat /tmp/resp.txt || true
+          [ "$HTTP" = "204" ] || { echo "::error::Discord rejected payload (HTTP $HTTP)"; exit 1; }
