@@ -46,11 +46,6 @@ jobs:
             printf '%s' "$out"
           }
 
-          INFRA_FIELD=$(build_field "infrastructure")
-          APPSTORE_FIELD=$(build_field "app-store")
-          DISCORD_FIELD=$(build_field "discord")
-          ROADMAP_FIELD=$(build_field "roadmap")
-
           TOTAL_RED=$(echo "$STATUS"    | jq '[.programs[] | select(.status=="red")]    | length')
           TOTAL_YELLOW=$(echo "$STATUS" | jq '[.programs[] | select(.status=="yellow")] | length')
 
@@ -73,28 +68,43 @@ jobs:
           ISSUES_LINK="https://github.com/${{ github.repository }}/issues"
           TRACKER_LINK="https://github.com/${{ github.repository }}/blob/main/docs/dbr/status.json"
 
+          # Build fields sorted: red first, then yellow, then green
+          SORTED_IDS=$(echo "$STATUS" | jq -r '
+            .programs
+            | sort_by(
+                if .status == "red"    then 0
+                elif .status == "yellow" then 1
+                else 2 end
+              )
+            | .[].id')
+
+          FIELDS_JSON="[]"
+          while IFS= read -r prog; do
+            name=$(echo "$STATUS" | jq -r ".programs[] | select(.id==\"$prog\") | .name" | tr '[:upper:]' '[:lower:]')
+            field_val=$(build_field "$prog")
+            FIELDS_JSON=$(echo "$FIELDS_JSON" | jq \
+              --arg n "$name" \
+              --arg v "$field_val" \
+              '. + [{name: $n, value: $v, inline: false}]')
+          done <<< "$SORTED_IDS"
+
+          # Append links field
+          FIELDS_JSON=$(echo "$FIELDS_JSON" | jq \
+            --arg links "[issues]($ISSUES_LINK) · [tracker]($TRACKER_LINK)" \
+            '. + [{name: "links", value: $links, inline: false}]')
+
           PAYLOAD=$(jq -n \
-            --arg date         "push // $DATE" \
-            --arg sitrep       "$SITREP" \
-            --arg infra        "$INFRA_FIELD" \
-            --arg appstore     "$APPSTORE_FIELD" \
-            --arg discord_prog "$DISCORD_FIELD" \
-            --arg roadmap      "$ROADMAP_FIELD" \
-            --arg links        "[issues]($ISSUES_LINK) · [tracker]($TRACKER_LINK)" \
-            --argjson color    "$COLOR" \
+            --arg date      "push // $DATE" \
+            --arg sitrep    "$SITREP" \
+            --argjson fields "$FIELDS_JSON" \
+            --argjson color  "$COLOR" \
             '{
               thread_name: $date,
               embeds: [{
                 title: $date,
                 description: $sitrep,
                 color: $color,
-                fields: [
-                  {name: "prod — infrastructure",    value: $infra,        inline: false},
-                  {name: "app store — ios launch",   value: $appstore,     inline: false},
-                  {name: "discord — notifications",  value: $discord_prog, inline: false},
-                  {name: "roadmap — 2027",           value: $roadmap,      inline: false},
-                  {name: "links",                    value: $links,        inline: false}
-                ],
+                fields: $fields,
                 footer: {text: "push // gyattchores // daily 09:00 et"}
               }]
             }')
