@@ -51,9 +51,26 @@ struct HomeView: View {
     // MARK: - Stats Bar
 
     private func statsBar(for player: Player) -> some View {
-        HStack(spacing: 20) {
-            StatPill(label: "Today", value: "\(store.todayPoints(for: player))", icon: "sun.max.fill", color: .orange)
-            StatPill(label: "This Week", value: "\(store.weeklyPoints(for: player))", icon: "calendar", color: .cyan)
+        let todayPts = store.todayPoints(for: player)
+        let lastMonthTodayPts = store.lastMonthTodayPoints(for: player)
+        let weekPts = store.weeklyPoints(for: player)
+        let lastMonthWeekPts = store.lastMonthWeeklyPoints(for: player)
+
+        return HStack(spacing: 20) {
+            StatPill(
+                label: "Today",
+                value: "\(todayPts)",
+                icon: "sun.max.fill",
+                color: .orange,
+                trend: (todayPts > 0 || lastMonthTodayPts > 0) ? todayPts - lastMonthTodayPts : nil
+            )
+            StatPill(
+                label: "This Week",
+                value: "\(weekPts)",
+                icon: "calendar",
+                color: .cyan,
+                trend: (weekPts > 0 || lastMonthWeekPts > 0) ? weekPts - lastMonthWeekPts : nil
+            )
         }
     }
 
@@ -166,6 +183,22 @@ struct StatPill: View {
     let value: String
     let icon: String
     let color: Color
+    var trend: Int? = nil
+
+    private var trendArrow: String {
+        guard let delta = trend else { return "" }
+        return delta > 0 ? "↑" : delta < 0 ? "↓" : "→"
+    }
+
+    private var trendColor: Color {
+        guard let delta = trend else { return .secondary }
+        return delta > 0 ? .green : delta < 0 ? .red : .secondary
+    }
+
+    private var trendLabel: String {
+        guard let delta = trend else { return "" }
+        return delta > 0 ? "+\(delta)" : "\(delta)"
+    }
 
     var body: some View {
         HStack(spacing: 8) {
@@ -178,6 +211,17 @@ struct StatPill: View {
                 Text(label)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            }
+
+            if trend != nil {
+                VStack(spacing: 0) {
+                    Text(trendArrow)
+                        .font(.caption.bold())
+                        .foregroundStyle(trendColor)
+                    Text(trendLabel)
+                        .font(.caption2)
+                        .foregroundStyle(trendColor)
+                }
             }
         }
         .padding(.horizontal, 16)

@@ -31,6 +31,24 @@ class ChoreStore: ObservableObject {
             .reduce(0) { $0 + $1.points }
     }
 
+    func lastMonthTodayPoints(for player: Player) -> Int {
+        let today = Calendar.current.startOfDay(for: Date())
+        guard let start = Calendar.current.date(byAdding: .month, value: -1, to: today),
+              let end = Calendar.current.date(byAdding: .day, value: 1, to: start) else { return 0 }
+        return logs
+            .filter { $0.playerId == player.id && $0.status == .approved && $0.timestamp >= start && $0.timestamp < end }
+            .reduce(0) { $0 + $1.points }
+    }
+
+    func lastMonthWeeklyPoints(for player: Player) -> Int {
+        let weekStart = Calendar.current.date(from: Calendar.current.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date()))!
+        guard let start = Calendar.current.date(byAdding: .month, value: -1, to: weekStart),
+              let end = Calendar.current.date(byAdding: .day, value: 7, to: start) else { return 0 }
+        return logs
+            .filter { $0.playerId == player.id && $0.status == .approved && $0.timestamp >= start && $0.timestamp < end }
+            .reduce(0) { $0 + $1.points }
+    }
+
     var leader: Player? {
         players.max { weeklyPoints(for: $0) < weeklyPoints(for: $1) }
     }
