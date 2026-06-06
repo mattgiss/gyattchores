@@ -4,77 +4,75 @@
     {
       "id": "infrastructure",
       "name": "PROD — Production Infrastructure",
-      "emoji": "🏗️",
+      "emoji": "",
       "status": "red",
       "blockers": [
-        "DISCORD_WEBHOOK secret not added to GitHub Actions (Settings → Secrets → Actions)",
-        "Branch protection not enabled on main — run Actions › Repo Setup workflow to auto-fix",
-        "Discord webhook URL exposed in session history — rotate in Discord developer portal, update secret"
+        "branch protection not enabled on main — run actions › repo setup workflow",
+        "discord webhook url exposed in session history — rotate in discord, update secret"
       ],
       "highs": [
-        "9 stale branches need cleanup — run Actions › Stale Branch Cleanup with dry_run=false"
+        "9 stale branches need cleanup — run actions › stale branch cleanup with dry_run=false"
       ],
       "milestones": [
-        {"id": "M1.1", "name": "Secrets Management", "status": "red", "issues": [11, 13], "notes": "Add DISCORD_WEBHOOK secret; rotate exposed webhook URL"},
-        {"id": "M1.2", "name": "Branch Protection on main", "status": "red", "issues": [12], "notes": "Run repo-setup.yml workflow — one click in Actions UI"},
-        {"id": "M1.3", "name": "Stale Branch Cleanup", "status": "yellow", "issues": [14], "notes": "Run branch-cleanup.yml with dry_run=false"},
-        {"id": "M1.4", "name": "CI/CD Verified End-to-End", "status": "yellow", "issues": [], "notes": "Pending M1.1 — all notification types fire correctly"}
+        {"id": "M1.1", "name": "secrets management", "status": "yellow", "issues": [11, 13], "notes": "discord webhook secret confirmed working. rotation still needed."},
+        {"id": "M1.2", "name": "branch protection on main", "status": "red", "issues": [12], "notes": "run repo-setup.yml — one click in actions ui"},
+        {"id": "M1.3", "name": "stale branch cleanup", "status": "yellow", "issues": [14], "notes": "run branch-cleanup.yml with dry_run=false"},
+        {"id": "M1.4", "name": "ci/cd verified end-to-end", "status": "yellow", "issues": [], "notes": "push notifications confirmed working. dbr and branch cleanup fire after merge to main."}
       ]
     },
     {
       "id": "app-store",
       "name": "APP STORE — iOS Launch",
-      "emoji": "📱",
+      "emoji": "",
       "status": "red",
       "blockers": [
-        "Apple Developer Program not purchased ($99/year at developer.apple.com)",
-        "Xcode project (.xcodeproj) not created — see app-store-metadata/developer-account-checklist.md Day 2"
+        "apple developer program not purchased ($99/year at developer.apple.com)",
+        "xcode project not created — see app-store-metadata/developer-account-checklist.md day 2"
       ],
       "highs": [
-        "App Store screenshots not yet produced — see app-store-metadata/screenshots-spec.md",
-        "gyattchores.com/privacy URL not yet verified live (file deployed, URL needs confirmation)"
+        "app store screenshots not yet produced — see app-store-metadata/screenshots-spec.md",
+        "gyattchores.com/privacy url not yet verified live (file deployed, needs merge to main)"
       ],
       "milestones": [
-        {"id": "M2.1", "name": "Apple Developer Account ($99)", "status": "red", "issues": [15], "notes": "Unblocks all downstream App Store milestones"},
-        {"id": "M2.2", "name": "Xcode Project Created", "status": "red", "issues": [16], "notes": "Wire existing GyattChoresApp/ sources; commit .xcodeproj"},
-        {"id": "M2.3", "name": "Privacy Policy Live at /privacy", "status": "yellow", "issues": [18], "notes": "File committed; needs merge to main + URL verification"},
-        {"id": "M2.4", "name": "App Store Screenshots (6 shots)", "status": "red", "issues": [17], "notes": "Requires Simulator on Mac with developer account"},
-        {"id": "M2.5", "name": "App Review Submission", "status": "red", "issues": [], "notes": "Blocked on M2.1–M2.4 all green"}
+        {"id": "M2.1", "name": "apple developer account ($99)", "status": "red", "issues": [15], "notes": "unblocks all downstream app store milestones"},
+        {"id": "M2.2", "name": "xcode project created", "status": "red", "issues": [16], "notes": "wire existing gyattchoresapp/ sources; commit .xcodeproj"},
+        {"id": "M2.3", "name": "privacy policy live at /privacy", "status": "yellow", "issues": [18], "notes": "file committed; needs merge to main + url verification"},
+        {"id": "M2.4", "name": "app store screenshots (6 shots)", "status": "red", "issues": [17], "notes": "requires simulator on mac with developer account"},
+        {"id": "M2.5", "name": "app review submission", "status": "red", "issues": [], "notes": "blocked on m2.1–m2.4 all green"}
       ]
     },
     {
       "id": "discord",
       "name": "DISCORD — Notifications & DBR",
-      "emoji": "💬",
+      "emoji": "",
       "status": "yellow",
       "blockers": [],
       "highs": [
-        "DISCORD_WEBHOOK secret must be configured before any notification fires (shared with Infrastructure M1.1)",
-        "Daily DBR not yet posting — workflow ready, fires after secret + merge to main"
+        "pr not yet merged to main — dbr, branch cleanup, and deploy confirmation all fire on merge"
       ],
       "milestones": [
-        {"id": "M3.1", "name": "Secret Configured in GitHub Actions", "status": "red", "issues": [11], "notes": "Single manual step — unblocks all notifications + DBR"},
-        {"id": "M3.2", "name": "All Event Types Verified", "status": "yellow", "issues": [], "notes": "Push / PR / Review / Issue / Branch events all wired"},
-        {"id": "M3.3", "name": "Daily DBR Automated", "status": "yellow", "issues": [], "notes": "dbr-daily.yml posts at 9am ET — fires on merge to main"},
-        {"id": "M3.4", "name": "Branch Cleanup Weekly Report", "status": "yellow", "issues": [], "notes": "branch-cleanup.yml runs Mondays; reports to Discord"}
+        {"id": "M3.1", "name": "secret configured", "status": "green", "issues": [11], "notes": "confirmed working. test message delivered 2026-06-06 03:15 utc."},
+        {"id": "M3.2", "name": "all event types verified", "status": "green", "issues": [], "notes": "push, pr, review, issue, branch — all wired and confirmed http 204."},
+        {"id": "M3.3", "name": "daily dbr automated", "status": "yellow", "issues": [], "notes": "dbr-daily.yml ready. fires at 09:00 et after merge to main."},
+        {"id": "M3.4", "name": "branch cleanup weekly report", "status": "yellow", "issues": [], "notes": "branch-cleanup.yml ready. fires mondays after merge to main."}
       ]
     },
     {
       "id": "roadmap",
       "name": "ROADMAP — App of the Year 2027",
-      "emoji": "🏆",
+      "emoji": "",
       "status": "yellow",
       "blockers": [],
       "highs": [
-        "v1.0 release blocked on App Store program completion — no independent blockers at roadmap level"
+        "v1.0 release blocked on app store program completion — no independent blockers at roadmap level"
       ],
       "milestones": [
-        {"id": "M4.1", "name": "v1.0 App Store Release", "status": "red", "notes": "Blocked on App Store program (Program 2) going green"},
-        {"id": "M4.2", "name": "Live Activities & Lock Screen Widgets", "status": "green", "notes": "Planned post-v1.0 — Swift widget extension"},
-        {"id": "M4.3", "name": "CloudKit Family Sync", "status": "green", "notes": "Replace optional Supabase with native CloudKit"},
-        {"id": "M4.4", "name": "Apple Watch Polish & Complications", "status": "green", "notes": "Watch app exists; complication + always-on display"},
-        {"id": "M4.5", "name": "Localization — Spanish (es-MX)", "status": "green", "notes": "Same screenshots, translated caption overlays"},
-        {"id": "M4.6", "name": "Press Kit & Apple Editorial Outreach", "status": "green", "notes": "Pitch to App Store editorial 90 days before target"}
+        {"id": "M4.1", "name": "v1.0 app store release", "status": "red", "issues": [], "notes": "blocked on app store program (program 2) going green"},
+        {"id": "M4.2", "name": "live activities & lock screen widgets", "status": "green", "issues": [], "notes": "planned post-v1.0"},
+        {"id": "M4.3", "name": "cloudkit family sync", "status": "green", "issues": [], "notes": "replace optional supabase with native cloudkit"},
+        {"id": "M4.4", "name": "apple watch polish & complications", "status": "green", "issues": [], "notes": "watch app exists; complication + always-on display"},
+        {"id": "M4.5", "name": "localization — spanish (es-mx)", "status": "green", "issues": [], "notes": "same screenshots, translated caption overlays"},
+        {"id": "M4.6", "name": "press kit & apple editorial outreach", "status": "green", "issues": [], "notes": "pitch to app store editorial 90 days before target"}
       ]
     }
   ]
