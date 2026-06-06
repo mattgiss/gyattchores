@@ -55,8 +55,11 @@ struct HomeView: View {
         let lastMonthTodayPts = store.lastMonthTodayPoints(for: player)
         let weekPts = store.weeklyPoints(for: player)
         let lastMonthWeekPts = store.lastMonthWeeklyPoints(for: player)
+        let monthPts = store.monthlyPoints(for: player)
+        let lastMonthSamePts = store.lastMonthSamePeriodPoints(for: player)
+        let totalPts = store.totalPoints(for: player)
 
-        return HStack(spacing: 20) {
+        return LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
             StatPill(
                 label: "Today",
                 value: "\(todayPts)",
@@ -70,6 +73,19 @@ struct HomeView: View {
                 icon: "calendar",
                 color: .cyan,
                 trend: (weekPts > 0 || lastMonthWeekPts > 0) ? weekPts - lastMonthWeekPts : nil
+            )
+            StatPill(
+                label: "This Month",
+                value: "\(monthPts)",
+                icon: "chart.bar.fill",
+                color: .purple,
+                trend: (monthPts > 0 || lastMonthSamePts > 0) ? monthPts - lastMonthSamePts : nil
+            )
+            StatPill(
+                label: "Total Earned",
+                value: "\(totalPts)",
+                icon: "star.fill",
+                color: .yellow
             )
         }
     }

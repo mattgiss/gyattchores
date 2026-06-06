@@ -1,0 +1,75 @@
+name: Customer Announcement
+
+# Post a plain-language update to the customer-facing Discord channel.
+# Triggered manually — write the message in Dad voice, choose when it goes out.
+# Uses DISCORD_ANNOUNCE_WEBHOOK (separate from the dev webhook).
+#
+# TONE GUIDE
+# ──────────
+# Write like you're explaining an update to your kids at the dinner table.
+# Soft, warm, a little proud. Introduce technical words naturally —
+# say the term, then immediately say what it means in plain English.
+#
+# Good example
+# ────────────
+# Title:  Dad fixed the scoreboard today 🏆
+# Body:   You know how we track everyone's chores and points?
+#         Today I added something called a "trend" — it's just a little
+#         arrow that shows whether you're doing better or worse than you
+#         were last month. Most apps you use every day (Spotify, YouTube,
+#         even your school dashboard) use trends to help you see progress.
+#         Now GyattChores does too. Keep those arrows pointing up 🎮
+
+on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: 'Headline in Dad voice — e.g. "Dad fixed the scoreboard today 🏆"'
+        required: true
+        type: string
+      body:
+        description: 'Explain it like dinner-table conversation. Introduce any tech term naturally — say the word, then say what it means.'
+        required: true
+        type: string
+      sign_off:
+        description: 'Sign-off line (leave blank to omit) — e.g. "Love you guys ❤️" or "— Dad"'
+        required: false
+        default: '— Dad 🎮'
+        type: string
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post to customer Discord
+        env:
+          DISCORD_ANNOUNCE_WEBHOOK: ${{ secrets.DISCORD_ANNOUNCE_WEBHOOK }}
+          TITLE:    ${{ github.event.inputs.title }}
+          BODY:     ${{ github.event.inputs.body }}
+          SIGN_OFF: ${{ github.event.inputs.sign_off }}
+        run: |
+          # Append sign-off to body if provided
+          if [ -n "$SIGN_OFF" ]; then
+            FULL_BODY=$(printf '%s\n\n%s' "$BODY" "$SIGN_OFF")
+          else
+            FULL_BODY="$BODY"
+          fi
+
+          PAYLOAD=$(jq -n \
+            --arg title "$TITLE" \
+            --arg body  "$FULL_BODY" \
+            '{
+              thread_name: $title,
+              embeds: [{
+                title: $title,
+                description: $body,
+                color: 59391,
+                footer: {text: "Made with ❤️ for bekindhearted & titan"}
+              }]
+            }')
+
+          HTTP=$(curl -s -o /tmp/resp.txt -w "%{http_code}" \
+            -X POST "$DISCORD_ANNOUNCE_WEBHOOK" \
+            -H "Content-Type: application/json" -d "$PAYLOAD")
+          echo "Discord HTTP: $HTTP"; cat /tmp/resp.txt || true
+          [ "$HTTP" = "204" ] || { echo "::error::Discord rejected payload (HTTP $HTTP)"; exit 1; }

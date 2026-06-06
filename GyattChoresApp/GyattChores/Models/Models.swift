@@ -8,8 +8,8 @@ struct Player: Identifiable, Codable, Hashable {
     var avatar: String // Emoji
 
     static let samples: [Player] = [
-        Player(id: UUID(), name: "BeKindHearted", avatar: "🦁"),
-        Player(id: UUID(), name: "MegoDinoLava", avatar: "🦖")
+        Player(id: UUID(), name: "bekindhearted", avatar: "🦁"),
+        Player(id: UUID(), name: "titan", avatar: "🦖")
     ]
 }
 

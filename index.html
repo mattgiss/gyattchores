@@ -10,6 +10,7 @@
     <title>GyattChores</title>
     <link rel="icon" type="image/svg+xml" href="gyattchores-logo-transparent.svg">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="manifest" href="/manifest.json">
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -107,8 +108,8 @@
         // ============================================
 
         const PLAYERS = [
-            { id: '1', name: 'BeKindHearted', avatar: '🦁' },
-            { id: '2', name: 'MegoDinoLava', avatar: '🦖' }
+            { id: '1', name: 'bekindhearted', avatar: '🦁' },
+            { id: '2', name: 'titan', avatar: '🦖' }
         ];
 
         const CHORES = [
@@ -377,6 +378,41 @@
                     .reduce((sum, log) => sum + log.points, 0);
             };
 
+            const getMonthlyPoints = (playerId) => {
+                const monthStart = new Date();
+                monthStart.setDate(1);
+                monthStart.setHours(0, 0, 0, 0);
+
+                return logs
+                    .filter(log =>
+                        log.playerId === playerId &&
+                        log.status === 'approved' &&
+                        new Date(log.timestamp) >= monthStart
+                    )
+                    .reduce((sum, log) => sum + log.points, 0);
+            };
+
+            // Same number of days into last month (e.g. on Jun 6, compares May 1–6)
+            const getLastMonthSamePeriodPoints = (playerId) => {
+                const now = new Date();
+                const start = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
+                const end = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate() + 1, 0, 0, 0, 0);
+
+                return logs
+                    .filter(log =>
+                        log.playerId === playerId &&
+                        log.status === 'approved' &&
+                        new Date(log.timestamp) >= start &&
+                        new Date(log.timestamp) < end
+                    )
+                    .reduce((sum, log) => sum + log.points, 0);
+            };
+
+            const getTotalPoints = (playerId) =>
+                logs
+                    .filter(log => log.playerId === playerId && log.status === 'approved')
+                    .reduce((sum, log) => sum + log.points, 0);
+
             const pendingLogs = logs.filter(log => log.status === 'pending');
 
             const leader = PLAYERS.reduce((best, player) => {
@@ -493,6 +529,7 @@
                         </div>
                         <button
                             onClick={() => setShowAdmin(true)}
+                            aria-label={`Admin — ${pendingLogs.length > 0 ? `${pendingLogs.length} pending` : 'no pending chores'}`}
                             style={{
                                 background: 'var(--surface)',
                                 border: 'none',
@@ -583,9 +620,13 @@
                             const lastMonthTodayPts = getLastMonthTodayPoints(selectedPlayer.id);
                             const weekPts = getWeeklyPoints(selectedPlayer.id);
                             const lastMonthWeekPts = getLastMonthWeeklyPoints(selectedPlayer.id);
+                            const monthPts = getMonthlyPoints(selectedPlayer.id);
+                            const lastMonthSamePts = getLastMonthSamePeriodPoints(selectedPlayer.id);
+                            const totalPts = getTotalPoints(selectedPlayer.id);
                             return (
                                 <div style={{
-                                    display: 'flex',
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(2, 1fr)',
                                     gap: '12px',
                                     marginBottom: '24px'
                                 }} className="animate-fade">
@@ -594,7 +635,7 @@
                                         value={todayPts}
                                         color="orange"
                                         trend={(todayPts > 0 || lastMonthTodayPts > 0)
-                                            ? { delta: todayPts - lastMonthTodayPts, lastMonth: lastMonthTodayPts }
+                                            ? { delta: todayPts - lastMonthTodayPts }
                                             : null}
                                     />
                                     <StatPill
@@ -602,8 +643,21 @@
                                         value={weekPts}
                                         color="cyan"
                                         trend={(weekPts > 0 || lastMonthWeekPts > 0)
-                                            ? { delta: weekPts - lastMonthWeekPts, lastMonth: lastMonthWeekPts }
+                                            ? { delta: weekPts - lastMonthWeekPts }
                                             : null}
+                                    />
+                                    <StatPill
+                                        label="This Month"
+                                        value={monthPts}
+                                        color="purple"
+                                        trend={(monthPts > 0 || lastMonthSamePts > 0)
+                                            ? { delta: monthPts - lastMonthSamePts }
+                                            : null}
+                                    />
+                                    <StatPill
+                                        label="Total Earned"
+                                        value={totalPts}
+                                        color="gold"
                                     />
                                 </div>
                             );
@@ -661,6 +715,7 @@
                     {showAdmin && (
                         <AdminModal
                             logs={pendingLogs}
+                            allLogs={logs}
                             onApprove={approve}
                             onReject={reject}
                             onApproveAll={approveAll}
@@ -724,7 +779,9 @@
         function StatPill({ label, value, color, trend }) {
             const colors = {
                 orange: '#F59E0B',
-                cyan: 'var(--cyan)'
+                cyan: 'var(--cyan)',
+                purple: 'var(--purple)',
+                gold: '#EAB308'
             };
 
             const trendArrow = !trend ? null : trend.delta > 0 ? '↑' : trend.delta < 0 ? '↓' : '→';
@@ -813,10 +870,11 @@
             );
         }
 
-        function AdminModal({ logs, onApprove, onReject, onApproveAll, onClose }) {
+        function AdminModal({ logs, allLogs, onApprove, onReject, onApproveAll, onClose }) {
             const [code, setCode] = useState('');
             const [unlocked, setUnlocked] = useState(false);
             const [error, setError] = useState(false);
+            const [tab, setTab] = useState('pending'); // 'pending' | 'history'
 
             const checkCode = (value) => {
                 setCode(value);
@@ -864,9 +922,9 @@
                             Done
                         </button>
                         <h2 style={{ fontSize: '1.1rem', fontWeight: 600 }}>
-                            {unlocked ? 'Pending Approval' : 'Admin'}
+                            {!unlocked ? 'Admin' : tab === 'pending' ? 'Pending Approval' : 'History'}
                         </h2>
-                        {unlocked && logs.length > 0 ? (
+                        {unlocked && tab === 'pending' && logs.length > 0 ? (
                             <button
                                 onClick={onApproveAll}
                                 style={{
@@ -885,9 +943,160 @@
                         )}
                     </header>
 
+                    {/* Tab Bar (only when unlocked) */}
+                    {unlocked && (
+                        <div style={{
+                            display: 'flex',
+                            borderBottom: '1px solid var(--surface)',
+                            padding: '0 20px'
+                        }}>
+                            {['pending', 'history'].map(t => (
+                                <button
+                                    key={t}
+                                    onClick={() => setTab(t)}
+                                    style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        borderBottom: tab === t ? '2px solid var(--cyan)' : '2px solid transparent',
+                                        color: tab === t ? 'var(--cyan)' : 'var(--text-secondary)',
+                                        fontWeight: 600,
+                                        fontSize: '0.9rem',
+                                        padding: '12px 16px',
+                                        cursor: 'pointer',
+                                        marginBottom: '-1px',
+                                        textTransform: 'capitalize'
+                                    }}
+                                >
+                                    {t === 'pending' ? `Pending${logs.length > 0 ? ` (${logs.length})` : ''}` : 'History'}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
                     {/* Content */}
                     <div style={{ flex: 1, overflow: 'auto', padding: '20px' }}>
-                        {!unlocked ? (
+                        {unlocked && tab === 'history' ? (
+                            /* History & Stats Tab */
+                            (() => {
+                                const approved = allLogs.filter(l => l.status === 'approved');
+                                const rejected = allLogs.filter(l => l.status === 'rejected');
+                                const pending  = allLogs.filter(l => l.status === 'pending');
+                                const sorted   = [...allLogs].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                                const totalPts = approved.reduce((s, l) => s + l.points, 0);
+                                const oldest   = allLogs.length ? new Date(Math.min(...allLogs.map(l => new Date(l.timestamp)))) : null;
+                                const stale    = pending.filter(l => Date.now() - new Date(l.timestamp) > 86400000);
+
+                                const fmtDate = (d) => new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+                                const fmtTime = (d) => new Date(d).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+
+                                const statusColor = { approved: 'var(--green)', rejected: 'var(--red)', pending: '#F59E0B' };
+                                const statusLabel = { approved: '✓', rejected: '✕', pending: '…' };
+
+                                return (
+                                    <div>
+                                        {/* Summary stats */}
+                                        <div style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: 'repeat(2, 1fr)',
+                                            gap: '10px',
+                                            marginBottom: '20px'
+                                        }}>
+                                            {[
+                                                { label: 'Total Earned', value: `${totalPts} pts`, color: '#EAB308' },
+                                                { label: 'Chores Done', value: approved.length, color: 'var(--green)' },
+                                                { label: 'Pending', value: pending.length, color: '#F59E0B' },
+                                                { label: 'Rejected', value: rejected.length, color: 'var(--red)' }
+                                            ].map(s => (
+                                                <div key={s.label} style={{
+                                                    background: 'var(--surface)',
+                                                    borderRadius: '12px',
+                                                    padding: '14px',
+                                                    textAlign: 'center'
+                                                }}>
+                                                    <div style={{ fontWeight: 700, fontSize: '1.3rem', color: s.color }}>{s.value}</div>
+                                                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: '2px' }}>{s.label}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {/* Data health flags */}
+                                        {stale.length > 0 && (
+                                            <div style={{
+                                                background: 'rgba(245, 158, 11, 0.12)',
+                                                border: '1px solid rgba(245, 158, 11, 0.3)',
+                                                borderRadius: '12px',
+                                                padding: '12px 16px',
+                                                marginBottom: '16px',
+                                                fontSize: '0.85rem',
+                                                color: '#F59E0B'
+                                            }}>
+                                                ⚠️ {stale.length} pending {stale.length === 1 ? 'chore is' : 'chores are'} over 24h old — review or reject in the Pending tab.
+                                            </div>
+                                        )}
+
+                                        {oldest && (
+                                            <div style={{
+                                                color: 'var(--text-secondary)',
+                                                fontSize: '0.78rem',
+                                                marginBottom: '16px',
+                                                textAlign: 'center'
+                                            }}>
+                                                Data since {fmtDate(oldest)} · {allLogs.length} total records on this device
+                                            </div>
+                                        )}
+
+                                        {/* Log list */}
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                            {sorted.map(log => (
+                                                <div key={log.id} style={{
+                                                    background: 'var(--surface)',
+                                                    borderRadius: '12px',
+                                                    padding: '12px 14px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '12px',
+                                                    opacity: log.status === 'rejected' ? 0.5 : 1
+                                                }}>
+                                                    <span style={{ fontSize: '1.5rem', flexShrink: 0 }}>{log.choreIcon}</span>
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                                        <div style={{ fontWeight: 600, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                            {log.choreName}
+                                                        </div>
+                                                        <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: '1px' }}>
+                                                            {log.playerName} · {fmtDate(log.timestamp)} {fmtTime(log.timestamp)}
+                                                        </div>
+                                                    </div>
+                                                    <div style={{ color: 'var(--cyan)', fontWeight: 700, fontSize: '0.85rem', flexShrink: 0 }}>
+                                                        {log.status === 'approved' ? '+' : ''}{log.points}
+                                                    </div>
+                                                    <div style={{
+                                                        width: '24px',
+                                                        height: '24px',
+                                                        borderRadius: '50%',
+                                                        background: `${statusColor[log.status]}22`,
+                                                        color: statusColor[log.status],
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        fontWeight: 700,
+                                                        fontSize: '0.8rem',
+                                                        flexShrink: 0
+                                                    }}>
+                                                        {statusLabel[log.status]}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {allLogs.length === 0 && (
+                                            <div style={{ textAlign: 'center', color: 'var(--text-secondary)', marginTop: '60px' }}>
+                                                No history on this device yet.
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })()
+                        ) : !unlocked ? (
                             /* Code Entry */
                             <div style={{
                                 display: 'flex',
@@ -976,6 +1185,7 @@
                                         </div>
                                         <button
                                             onClick={() => onReject(log.id)}
+                                            aria-label={`Reject ${log.choreName}`}
                                             style={{
                                                 background: 'rgba(239, 68, 68, 0.15)',
                                                 border: 'none',
@@ -990,6 +1200,7 @@
                                         </button>
                                         <button
                                             onClick={() => onApprove(log.id)}
+                                            aria-label={`Approve ${log.choreName}`}
                                             style={{
                                                 background: 'rgba(34, 197, 94, 0.15)',
                                                 border: 'none',
@@ -1013,10 +1224,18 @@
 
         // ============================================
         // RENDER
+
         // ============================================
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').catch(() => {});
+            });
+        }
     </script>
 </body>
 </html>

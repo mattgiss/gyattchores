@@ -15,7 +15,7 @@ I needed something different. Something that would:
 - Track everything automatically
 - Be visible on a wall-mounted tablet
 - Require minimal parent intervention
-- Actually engage my two kids: BeKindHearted and MegoDinoLava
+- Actually engage my two kids: bekindhearted and titan
 
 This is the story of how GyattChores was built in 2 days with my kids, the problems we encountered, and what we're still fixing together. It's a work in progress—our small product team (me and my 2 kids) building something for ourselves.
 
@@ -519,7 +519,7 @@ After production deployment:
 | Code | 2,800 lines (single file) |
 | Database Tables | 7 |
 | Achievements | 24 |
-| Active Users | 2 (BeKindHearted, MegoDinoLava) |
+| Active Users | 2 (bekindhearted, titan) |
 | Engagement | Daily usage, 100% adoption |
 | Cost | $0/month (Supabase free tier) |
 | Load Time | ~800ms on tablet |
@@ -726,5 +726,5 @@ gyattchores/
 
 *This document tells the story of GyattChores from conception to production. For technical details, see ebook.md. For security analysis, see security-evaluation.md.*
 
-*Built with ❤️ for BeKindHearted and MegoDinoLava*
+*Built with ❤️ for bekindhearted and titan*
 *December 2025*

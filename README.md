@@ -6,7 +6,7 @@ A simple, gamified family chore tracker. Kids tap to log the chores they've done
 
 ## How it works
 
-1. **Pick a player** — tap a player card (e.g. 🦁 BeKindHearted or 🦖 MegoDinoLava).
+1. **Pick a player** — tap a player card (e.g. 🦁 bekindhearted or 🦖 titan).
 2. **Log a chore** — tap any chore tile. It's recorded as **pending** and earns no points yet.
 3. **Parent approves** — open the ✓ menu, enter the admin PIN, and approve (or reject) pending chores. Approving awards the chore's points.
 4. **Compete** — approved points count toward **Today** and **This Week** totals. The player leading the week gets a 👑.
@@ -120,6 +120,15 @@ gyattchores/
 
 All chore data lives in the browser's `localStorage` on each device; the optional Supabase sync stores only non-sensitive chore logs, written with the project's public anon key under permissive row-level-security policies (it's a private family app). The admin PIN is a lightweight, client-side "are you a grown-up?" gate, **not** a real security boundary. See [SECURITY.md](SECURITY.md).
 
+## Governance & operations
+
+This repository is run under a lightweight, ITIL 4-aligned **Service Management System** in [`docs/governance/`](docs/governance/README.md) — covering change control, incident & problem management, monitoring, security, and a continual-improvement backlog. New contributors should start with [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+- **How changes reach production:** [Change Enablement](docs/governance/change-enablement.md)
+- **When something breaks:** [Incident & Problem Management](docs/governance/incident-and-problem-management.md)
+- **The Discord alerting:** [Monitoring & Event Management](docs/governance/monitoring-and-event-management.md)
+- **Current posture & gaps:** [Governance Audit](docs/governance/governance-audit.md) · [Improvement backlog](docs/governance/continual-improvement.md)
+
 ## History
 
 This started as a Supabase-backed app, was rewritten into a simple offline-first localStorage app, and is now **local-first with optional Supabase sync** — local storage is always the source of truth, and the cloud is a best-effort sync layer that the app no longer depends on to function. That journey is preserved in [`development-narrative.md`](development-narrative.md) and the [`ebook`](ebook.md).
@@ -130,4 +139,4 @@ MIT License — feel free to fork and adapt for your family.
 
 ---
 
-**Created with love for BeKindHearted and MegoDinoLava** · *Built by Matthew Gissentanna*
+**Created with love for bekindhearted and titan** · *Built by Matthew Gissentanna*

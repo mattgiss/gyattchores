@@ -1,0 +1,15 @@
+# Code owners for GyattChores
+# These owners are requested for review automatically when a PR touches the
+# matching paths. See docs/governance/change-enablement.md.
+
+# Default owner for everything
+*                       @mattgiss
+
+# Production application & deployment-affecting files
+/index.html             @mattgiss
+/CNAME                  @mattgiss
+/.github/               @mattgiss
+
+# Governance / Service Management System
+/docs/governance/       @mattgiss
+/SECURITY.md            @mattgiss

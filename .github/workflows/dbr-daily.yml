@@ -1,0 +1,116 @@
+name: Daily Business Review
+
+# push reports in every morning at 09:00 et.
+
+on:
+  schedule:
+    - cron: '0 14 * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'docs/dbr/status.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  post-dbr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: push reports in
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          DATE=$(date -u +"%-d %b %Y" | tr '[:upper:]' '[:lower:]')
+          STATUS=$(cat docs/dbr/status.json)
+
+          build_field() {
+            local prog="$1"
+            local raw_status blockers_count highs_count top_blocker top_high
+            raw_status=$(echo "$STATUS"     | jq -r ".programs[] | select(.id==\"$prog\") | .status")
+            blockers_count=$(echo "$STATUS" | jq -r ".programs[] | select(.id==\"$prog\") | .blockers | length")
+            highs_count=$(echo "$STATUS"    | jq -r ".programs[] | select(.id==\"$prog\") | .highs | length")
+            top_blocker=$(echo "$STATUS"    | jq -r ".programs[] | select(.id==\"$prog\") | .blockers[0] // \"\"")
+            top_high=$(echo "$STATUS"       | jq -r ".programs[] | select(.id==\"$prog\") | .highs[0] // \"\"")
+
+            local out="${raw_status} · ${blockers_count} blocker(s), ${highs_count} high(s)"
+            if [ -n "$top_blocker" ]; then
+              out="${out}\n→ ${top_blocker}"
+            elif [ -n "$top_high" ]; then
+              out="${out}\n→ ${top_high}"
+            fi
+            printf '%s' "$out"
+          }
+
+          TOTAL_RED=$(echo "$STATUS"    | jq '[.programs[] | select(.status=="red")]    | length')
+          TOTAL_YELLOW=$(echo "$STATUS" | jq '[.programs[] | select(.status=="yellow")] | length')
+
+          if [ "$TOTAL_RED" -gt 2 ]; then
+            COLOR=15158332
+          elif [ "$TOTAL_RED" -gt 0 ]; then
+            COLOR=16756480
+          else
+            COLOR=5763719
+          fi
+
+          if [ "$TOTAL_RED" -gt 0 ]; then
+            SITREP="${TOTAL_RED} blocker(s) active. moving when they clear."
+          elif [ "$TOTAL_YELLOW" -gt 0 ]; then
+            SITREP="no blockers. ${TOTAL_YELLOW} program(s) need watching."
+          else
+            SITREP="all clear."
+          fi
+
+          ISSUES_LINK="https://github.com/${{ github.repository }}/issues"
+          TRACKER_LINK="https://github.com/${{ github.repository }}/blob/main/docs/dbr/status.json"
+
+          # Build fields sorted: red first, then yellow, then green
+          SORTED_IDS=$(echo "$STATUS" | jq -r '
+            .programs
+            | sort_by(
+                if .status == "red"    then 0
+                elif .status == "yellow" then 1
+                else 2 end
+              )
+            | .[].id')
+
+          FIELDS_JSON="[]"
+          while IFS= read -r prog; do
+            name=$(echo "$STATUS" | jq -r ".programs[] | select(.id==\"$prog\") | .name" | tr '[:upper:]' '[:lower:]')
+            field_val=$(build_field "$prog")
+            FIELDS_JSON=$(echo "$FIELDS_JSON" | jq \
+              --arg n "$name" \
+              --arg v "$field_val" \
+              '. + [{name: $n, value: $v, inline: false}]')
+          done <<< "$SORTED_IDS"
+
+          # Append links field
+          FIELDS_JSON=$(echo "$FIELDS_JSON" | jq \
+            --arg links "[issues]($ISSUES_LINK) · [tracker]($TRACKER_LINK)" \
+            '. + [{name: "links", value: $links, inline: false}]')
+
+          PAYLOAD=$(jq -n \
+            --arg date      "push // $DATE" \
+            --arg sitrep    "$SITREP" \
+            --argjson fields "$FIELDS_JSON" \
+            --argjson color  "$COLOR" \
+            '{
+              thread_name: $date,
+              embeds: [{
+                title: $date,
+                description: $sitrep,
+                color: $color,
+                fields: $fields,
+                footer: {text: "push // gyattchores // daily 09:00 et"}
+              }]
+            }')
+
+          HTTP=$(curl -s -o /tmp/discord_resp.txt -w "%{http_code}" \
+            -X POST "$DISCORD_WEBHOOK" \
+            -H "Content-Type: application/json" -d "$PAYLOAD")
+          echo "Discord HTTP: $HTTP"; cat /tmp/discord_resp.txt || true
+          [ "$HTTP" = "204" ] || { echo "::error::dbr failed (HTTP $HTTP)"; exit 1; }
