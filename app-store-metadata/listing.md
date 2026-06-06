@@ -45,7 +45,7 @@ STATS THAT MOTIVATE
 Track Today, This Week, This Month, and Total Earned for each player — with trending arrows showing whether they're ahead of or behind last month's pace. Data stays on your device; nothing is shared with advertisers or analytics platforms.
 
 NATIVE APPLE EXPERIENCE
-• Ask Siri to "Log dishes for BeKindHearted" using Shortcuts
+• Ask Siri to "Log dishes for bekindhearted" using Shortcuts
 • Apple Watch companion app for quick chore logging from the wrist
 • Dark mode, haptic feedback, and a clean design built around the way families actually use their phones
 
@@ -56,7 +56,7 @@ PRIVACY FIRST
 GyattChores collects no personal data, has no advertising, and includes no analytics. Your family's chore history stays on your devices. See our full privacy policy at gyattchores.com/privacy.
 
 ---
-Built by a dad for his kids. BeKindHearted and MegoDinoLava helped test every version.
+Built by a dad for his kids. bekindhearted and titan helped test every version.
 ```
 (1,618 chars ✅ — well under 4000 limit)
 
@@ -96,14 +96,14 @@ ADMIN PIN: The app has a 4-digit PIN (7874 in the demo build — change this bef
 
 TEST FLOW:
 1. Launch the app
-2. Tap a player card (🦁 BeKindHearted or 🦖 MegoDinoLava)
+2. Tap a player card (🦁 bekindhearted or 🦖 titan)
 3. Tap any chore tile — it will be logged as "pending" with no points yet
 4. Tap the ✓ button (top right)
 5. Enter PIN: 7874
 6. Approve the pending chore — points will be awarded
 7. Return to the home screen — Today and This Week stats update
 
-SIRI SHORTCUT: Say "Log dishes for BeKindHearted" to trigger the App Intent. No special permissions required.
+SIRI SHORTCUT: Say "Log dishes for bekindhearted" to trigger the App Intent. No special permissions required.
 
 WATCH APP: The companion watchOS app mirrors the iOS workflow. No special entitlements are required.
 

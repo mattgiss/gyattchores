@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GyattChores :: CYBERPUNK SKIN MOCKUP</title>
+<style>
+  /* ── Base ── */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #030a0e;
+    --bg2:      #071218;
+    --bg3:      #0d1f28;
+    --cyan:     #00ffe5;
+    --magenta:  #ff00c8;
+    --yellow:   #ffe600;
+    --green:    #00ff88;
+    --red:      #ff2d55;
+    --dim:      #1a3340;
+    --text:     #c8eaf0;
+    --text-dim: #4a7a8a;
+    --scan:     rgba(0,255,229,0.03);
+    --font-mono: 'Courier New', 'Lucida Console', monospace;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-mono);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── CRT scanlines overlay ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      var(--scan) 2px,
+      var(--scan) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* ── Glitch animation ── */
+  @keyframes glitch {
+    0%   { text-shadow: 2px 0 var(--magenta), -2px 0 var(--cyan); }
+    20%  { text-shadow: -2px 0 var(--magenta), 2px 0 var(--cyan); clip-path: inset(20% 0 60% 0); }
+    40%  { text-shadow: 2px 0 var(--magenta), -2px 0 var(--cyan); clip-path: inset(0); }
+    60%  { text-shadow: -3px 0 var(--magenta), 3px 0 var(--cyan); clip-path: inset(60% 0 10% 0); }
+    80%  { text-shadow: 2px 0 var(--magenta), -2px 0 var(--cyan); clip-path: inset(0); }
+    100% { text-shadow: 2px 0 var(--magenta), -2px 0 var(--cyan); }
+  }
+  @keyframes flicker {
+    0%,100% { opacity: 1; }
+    92%      { opacity: 1; }
+    93%      { opacity: 0.85; }
+    94%      { opacity: 1; }
+    96%      { opacity: 0.9; }
+    97%      { opacity: 1; }
+  }
+  @keyframes blink { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
+  @keyframes pulse-border {
+    0%,100% { box-shadow: 0 0 6px var(--cyan), inset 0 0 6px rgba(0,255,229,0.05); }
+    50%     { box-shadow: 0 0 18px var(--cyan), inset 0 0 12px rgba(0,255,229,0.1); }
+  }
+  @keyframes pulse-magenta {
+    0%,100% { box-shadow: 0 0 6px var(--magenta), inset 0 0 6px rgba(255,0,200,0.05); }
+    50%     { box-shadow: 0 0 18px var(--magenta), inset 0 0 12px rgba(255,0,200,0.1); }
+  }
+
+  /* ── Layout ── */
+  .screen {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 0 0 120px;
+    animation: flicker 8s infinite;
+  }
+
+  /* ── Top bar ── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--dim);
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .topbar .sys { color: var(--cyan); }
+  .topbar .clock { color: var(--yellow); }
+
+  /* ── Header ── */
+  header {
+    padding: 20px 16px 12px;
+    border-bottom: 1px solid var(--dim);
+  }
+  .logo-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-text {
+    font-size: 22px;
+    font-weight: bold;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    animation: glitch 6s infinite;
+  }
+  .logo-sub {
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+  .admin-btn {
+    margin-left: auto;
+    background: none;
+    border: 1px solid var(--magenta);
+    color: var(--magenta);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    padding: 4px 8px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+  .admin-btn:hover { background: var(--magenta); color: var(--bg); }
+
+  /* ── Section label ── */
+  .section-label {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding: 14px 16px 6px;
+  }
+  .section-label::before { content: '// '; color: var(--magenta); }
+
+  /* ── Player cards ── */
+  .players { display: flex; gap: 10px; padding: 0 16px 12px; }
+
+  .player-card {
+    flex: 1;
+    border: 1px solid var(--dim);
+    background: var(--bg2);
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .player-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--dim);
+    transition: background 0.15s;
+  }
+  .player-card.active {
+    border-color: var(--cyan);
+    background: var(--bg3);
+    animation: pulse-border 2s infinite;
+  }
+  .player-card.active::before { background: var(--cyan); }
+  .player-card.p2.active {
+    border-color: var(--magenta);
+    animation: pulse-magenta 2s infinite;
+  }
+  .player-card.p2.active::before { background: var(--magenta); }
+
+  .player-avatar { font-size: 28px; display: block; margin-bottom: 6px; }
+  .player-name {
+    font-size: 11px;
+    color: var(--cyan);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: bold;
+  }
+  .player-card.p2 .player-name { color: var(--magenta); }
+  .player-pts {
+    font-size: 20px;
+    color: var(--yellow);
+    font-weight: bold;
+    margin-top: 4px;
+  }
+  .player-pts span { font-size: 10px; color: var(--text-dim); }
+  .crown { font-size: 14px; position: absolute; top: 8px; right: 8px; }
+
+  /* ── Stat pills ── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 0 16px 12px;
+  }
+  .stat-pill {
+    background: var(--bg2);
+    border: 1px solid var(--dim);
+    padding: 10px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .stat-label {
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+  .stat-val {
+    font-size: 16px;
+    font-weight: bold;
+  }
+  .stat-trend { font-size: 10px; }
+  .up   { color: var(--green); }
+  .down { color: var(--red); }
+
+  /* ── Divider ── */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--dim);
+    margin: 4px 16px 0;
+  }
+
+  /* ── Chore grid ── */
+  .chore-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 0 16px;
+  }
+  .chore-tile {
+    background: var(--bg2);
+    border: 1px solid var(--dim);
+    padding: 14px 12px;
+    cursor: pointer;
+    transition: all 0.12s;
+    position: relative;
+  }
+  .chore-tile:hover {
+    border-color: var(--cyan);
+    background: var(--bg3);
+  }
+  .chore-tile:active { transform: scale(0.97); }
+  .chore-icon { font-size: 22px; display: block; margin-bottom: 6px; }
+  .chore-name {
+    font-size: 11px;
+    color: var(--text);
+    letter-spacing: 0.04em;
+    display: block;
+  }
+  .chore-pts {
+    font-size: 10px;
+    color: var(--cyan);
+    margin-top: 4px;
+    letter-spacing: 0.06em;
+  }
+  .chore-pts::before { content: '+ '; }
+  .chore-tile.pending::after {
+    content: 'PENDING';
+    position: absolute;
+    top: 6px; right: 6px;
+    font-size: 7px;
+    letter-spacing: 0.1em;
+    color: var(--yellow);
+    border: 1px solid var(--yellow);
+    padding: 1px 4px;
+  }
+
+  /* ── Success overlay ── */
+  .success-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,10,14,0.92);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 100;
+    font-family: var(--font-mono);
+  }
+  .success-box {
+    border: 1px solid var(--green);
+    background: var(--bg2);
+    padding: 32px 48px;
+    text-align: center;
+    box-shadow: 0 0 40px rgba(0,255,136,0.2);
+  }
+  .success-icon { font-size: 48px; display: block; margin-bottom: 12px; }
+  .success-title {
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 8px;
+  }
+  .success-pts {
+    font-size: 36px;
+    color: var(--cyan);
+    font-weight: bold;
+  }
+  .success-pts::before { content: '[ +'; }
+  .success-pts::after  { content: ' PTS ]'; }
+  .success-cursor {
+    display: inline-block;
+    width: 10px; height: 2px;
+    background: var(--cyan);
+    margin-left: 4px;
+    animation: blink 1s step-start infinite;
+    vertical-align: middle;
+  }
+
+  /* ── Admin modal ── */
+  .admin-modal {
+    position: fixed; inset: 0;
+    background: rgba(0,5,10,0.95);
+    z-index: 200;
+    font-family: var(--font-mono);
+    padding: 24px 16px;
+    overflow-y: auto;
+  }
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--magenta);
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+  }
+  .modal-title {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--magenta);
+  }
+  .modal-close {
+    background: none; border: 1px solid var(--dim);
+    color: var(--text-dim); font-family: var(--font-mono);
+    font-size: 11px; padding: 2px 8px; cursor: pointer;
+  }
+  .pending-row {
+    border: 1px solid var(--dim);
+    background: var(--bg2);
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .pending-icon { font-size: 20px; }
+  .pending-info { flex: 1; }
+  .pending-name { font-size: 11px; color: var(--text); }
+  .pending-meta { font-size: 9px; color: var(--text-dim); margin-top: 2px; }
+  .pending-pts  { font-size: 11px; color: var(--cyan); margin-right: 4px; }
+  .btn-approve {
+    background: none; border: 1px solid var(--green);
+    color: var(--green); font-family: var(--font-mono);
+    font-size: 9px; padding: 4px 8px; cursor: pointer; letter-spacing: 0.1em;
+  }
+  .btn-reject {
+    background: none; border: 1px solid var(--red);
+    color: var(--red); font-family: var(--font-mono);
+    font-size: 9px; padding: 4px 8px; cursor: pointer; letter-spacing: 0.1em;
+  }
+
+  /* ── Bottom nav ── */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 420px;
+    border-top: 1px solid var(--dim);
+    background: var(--bg);
+    display: flex;
+  }
+  .nav-item {
+    flex: 1; padding: 14px 0 12px;
+    text-align: center; cursor: pointer;
+    font-size: 9px; letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    transition: color 0.1s;
+  }
+  .nav-item.active { color: var(--cyan); border-top: 2px solid var(--cyan); margin-top: -1px; }
+  .nav-icon { font-size: 18px; display: block; margin-bottom: 3px; }
+
+  /* ── Skin note ── */
+  .skin-note {
+    position: fixed; top: 0; right: 0;
+    background: var(--magenta);
+    color: #000;
+    font-size: 9px;
+    font-family: var(--font-mono);
+    letter-spacing: 0.1em;
+    padding: 3px 8px;
+    text-transform: uppercase;
+    z-index: 9998;
+  }
+
+  /* ── PIN prompt ── */
+  .pin-prompt {
+    padding: 24px 16px;
+    text-align: center;
+  }
+  .pin-label {
+    font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--text-dim); margin-bottom: 16px;
+  }
+  .pin-dots {
+    display: flex; gap: 12px; justify-content: center; margin-bottom: 20px;
+  }
+  .pin-dot {
+    width: 16px; height: 16px;
+    border: 1px solid var(--magenta);
+    background: var(--magenta);
+  }
+  .pin-dot.empty { background: none; }
+  .numpad {
+    display: grid; grid-template-columns: repeat(3,1fr); gap: 8px;
+    max-width: 240px; margin: 0 auto;
+  }
+  .num-key {
+    border: 1px solid var(--dim);
+    background: var(--bg2);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 18px;
+    padding: 14px 0;
+    cursor: pointer;
+    transition: all 0.1s;
+  }
+  .num-key:hover { border-color: var(--magenta); color: var(--magenta); }
+</style>
+</head>
+<body>
+
+<div class="skin-note">SKIN MOCKUP — CYBERPUNK TERMINAL</div>
+
+<!-- ─────────────────── SCREEN 1: HOME ─────────────────── -->
+<div class="screen" id="screen-home">
+
+  <!-- Top system bar -->
+  <div class="topbar">
+    <span class="sys">SYS::GYATTCHORES v1.0</span>
+    <span class="clock">06.JUN.2026 // 09:41</span>
+  </div>
+
+  <!-- Header -->
+  <header>
+    <div class="logo-line">
+      <div>
+        <div class="logo-text">// GyattChores</div>
+        <div class="logo-sub">CHORE MANAGEMENT SYSTEM</div>
+      </div>
+      <button class="admin-btn" onclick="showAdmin()">ADMIN ▸</button>
+    </div>
+  </header>
+
+  <!-- Players -->
+  <div class="section-label">SELECT_OPERATIVE</div>
+  <div class="players">
+    <div class="player-card active" onclick="selectPlayer(this)">
+      <span class="crown">👑</span>
+      <span class="player-avatar">🦁</span>
+      <div class="player-name">bekindhearted</div>
+      <div class="player-pts">750 <span>PTS</span></div>
+    </div>
+    <div class="player-card p2" onclick="selectPlayer(this)">
+      <span class="player-avatar">🤖</span>
+      <div class="player-name">titan</div>
+      <div class="player-pts">480 <span>PTS</span></div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="section-label">OPERATIVE_STATS</div>
+  <div class="stats-grid">
+    <div class="stat-pill">
+      <div>
+        <div class="stat-label">TODAY</div>
+        <div class="stat-val up">250</div>
+      </div>
+      <div class="stat-trend up">↑ +50</div>
+    </div>
+    <div class="stat-pill">
+      <div>
+        <div class="stat-label">THIS_WEEK</div>
+        <div class="stat-val up">750</div>
+      </div>
+      <div class="stat-trend up">↑ +200</div>
+    </div>
+    <div class="stat-pill">
+      <div>
+        <div class="stat-label">THIS_MONTH</div>
+        <div class="stat-val">2100</div>
+      </div>
+      <div class="stat-trend up">↑ +340</div>
+    </div>
+    <div class="stat-pill">
+      <div>
+        <div class="stat-label">TOTAL_XP</div>
+        <div class="stat-val" style="color:var(--yellow)">14200</div>
+      </div>
+      <div class="stat-trend" style="color:var(--text-dim)">ALL TIME</div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- Chore grid -->
+  <div class="section-label">AVAILABLE_MISSIONS</div>
+  <div class="chore-grid">
+    <div class="chore-tile" onclick="showSuccess('🛏️','Make Bed','500')">
+      <span class="chore-icon">🛏️</span>
+      <span class="chore-name">Make Bed</span>
+      <div class="chore-pts">500 PTS</div>
+    </div>
+    <div class="chore-tile pending">
+      <span class="chore-icon">🍽️</span>
+      <span class="chore-name">Dishes</span>
+      <div class="chore-pts">500 PTS</div>
+    </div>
+    <div class="chore-tile" onclick="showSuccess('🧹','Sweep','500')">
+      <span class="chore-icon">🧹</span>
+      <span class="chore-name">Sweep Floor</span>
+      <div class="chore-pts">500 PTS</div>
+    </div>
+    <div class="chore-tile" onclick="showSuccess('🐕','Walk Dog','750')">
+      <span class="chore-icon">🐕</span>
+      <span class="chore-name">Walk Dog</span>
+      <div class="chore-pts">750 PTS</div>
+    </div>
+    <div class="chore-tile" onclick="showSuccess('📦','Clean Room','750')">
+      <span class="chore-icon">📦</span>
+      <span class="chore-name">Clean Room</span>
+      <div class="chore-pts">750 PTS</div>
+    </div>
+    <div class="chore-tile" onclick="showSuccess('📬','Get Mail','250')">
+      <span class="chore-icon">📬</span>
+      <span class="chore-name">Get Mail</span>
+      <div class="chore-pts">250 PTS</div>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────────── OVERLAY: SUCCESS ─────────────────── -->
+<div class="success-overlay" id="overlay-success" style="display:none" onclick="hideSuccess()">
+  <div class="success-box">
+    <span class="success-icon" id="s-icon">🛏️</span>
+    <div class="success-title" id="s-name">MISSION LOGGED</div>
+    <div class="success-pts" id="s-pts">500<span class="success-cursor"></span></div>
+    <div style="font-size:9px;color:var(--text-dim);margin-top:14px;letter-spacing:0.1em">
+      AWAITING_PARENT_CONFIRMATION<span style="animation:blink 1s step-start infinite;display:inline-block">_</span>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────────── OVERLAY: ADMIN ─────────────────── -->
+<div class="admin-modal" id="overlay-admin" style="display:none">
+  <div class="modal-header">
+    <div class="modal-title">// ADMIN_CONSOLE :: PENDING_MISSIONS</div>
+    <button class="modal-close" onclick="hideAdmin()">[ CLOSE ]</button>
+  </div>
+
+  <!-- PIN prompt (shown first) -->
+  <div class="pin-prompt" id="pin-prompt">
+    <div class="pin-label">ENTER_PARENT_OVERRIDE_CODE</div>
+    <div class="pin-dots">
+      <div class="pin-dot"></div>
+      <div class="pin-dot"></div>
+      <div class="pin-dot empty"></div>
+      <div class="pin-dot empty"></div>
+    </div>
+    <div class="numpad">
+      <button class="num-key">1</button><button class="num-key">2</button><button class="num-key">3</button>
+      <button class="num-key">4</button><button class="num-key">5</button><button class="num-key">6</button>
+      <button class="num-key">7</button><button class="num-key" style="grid-column:2" onclick="showPending()">✓</button>
+    </div>
+  </div>
+
+  <!-- Pending list (shown after PIN) -->
+  <div id="pending-list" style="display:none">
+    <div class="pending-row">
+      <span class="pending-icon">🍽️</span>
+      <div class="pending-info">
+        <div class="pending-name">Dishes</div>
+        <div class="pending-meta">bekindhearted // 09:22:14</div>
+      </div>
+      <span class="pending-pts">500 PTS</span>
+      <button class="btn-approve">APPROVE</button>
+      <button class="btn-reject">REJECT</button>
+    </div>
+    <div class="pending-row">
+      <span class="pending-icon">🛏️</span>
+      <div class="pending-info">
+        <div class="pending-name">Make Bed</div>
+        <div class="pending-meta">titan // 08:55:03</div>
+      </div>
+      <span class="pending-pts">500 PTS</span>
+      <button class="btn-approve">APPROVE</button>
+      <button class="btn-reject">REJECT</button>
+    </div>
+    <div class="pending-row">
+      <span class="pending-icon">📬</span>
+      <div class="pending-info">
+        <div class="pending-name">Get Mail</div>
+        <div class="pending-meta">titan // 08:30:47</div>
+      </div>
+      <span class="pending-pts">250 PTS</span>
+      <button class="btn-approve">APPROVE</button>
+      <button class="btn-reject">REJECT</button>
+    </div>
+    <div style="margin-top:16px;text-align:right">
+      <button class="btn-approve" style="font-size:10px;padding:8px 16px">APPROVE_ALL [ 3 ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────────── BOTTOM NAV ─────────────────── -->
+<nav class="bottom-nav">
+  <div class="nav-item active">
+    <span class="nav-icon">⚡</span>MISSIONS
+  </div>
+  <div class="nav-item">
+    <span class="nav-icon">📡</span>HISTORY
+  </div>
+  <div class="nav-item">
+    <span class="nav-icon">🏆</span>LEADERBOARD
+  </div>
+</nav>
+
+<script>
+  function selectPlayer(el) {
+    document.querySelectorAll('.player-card').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+  }
+  function showSuccess(icon, name, pts) {
+    document.getElementById('s-icon').textContent = icon;
+    document.getElementById('s-name').textContent = name.toUpperCase() + ' // LOGGED';
+    document.getElementById('s-pts').childNodes[0].textContent = pts;
+    document.getElementById('overlay-success').style.display = 'flex';
+  }
+  function hideSuccess() {
+    document.getElementById('overlay-success').style.display = 'none';
+  }
+  function showAdmin() {
+    document.getElementById('overlay-admin').style.display = 'block';
+    document.getElementById('pin-prompt').style.display = 'block';
+    document.getElementById('pending-list').style.display = 'none';
+  }
+  function hideAdmin() {
+    document.getElementById('overlay-admin').style.display = 'none';
+  }
+  function showPending() {
+    document.getElementById('pin-prompt').style.display = 'none';
+    document.getElementById('pending-list').style.display = 'block';
+  }
+</script>
+</body>
+</html>

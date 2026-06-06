@@ -20,7 +20,7 @@ Required before App Store submission. Produce these in Simulator or on real hard
 **File:** `01-home-with-players.png`
 **Caption overlay:** "Make chores a game 🎮"
 **What to show:** Home screen with both player cards visible, weekly points on each, crown on the leader. Chore grid partially visible below.
-**State:** BeKindHearted selected (cyan border), 750 pts this week, crown. Stats pills showing Today + This Week + This Month + Total.
+**State:** bekindhearted selected (cyan border), 750 pts this week, crown. Stats pills showing Today + This Week + This Month + Total.
 
 ### Shot 2 — Logging a chore
 **File:** `02-log-chore.png`

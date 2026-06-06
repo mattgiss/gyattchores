@@ -6,7 +6,7 @@ A simple, gamified family chore tracker. Kids tap to log the chores they've done
 
 ## How it works
 
-1. **Pick a player** — tap a player card (e.g. 🦁 BeKindHearted or 🦖 MegoDinoLava).
+1. **Pick a player** — tap a player card (e.g. 🦁 bekindhearted or 🦖 titan).
 2. **Log a chore** — tap any chore tile. It's recorded as **pending** and earns no points yet.
 3. **Parent approves** — open the ✓ menu, enter the admin PIN, and approve (or reject) pending chores. Approving awards the chore's points.
 4. **Compete** — approved points count toward **Today** and **This Week** totals. The player leading the week gets a 👑.
@@ -139,4 +139,4 @@ MIT License — feel free to fork and adapt for your family.
 
 ---
 
-**Created with love for BeKindHearted and MegoDinoLava** · *Built by Matthew Gissentanna*
+**Created with love for bekindhearted and titan** · *Built by Matthew Gissentanna*

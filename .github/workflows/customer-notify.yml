@@ -64,7 +64,7 @@ jobs:
                 title: $title,
                 description: $body,
                 color: 59391,
-                footer: {text: "Made with ❤️ for BeKindHearted & MegoDinoLava"}
+                footer: {text: "Made with ❤️ for bekindhearted & titan"}
               }]
             }')
 

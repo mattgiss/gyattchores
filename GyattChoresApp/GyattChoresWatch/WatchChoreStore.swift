@@ -4,8 +4,8 @@ import SwiftUI
 @MainActor
 class WatchChoreStore: ObservableObject {
     @Published var players: [WatchPlayer] = [
-        WatchPlayer(id: "1", name: "BeKindHearted", avatar: "🦁"),
-        WatchPlayer(id: "2", name: "MegoDinoLava", avatar: "🦖")
+        WatchPlayer(id: "1", name: "bekindhearted", avatar: "🦁"),
+        WatchPlayer(id: "2", name: "titan", avatar: "🦖")
     ]
 
     @Published var chores: [WatchChore] = [

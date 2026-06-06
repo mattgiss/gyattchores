@@ -66,7 +66,7 @@ iOS integration
 
 ### 1.1 Real-time features (Live Activities + Dynamic Island)
 
-- **Pending approval Live Activity** — when a chore is logged, a Live Activity shows on the parent's Lock Screen: "🦁 BeKindHearted logged Dishes · Waiting for approval." Parent approves from Lock Screen.
+- **Pending approval Live Activity** — when a chore is logged, a Live Activity shows on the parent's Lock Screen: "🦁 bekindhearted logged Dishes · Waiting for approval." Parent approves from Lock Screen.
 - **Dynamic Island** — show the current week leader's score as a compact live update.
 
 ### 1.2 Widgets
