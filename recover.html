@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GyattChores — Points Recovery</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+         max-width: 680px; margin: 48px auto; padding: 0 24px;
+         background: #0a0a0f; color: #e5e7eb; line-height: 1.6; }
+  h1 { color: #00e5ff; font-size: 1.4rem; margin-bottom: 4px; }
+  .sub { color: #4a7a8a; font-size: 0.85rem; margin-bottom: 32px; }
+  .card { background: #0d1f28; border: 1px solid #1a3340;
+          padding: 20px; margin-bottom: 16px; border-radius: 4px; }
+  .player { font-size: 1.1rem; color: #00e5ff; font-weight: 600; margin-bottom: 8px; }
+  .big { font-size: 2rem; font-weight: 700; color: #ffe600; }
+  .big span { font-size: 0.9rem; color: #4a7a8a; font-weight: 400; }
+  table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 0.85rem; }
+  th { text-align: left; color: #4a7a8a; padding: 4px 8px; border-bottom: 1px solid #1a3340; }
+  td { padding: 4px 8px; border-bottom: 1px solid #0d1f28; }
+  .approved { color: #22c55e; }
+  .pending  { color: #ffe600; }
+  .rejected { color: #ef4444; }
+  .empty { color: #4a7a8a; text-align: center; padding: 32px; }
+  .export-btn { background: #00e5ff; color: #0a0a0f; border: none;
+                padding: 10px 20px; font-size: 0.9rem; font-weight: 600;
+                cursor: pointer; margin-top: 24px; width: 100%; }
+  pre { background: #030a0e; padding: 16px; font-size: 0.75rem;
+        overflow-x: auto; color: #4a7a8a; margin-top: 16px;
+        border: 1px solid #1a3340; white-space: pre-wrap; word-break: break-all; }
+  .monthly-grid { display: grid; grid-template-columns: auto 1fr 1fr; gap: 4px 16px;
+                  font-size: 0.85rem; margin-top: 8px; }
+  .month-label { color: #4a7a8a; }
+  .month-pts   { color: #ffe600; font-weight: 600; }
+  .month-count { color: #4a7a8a; }
+</style>
+</head>
+<body>
+<h1>points recovery</h1>
+<p class="sub">reads your device's local storage. open this page on the same browser/device where you use gyattchores.</p>
+
+<div id="output"></div>
+<button class="export-btn" onclick="copyJSON()">copy raw json to clipboard</button>
+<pre id="raw"></pre>
+
+<script>
+const KEY = 'gyattchores_logs';
+
+function run() {
+  const raw = localStorage.getItem(KEY);
+  const out  = document.getElementById('output');
+  const rawEl = document.getElementById('raw');
+
+  if (!raw) {
+    out.innerHTML = '<div class="card"><p class="empty">no data found in localStorage on this device.<br>the points may be in supabase — run the points-recovery github action.</p></div>';
+    return;
+  }
+
+  let logs;
+  try { logs = JSON.parse(raw); } catch(e) {
+    out.innerHTML = '<div class="card"><p class="empty">found data but could not parse it.</p></div>';
+    rawEl.textContent = raw;
+    return;
+  }
+
+  rawEl.textContent = JSON.stringify(logs, null, 2);
+
+  const approved = logs.filter(l => l.status === 'approved');
+  const players  = [...new Set(logs.map(l => l.playerName || l.player_name))].filter(Boolean);
+
+  let html = '';
+
+  // Per-player summary
+  players.forEach(p => {
+    const pLogs     = approved.filter(l => (l.playerName || l.player_name) === p);
+    const allLogs   = logs.filter(l => (l.playerName || l.player_name) === p);
+    const totalPts  = pLogs.reduce((s, l) => s + (l.points || 0), 0);
+    const pending   = allLogs.filter(l => l.status === 'pending').length;
+    const rejected  = allLogs.filter(l => l.status === 'rejected').length;
+
+    // Monthly breakdown
+    const byMonth = {};
+    pLogs.forEach(l => {
+      const ts = l.timestamp || l.created_at || '';
+      const m  = ts.slice(0, 7); // "2026-01"
+      if (!m) return;
+      if (!byMonth[m]) byMonth[m] = { pts: 0, count: 0 };
+      byMonth[m].pts   += l.points || 0;
+      byMonth[m].count += 1;
+    });
+
+    const monthRows = Object.keys(byMonth).sort().map(m => {
+      const label = new Date(m + '-02').toLocaleString('default', { month: 'long', year: 'numeric' });
+      return `<div class="month-label">${label}</div>
+              <div class="month-pts">${byMonth[m].pts.toLocaleString()} pts</div>
+              <div class="month-count">${byMonth[m].count} chores</div>`;
+    }).join('');
+
+    // Top 5 chores
+    const choreCount = {};
+    pLogs.forEach(l => {
+      const n = l.choreName || l.chore_name || 'unknown';
+      choreCount[n] = (choreCount[n] || 0) + 1;
+    });
+    const topChores = Object.entries(choreCount)
+      .sort((a,b) => b[1]-a[1]).slice(0,5)
+      .map(([n,c]) => `<tr><td>${n}</td><td>${c}x</td></tr>`).join('');
+
+    html += `
+    <div class="card">
+      <div class="player">${p}</div>
+      <div class="big">${totalPts.toLocaleString()} <span>all-time pts (${pLogs.length} approved chores)</span></div>
+      <div style="margin-top:8px;font-size:0.85rem;color:#4a7a8a">
+        ${pending} pending · ${rejected} rejected
+      </div>
+      ${monthRows ? `<div class="monthly-grid" style="margin-top:16px">${monthRows}</div>` : ''}
+      ${topChores ? `<table style="margin-top:16px"><tr><th>chore</th><th>times done</th></tr>${topChores}</table>` : ''}
+    </div>`;
+  });
+
+  // Grand total
+  const grand = approved.reduce((s,l) => s + (l.points||0), 0);
+  html += `
+  <div class="card">
+    <div class="player">total — all players</div>
+    <div class="big">${grand.toLocaleString()} <span>pts · ${approved.length} approved chores · ${logs.length} total logs</span></div>
+  </div>`;
+
+  out.innerHTML = html || '<div class="card"><p class="empty">no approved logs found.</p></div>';
+}
+
+function copyJSON() {
+  const raw = localStorage.getItem(KEY) || '[]';
+  navigator.clipboard.writeText(raw).then(() => alert('copied to clipboard'));
+}
+
+run();
+</script>
+</body>
+</html>
