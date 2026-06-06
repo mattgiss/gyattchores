@@ -1,8 +1,12 @@
 name: Daily Business Review
 
+# Sent by Push — the operator behind GyattChores in the cyber universe.
+# Push is technically Matt, but in here Push is the one who keeps the
+# lights on, watches the programs, and reports every morning at 09:00 ET.
+
 on:
   schedule:
-    - cron: '0 14 * * *'   # 9am Eastern / 14:00 UTC every day
+    - cron: '0 14 * * *'   # 09:00 ET / 14:00 UTC every day
   push:
     branches: [main]
     paths:
@@ -19,18 +23,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Post DBR to Discord
+      - name: Push reports in
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
-          DATE=$(date -u +"%B %d, %Y")
+          DATE=$(date -u +"%d.%b.%Y" | tr '[:lower:]' '[:upper:]')
           STATUS=$(cat docs/dbr/status.json)
 
           build_field() {
             local prog="$1"
-            local raw_status
-            local blockers_count highs_count top_blocker top_high
-            raw_status=$(echo "$STATUS"    | jq -r ".programs[] | select(.id==\"$prog\") | .status")
+            local raw_status blockers_count highs_count top_blocker top_high
+            raw_status=$(echo "$STATUS"     | jq -r ".programs[] | select(.id==\"$prog\") | .status")
             blockers_count=$(echo "$STATUS" | jq -r ".programs[] | select(.id==\"$prog\") | .blockers | length")
             highs_count=$(echo "$STATUS"    | jq -r ".programs[] | select(.id==\"$prog\") | .highs | length")
             top_blocker=$(echo "$STATUS"    | jq -r ".programs[] | select(.id==\"$prog\") | .blockers[0] // \"\"")
@@ -43,11 +46,11 @@ jobs:
               *)      RAG="⚪ UNKNOWN" ;;
             esac
 
-            local out="${RAG} | Blockers: ${blockers_count} | Highs: ${highs_count}"
+            local out="${RAG}  ·  blockers: ${blockers_count}  highs: ${highs_count}"
             if [ -n "$top_blocker" ]; then
-              out="${out}\n→ ${top_blocker}"
+              out="${out}\n\`→ ${top_blocker}\`"
             elif [ -n "$top_high" ]; then
-              out="${out}\n→ ${top_high}"
+              out="${out}\n\`→ ${top_high}\`"
             fi
             printf '%s' "$out"
           }
@@ -57,44 +60,57 @@ jobs:
           DISCORD_FIELD=$(build_field "discord")
           ROADMAP_FIELD=$(build_field "roadmap")
 
-          TOTAL_RED=$(echo "$STATUS" | jq '[.programs[] | select(.status=="red")] | length')
+          TOTAL_RED=$(echo "$STATUS"    | jq '[.programs[] | select(.status=="red")]    | length')
+          TOTAL_YELLOW=$(echo "$STATUS" | jq '[.programs[] | select(.status=="yellow")] | length')
+          TOTAL_GREEN=$(echo "$STATUS"  | jq '[.programs[] | select(.status=="green")]  | length')
 
+          # Push sets the color by overall health
           if [ "$TOTAL_RED" -gt 2 ]; then
-            COLOR=15158332  # red
+            COLOR=15158332   # red — multiple programs blocked
           elif [ "$TOTAL_RED" -gt 0 ]; then
-            COLOR=16776960  # yellow
+            COLOR=16756480   # amber — at least one blocker
           else
-            COLOR=5763719   # green
+            COLOR=5763719    # green — clean
+          fi
+
+          # Push writes a one-line situation read
+          if [ "$TOTAL_RED" -gt 0 ]; then
+            SITREP="${TOTAL_RED} program(s) blocked. Needs resolution before we move."
+          elif [ "$TOTAL_YELLOW" -gt 0 ]; then
+            SITREP="No hard blockers. ${TOTAL_YELLOW} program(s) at risk — watching them."
+          else
+            SITREP="All programs green. Systems nominal."
           fi
 
           ISSUES_LINK="https://github.com/${{ github.repository }}/issues"
-          STATUS_LINK="https://github.com/${{ github.repository }}/blob/main/docs/dbr/status.json"
+          TRACKER_LINK="https://github.com/${{ github.repository }}/blob/main/docs/dbr/status.json"
 
           PAYLOAD=$(jq -n \
-            --arg date    "$DATE" \
-            --arg infra   "$INFRA_FIELD" \
-            --arg appstore "$APPSTORE_FIELD" \
+            --arg date         "$DATE" \
+            --arg sitrep       "$SITREP" \
+            --arg infra        "$INFRA_FIELD" \
+            --arg appstore     "$APPSTORE_FIELD" \
             --arg discord_prog "$DISCORD_FIELD" \
-            --arg roadmap "$ROADMAP_FIELD" \
-            --arg issues  "$ISSUES_LINK" \
-            --arg tracker "$STATUS_LINK" \
-            --argjson color "$COLOR" \
+            --arg roadmap      "$ROADMAP_FIELD" \
+            --arg issues       "$ISSUES_LINK" \
+            --arg tracker      "$TRACKER_LINK" \
+            --argjson color    "$COLOR" \
             '{
-              thread_name: ("📊 DBR — " + $date),
+              thread_name: ("PUSH :: DBR // " + $date),
               embeds: [{
-                title: ("📊 Daily Business Review — " + $date),
-                description: "**GyattChores** program status.\n🔴 Red = blocked  🟡 Yellow = at risk, on track  🟢 Green = healthy",
+                title: ("PUSH :: DBR // " + $date),
+                description: ("*" + $sitrep + "*\n\n🔴 blocked  🟡 at risk  🟢 healthy"),
                 color: $color,
                 fields: [
-                  {name: "🏗️ PROD — Infrastructure",      value: $infra,        inline: false},
-                  {name: "📱 APP STORE — iOS Launch",       value: $appstore,     inline: false},
-                  {name: "💬 DISCORD — Notifications",      value: $discord_prog, inline: false},
-                  {name: "🏆 ROADMAP — App of Year 2027",   value: $roadmap,      inline: false},
-                  {name: "Links",
-                   value: ("[Issues](" + $issues + ") · [Program tracker](" + $tracker + ")"),
+                  {name: "🏗️  PROD — Infrastructure",    value: $infra,        inline: false},
+                  {name: "📱  APP STORE — iOS Launch",    value: $appstore,     inline: false},
+                  {name: "💬  DISCORD — Notifications",   value: $discord_prog, inline: false},
+                  {name: "🏆  ROADMAP — App of Year 2027",value: $roadmap,      inline: false},
+                  {name: "—",
+                   value: ("[open issues](" + $issues + ")  ·  [program tracker](" + $tracker + ")"),
                    inline: false}
                 ],
-                footer: {text: "gyattchores • automated DBR • 9 am ET daily"}
+                footer: {text: "push // gyattchores ops // daily 09:00 et"}
               }]
             }')
 
@@ -102,4 +118,4 @@ jobs:
             -X POST "$DISCORD_WEBHOOK" \
             -H "Content-Type: application/json" -d "$PAYLOAD")
           echo "Discord HTTP: $HTTP"; cat /tmp/discord_resp.txt || true
-          [ "$HTTP" = "204" ] || { echo "::error::Discord rejected DBR payload (HTTP $HTTP)"; exit 1; }
+          [ "$HTTP" = "204" ] || { echo "::error::DBR failed (HTTP $HTTP)"; exit 1; }
