@@ -22,25 +22,29 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
+      # ── Shared helper: post to Discord and surface errors ────────────────────
+      # Each step below builds $PAYLOAD then calls this inline function.
+
       # ── Manual test ──────────────────────────────────────────────────────────
       - name: Test notification
         if: github.event_name == 'workflow_dispatch'
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
-          curl -sf -X POST "$DISCORD_WEBHOOK" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "embeds": [{
-                "title": "✅ GyattChores Notifications Active",
-                "description": "Discord integration is connected and working. You will receive notifications for pushes, PRs, issues, reviews, and branch changes.",
-                "color": 5763719,
-                "fields": [
-                  { "name": "Covers", "value": "Pushes · PRs · Reviews · Issues · Branches/Tags", "inline": false }
-                ],
-                "footer": { "text": "gyattchores • github.com/mattgiss/gyattchores" }
-              }]
-            }'
+          PAYLOAD=$(jq -n '{
+            embeds: [{
+              title: "✅ GyattChores Notifications Active",
+              description: "Discord integration is connected and working. You will receive notifications for pushes, PRs, issues, reviews, and branch changes.",
+              color: 5763719,
+              fields: [{name: "Covers", value: "Pushes · PRs · Reviews · Issues · Branches/Tags", inline: false}],
+              footer: {text: "gyattchores • github.com/mattgiss/gyattchores"}
+            }]
+          }')
+
+          HTTP=$(curl -s -o /tmp/discord_resp.txt -w "%{http_code}" -X POST "$DISCORD_WEBHOOK" \
+            -H "Content-Type: application/json" -d "$PAYLOAD")
+          echo "Discord HTTP: $HTTP"; cat /tmp/discord_resp.txt || true
+          [ "$HTTP" = "204" ] || { echo "::error::Discord rejected payload (HTTP $HTTP)"; exit 1; }
 
       # ── Push ─────────────────────────────────────────────────────────────────
       - name: Notify push
@@ -53,26 +57,34 @@ jobs:
         run: |
           SHORT_SHA="${{ github.sha }}"
           SHORT_SHA="${SHORT_SHA:0:7}"
-          REPO="${{ github.repository }}"
-          COMMIT_URL="https://github.com/$REPO/commit/${{ github.sha }}"
+          COMMIT_URL="https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
           FIRST_LINE=$(echo "$COMMIT_MSG" | head -1)
 
-          # Green for main, purple for other branches
-          COLOR=5763719
-          [ "$BRANCH" != "main" ] && COLOR=10181046
+          if [ "$BRANCH" = "main" ]; then
+            TITLE="🚀 Deployed to main"
+            COLOR=5763719
+          else
+            TITLE="⬆️ Push to ${BRANCH}"
+            COLOR=10181046
+          fi
 
           PAYLOAD=$(jq -n \
-            --arg title "$([ "$BRANCH" = "main" ] && echo "🚀 Deployed to main" || echo "⬆️ Push to ${BRANCH}")" \
+            --arg title "$TITLE" \
             --arg desc "**${FIRST_LINE}**" \
             --arg sha "[${SHORT_SHA}](${COMMIT_URL})" \
             --arg author "$AUTHOR" \
             --arg branch "$BRANCH" \
             --argjson color "$COLOR" \
-            '{embeds: [{title: $title, description: $desc, color: $color, fields: [{name: "Branch", value: $branch, inline: true}, {name: "Author", value: $author, inline: true}, {name: "Commit", value: $sha, inline: true}], footer: {text: "gyattchores"}}]}')
+            '{embeds: [{title: $title, description: $desc, color: $color, fields: [
+              {name: "Branch", value: $branch, inline: true},
+              {name: "Author", value: $author, inline: true},
+              {name: "Commit", value: $sha, inline: true}
+            ], footer: {text: "gyattchores"}}]}')
 
-          curl -sf -X POST "$DISCORD_WEBHOOK" \
-            -H "Content-Type: application/json" \
-            -d "$PAYLOAD"
+          HTTP=$(curl -s -o /tmp/discord_resp.txt -w "%{http_code}" -X POST "$DISCORD_WEBHOOK" \
+            -H "Content-Type: application/json" -d "$PAYLOAD")
+          echo "Discord HTTP: $HTTP"; cat /tmp/discord_resp.txt || true
+          [ "$HTTP" = "204" ] || { echo "::error::Discord rejected payload (HTTP $HTTP)"; exit 1; }
 
       # ── Pull Request ─────────────────────────────────────────────────────────
       - name: Notify PR
@@ -89,26 +101,19 @@ jobs:
           HEAD: ${{ github.event.pull_request.head.ref }}
         run: |
           if [ "$ACTION" = "closed" ] && [ "$MERGED" = "true" ]; then
-            TITLE="🎉 PR Merged"
-            COLOR=5763719
+            TITLE="🎉 PR Merged"; COLOR=5763719
           elif [ "$ACTION" = "closed" ]; then
-            TITLE="❌ PR Closed"
-            COLOR=15158332
+            TITLE="❌ PR Closed"; COLOR=15158332
           elif [ "$ACTION" = "opened" ]; then
-            TITLE="📬 PR Opened"
-            COLOR=3447003
+            TITLE="📬 PR Opened"; COLOR=3447003
           elif [ "$ACTION" = "reopened" ]; then
-            TITLE="🔄 PR Reopened"
-            COLOR=16776960
+            TITLE="🔄 PR Reopened"; COLOR=16776960
           elif [ "$ACTION" = "synchronize" ]; then
-            TITLE="🔃 PR Updated"
-            COLOR=8421504
+            TITLE="🔃 PR Updated"; COLOR=8421504
           elif [ "$ACTION" = "review_requested" ]; then
-            TITLE="👀 Review Requested"
-            COLOR=16776960
+            TITLE="👀 Review Requested"; COLOR=16776960
           else
-            TITLE="PR: ${ACTION}"
-            COLOR=8421504
+            TITLE="PR: ${ACTION}"; COLOR=8421504
           fi
 
           PAYLOAD=$(jq -n \
@@ -117,11 +122,15 @@ jobs:
             --arg author "$AUTHOR" \
             --arg branch "${HEAD} → ${BASE}" \
             --argjson color "$COLOR" \
-            '{embeds: [{title: $title, description: $desc, color: $color, fields: [{name: "Author", value: $author, inline: true}, {name: "Branch", value: $branch, inline: true}], footer: {text: "gyattchores"}}]}')
+            '{embeds: [{title: $title, description: $desc, color: $color, fields: [
+              {name: "Author", value: $author, inline: true},
+              {name: "Branch", value: $branch, inline: true}
+            ], footer: {text: "gyattchores"}}]}')
 
-          curl -sf -X POST "$DISCORD_WEBHOOK" \
-            -H "Content-Type: application/json" \
-            -d "$PAYLOAD"
+          HTTP=$(curl -s -o /tmp/discord_resp.txt -w "%{http_code}" -X POST "$DISCORD_WEBHOOK" \
+            -H "Content-Type: application/json" -d "$PAYLOAD")
+          echo "Discord HTTP: $HTTP"; cat /tmp/discord_resp.txt || true
+          [ "$HTTP" = "204" ] || { echo "::error::Discord rejected payload (HTTP $HTTP)"; exit 1; }
 
       # ── PR Review ────────────────────────────────────────────────────────────
       - name: Notify PR review
@@ -136,9 +145,9 @@ jobs:
           BODY: ${{ github.event.review.body }}
         run: |
           case "$STATE" in
-            approved)   TITLE="✅ PR Approved";  COLOR=5763719  ;;
-            changes_requested) TITLE="🔁 Changes Requested"; COLOR=15158332 ;;
-            *)          TITLE="💬 PR Reviewed";  COLOR=8421504  ;;
+            approved)            TITLE="✅ PR Approved";        COLOR=5763719  ;;
+            changes_requested)   TITLE="🔁 Changes Requested";  COLOR=15158332 ;;
+            *)                   TITLE="💬 PR Reviewed";         COLOR=8421504  ;;
           esac
 
           EXCERPT=$(echo "$BODY" | head -c 200)
@@ -149,11 +158,15 @@ jobs:
             --arg reviewer "$REVIEWER" \
             --arg excerpt "$EXCERPT" \
             --argjson color "$COLOR" \
-            '{embeds: [{title: $title, description: $desc, color: $color, fields: ([{name: "Reviewer", value: $reviewer, inline: true}] + (if $excerpt != "" then [{name: "Comment", value: $excerpt, inline: false}] else [] end)), footer: {text: "gyattchores"}}]}')
+            '{embeds: [{title: $title, description: $desc, color: $color, fields: (
+              [{name: "Reviewer", value: $reviewer, inline: true}] +
+              (if $excerpt != "" then [{name: "Comment", value: $excerpt, inline: false}] else [] end)
+            ), footer: {text: "gyattchores"}}]}')
 
-          curl -sf -X POST "$DISCORD_WEBHOOK" \
-            -H "Content-Type: application/json" \
-            -d "$PAYLOAD"
+          HTTP=$(curl -s -o /tmp/discord_resp.txt -w "%{http_code}" -X POST "$DISCORD_WEBHOOK" \
+            -H "Content-Type: application/json" -d "$PAYLOAD")
+          echo "Discord HTTP: $HTTP"; cat /tmp/discord_resp.txt || true
+          [ "$HTTP" = "204" ] || { echo "::error::Discord rejected payload (HTTP $HTTP)"; exit 1; }
 
       # ── Issues ───────────────────────────────────────────────────────────────
       - name: Notify issue
@@ -179,11 +192,14 @@ jobs:
             --arg desc "**[#${ISSUE_NUM}: ${ISSUE_TITLE}](${ISSUE_URL})**" \
             --arg author "$AUTHOR" \
             --argjson color "$COLOR" \
-            '{embeds: [{title: $title, description: $desc, color: $color, fields: [{name: "Author", value: $author, inline: true}], footer: {text: "gyattchores"}}]}')
+            '{embeds: [{title: $title, description: $desc, color: $color, fields: [
+              {name: "Author", value: $author, inline: true}
+            ], footer: {text: "gyattchores"}}]}')
 
-          curl -sf -X POST "$DISCORD_WEBHOOK" \
-            -H "Content-Type: application/json" \
-            -d "$PAYLOAD"
+          HTTP=$(curl -s -o /tmp/discord_resp.txt -w "%{http_code}" -X POST "$DISCORD_WEBHOOK" \
+            -H "Content-Type: application/json" -d "$PAYLOAD")
+          echo "Discord HTTP: $HTTP"; cat /tmp/discord_resp.txt || true
+          [ "$HTTP" = "204" ] || { echo "::error::Discord rejected payload (HTTP $HTTP)"; exit 1; }
 
       # ── Branch / Tag created ─────────────────────────────────────────────────
       - name: Notify create
@@ -194,15 +210,20 @@ jobs:
           REF: ${{ github.event.ref }}
           CREATOR: ${{ github.actor }}
         run: |
-          ICON=$([ "$REF_TYPE" = "tag" ] && echo "🏷️" || echo "🌿")
-          PAYLOAD=$(jq -n \
-            --arg title "${ICON} ${REF_TYPE^} Created: ${REF}" \
-            --arg creator "$CREATOR" \
-            '{embeds: [{title: $title, color: 3447003, fields: [{name: "By", value: $creator, inline: true}], footer: {text: "gyattchores"}}]}')
+          if [ "$REF_TYPE" = "tag" ]; then ICON="🏷️"; else ICON="🌿"; fi
+          REF_TYPE_CAP="${REF_TYPE^}"
 
-          curl -sf -X POST "$DISCORD_WEBHOOK" \
-            -H "Content-Type: application/json" \
-            -d "$PAYLOAD"
+          PAYLOAD=$(jq -n \
+            --arg title "${ICON} ${REF_TYPE_CAP} Created: ${REF}" \
+            --arg creator "$CREATOR" \
+            '{embeds: [{title: $title, color: 3447003, fields: [
+              {name: "By", value: $creator, inline: true}
+            ], footer: {text: "gyattchores"}}]}')
+
+          HTTP=$(curl -s -o /tmp/discord_resp.txt -w "%{http_code}" -X POST "$DISCORD_WEBHOOK" \
+            -H "Content-Type: application/json" -d "$PAYLOAD")
+          echo "Discord HTTP: $HTTP"; cat /tmp/discord_resp.txt || true
+          [ "$HTTP" = "204" ] || { echo "::error::Discord rejected payload (HTTP $HTTP)"; exit 1; }
 
       # ── Branch / Tag deleted ─────────────────────────────────────────────────
       - name: Notify delete
@@ -213,12 +234,17 @@ jobs:
           REF: ${{ github.event.ref }}
           ACTOR: ${{ github.actor }}
         run: |
-          ICON=$([ "$REF_TYPE" = "tag" ] && echo "🏷️" || echo "🌿")
-          PAYLOAD=$(jq -n \
-            --arg title "${ICON} ${REF_TYPE^} Deleted: ${REF}" \
-            --arg actor "$ACTOR" \
-            '{embeds: [{title: $title, color: 8421504, fields: [{name: "By", value: $actor, inline: true}], footer: {text: "gyattchores"}}]}')
+          if [ "$REF_TYPE" = "tag" ]; then ICON="🏷️"; else ICON="🌿"; fi
+          REF_TYPE_CAP="${REF_TYPE^}"
 
-          curl -sf -X POST "$DISCORD_WEBHOOK" \
-            -H "Content-Type: application/json" \
-            -d "$PAYLOAD"
+          PAYLOAD=$(jq -n \
+            --arg title "${ICON} ${REF_TYPE_CAP} Deleted: ${REF}" \
+            --arg actor "$ACTOR" \
+            '{embeds: [{title: $title, color: 8421504, fields: [
+              {name: "By", value: $actor, inline: true}
+            ], footer: {text: "gyattchores"}}]}')
+
+          HTTP=$(curl -s -o /tmp/discord_resp.txt -w "%{http_code}" -X POST "$DISCORD_WEBHOOK" \
+            -H "Content-Type: application/json" -d "$PAYLOAD")
+          echo "Discord HTTP: $HTTP"; cat /tmp/discord_resp.txt || true
+          [ "$HTTP" = "204" ] || { echo "::error::Discord rejected payload (HTTP $HTTP)"; exit 1; }
