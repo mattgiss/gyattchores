@@ -1,12 +1,10 @@
 name: Daily Business Review
 
-# Sent by Push — the operator behind GyattChores in the cyber universe.
-# Push is technically Matt, but in here Push is the one who keeps the
-# lights on, watches the programs, and reports every morning at 09:00 ET.
+# push reports in every morning at 09:00 et.
 
 on:
   schedule:
-    - cron: '0 14 * * *'   # 09:00 ET / 14:00 UTC every day
+    - cron: '0 14 * * *'
   push:
     branches: [main]
     paths:
@@ -23,11 +21,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Push reports in
+      - name: push reports in
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
-          DATE=$(date -u +"%d.%b.%Y" | tr '[:lower:]' '[:upper:]')
+          DATE=$(date -u +"%-d %b %Y" | tr '[:upper:]' '[:lower:]')
           STATUS=$(cat docs/dbr/status.json)
 
           build_field() {
@@ -39,18 +37,11 @@ jobs:
             top_blocker=$(echo "$STATUS"    | jq -r ".programs[] | select(.id==\"$prog\") | .blockers[0] // \"\"")
             top_high=$(echo "$STATUS"       | jq -r ".programs[] | select(.id==\"$prog\") | .highs[0] // \"\"")
 
-            case "$raw_status" in
-              red)    RAG="🔴 RED"    ;;
-              yellow) RAG="🟡 YELLOW" ;;
-              green)  RAG="🟢 GREEN"  ;;
-              *)      RAG="⚪ UNKNOWN" ;;
-            esac
-
-            local out="${RAG}  ·  blockers: ${blockers_count}  highs: ${highs_count}"
+            local out="${raw_status} · ${blockers_count} blocker(s), ${highs_count} high(s)"
             if [ -n "$top_blocker" ]; then
-              out="${out}\n\`→ ${top_blocker}\`"
+              out="${out}\n→ ${top_blocker}"
             elif [ -n "$top_high" ]; then
-              out="${out}\n\`→ ${top_high}\`"
+              out="${out}\n→ ${top_high}"
             fi
             printf '%s' "$out"
           }
@@ -62,55 +53,49 @@ jobs:
 
           TOTAL_RED=$(echo "$STATUS"    | jq '[.programs[] | select(.status=="red")]    | length')
           TOTAL_YELLOW=$(echo "$STATUS" | jq '[.programs[] | select(.status=="yellow")] | length')
-          TOTAL_GREEN=$(echo "$STATUS"  | jq '[.programs[] | select(.status=="green")]  | length')
 
-          # Push sets the color by overall health
           if [ "$TOTAL_RED" -gt 2 ]; then
-            COLOR=15158332   # red — multiple programs blocked
+            COLOR=15158332
           elif [ "$TOTAL_RED" -gt 0 ]; then
-            COLOR=16756480   # amber — at least one blocker
+            COLOR=16756480
           else
-            COLOR=5763719    # green — clean
+            COLOR=5763719
           fi
 
-          # Push writes a one-line situation read
           if [ "$TOTAL_RED" -gt 0 ]; then
-            SITREP="${TOTAL_RED} program(s) blocked. Needs resolution before we move."
+            SITREP="${TOTAL_RED} blocker(s) active. moving when they clear."
           elif [ "$TOTAL_YELLOW" -gt 0 ]; then
-            SITREP="No hard blockers. ${TOTAL_YELLOW} program(s) at risk — watching them."
+            SITREP="no blockers. ${TOTAL_YELLOW} program(s) need watching."
           else
-            SITREP="All programs green. Systems nominal."
+            SITREP="all clear."
           fi
 
           ISSUES_LINK="https://github.com/${{ github.repository }}/issues"
           TRACKER_LINK="https://github.com/${{ github.repository }}/blob/main/docs/dbr/status.json"
 
           PAYLOAD=$(jq -n \
-            --arg date         "$DATE" \
+            --arg date         "push // $DATE" \
             --arg sitrep       "$SITREP" \
             --arg infra        "$INFRA_FIELD" \
             --arg appstore     "$APPSTORE_FIELD" \
             --arg discord_prog "$DISCORD_FIELD" \
             --arg roadmap      "$ROADMAP_FIELD" \
-            --arg issues       "$ISSUES_LINK" \
-            --arg tracker      "$TRACKER_LINK" \
+            --arg links        "[issues]($ISSUES_LINK) · [tracker]($TRACKER_LINK)" \
             --argjson color    "$COLOR" \
             '{
-              thread_name: ("PUSH :: DBR // " + $date),
+              thread_name: $date,
               embeds: [{
-                title: ("PUSH :: DBR // " + $date),
-                description: ("*" + $sitrep + "*\n\n🔴 blocked  🟡 at risk  🟢 healthy"),
+                title: $date,
+                description: $sitrep,
                 color: $color,
                 fields: [
-                  {name: "🏗️  PROD — Infrastructure",    value: $infra,        inline: false},
-                  {name: "📱  APP STORE — iOS Launch",    value: $appstore,     inline: false},
-                  {name: "💬  DISCORD — Notifications",   value: $discord_prog, inline: false},
-                  {name: "🏆  ROADMAP — App of Year 2027",value: $roadmap,      inline: false},
-                  {name: "—",
-                   value: ("[open issues](" + $issues + ")  ·  [program tracker](" + $tracker + ")"),
-                   inline: false}
+                  {name: "prod — infrastructure",    value: $infra,        inline: false},
+                  {name: "app store — ios launch",   value: $appstore,     inline: false},
+                  {name: "discord — notifications",  value: $discord_prog, inline: false},
+                  {name: "roadmap — 2027",           value: $roadmap,      inline: false},
+                  {name: "links",                    value: $links,        inline: false}
                 ],
-                footer: {text: "push // gyattchores ops // daily 09:00 et"}
+                footer: {text: "push // gyattchores // daily 09:00 et"}
               }]
             }')
 
@@ -118,4 +103,4 @@ jobs:
             -X POST "$DISCORD_WEBHOOK" \
             -H "Content-Type: application/json" -d "$PAYLOAD")
           echo "Discord HTTP: $HTTP"; cat /tmp/discord_resp.txt || true
-          [ "$HTTP" = "204" ] || { echo "::error::DBR failed (HTTP $HTTP)"; exit 1; }
+          [ "$HTTP" = "204" ] || { echo "::error::dbr failed (HTTP $HTTP)"; exit 1; }
