@@ -10,6 +10,7 @@
     <title>GyattChores</title>
     <link rel="icon" type="image/svg+xml" href="gyattchores-logo-transparent.svg">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="manifest" href="/manifest.json">
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -528,6 +529,7 @@
                         </div>
                         <button
                             onClick={() => setShowAdmin(true)}
+                            aria-label={`Admin — ${pendingLogs.length > 0 ? `${pendingLogs.length} pending` : 'no pending chores'}`}
                             style={{
                                 background: 'var(--surface)',
                                 border: 'none',
@@ -1183,6 +1185,7 @@
                                         </div>
                                         <button
                                             onClick={() => onReject(log.id)}
+                                            aria-label={`Reject ${log.choreName}`}
                                             style={{
                                                 background: 'rgba(239, 68, 68, 0.15)',
                                                 border: 'none',
@@ -1197,6 +1200,7 @@
                                         </button>
                                         <button
                                             onClick={() => onApprove(log.id)}
+                                            aria-label={`Approve ${log.choreName}`}
                                             style={{
                                                 background: 'rgba(34, 197, 94, 0.15)',
                                                 border: 'none',
@@ -1225,6 +1229,13 @@
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').catch(() => {});
+            });
+        }
     </script>
 </body>
 </html>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  PrivacyInfo.xcprivacy — Required for App Store submission since iOS 17.4.
+  Declares what data the app collects, how it's used, and which
+  Apple-required reason APIs it uses.
+
+  GyattChores collects no personal data, uses no analytics, and has
+  no advertising. Data declared below is the minimum required.
+-->
+<plist version="1.0">
+<dict>
+    <!-- ── Required Reason APIs ──────────────────────────────── -->
+    <!-- UserDefaults: used to persist chore logs on-device. -->
+    <!-- Reason: 1C8F.1 — accessing info from the same app -->
+    <key>NSPrivacyAccessedAPITypes</key>
+    <array>
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <string>CA92.1</string>
+            </array>
+        </dict>
+    </dict>
+    </array>
+
+    <!-- ── Data Collection ───────────────────────────────────── -->
+    <!-- GyattChores does NOT collect any data linked to users,    -->
+    <!-- device identifiers, or sent off-device for analytics.     -->
+    <!-- All chore logs are stored only on the user's device.      -->
+    <key>NSPrivacyCollectedDataTypes</key>
+    <array/>
+
+    <!-- ── Tracking ─────────────────────────────────────────── -->
+    <key>NSPrivacyTracking</key>
+    <false/>
+
+    <!-- ── Tracking Domains ──────────────────────────────────── -->
+    <key>NSPrivacyTrackingDomains</key>
+    <array/>
+</dict>
+</plist>

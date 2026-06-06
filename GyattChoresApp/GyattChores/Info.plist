@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Info.plist for GyattChores iOS app.
+  When creating the Xcode project, set the bundle identifier to
+  com.gissentanna.gyattchores and point Xcode to use this file,
+  OR let Xcode generate one and merge these keys into it.
+
+  Keys prefixed with $(…) are Xcode build setting variables —
+  Xcode resolves them automatically from the project configuration.
+-->
+<plist version="1.0">
+<dict>
+
+    <!-- ── Identity ─────────────────────────────────────────── -->
+    <key>CFBundleIdentifier</key>
+    <string>com.gissentanna.gyattchores</string>
+
+    <key>CFBundleName</key>
+    <string>GyattChores</string>
+
+    <key>CFBundleDisplayName</key>
+    <string>GyattChores</string>
+
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+
+    <key>CFBundleVersion</key>
+    <string>1</string>
+
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+
+    <key>CFBundleDevelopmentRegion</key>
+    <string>en</string>
+
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+
+    <!-- ── Supported Platforms ───────────────────────────────── -->
+    <key>LSRequiresIPhoneOS</key>
+    <true/>
+
+    <key>UIDeviceFamily</key>
+    <array>
+        <integer>1</integer>  <!-- iPhone -->
+        <integer>2</integer>  <!-- iPad -->
+    </array>
+
+    <!-- ── Minimum OS ────────────────────────────────────────── -->
+    <!-- iOS 17+ required for App Intents, WidgetKit latest APIs  -->
+    <key>MinimumOSVersion</key>
+    <string>17.0</string>
+
+    <!-- ── Orientation ───────────────────────────────────────── -->
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+    </array>
+
+    <key>UISupportedInterfaceOrientations~ipad</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationPortraitUpsideDown</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+
+    <!-- ── UI ────────────────────────────────────────────────── -->
+    <key>UILaunchScreen</key>
+    <dict/>
+
+    <key>UIApplicationSupportsIndirectInputEvents</key>
+    <true/>
+
+    <key>UIStatusBarStyle</key>
+    <string>UIStatusBarStyleLightContent</string>
+
+    <!-- ── App Transport Security ────────────────────────────── -->
+    <!-- Supabase sync uses HTTPS only — no exceptions needed.    -->
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <false/>
+    </dict>
+
+    <!-- ── Privacy usage descriptions ───────────────────────── -->
+    <!-- None required: app does not access camera, photos,       -->
+    <!-- location, contacts, microphone, or health data.          -->
+
+    <!-- ── Siri / App Intents ───────────────────────────────── -->
+    <key>NSUserActivityTypes</key>
+    <array>
+        <string>LogChoreIntent</string>
+    </array>
+
+    <!-- ── Background modes ─────────────────────────────────── -->
+    <!-- None: app does not need background execution.            -->
+
+</dict>
+</plist>
