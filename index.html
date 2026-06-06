@@ -377,6 +377,41 @@
                     .reduce((sum, log) => sum + log.points, 0);
             };
 
+            const getMonthlyPoints = (playerId) => {
+                const monthStart = new Date();
+                monthStart.setDate(1);
+                monthStart.setHours(0, 0, 0, 0);
+
+                return logs
+                    .filter(log =>
+                        log.playerId === playerId &&
+                        log.status === 'approved' &&
+                        new Date(log.timestamp) >= monthStart
+                    )
+                    .reduce((sum, log) => sum + log.points, 0);
+            };
+
+            // Same number of days into last month (e.g. on Jun 6, compares May 1–6)
+            const getLastMonthSamePeriodPoints = (playerId) => {
+                const now = new Date();
+                const start = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
+                const end = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate() + 1, 0, 0, 0, 0);
+
+                return logs
+                    .filter(log =>
+                        log.playerId === playerId &&
+                        log.status === 'approved' &&
+                        new Date(log.timestamp) >= start &&
+                        new Date(log.timestamp) < end
+                    )
+                    .reduce((sum, log) => sum + log.points, 0);
+            };
+
+            const getTotalPoints = (playerId) =>
+                logs
+                    .filter(log => log.playerId === playerId && log.status === 'approved')
+                    .reduce((sum, log) => sum + log.points, 0);
+
             const pendingLogs = logs.filter(log => log.status === 'pending');
 
             const leader = PLAYERS.reduce((best, player) => {
@@ -583,9 +618,13 @@
                             const lastMonthTodayPts = getLastMonthTodayPoints(selectedPlayer.id);
                             const weekPts = getWeeklyPoints(selectedPlayer.id);
                             const lastMonthWeekPts = getLastMonthWeeklyPoints(selectedPlayer.id);
+                            const monthPts = getMonthlyPoints(selectedPlayer.id);
+                            const lastMonthSamePts = getLastMonthSamePeriodPoints(selectedPlayer.id);
+                            const totalPts = getTotalPoints(selectedPlayer.id);
                             return (
                                 <div style={{
-                                    display: 'flex',
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(2, 1fr)',
                                     gap: '12px',
                                     marginBottom: '24px'
                                 }} className="animate-fade">
@@ -594,7 +633,7 @@
                                         value={todayPts}
                                         color="orange"
                                         trend={(todayPts > 0 || lastMonthTodayPts > 0)
-                                            ? { delta: todayPts - lastMonthTodayPts, lastMonth: lastMonthTodayPts }
+                                            ? { delta: todayPts - lastMonthTodayPts }
                                             : null}
                                     />
                                     <StatPill
@@ -602,8 +641,21 @@
                                         value={weekPts}
                                         color="cyan"
                                         trend={(weekPts > 0 || lastMonthWeekPts > 0)
-                                            ? { delta: weekPts - lastMonthWeekPts, lastMonth: lastMonthWeekPts }
+                                            ? { delta: weekPts - lastMonthWeekPts }
                                             : null}
+                                    />
+                                    <StatPill
+                                        label="This Month"
+                                        value={monthPts}
+                                        color="purple"
+                                        trend={(monthPts > 0 || lastMonthSamePts > 0)
+                                            ? { delta: monthPts - lastMonthSamePts }
+                                            : null}
+                                    />
+                                    <StatPill
+                                        label="Total Earned"
+                                        value={totalPts}
+                                        color="gold"
                                     />
                                 </div>
                             );
@@ -724,7 +776,9 @@
         function StatPill({ label, value, color, trend }) {
             const colors = {
                 orange: '#F59E0B',
-                cyan: 'var(--cyan)'
+                cyan: 'var(--cyan)',
+                purple: 'var(--purple)',
+                gold: '#EAB308'
             };
 
             const trendArrow = !trend ? null : trend.delta > 0 ? '↑' : trend.delta < 0 ? '↓' : '→';
