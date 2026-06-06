@@ -1,0 +1,105 @@
+name: Daily Business Review
+
+on:
+  schedule:
+    - cron: '0 14 * * *'   # 9am Eastern / 14:00 UTC every day
+  push:
+    branches: [main]
+    paths:
+      - 'docs/dbr/status.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  post-dbr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Post DBR to Discord
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          DATE=$(date -u +"%B %d, %Y")
+          STATUS=$(cat docs/dbr/status.json)
+
+          build_field() {
+            local prog="$1"
+            local raw_status
+            local blockers_count highs_count top_blocker top_high
+            raw_status=$(echo "$STATUS"    | jq -r ".programs[] | select(.id==\"$prog\") | .status")
+            blockers_count=$(echo "$STATUS" | jq -r ".programs[] | select(.id==\"$prog\") | .blockers | length")
+            highs_count=$(echo "$STATUS"    | jq -r ".programs[] | select(.id==\"$prog\") | .highs | length")
+            top_blocker=$(echo "$STATUS"    | jq -r ".programs[] | select(.id==\"$prog\") | .blockers[0] // \"\"")
+            top_high=$(echo "$STATUS"       | jq -r ".programs[] | select(.id==\"$prog\") | .highs[0] // \"\"")
+
+            case "$raw_status" in
+              red)    RAG="🔴 RED"    ;;
+              yellow) RAG="🟡 YELLOW" ;;
+              green)  RAG="🟢 GREEN"  ;;
+              *)      RAG="⚪ UNKNOWN" ;;
+            esac
+
+            local out="${RAG} | Blockers: ${blockers_count} | Highs: ${highs_count}"
+            if [ -n "$top_blocker" ]; then
+              out="${out}\n→ ${top_blocker}"
+            elif [ -n "$top_high" ]; then
+              out="${out}\n→ ${top_high}"
+            fi
+            printf '%s' "$out"
+          }
+
+          INFRA_FIELD=$(build_field "infrastructure")
+          APPSTORE_FIELD=$(build_field "app-store")
+          DISCORD_FIELD=$(build_field "discord")
+          ROADMAP_FIELD=$(build_field "roadmap")
+
+          TOTAL_RED=$(echo "$STATUS" | jq '[.programs[] | select(.status=="red")] | length')
+
+          if [ "$TOTAL_RED" -gt 2 ]; then
+            COLOR=15158332  # red
+          elif [ "$TOTAL_RED" -gt 0 ]; then
+            COLOR=16776960  # yellow
+          else
+            COLOR=5763719   # green
+          fi
+
+          ISSUES_LINK="https://github.com/${{ github.repository }}/issues"
+          STATUS_LINK="https://github.com/${{ github.repository }}/blob/main/docs/dbr/status.json"
+
+          PAYLOAD=$(jq -n \
+            --arg date    "$DATE" \
+            --arg infra   "$INFRA_FIELD" \
+            --arg appstore "$APPSTORE_FIELD" \
+            --arg discord_prog "$DISCORD_FIELD" \
+            --arg roadmap "$ROADMAP_FIELD" \
+            --arg issues  "$ISSUES_LINK" \
+            --arg tracker "$STATUS_LINK" \
+            --argjson color "$COLOR" \
+            '{
+              thread_name: ("📊 DBR — " + $date),
+              embeds: [{
+                title: ("📊 Daily Business Review — " + $date),
+                description: "**GyattChores** program status.\n🔴 Red = blocked  🟡 Yellow = at risk, on track  🟢 Green = healthy",
+                color: $color,
+                fields: [
+                  {name: "🏗️ PROD — Infrastructure",      value: $infra,        inline: false},
+                  {name: "📱 APP STORE — iOS Launch",       value: $appstore,     inline: false},
+                  {name: "💬 DISCORD — Notifications",      value: $discord_prog, inline: false},
+                  {name: "🏆 ROADMAP — App of Year 2027",   value: $roadmap,      inline: false},
+                  {name: "Links",
+                   value: ("[Issues](" + $issues + ") · [Program tracker](" + $tracker + ")"),
+                   inline: false}
+                ],
+                footer: {text: "gyattchores • automated DBR • 9 am ET daily"}
+              }]
+            }')
+
+          HTTP=$(curl -s -o /tmp/discord_resp.txt -w "%{http_code}" \
+            -X POST "$DISCORD_WEBHOOK" \
+            -H "Content-Type: application/json" -d "$PAYLOAD")
+          echo "Discord HTTP: $HTTP"; cat /tmp/discord_resp.txt || true
+          [ "$HTTP" = "204" ] || { echo "::error::Discord rejected DBR payload (HTTP $HTTP)"; exit 1; }

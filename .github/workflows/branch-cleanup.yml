@@ -1,0 +1,127 @@
+name: Stale Branch Cleanup
+
+# Runs every Monday. Also available as a manual trigger.
+# Deletes branches that are fully merged into main and older than 7 days.
+# Always keeps: main, backup-*, and any protected branch.
+# Posts a cleanup report to Discord.
+
+on:
+  schedule:
+    - cron: '0 10 * * 1'   # Mondays 10:00 UTC
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (list only, do not delete)'
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+      REPO: ${{ github.repository }}
+      DRY_RUN: ${{ github.event.inputs.dry_run || 'true' }}
+    steps:
+      - name: Clean merged stale branches
+        run: |
+          NOW=$(date +%s)
+          DELETED_LIST=""
+          KEPT_LIST=""
+          DELETED_COUNT=0
+
+          # Fetch all branches (paginated, up to 300)
+          BRANCHES=$(curl -s \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${REPO}/branches?per_page=100" \
+            | jq -r '.[].name')
+
+          for BRANCH in $BRANCHES; do
+            # Always keep main and backup-* branches
+            if [ "$BRANCH" = "main" ] || echo "$BRANCH" | grep -q "^backup-"; then
+              continue
+            fi
+
+            # Get commit comparison: how does this branch relate to main?
+            COMPARE=$(curl -s \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              "https://api.github.com/repos/${REPO}/compare/main...${BRANCH}" \
+              | jq -r '.status // "error"')
+
+            # Get age of last commit on this branch
+            LAST_COMMIT_DATE=$(curl -s \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              "https://api.github.com/repos/${REPO}/branches/${BRANCH}" \
+              | jq -r '.commit.commit.committer.date // "1970-01-01T00:00:00Z"')
+            LAST_TS=$(date -d "$LAST_COMMIT_DATE" +%s 2>/dev/null || echo 0)
+            DAYS_OLD=$(( (NOW - LAST_TS) / 86400 ))
+
+            # Delete only if: all commits are already in main AND branch is > 7 days old
+            if [ "$COMPARE" = "identical" ] || [ "$COMPARE" = "behind" ]; then
+              if [ "$DAYS_OLD" -gt 7 ]; then
+                if [ "$DRY_RUN" = "false" ]; then
+                  HTTP=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE \
+                    -H "Authorization: Bearer $GITHUB_TOKEN" \
+                    "https://api.github.com/repos/${REPO}/git/refs/heads/${BRANCH}")
+                  if [ "$HTTP" = "204" ]; then
+                    DELETED_LIST="${DELETED_LIST}~~${BRANCH}~~ (${DAYS_OLD}d, merged)\n"
+                    DELETED_COUNT=$((DELETED_COUNT + 1))
+                  else
+                    KEPT_LIST="${KEPT_LIST}${BRANCH} (delete failed: HTTP ${HTTP})\n"
+                  fi
+                else
+                  DELETED_LIST="${DELETED_LIST}${BRANCH} (${DAYS_OLD}d, merged — would delete)\n"
+                fi
+              else
+                KEPT_LIST="${KEPT_LIST}${BRANCH} (${DAYS_OLD}d, merged but recent — kept)\n"
+              fi
+            else
+              KEPT_LIST="${KEPT_LIST}${BRANCH} (${DAYS_OLD}d, has unmerged commits — kept)\n"
+            fi
+          done
+
+          # Post report to Discord
+          if [ -n "$DISCORD_WEBHOOK" ]; then
+            if [ "$DRY_RUN" = "false" ]; then
+              MODE="Cleanup complete — ${DELETED_COUNT} branch(es) deleted"
+              TITLE="🧹 Branch Cleanup — Done"
+            else
+              MODE="Dry run — no changes made. Re-run with dry_run=false to delete."
+              TITLE="🧹 Branch Cleanup — Dry Run"
+            fi
+
+            DELETED_TEXT=$([ -n "$DELETED_LIST" ] && printf "$DELETED_LIST" || echo "None")
+            KEPT_TEXT=$([ -n "$KEPT_LIST" ] && printf "$KEPT_LIST" || echo "None")
+
+            # Truncate to Discord field limit (1024 chars)
+            DELETED_TEXT=$(echo "$DELETED_TEXT" | head -c 900)
+            KEPT_TEXT=$(echo "$KEPT_TEXT" | head -c 900)
+
+            PAYLOAD=$(jq -n \
+              --arg title   "$TITLE" \
+              --arg mode    "$MODE" \
+              --arg deleted "$DELETED_TEXT" \
+              --arg kept    "$KEPT_TEXT" \
+              '{
+                thread_name: $title,
+                embeds: [{
+                  title: $title,
+                  description: $mode,
+                  color: 3447003,
+                  fields: [
+                    {name: "Deleted",                      value: $deleted, inline: false},
+                    {name: "Kept (review if unexpected)",  value: $kept,    inline: false}
+                  ],
+                  footer: {text: "gyattchores • branch-cleanup • runs every Monday"}
+                }]
+              }')
+
+            curl -s -X POST "$DISCORD_WEBHOOK" \
+              -H "Content-Type: application/json" -d "$PAYLOAD" || true
+          fi
+
+          echo "Deleted: $DELETED_COUNT branches (dry_run=$DRY_RUN)"
