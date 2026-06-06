@@ -26,11 +26,11 @@ jobs:
       # Each step below builds $PAYLOAD then calls this inline function.
 
       # ── Test / first-deploy confirmation ─────────────────────────────────────
-      # Fires on: manual workflow_dispatch OR first push to main (deploy confirmation)
+      # Fires on: manual workflow_dispatch OR push to main (deploy confirmation)
       - name: Test notification
         if: >
           github.event_name == 'workflow_dispatch' ||
-          (github.event_name == 'push' && github.ref == 'refs/heads/main')
+          github.event_name == 'push'
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
