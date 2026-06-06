@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-06-06",
+  "last_updated": "2026-06-07",
   "programs": [
     {
       "id": "infrastructure",
@@ -31,7 +31,7 @@
       ],
       "highs": [
         "app store screenshots not yet produced — see app-store-metadata/screenshots-spec.md",
-        "gyattchores.com/privacy url not yet verified live (file deployed, needs merge to main)"
+        "gyattchores.com/privacy url not yet verified live (file deployed and merged to main — verify in browser)"
       ],
       "milestones": [
         {"id": "M2.1", "name": "apple developer account ($99)", "status": "red", "issues": [15], "notes": "unblocks all downstream app store milestones"},
@@ -45,16 +45,14 @@
       "id": "discord",
       "name": "DISCORD — Notifications & DBR",
       "emoji": "",
-      "status": "yellow",
+      "status": "green",
       "blockers": [],
-      "highs": [
-        "pr not yet merged to main — dbr, branch cleanup, and deploy confirmation all fire on merge"
-      ],
+      "highs": [],
       "milestones": [
         {"id": "M3.1", "name": "secret configured", "status": "green", "issues": [11], "notes": "confirmed working. test message delivered 2026-06-06 03:15 utc."},
         {"id": "M3.2", "name": "all event types verified", "status": "green", "issues": [], "notes": "push, pr, review, issue, branch — all wired and confirmed http 204."},
-        {"id": "M3.3", "name": "daily dbr automated", "status": "yellow", "issues": [], "notes": "dbr-daily.yml ready. fires at 09:00 et after merge to main."},
-        {"id": "M3.4", "name": "branch cleanup weekly report", "status": "yellow", "issues": [], "notes": "branch-cleanup.yml ready. fires mondays after merge to main."}
+        {"id": "M3.3", "name": "daily dbr automated", "status": "green", "issues": [], "notes": "dbr-daily.yml live on main. fires daily at 09:00 et."},
+        {"id": "M3.4", "name": "branch cleanup weekly report", "status": "green", "issues": [], "notes": "branch-cleanup.yml live on main. fires mondays at 10:00 utc."}
       ]
     },
     {
