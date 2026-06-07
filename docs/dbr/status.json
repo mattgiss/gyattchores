@@ -5,13 +5,11 @@
       "id": "infrastructure",
       "name": "PROD — Production Infrastructure",
       "emoji": "",
-      "status": "yellow",
-      "blockers": [
-        "discord webhook url exposed in session history — rotate in discord, update secret"
-      ],
+      "status": "green",
+      "blockers": [],
       "highs": [],
       "milestones": [
-        {"id": "M1.1", "name": "secrets management", "status": "yellow", "issues": [11, 13], "notes": "rotation still needed. old webhook url was exposed in session history."},
+        {"id": "M1.1", "name": "secrets management", "status": "green", "issues": [11, 13], "notes": "webhook rotated 2026-06-07. old url invalidated. new secret confirmed working."},
         {"id": "M1.2", "name": "branch protection on main", "status": "green", "issues": [12], "notes": "enabled via repo-setup.yml 2026-06-07."},
         {"id": "M1.3", "name": "stale branch cleanup", "status": "green", "issues": [14], "notes": "branch-cleanup.yml ran 2026-06-07. stale branches removed."},
         {"id": "M1.4", "name": "ci/cd verified end-to-end", "status": "green", "issues": [], "notes": "discord confirmed http 204. dbr, deploy notify, and branch cleanup all live."}
