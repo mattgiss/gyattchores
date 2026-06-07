@@ -182,7 +182,7 @@ function ChoreRow({ chore, checked, onToggle }) {
       cursor:'pointer',
     }}>
       <span style={{
-        color: checked ? ACCENT : '#444',
+        color: checked ? ACCENT : '#666',
         fontFamily:'monospace', fontSize:'0.9rem', flexShrink:0, userSelect:'none',
       }}>
         {checked ? '[+]' : '[ ]'}
@@ -196,7 +196,7 @@ function ChoreRow({ chore, checked, onToggle }) {
       </span>
       <span style={{
         fontFamily:'monospace', fontSize:'0.75rem', flexShrink:0,
-        color: escalLabel ? escalColor : '#444',
+        color: escalLabel ? escalColor : '#666',
       }}>
         {escalLabel ? `${escalLabel} ` : ''}{chore.currentMinutes}m
       </span>
@@ -243,7 +243,7 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus }) {
         padding:'12px 20px', borderBottom:'1px solid #1a1a1a', flexShrink:0,
       }}>
         <button onClick={onBack} style={{
-          background:'none', border:'none', color:'#555',
+          background:'none', border:'none', color:'#999',
           fontSize:'0.75rem', cursor:'pointer', fontFamily:'monospace', letterSpacing:'1px',
         }}>← back</button>
         <span style={{fontSize:'0.65rem', color:syncColor, fontFamily:'monospace', letterSpacing:'2px'}}>
@@ -255,7 +255,7 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus }) {
 
         <div style={{marginBottom:'28px'}}>
           <div style={{
-            fontSize:'0.65rem', color:'#444', fontFamily:'monospace',
+            fontSize:'0.65rem', color:'#888', fontFamily:'monospace',
             letterSpacing:'3px', marginBottom:'6px',
           }}>
             player
@@ -287,7 +287,7 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus }) {
                 borderRight: i<arr.length-1 ? '1px solid #1a1a1a' : 'none',
               }}>
                 <div style={{fontSize:'1rem', fontWeight:700, color:ACCENT, fontFamily:'monospace'}}>{val}</div>
-                <div style={{fontSize:'0.6rem', color:'#444', fontFamily:'monospace', letterSpacing:'2px', marginTop:'2px'}}>{label}</div>
+                <div style={{fontSize:'0.6rem', color:'#888', fontFamily:'monospace', letterSpacing:'2px', marginTop:'2px'}}>{label}</div>
               </div>
             ))}
           </div>
@@ -297,10 +297,10 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus }) {
           display:'flex', justifyContent:'space-between', alignItems:'baseline',
           marginBottom:'4px',
         }}>
-          <span style={{fontSize:'0.65rem', color:'#444', fontFamily:'monospace', letterSpacing:'3px'}}>
+          <span style={{fontSize:'0.65rem', color:'#888', fontFamily:'monospace', letterSpacing:'3px'}}>
             today's card
           </span>
-          <span style={{fontSize:'0.65rem', color:'#444', fontFamily:'monospace'}}>
+          <span style={{fontSize:'0.65rem', color:'#888', fontFamily:'monospace'}}>
             {doneCount}/{card.chores.length} · {totalMin}m
           </span>
         </div>
@@ -314,7 +314,7 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus }) {
         </div>
 
         {card.chores.some(c=>c.escalLevel>0) && (
-          <div style={{fontSize:'0.62rem', color:'#444', fontFamily:'monospace', letterSpacing:'1px', marginBottom:'16px'}}>
+          <div style={{fontSize:'0.62rem', color:'#777', fontFamily:'monospace', letterSpacing:'1px', marginBottom:'16px'}}>
             ! = neglected &nbsp; !! = long overdue
           </div>
         )}
@@ -343,7 +343,7 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus }) {
               width:'100%', padding:'17px', cursor:allChecked?'pointer':'default',
               background: allChecked ? ACCENT : 'transparent',
               border:`1px solid ${allChecked ? ACCENT : '#2a2a2a'}`,
-              color: allChecked ? '#000' : '#333',
+              color: allChecked ? '#000' : '#555',
               fontSize:'0.75rem', fontWeight:800, letterSpacing:'3px',
               fontFamily:'monospace', transition:'all 0.15s',
             }}>
@@ -376,9 +376,9 @@ function PlayerSelect({ onSelect, onAdmin }) {
       <div onClick={handleTitle} style={{marginBottom:'52px', cursor:'default', userSelect:'none', textAlign:'center'}}>
         <div style={{
           fontSize:'1.3rem', fontWeight:900, letterSpacing:'6px',
-          color:'#fff', fontFamily:'monospace',
+          color:'#F23861', fontFamily:'monospace',
         }}>GYATTCHORES</div>
-        <div style={{fontSize:'0.6rem', letterSpacing:'4px', color:'#333', fontFamily:'monospace', marginTop:'6px'}}>
+        <div style={{fontSize:'0.6rem', letterSpacing:'4px', color:'#666', fontFamily:'monospace', marginTop:'6px'}}>
           select player
         </div>
       </div>
@@ -407,9 +407,9 @@ function PlayerSelect({ onSelect, onAdmin }) {
         fontSize:'0.62rem', fontFamily:'monospace', letterSpacing:'2px',
       }}>
         {[['about','/about.html'],['guide','/ebook.html'],['story','/development-story.html']].map(([label,href])=>(
-          <a key={label} href={href} style={{color:'#333', textDecoration:'none'}}
-             onMouseEnter={e=>e.target.style.color='#555'}
-             onMouseLeave={e=>e.target.style.color='#333'}>{label}</a>
+          <a key={label} href={href} style={{color:'#555', textDecoration:'none'}}
+             onMouseEnter={e=>e.target.style.color='#888'}
+             onMouseLeave={e=>e.target.style.color='#555'}>{label}</a>
         ))}
       </div>
     </div>
@@ -428,12 +428,12 @@ function AdminModal({ logs, onClose, onUpdate }) {
   if (!authed) return (
     <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.97)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,padding:'24px'}}>
       <div style={{background:'#000',border:'1px solid #2a2a2a',padding:'32px',width:'100%',maxWidth:'300px',textAlign:'center'}}>
-        <div style={{fontSize:'0.65rem',letterSpacing:'5px',color:'#444',fontFamily:'monospace',marginBottom:'24px'}}>ADMIN ACCESS</div>
+        <div style={{fontSize:'0.65rem',letterSpacing:'5px',color:'#888',fontFamily:'monospace',marginBottom:'24px'}}>ADMIN ACCESS</div>
         <input type="password" value={code} onChange={e=>setCode(e.target.value)}
           onKeyDown={e=>e.key==='Enter'&&verify()} placeholder="——" autoFocus
           style={{width:'100%',padding:'14px',background:'#000',border:'1px solid #2a2a2a',color:'#fff',fontSize:'1.4rem',textAlign:'center',fontFamily:'monospace',outline:'none',letterSpacing:'8px',marginBottom:'16px'}}/>
         <button onClick={verify} style={{width:'100%',padding:'13px',background:ACCENT,border:'none',color:'#000',fontWeight:800,fontSize:'0.75rem',letterSpacing:'3px',fontFamily:'monospace',cursor:'pointer'}}>ENTER</button>
-        <button onClick={onClose} style={{width:'100%',padding:'13px',background:'none',border:'none',color:'#444',fontSize:'0.72rem',cursor:'pointer',fontFamily:'monospace',marginTop:'6px'}}>cancel</button>
+        <button onClick={onClose} style={{width:'100%',padding:'13px',background:'none',border:'none',color:'#888',fontSize:'0.72rem',cursor:'pointer',fontFamily:'monospace',marginTop:'6px'}}>cancel</button>
       </div>
     </div>
   );
@@ -442,7 +442,7 @@ function AdminModal({ logs, onClose, onUpdate }) {
     <div style={{position:'fixed',inset:0,background:'#000',display:'flex',flexDirection:'column',zIndex:200}}>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 20px',borderBottom:'1px solid #1a1a1a',flexShrink:0}}>
         <div style={{fontSize:'0.65rem',letterSpacing:'4px',color:ACCENT,fontFamily:'monospace'}}>ADMIN</div>
-        <button onClick={onClose} style={{background:'none',border:'none',color:'#555',fontSize:'0.78rem',cursor:'pointer',fontFamily:'monospace'}}>✕ close</button>
+        <button onClick={onClose} style={{background:'none',border:'none',color:'#999',fontSize:'0.78rem',cursor:'pointer',fontFamily:'monospace'}}>✕ close</button>
       </div>
 
       <div style={{display:'flex',gap:'8px',padding:'12px 20px',borderBottom:'1px solid #1a1a1a',flexShrink:0,flexWrap:'wrap'}}>
@@ -451,7 +451,7 @@ function AdminModal({ logs, onClose, onUpdate }) {
             padding:'5px 12px', cursor:'pointer',
             background: filter===f ? ACCENT : 'transparent',
             border:`1px solid ${filter===f ? ACCENT : '#2a2a2a'}`,
-            color: filter===f ? '#000' : '#555',
+            color: filter===f ? '#000' : '#999',
             fontSize:'0.68rem', fontWeight:700, letterSpacing:'1px', fontFamily:'monospace',
           }}>{f}</button>
         ))}
@@ -459,7 +459,7 @@ function AdminModal({ logs, onClose, onUpdate }) {
 
       <div className="scroll" style={{flex:1,padding:'16px 20px'}}>
         {shown.length===0 && (
-          <div style={{textAlign:'center',color:'#333',fontFamily:'monospace',fontSize:'0.78rem',marginTop:'48px',letterSpacing:'2px'}}>
+          <div style={{textAlign:'center',color:'#666',fontFamily:'monospace',fontSize:'0.78rem',marginTop:'48px',letterSpacing:'2px'}}>
             no {filter} logs
           </div>
         )}
@@ -468,7 +468,7 @@ function AdminModal({ logs, onClose, onUpdate }) {
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'10px'}}>
               <div>
                 <div style={{fontSize:'0.87rem',fontWeight:600,color:'#fff',fontFamily:'monospace'}}>{log.choreName}</div>
-                <div style={{fontSize:'0.68rem',color:'#444',fontFamily:'monospace',marginTop:'3px'}}>
+                <div style={{fontSize:'0.68rem',color:'#888',fontFamily:'monospace',marginTop:'3px'}}>
                   {log.playerName} · {new Date(log.timestamp).toLocaleString()}
                 </div>
               </div>
