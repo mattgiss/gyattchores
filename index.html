@@ -1,1241 +1,642 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#0A0A0F">
-    <title>GyattChores</title>
-    <link rel="icon" type="image/svg+xml" href="gyattchores-logo-transparent.svg">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png">
-    <link rel="manifest" href="/manifest.json">
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#050D14">
+<title>GyattChores</title>
+<link rel="icon" type="image/svg+xml" href="gyattchores-logo-transparent.svg">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="/manifest.json">
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: #050D14; color: #F8FAFC; overflow: hidden; }
+body { font-family: 'Courier New', Courier, monospace; -webkit-font-smoothing: antialiased; }
+#root { height: 100%; }
 
-        :root {
-            --bg: #0A0A0F;
-            --surface: #16161D;
-            --surface-elevated: #1E1E28;
-            --text: #F8FAFC;
-            --text-secondary: #94A3B8;
-            --cyan: #22D3EE;
-            --cyan-glow: rgba(34, 211, 238, 0.15);
-            --green: #22C55E;
-            --red: #EF4444;
-            --purple: #A855F7;
-            --radius: 16px;
-            --radius-lg: 24px;
-        }
+@supports (padding: env(safe-area-inset-top)) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
 
-        html, body {
-            height: 100%;
-            overflow: hidden;
-        }
+@keyframes fadeIn  { from { opacity:0; transform:translateY(8px);  } to { opacity:1; transform:translateY(0);   } }
+@keyframes pop     { 0% { transform:scale(0.9); opacity:0; } 60% { transform:scale(1.04); } 100% { transform:scale(1); opacity:1; } }
+@keyframes flicker { 0%,100%{opacity:1} 92%{opacity:1} 93%{opacity:0.4} 94%{opacity:1} 96%{opacity:0.6} 97%{opacity:1} }
 
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
+.fade-in  { animation: fadeIn  0.25s ease-out both; }
+.pop      { animation: pop     0.3s  ease-out both; }
+.flicker  { animation: flicker 4s    infinite; }
 
-        #root {
-            height: 100%;
-        }
-
-        /* Safe area for notch */
-        @supports (padding: env(safe-area-inset-top)) {
-            body {
-                padding-top: env(safe-area-inset-top);
-                padding-bottom: env(safe-area-inset-bottom);
-                padding-left: env(safe-area-inset-left);
-                padding-right: env(safe-area-inset-right);
-            }
-        }
-
-        /* Animations */
-        @keyframes pop {
-            0% { transform: scale(0.8); opacity: 0; }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); opacity: 1; }
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-
-        .animate-pop {
-            animation: pop 0.3s ease-out;
-        }
-
-        .animate-fade {
-            animation: fadeIn 0.2s ease-out;
-        }
-
-        /* Hide scrollbar but allow scroll */
-        ::-webkit-scrollbar {
-            display: none;
-        }
-    </style>
+.scroll { overflow-y:auto; -webkit-overflow-scrolling:touch; }
+.scroll::-webkit-scrollbar       { width:2px; }
+.scroll::-webkit-scrollbar-track { background:transparent; }
+.scroll::-webkit-scrollbar-thumb { background:#162035; border-radius:2px; }
+</style>
 </head>
 <body>
-    <div id="root"></div>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef } = React;
 
-    <script type="text/babel">
-        const { useState, useEffect, useCallback } = React;
+// ─── CONFIG ──────────────────────────────────────────────────────────────────
+const ADMIN_CODE        = '7874';
+const STORAGE_KEY       = 'gyattchores_logs';
+const SUPABASE_URL      = 'https://ukshxdoqgwoxobjdclpx.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrc2h4ZG9xZ3dveG9iamRjbHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3MjI2NDEsImV4cCI6MjA4MDI5ODY0MX0.UGNrsfG6goEA0PPWG4x7gxBueA7D5Oe9uWI-iCXIar0';
+const supabase = window.supabase?.createClient
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
 
-        // ============================================
-        // DATA
-        // ============================================
+// ─── PLAYERS ─────────────────────────────────────────────────────────────────
+const PLAYERS = [
+  { id:'1', name:'bekindhearted', color:'#22D3EE', glow:'rgba(34,211,238,0.2)'  },
+  { id:'2', name:'titan',         color:'#A855F7', glow:'rgba(168,85,247,0.2)'  },
+];
 
-        const PLAYERS = [
-            { id: '1', name: 'bekindhearted', avatar: '🦁' },
-            { id: '2', name: 'titan', avatar: '🦖' }
-        ];
+// ─── CHORE POOL ──────────────────────────────────────────────────────────────
+// tiers: time in minutes at [base, +neglect, heavy neglect]
+// tierDays: days without completion to reach each tier
+const CHORE_POOL = [
+  { id:'load-dishwasher',     name:'load dishwasher',            cat:'kitchen',  pts:15, base:5,  tiers:[5,5,8],    tierDays:[0,3,6]  },
+  { id:'unload-dishwasher',   name:'unload dishwasher',          cat:'kitchen',  pts:15, base:5,  tiers:[5,5,8],    tierDays:[0,3,6]  },
+  { id:'wipe-counters',       name:'wipe kitchen counters',      cat:'kitchen',  pts:10, base:4,  tiers:[4,6,10],   tierDays:[0,2,5]  },
+  { id:'wipe-stovetop',       name:'wipe stovetop',              cat:'kitchen',  pts:15, base:4,  tiers:[4,7,12],   tierDays:[0,3,7]  },
+  { id:'sweep-kitchen',       name:'sweep kitchen floor',        cat:'kitchen',  pts:15, base:6,  tiers:[6,10,18],  tierDays:[0,2,5]  },
+  { id:'empty-kitchen-trash', name:'empty kitchen trash',        cat:'kitchen',  pts:10, base:3,  tiers:[3,5,8],    tierDays:[0,2,4]  },
+  { id:'wipe-microwave',      name:'wipe microwave',             cat:'kitchen',  pts:10, base:3,  tiers:[3,5,10],   tierDays:[0,4,8]  },
+  { id:'wipe-bath-counter',   name:'wipe bathroom counter',      cat:'bathroom', pts:10, base:3,  tiers:[3,5,8],    tierDays:[0,2,5]  },
+  { id:'scrub-toilet',        name:'scrub toilet',               cat:'bathroom', pts:20, base:5,  tiers:[5,9,15],   tierDays:[0,3,7]  },
+  { id:'wipe-mirrors',        name:'wipe mirrors',               cat:'bathroom', pts:8,  base:3,  tiers:[3,4,6],    tierDays:[0,4,8]  },
+  { id:'sweep-bathroom',      name:'sweep bathroom floor',       cat:'bathroom', pts:10, base:4,  tiers:[4,6,10],   tierDays:[0,3,7]  },
+  { id:'trash-kids-bath',     name:"empty kids bathroom trash",  cat:'bathroom', pts:8,  base:2,  tiers:[2,3,5],    tierDays:[0,3,6]  },
+  { id:'trash-main-bath',     name:'empty main bathroom trash',  cat:'bathroom', pts:8,  base:2,  tiers:[2,3,5],    tierDays:[0,3,6]  },
+  { id:'trash-guest-bath',    name:'empty guest bathroom trash', cat:'bathroom', pts:6,  base:2,  tiers:[2,3,4],    tierDays:[0,4,8]  },
+  { id:'start-laundry',       name:'start a load of laundry',    cat:'laundry',  pts:10, base:4,  tiers:[4,4,4],    tierDays:[0,0,0]  },
+  { id:'switch-laundry',      name:'switch laundry',             cat:'laundry',  pts:8,  base:3,  tiers:[3,3,3],    tierDays:[0,0,0]  },
+  { id:'fold-laundry',        name:'fold and put away laundry',  cat:'laundry',  pts:25, base:10, tiers:[10,15,22], tierDays:[0,2,5]  },
+  { id:'collect-laundry',     name:'collect dirty laundry',      cat:'laundry',  pts:8,  base:3,  tiers:[3,5,8],    tierDays:[0,2,4]  },
+  { id:'vacuum-living-room',  name:'vacuum living room',         cat:'floors',   pts:25, base:10, tiers:[10,14,20], tierDays:[0,3,7]  },
+  { id:'pick-up-clutter',     name:'pick up common area clutter',cat:'floors',   pts:12, base:5,  tiers:[5,9,15],   tierDays:[0,2,4]  },
+  { id:'wipe-dining-table',   name:'wipe dining table',          cat:'floors',   pts:10, base:4,  tiers:[4,6,8],    tierDays:[0,1,3]  },
+  { id:'dog-poop',            name:'pick up dog poop',           cat:'outdoor',  pts:15, base:5,  tiers:[5,10,18],  tierDays:[0,1,3]  },
+  { id:'take-out-trash',      name:'take out trash/recycling',   cat:'outdoor',  pts:10, base:4,  tiers:[4,4,6],    tierDays:[0,3,7]  },
+  { id:'water-plants',        name:'water plants',               cat:'outdoor',  pts:10, base:4,  tiers:[4,4,8],    tierDays:[0,3,7]  },
+  { id:'make-bed',            name:'make bed',                   cat:'room',     pts:8,  base:3,  tiers:[3,3,5],    tierDays:[0,2,4]  },
+  { id:'pick-up-room',        name:'pick up room floor',         cat:'room',     pts:12, base:5,  tiers:[5,8,15],   tierDays:[0,2,4]  },
+  { id:'put-away-clothes',    name:'put away clean clothes',     cat:'room',     pts:12, base:5,  tiers:[5,8,12],   tierDays:[0,2,5]  },
+];
 
-        const CHORES = [
-            { id: '1', name: 'Pick up Poop', points: 500, icon: '💩' },
-            { id: '2', name: 'Vacuum', points: 500, icon: '🧹' },
-            { id: '3', name: 'Get Mail', points: 250, icon: '📬' },
-            { id: '4', name: 'Trash', points: 375, icon: '🗑️' },
-            { id: '5', name: 'Dishes', points: 500, icon: '🍽️' },
-            { id: '6', name: 'Load Dishwasher', points: 625, icon: '🫧' },
-            { id: '7', name: 'Unload Dishwasher', points: 500, icon: '✨' },
-            { id: '8', name: 'Clean Room', points: 750, icon: '🛏️' },
-            { id: '9', name: 'Clean Bathroom', points: 750, icon: '🚿' },
-            { id: '10', name: 'Water Plants', points: 250, icon: '🌱' },
-            { id: '11', name: 'Feed Alfred', points: 250, icon: '🐕' },
-            { id: '12', name: 'Feed Chevy', points: 250, icon: '🐱' },
-            { id: '13', name: 'Sweep', points: 375, icon: '🧹' },
-            { id: '14', name: 'Wipe Counters', points: 375, icon: '🧽' },
-            { id: '15', name: 'Fold Laundry', points: 500, icon: '👕' },
-            { id: '16', name: 'Set Table', points: 250, icon: '🍴' },
-            { id: '17', name: 'Clear Table', points: 250, icon: '🧹' }
-        ];
+// ─── STORAGE ─────────────────────────────────────────────────────────────────
+const makeId     = () => `${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+const loadLogs   = () => {
+  try {
+    return (JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'))
+      .sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+  } catch { return []; }
+};
+const saveLogs   = logs => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(logs)); } catch {} };
+const toRow      = l => ({ player_id:l.playerId, player_name:l.playerName, chore_id:l.choreId, chore_name:l.choreName, chore_icon:l.choreIcon||'', points:l.points, status:l.status });
+const rowToLocal = r => ({ id:'r_'+r.id, remoteId:r.id, synced:true, statusDirty:false, playerId:r.player_id, playerName:r.player_name, choreId:r.chore_id, choreName:r.chore_name, choreIcon:r.chore_icon||'', points:r.points, timestamp:r.created_at, status:r.status });
 
-        const ADMIN_CODE = '7874';
+// ─── CARD ENGINE ─────────────────────────────────────────────────────────────
+const cardKey = id => `gyattchores_card_${id}_${new Date().toDateString()}`;
 
-        // ============================================
-        // STORAGE — local-first, with optional Supabase sync
-        // ============================================
-        // Chore logs are ALWAYS written to localStorage first, so logging is
-        // instant and can never fail because a server is unreachable. When the
-        // shared Supabase backend is reachable, logs sync across devices in the
-        // background; when it isn't (e.g. a paused free-tier project), the app
-        // keeps working offline and syncs automatically once it's back.
+const neglectDays = (choreId, playerId, logs) => {
+  const last = logs
+    .filter(l => l.playerId===playerId && l.choreId===choreId && l.status==='approved')
+    .sort((a,b) => new Date(b.timestamp)-new Date(a.timestamp))[0];
+  return last ? Math.floor((Date.now()-new Date(last.timestamp))/86400000) : 999;
+};
 
-        const STORAGE_KEY = 'gyattchores_logs';
+const enrichChore = (chore, days) => {
+  let tier = 0;
+  for (let i = chore.tierDays.length-1; i>=0; i--) { if (days>=chore.tierDays[i]){ tier=i; break; } }
+  return { ...chore, neglectDays:days, currentMinutes:chore.tiers[tier], escalLevel:tier };
+};
 
-        const SUPABASE_URL = 'https://ukshxdoqgwoxobjdclpx.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrc2h4ZG9xZ3dveG9iamRjbHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3MjI2NDEsImV4cCI6MjA4MDI5ODY0MX0.UGNrsfG6goEA0PPWG4x7gxBueA7D5Oe9uWI-iCXIar0';
+const seededRand = (n) => { const x=Math.sin(n)*10000; return x-Math.floor(x); };
 
-        // Create the Supabase client if the library loaded. If it's blocked or
-        // the page is offline, `supabase` is null and the app runs local-only.
-        const supabase = (window.supabase && window.supabase.createClient)
-            ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-            : null;
+const generateCard = (playerId, logs) => {
+  const cached = localStorage.getItem(cardKey(playerId));
+  if (cached) return JSON.parse(cached);
 
-        // Read logs from localStorage, newest first.
-        const loadLogs = () => {
-            try {
-                const raw = localStorage.getItem(STORAGE_KEY);
-                const parsed = raw ? JSON.parse(raw) : [];
-                return parsed
-                    .slice()
-                    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-            } catch (e) {
-                console.error('Failed to read logs:', e);
-                return [];
-            }
-        };
+  const seed = parseInt(new Date().toDateString().replace(/\D/g,'')) + parseInt(playerId);
+  const enriched = CHORE_POOL
+    .map(c => enrichChore(c, neglectDays(c.id, playerId, logs)))
+    .sort((a,b) => {
+      if (b.neglectDays !== a.neglectDays) return b.neglectDays - a.neglectDays;
+      return seededRand(seed + a.id.charCodeAt(0)) - seededRand(seed + b.id.charCodeAt(0));
+    });
 
-        // Persist logs to localStorage.
-        const saveLogs = (logs) => {
-            try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
-            } catch (e) {
-                console.error('Failed to save logs:', e);
-            }
-        };
+  const selected = [];
+  let total = 0;
+  for (const c of enriched) {
+    if (selected.length >= 3) break;
+    if (total + c.currentMinutes <= 27) { selected.push(c); total += c.currentMinutes; }
+  }
+  for (const c of enriched) {
+    if (selected.length >= 3) break;
+    if (!selected.find(s => s.id===c.id)) selected.push(c);
+  }
 
-        // Generate a unique local id for a new log entry.
-        const makeId = () =>
-            (window.crypto && crypto.randomUUID)
-                ? crypto.randomUUID()
-                : Date.now().toString(36) + Math.random().toString(36).slice(2);
+  const card = { date:new Date().toDateString(), chores:selected, checked:[false,false,false], submitted:false };
+  localStorage.setItem(cardKey(playerId), JSON.stringify(card));
+  return card;
+};
 
-        // Convert a Supabase row (snake_case) into a local log a device created
-        // elsewhere. `remoteId` ties it back to the shared row; `synced` true.
-        const rowToLocal = (r) => ({
-            id: 'r_' + r.id,
-            remoteId: r.id,
-            synced: true,
-            statusDirty: false,
-            playerId: r.player_id,
-            playerName: r.player_name,
-            choreId: r.chore_id,
-            choreName: r.chore_name,
-            choreIcon: r.chore_icon,
-            points: r.points,
-            timestamp: r.created_at,
-            status: r.status
-        });
+const saveCard = (playerId, card) => localStorage.setItem(cardKey(playerId), JSON.stringify(card));
 
-        // The Supabase payload for a locally-created log (no id — the DB makes it).
-        const toRow = (l) => ({
-            player_id: l.playerId,
-            player_name: l.playerName,
-            chore_id: l.choreId,
-            chore_name: l.choreName,
-            chore_icon: l.choreIcon,
-            points: l.points,
-            status: l.status
-        });
+// ─── LEVEL / STREAK ──────────────────────────────────────────────────────────
+const RANKS      = ['RECRUIT','OPERATOR','RUNNER','GHOST','HACKER','PHANTOM','SPECTER','WRAITH','SHADOW','LEGEND'];
+const THRESHOLDS = [0,100,300,600,1000,1500,2500,4000,6000,9000];
 
-        // ============================================
-        // MAIN APP
-        // ============================================
+const getLevel = pts => {
+  for (let i=THRESHOLDS.length-1; i>=0; i--) if (pts>=THRESHOLDS[i]) return {num:i+1, rank:RANKS[i]};
+  return {num:1, rank:'RECRUIT'};
+};
+const getStreak = (playerId, logs) => {
+  let streak=0; const d=new Date(); d.setHours(0,0,0,0);
+  for (let i=0; i<365; i++) {
+    const has = logs.some(l => { const lt=new Date(l.timestamp); lt.setHours(0,0,0,0); return l.playerId===playerId && l.status==='approved' && lt.getTime()===d.getTime(); });
+    if (!has) break; streak++; d.setDate(d.getDate()-1);
+  }
+  return streak;
+};
+const getTotalPts = (playerId, logs) => logs.filter(l=>l.playerId===playerId&&l.status==='approved').reduce((s,l)=>s+l.points,0);
 
-        function App() {
-            const [selectedPlayer, setSelectedPlayer] = useState(null);
-            const [logs, setLogs] = useState(loadLogs);
-            const [showSuccess, setShowSuccess] = useState(null);
-            const [showAdmin, setShowAdmin] = useState(false);
-            // 'idle' | 'syncing' | 'synced' | 'offline' (offline = backend unreachable)
-            const [syncStatus, setSyncStatus] = useState(supabase ? 'idle' : 'offline');
+// ─── AVATAR ──────────────────────────────────────────────────────────────────
+function CyberpunkAvatar({ player, levelNum }) {
+  const { color, name } = player;
+  const init = name[0].toUpperCase();
+  return (
+    <svg viewBox="0 0 100 100" width="130" height="130"
+      style={{ filter:`drop-shadow(0 0 18px ${color})`, display:'block' }}>
+      <polygon points="50,2 96,26 96,74 50,98 4,74 4,26"
+        fill="none" stroke={color} strokeWidth="0.7" opacity="0.3"/>
+      <polygon points="50,8 91,30 91,70 50,92 9,70 9,30"
+        fill="#060F1C" stroke={color} strokeWidth="1.8"/>
+      {[...Array(13)].map((_,i)=>(
+        <line key={i} x1="9" x2="91" y1={18+i*5.8} y2={18+i*5.8}
+          stroke={color} strokeWidth="0.4" opacity="0.07"/>
+      ))}
+      <circle cx="9"  cy="50" r="2.5" fill={color} opacity="0.65"/>
+      <circle cx="91" cy="50" r="2.5" fill={color} opacity="0.65"/>
+      <line x1="9" y1="50" x2="24" y2="50" stroke={color} strokeWidth="0.8" opacity="0.3"/>
+      <line x1="76" y1="50" x2="91" y2="50" stroke={color} strokeWidth="0.8" opacity="0.3"/>
+      <line x1="24" y1="50" x2="24" y2="38" stroke={color} strokeWidth="0.8" opacity="0.3"/>
+      <line x1="76" y1="50" x2="76" y2="38" stroke={color} strokeWidth="0.8" opacity="0.3"/>
+      <circle cx="24" cy="38" r="1.5" fill={color} opacity="0.5"/>
+      <circle cx="76" cy="38" r="1.5" fill={color} opacity="0.5"/>
+      <text x="50" y="62" textAnchor="middle"
+        fontSize="40" fontWeight="900" fill={color}
+        fontFamily="'Courier New', monospace">{init}</text>
+      <text x="50" y="79" textAnchor="middle"
+        fontSize="6.5" fill={color} opacity="0.5"
+        fontFamily="'Courier New', monospace" letterSpacing="4">LV.{levelNum}</text>
+    </svg>
+  );
+}
 
-            // Reconcile local logs with the shared Supabase table:
-            //   1. push locally-created logs that aren't on the server yet,
-            //   2. push local status changes (approve/reject),
-            //   3. pull the shared rows and merge them in.
-            // Everything operates on a working array and writes localStorage
-            // ONCE, so a chore logged mid-sync is never lost. Any failure just
-            // leaves us in 'offline' — local data is untouched and we retry.
-            const sync = useCallback(async () => {
-                if (!supabase) { setSyncStatus('offline'); return; }
-                setSyncStatus('syncing');
-                let work = loadLogs();
-                try {
-                    // 1. Push new local logs (no remoteId yet).
-                    for (const l of work.filter(x => x.remoteId == null)) {
-                        const { data, error } = await supabase
-                            .from('simple_logs').insert(toRow(l)).select().single();
-                        if (error) throw error;
-                        l.remoteId = data.id;
-                        l.synced = true;
-                        l.statusDirty = false;
-                        if (data.created_at) l.timestamp = data.created_at;
-                    }
+// ─── CHORE ROW ───────────────────────────────────────────────────────────────
+function ChoreRow({ chore, checked, color, glow, onToggle }) {
+  const escalLabel = ['','↑','↑↑'][chore.escalLevel]||'';
+  const escalColor = ['','#F59E0B','#EF4444'][chore.escalLevel]||'';
+  const r = color==='#22D3EE' ? '34,211,238' : '168,85,247';
+  return (
+    <div onClick={onToggle} style={{
+      display:'flex', alignItems:'center', gap:'12px',
+      padding:'14px 16px', borderRadius:'8px', marginBottom:'8px',
+      background: checked ? `rgba(${r},0.07)` : '#0A1827',
+      border:`1px solid ${checked ? color : '#162035'}`,
+      cursor:'pointer', transition:'all 0.15s',
+      boxShadow: checked ? `0 0 12px ${glow}` : 'none',
+    }}>
+      <div style={{
+        width:22, height:22, borderRadius:4, flexShrink:0,
+        border:`2px solid ${checked ? color : '#243550'}`,
+        background: checked ? color : 'transparent',
+        display:'flex', alignItems:'center', justifyContent:'center',
+        transition:'all 0.15s',
+      }}>
+        {checked && <span style={{color:'#050D14', fontSize:'12px', fontWeight:900, lineHeight:1}}>✓</span>}
+      </div>
+      <div style={{
+        flex:1, fontSize:'0.87rem', fontWeight:600,
+        color: checked ? '#3A556A' : '#D4E4F0',
+        textDecoration: checked ? 'line-through' : 'none',
+        fontFamily:"'Courier New', monospace",
+        transition:'color 0.15s',
+      }}>
+        {chore.name}
+      </div>
+      <div style={{textAlign:'right', flexShrink:0}}>
+        {escalLabel && (
+          <div style={{fontSize:'0.65rem', color:escalColor, fontWeight:800, lineHeight:1.1}}>
+            {escalLabel}
+          </div>
+        )}
+        <div style={{fontSize:'0.75rem', fontFamily:'monospace',
+          color: chore.escalLevel>0 ? escalColor : '#3A556A'}}>
+          {chore.currentMinutes}m
+        </div>
+      </div>
+    </div>
+  );
+}
 
-                    // 2. Push local status changes.
-                    for (const l of work.filter(x => x.remoteId != null && x.statusDirty)) {
-                        const { error } = await supabase
-                            .from('simple_logs').update({ status: l.status }).eq('id', l.remoteId);
-                        if (error) throw error;
-                        l.statusDirty = false;
-                    }
+// ─── PLAYER CARD VIEW ────────────────────────────────────────────────────────
+function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus }) {
+  const totalPts = getTotalPts(player.id, logs);
+  const level    = getLevel(totalPts);
+  const streak   = getStreak(player.id, logs);
+  const [card, setCard]         = useState(() => generateCard(player.id, logs));
+  const [submitting, setSubmit] = useState(false);
 
-                    // 3. Pull shared rows and merge.
-                    const { data: rows, error: selErr } = await supabase
-                        .from('simple_logs').select('*').order('created_at', { ascending: false });
-                    if (selErr) throw selErr;
-                    const byRemote = {};
-                    work.forEach(l => { if (l.remoteId != null) byRemote[String(l.remoteId)] = l; });
-                    (rows || []).forEach(r => {
-                        const existing = byRemote[String(r.id)];
-                        if (existing) {
-                            // Server is shared truth for status, unless we have an
-                            // un-pushed local change for this row.
-                            if (!existing.statusDirty) existing.status = r.status;
-                        } else {
-                            work.push(rowToLocal(r));
-                        }
-                    });
+  const totalMin   = card.chores.reduce((s,c)=>s+c.currentMinutes,0);
+  const allChecked = card.checked.every(Boolean);
+  const doneCount  = card.checked.filter(Boolean).length;
+  const pending    = logs.filter(l=>l.playerId===player.id&&l.status==='pending').length;
 
-                    // Re-absorb anything the user logged while we were awaiting
-                    // the network, so concurrent edits are never overwritten.
-                    const latest = loadLogs();
-                    const workById = {};
-                    work.forEach(l => { workById[l.id] = l; });
-                    latest.forEach(l => {
-                        if (!workById[l.id]) work.push(l);
-                        else if (l.statusDirty) {
-                            workById[l.id].status = l.status;
-                            workById[l.id].statusDirty = true;
-                        }
-                    });
+  const toggle = i => {
+    if (card.submitted) return;
+    const next = { ...card, checked: card.checked.map((v,idx)=>idx===i?!v:v) };
+    setCard(next); saveCard(player.id, next);
+  };
 
-                    work.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                    saveLogs(work);
-                    setLogs(work.slice());
-                    setSyncStatus('synced');
-                } catch (e) {
-                    console.warn('Sync deferred — backend unreachable:', e && (e.message || e));
-                    setSyncStatus('offline');
-                }
-            }, []);
+  const submit = async () => {
+    if (!allChecked || submitting || card.submitted) return;
+    setSubmit(true);
+    try {
+      await onSubmitCard(card.chores);
+      const next = { ...card, submitted:true };
+      setCard(next); saveCard(player.id, next);
+    } finally { setSubmit(false); }
+  };
 
-            // Initial sync + keep in sync: poll, on tab focus, on reconnect, and
-            // when another tab on this device changes the shared localStorage.
-            useEffect(() => {
-                sync();
-                const interval = setInterval(sync, 5000);
-                const onVisible = () => { if (document.visibilityState === 'visible') sync(); };
-                const onOnline = () => sync();
-                const onStorage = (e) => { if (e.key === STORAGE_KEY) setLogs(loadLogs()); };
-                document.addEventListener('visibilitychange', onVisible);
-                window.addEventListener('online', onOnline);
-                window.addEventListener('storage', onStorage);
-                return () => {
-                    clearInterval(interval);
-                    document.removeEventListener('visibilitychange', onVisible);
-                    window.removeEventListener('online', onOnline);
-                    window.removeEventListener('storage', onStorage);
-                };
-            }, [sync]);
+  const { color, glow } = player;
+  const syncDot = syncStatus==='syncing' ? '#EAB308' : syncStatus==='offline' ? '#EF4444' : '#22C55E';
 
-            // Calculate points
-            const getWeeklyPoints = (playerId) => {
-                const weekStart = new Date();
-                weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1);
-                weekStart.setHours(0, 0, 0, 0);
+  return (
+    <div className="fade-in" style={{display:'flex', flexDirection:'column', height:'100%', background:'#050D14'}}>
+      {/* top bar */}
+      <div style={{
+        display:'flex', alignItems:'center', justifyContent:'space-between',
+        padding:'14px 20px', borderBottom:'1px solid #0D1E30', flexShrink:0,
+      }}>
+        <button onClick={onBack} style={{
+          background:'none', border:'none', color:'#3A556A',
+          fontSize:'0.75rem', cursor:'pointer', fontFamily:'monospace', letterSpacing:'1px',
+        }}>← back</button>
+        <div style={{display:'flex', alignItems:'center', gap:'6px'}}>
+          <div style={{width:6, height:6, borderRadius:'50%', background:syncDot}}/>
+          <span style={{fontSize:'0.65rem', color:'#3A556A', fontFamily:'monospace', letterSpacing:'2px'}}>
+            {syncStatus==='syncing'?'sync':'live'}
+          </span>
+        </div>
+      </div>
 
-                return logs
-                    .filter(log =>
-                        log.playerId === playerId &&
-                        log.status === 'approved' &&
-                        new Date(log.timestamp) >= weekStart
-                    )
-                    .reduce((sum, log) => sum + log.points, 0);
-            };
+      {/* body */}
+      <div className="scroll" style={{flex:1, padding:'28px 20px 0'}}>
 
-            const getTodayPoints = (playerId) => {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
+        {/* avatar block */}
+        <div style={{display:'flex', flexDirection:'column', alignItems:'center', marginBottom:'28px'}}>
+          <CyberpunkAvatar player={player} levelNum={level.num}/>
+          <div className="flicker" style={{
+            fontSize:'1.25rem', fontWeight:900, letterSpacing:'4px',
+            color, marginTop:'14px', textTransform:'uppercase',
+            fontFamily:"'Courier New', monospace",
+          }}>{player.name}</div>
+          <div style={{
+            fontSize:'0.6rem', letterSpacing:'5px', color, opacity:0.55,
+            fontFamily:'monospace', marginTop:'3px',
+          }}>{level.rank}</div>
 
-                return logs
-                    .filter(log =>
-                        log.playerId === playerId &&
-                        log.status === 'approved' &&
-                        new Date(log.timestamp) >= today
-                    )
-                    .reduce((sum, log) => sum + log.points, 0);
-            };
-
-            const getLastMonthTodayPoints = (playerId) => {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const start = new Date(today);
-                start.setMonth(start.getMonth() - 1);
-                const end = new Date(start);
-                end.setDate(end.getDate() + 1);
-
-                return logs
-                    .filter(log =>
-                        log.playerId === playerId &&
-                        log.status === 'approved' &&
-                        new Date(log.timestamp) >= start &&
-                        new Date(log.timestamp) < end
-                    )
-                    .reduce((sum, log) => sum + log.points, 0);
-            };
-
-            const getLastMonthWeeklyPoints = (playerId) => {
-                const weekStart = new Date();
-                weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1);
-                weekStart.setHours(0, 0, 0, 0);
-                const start = new Date(weekStart);
-                start.setMonth(start.getMonth() - 1);
-                const end = new Date(start);
-                end.setDate(end.getDate() + 7);
-
-                return logs
-                    .filter(log =>
-                        log.playerId === playerId &&
-                        log.status === 'approved' &&
-                        new Date(log.timestamp) >= start &&
-                        new Date(log.timestamp) < end
-                    )
-                    .reduce((sum, log) => sum + log.points, 0);
-            };
-
-            const getMonthlyPoints = (playerId) => {
-                const monthStart = new Date();
-                monthStart.setDate(1);
-                monthStart.setHours(0, 0, 0, 0);
-
-                return logs
-                    .filter(log =>
-                        log.playerId === playerId &&
-                        log.status === 'approved' &&
-                        new Date(log.timestamp) >= monthStart
-                    )
-                    .reduce((sum, log) => sum + log.points, 0);
-            };
-
-            // Same number of days into last month (e.g. on Jun 6, compares May 1–6)
-            const getLastMonthSamePeriodPoints = (playerId) => {
-                const now = new Date();
-                const start = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
-                const end = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate() + 1, 0, 0, 0, 0);
-
-                return logs
-                    .filter(log =>
-                        log.playerId === playerId &&
-                        log.status === 'approved' &&
-                        new Date(log.timestamp) >= start &&
-                        new Date(log.timestamp) < end
-                    )
-                    .reduce((sum, log) => sum + log.points, 0);
-            };
-
-            const getTotalPoints = (playerId) =>
-                logs
-                    .filter(log => log.playerId === playerId && log.status === 'approved')
-                    .reduce((sum, log) => sum + log.points, 0);
-
-            const pendingLogs = logs.filter(log => log.status === 'pending');
-
-            const leader = PLAYERS.reduce((best, player) => {
-                const pts = getWeeklyPoints(player.id);
-                if (!best || pts > best.pts) return { player, pts };
-                return best;
-            }, null);
-
-            // Log a chore — saved locally, instantly. Cannot fail on a network.
-            // We persist synchronously (via loadLogs/saveLogs) so the follow-up
-            // sync() always sees the new entry, then push it to Supabase.
-            const logChore = (chore) => {
-                if (!selectedPlayer) return;
-
-                // Show success immediately for a snappy, frictionless feel.
-                setShowSuccess(chore);
-                if (navigator.vibrate) navigator.vibrate(10);
-                setTimeout(() => setShowSuccess(null), 1500);
-
-                const newLog = {
-                    id: makeId(),
-                    remoteId: null,
-                    synced: false,
-                    statusDirty: false,
-                    playerId: selectedPlayer.id,
-                    playerName: selectedPlayer.name,
-                    choreId: chore.id,
-                    choreName: chore.name,
-                    choreIcon: chore.icon,
-                    points: chore.points,
-                    timestamp: new Date().toISOString(),
-                    status: 'pending'
-                };
-
-                const next = [newLog, ...loadLogs()]
-                    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                saveLogs(next);
-                setLogs(next);
-                sync();
-            };
-
-            // Approve/reject — update locally, mark for push, then sync.
-            const setStatus = (logId, status) => {
-                const next = loadLogs().map(log =>
-                    log.id === logId
-                        ? { ...log, status, statusDirty: log.remoteId != null }
-                        : log
-                );
-                saveLogs(next);
-                setLogs(next);
-                sync();
-            };
-
-            const approve = (logId) => {
-                if (navigator.vibrate) navigator.vibrate([10, 50, 10]);
-                setStatus(logId, 'approved');
-            };
-
-            const reject = (logId) => {
-                setStatus(logId, 'rejected');
-            };
-
-            const approveAll = () => {
-                if (navigator.vibrate) navigator.vibrate([10, 50, 10]);
-                const cur = loadLogs();
-                if (!cur.some(log => log.status === 'pending')) return;
-                const next = cur.map(log =>
-                    log.status === 'pending'
-                        ? { ...log, status: 'approved', statusDirty: log.remoteId != null }
-                        : log
-                );
-                saveLogs(next);
-                setLogs(next);
-                sync();
-            };
-
-            return (
-                <div style={{
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    background: 'var(--bg)'
-                }}>
-                    {/* Header */}
-                    <header style={{
-                        padding: '16px 20px',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        borderBottom: '1px solid var(--surface)'
-                    }}>
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '12px'
-                        }}>
-                            <img
-                                src="gyattchores-logo-transparent.svg"
-                                alt="GyattChores Logo"
-                                style={{
-                                    width: '32px',
-                                    height: '32px'
-                                }}
-                            />
-                            <h1 style={{
-                                fontSize: '1.5rem',
-                                fontWeight: 700,
-                                background: 'linear-gradient(135deg, var(--cyan), var(--purple))',
-                                WebkitBackgroundClip: 'text',
-                                WebkitTextFillColor: 'transparent'
-                            }}>
-                                GyattChores
-                            </h1>
-                        </div>
-                        <button
-                            onClick={() => setShowAdmin(true)}
-                            aria-label={`Admin — ${pendingLogs.length > 0 ? `${pendingLogs.length} pending` : 'no pending chores'}`}
-                            style={{
-                                background: 'var(--surface)',
-                                border: 'none',
-                                borderRadius: '12px',
-                                padding: '10px 14px',
-                                color: 'var(--text)',
-                                fontSize: '1rem',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                position: 'relative'
-                            }}
-                        >
-                            <span>✓</span>
-                            {pendingLogs.length > 0 && (
-                                <span style={{
-                                    position: 'absolute',
-                                    top: '-6px',
-                                    right: '-6px',
-                                    background: 'var(--red)',
-                                    color: 'white',
-                                    fontSize: '0.7rem',
-                                    fontWeight: 700,
-                                    padding: '2px 6px',
-                                    borderRadius: '10px',
-                                    minWidth: '18px',
-                                    textAlign: 'center'
-                                }}>
-                                    {pendingLogs.length}
-                                </span>
-                            )}
-                        </button>
-                    </header>
-
-                    {/* Offline hint — non-blocking. Logging still works; data
-                        is saved on this device and syncs when the backend is back. */}
-                    {syncStatus === 'offline' && (
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '8px',
-                            padding: '6px 16px',
-                            background: 'rgba(245, 158, 11, 0.12)',
-                            color: '#f59e0b',
-                            borderBottom: '1px solid rgba(245, 158, 11, 0.25)',
-                            fontSize: '0.8rem',
-                            fontWeight: 600
-                        }}>
-                            <span style={{
-                                width: '7px',
-                                height: '7px',
-                                borderRadius: '50%',
-                                background: 'currentColor'
-                            }} />
-                            Offline — saved on this device, will sync later
-                        </div>
-                    )}
-
-                    {/* Main Content */}
-                    <main style={{
-                        flex: 1,
-                        overflow: 'auto',
-                        padding: '20px'
-                    }}>
-                        {/* Player Selection */}
-                        <div style={{
-                            display: 'flex',
-                            gap: '12px',
-                            marginBottom: '20px'
-                        }}>
-                            {PLAYERS.map(player => (
-                                <PlayerCard
-                                    key={player.id}
-                                    player={player}
-                                    isSelected={selectedPlayer?.id === player.id}
-                                    isLeader={leader?.player.id === player.id && leader.pts > 0}
-                                    points={getWeeklyPoints(player.id)}
-                                    onClick={() => setSelectedPlayer(player)}
-                                />
-                            ))}
-                        </div>
-
-                        {/* Stats */}
-                        {selectedPlayer && (() => {
-                            const todayPts = getTodayPoints(selectedPlayer.id);
-                            const lastMonthTodayPts = getLastMonthTodayPoints(selectedPlayer.id);
-                            const weekPts = getWeeklyPoints(selectedPlayer.id);
-                            const lastMonthWeekPts = getLastMonthWeeklyPoints(selectedPlayer.id);
-                            const monthPts = getMonthlyPoints(selectedPlayer.id);
-                            const lastMonthSamePts = getLastMonthSamePeriodPoints(selectedPlayer.id);
-                            const totalPts = getTotalPoints(selectedPlayer.id);
-                            return (
-                                <div style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: 'repeat(2, 1fr)',
-                                    gap: '12px',
-                                    marginBottom: '24px'
-                                }} className="animate-fade">
-                                    <StatPill
-                                        label="Today"
-                                        value={todayPts}
-                                        color="orange"
-                                        trend={(todayPts > 0 || lastMonthTodayPts > 0)
-                                            ? { delta: todayPts - lastMonthTodayPts }
-                                            : null}
-                                    />
-                                    <StatPill
-                                        label="This Week"
-                                        value={weekPts}
-                                        color="cyan"
-                                        trend={(weekPts > 0 || lastMonthWeekPts > 0)
-                                            ? { delta: weekPts - lastMonthWeekPts }
-                                            : null}
-                                    />
-                                    <StatPill
-                                        label="This Month"
-                                        value={monthPts}
-                                        color="purple"
-                                        trend={(monthPts > 0 || lastMonthSamePts > 0)
-                                            ? { delta: monthPts - lastMonthSamePts }
-                                            : null}
-                                    />
-                                    <StatPill
-                                        label="Total Earned"
-                                        value={totalPts}
-                                        color="gold"
-                                    />
-                                </div>
-                            );
-                        })()}
-
-                        {/* Chores Grid */}
-                        <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(2, 1fr)',
-                            gap: '12px'
-                        }}>
-                            {CHORES.map(chore => (
-                                <ChoreCard
-                                    key={chore.id}
-                                    chore={chore}
-                                    disabled={!selectedPlayer}
-                                    onClick={() => logChore(chore)}
-                                />
-                            ))}
-                        </div>
-                    </main>
-
-                    {/* Success Overlay */}
-                    {showSuccess && (
-                        <div style={{
-                            position: 'fixed',
-                            inset: 0,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            background: 'rgba(0,0,0,0.6)',
-                            backdropFilter: 'blur(8px)',
-                            zIndex: 100
-                        }} className="animate-pop">
-                            <div style={{
-                                background: 'var(--surface)',
-                                borderRadius: 'var(--radius-lg)',
-                                padding: '40px',
-                                textAlign: 'center'
-                            }}>
-                                <div style={{ fontSize: '4rem', marginBottom: '16px' }}>
-                                    {showSuccess.icon}
-                                </div>
-                                <div style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '8px' }}>
-                                    Logged!
-                                </div>
-                                <div style={{ color: 'var(--cyan)', fontWeight: 600 }}>
-                                    +{showSuccess.points} pts
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Admin Modal */}
-                    {showAdmin && (
-                        <AdminModal
-                            logs={pendingLogs}
-                            allLogs={logs}
-                            onApprove={approve}
-                            onReject={reject}
-                            onApproveAll={approveAll}
-                            onClose={() => setShowAdmin(false)}
-                        />
-                    )}
+          {/* stat pills */}
+          <div style={{display:'flex', gap:'20px', marginTop:'18px'}}>
+            {[
+              {label:'pts',    val:totalPts.toLocaleString()},
+              {label:'streak', val:streak},
+              {label:'level',  val:level.num},
+            ].map(({label,val},i,arr) => (
+              <React.Fragment key={label}>
+                <div style={{textAlign:'center'}}>
+                  <div style={{color, fontWeight:700, fontSize:'1.05rem', fontFamily:'monospace'}}>{val}</div>
+                  <div style={{color:'#3A556A', fontSize:'0.62rem', letterSpacing:'2px', fontFamily:'monospace'}}>{label}</div>
                 </div>
-            );
-        }
+                {i < arr.length-1 && <div style={{width:'1px', background:'#0D1E30'}}/>}
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
 
-        // ============================================
-        // COMPONENTS
-        // ============================================
+        {/* divider */}
+        <div style={{height:'1px', background:'#0D1E30', marginBottom:'20px'}}/>
 
-        function PlayerCard({ player, isSelected, isLeader, points, onClick }) {
-            return (
-                <button
-                    onClick={onClick}
-                    style={{
-                        flex: 1,
-                        background: isSelected ? 'var(--cyan-glow)' : 'var(--surface)',
-                        border: isSelected ? '2px solid var(--cyan)' : '2px solid transparent',
-                        borderRadius: 'var(--radius-lg)',
-                        padding: '20px 16px',
-                        cursor: 'pointer',
-                        textAlign: 'center',
-                        transition: 'all 0.2s ease',
-                        transform: isSelected ? 'scale(1.02)' : 'scale(1)'
-                    }}
-                >
-                    <div style={{ position: 'relative', display: 'inline-block' }}>
-                        <span style={{ fontSize: '3rem' }}>{player.avatar}</span>
-                        {isLeader && (
-                            <span style={{
-                                position: 'absolute',
-                                top: '-8px',
-                                right: '-12px',
-                                fontSize: '1.2rem'
-                            }}>👑</span>
-                        )}
-                    </div>
-                    <div style={{
-                        color: 'var(--text)',
-                        fontWeight: 600,
-                        marginTop: '8px',
-                        fontSize: '0.9rem'
-                    }}>
-                        {player.name}
-                    </div>
-                    <div style={{
-                        color: 'var(--text-secondary)',
-                        fontSize: '0.8rem',
-                        marginTop: '4px'
-                    }}>
-                        {points} pts
-                    </div>
-                </button>
-            );
-        }
+        {/* card header */}
+        <div style={{
+          display:'flex', justifyContent:'space-between', alignItems:'baseline',
+          marginBottom:'12px',
+        }}>
+          <div style={{fontSize:'0.65rem', letterSpacing:'4px', color:'#3A556A', fontFamily:'monospace'}}>
+            TODAY'S CARD
+          </div>
+          <div style={{fontSize:'0.65rem', color:'#3A556A', fontFamily:'monospace'}}>
+            {doneCount}/{card.chores.length} · est {totalMin}m
+          </div>
+        </div>
 
-        function StatPill({ label, value, color, trend }) {
-            const colors = {
-                orange: '#F59E0B',
-                cyan: 'var(--cyan)',
-                purple: 'var(--purple)',
-                gold: '#EAB308'
-            };
+        {/* chores */}
+        {card.chores.map((chore,i) => (
+          <ChoreRow key={chore.id} chore={chore}
+            checked={card.checked[i]} color={color} glow={glow}
+            onToggle={()=>toggle(i)}/>
+        ))}
 
-            const trendArrow = !trend ? null : trend.delta > 0 ? '↑' : trend.delta < 0 ? '↓' : '→';
-            const trendColor = !trend ? null : trend.delta > 0 ? '#22c55e' : trend.delta < 0 ? '#ef4444' : 'var(--text-secondary)';
-            const trendLabel = !trend ? null : trend.delta > 0 ? `+${trend.delta}` : `${trend.delta}`;
+        {/* escalation legend (shown if any chore is escalated) */}
+        {card.chores.some(c=>c.escalLevel>0) && (
+          <div style={{
+            fontSize:'0.62rem', color:'#3A556A', fontFamily:'monospace',
+            letterSpacing:'1px', marginTop:'4px', marginBottom:'8px',
+          }}>
+            ↑ = neglected · ↑↑ = long overdue
+          </div>
+        )}
 
-            return (
-                <div style={{
-                    background: 'var(--surface)',
-                    borderRadius: '100px',
-                    padding: '10px 16px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px'
-                }}>
-                    <span style={{
-                        width: '8px',
-                        height: '8px',
-                        borderRadius: '50%',
-                        background: colors[color]
-                    }} />
-                    <div>
-                        <div style={{ fontWeight: 700, fontSize: '1rem' }}>{value}</div>
-                        <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>{label}</div>
-                    </div>
-                    {trend && (
-                        <div style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            color: trendColor,
-                            lineHeight: 1.1
-                        }}>
-                            <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>{trendArrow}</span>
-                            <span style={{ fontSize: '0.65rem', fontWeight: 600 }}>{trendLabel}</span>
-                        </div>
-                    )}
+        {/* pending notice */}
+        {pending>0 && !card.submitted && (
+          <div style={{
+            marginTop:'6px', padding:'10px 14px', borderRadius:'6px',
+            background:'rgba(234,179,8,0.07)', border:'1px solid rgba(234,179,8,0.25)',
+            fontSize:'0.72rem', color:'#EAB308', fontFamily:'monospace', letterSpacing:'1px',
+          }}>
+            {pending} chore{pending>1?'s':''} pending dad's approval
+          </div>
+        )}
+
+        {/* submit */}
+        <div style={{marginTop:'20px', paddingBottom:'40px'}}>
+          {card.submitted ? (
+            <div style={{
+              padding:'16px', textAlign:'center', borderRadius:'8px',
+              background:`rgba(${color==='#22D3EE'?'34,211,238':'168,85,247'},0.07)`,
+              border:`1px solid ${color}`,
+              fontSize:'0.72rem', color, fontFamily:'monospace', letterSpacing:'3px',
+            }}>
+              CARD SUBMITTED — AWAITING APPROVAL
+            </div>
+          ) : (
+            <button onClick={submit} disabled={!allChecked||submitting} style={{
+              width:'100%', padding:'17px', borderRadius:'8px', cursor:allChecked?'pointer':'default',
+              background: allChecked ? color : '#090F1C',
+              border:`1px solid ${allChecked ? color : '#162035'}`,
+              color: allChecked ? '#050D14' : '#3A556A',
+              fontSize:'0.75rem', fontWeight:800, letterSpacing:'3px',
+              fontFamily:'monospace', transition:'all 0.2s',
+              boxShadow: allChecked ? `0 0 28px ${glow}` : 'none',
+            }}>
+              {submitting ? 'SUBMITTING...' : allChecked ? '⚡ SUBMIT CARD' : `CHECK OFF ALL ${card.chores.length} CHORES`}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── PLAYER SELECT ───────────────────────────────────────────────────────────
+function PlayerSelect({ onSelect, onAdmin }) {
+  const [taps, setTaps]   = useState(0);
+  const tapTimer          = useRef(null);
+
+  const handleTitle = () => {
+    const n = taps+1; setTaps(n);
+    clearTimeout(tapTimer.current);
+    if (n>=5) { onAdmin(); setTaps(0); return; }
+    tapTimer.current = setTimeout(()=>setTaps(0), 2000);
+  };
+
+  return (
+    <div className="fade-in" style={{
+      display:'flex', flexDirection:'column', alignItems:'center',
+      justifyContent:'center', height:'100%', padding:'40px 28px',
+      background:'#050D14',
+    }}>
+      <div onClick={handleTitle} style={{marginBottom:'56px', cursor:'default', userSelect:'none', textAlign:'center'}}>
+        <div style={{
+          fontSize:'1.5rem', fontWeight:900, letterSpacing:'7px',
+          background:'linear-gradient(135deg, #22D3EE 0%, #A855F7 100%)',
+          WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent',
+          fontFamily:"'Courier New', monospace",
+        }}>GYATTCHORES</div>
+        <div style={{fontSize:'0.58rem', letterSpacing:'5px', color:'#1A2F45', fontFamily:'monospace', marginTop:'6px'}}>
+          SELECT PLAYER
+        </div>
+      </div>
+
+      <div style={{display:'flex', flexDirection:'column', gap:'14px', width:'100%', maxWidth:'300px'}}>
+        {PLAYERS.map(p => (
+          <button key={p.id} onClick={()=>onSelect(p)} style={{
+            padding:'22px', borderRadius:'10px', cursor:'pointer',
+            background:'#090F1C',
+            border:`1px solid ${p.color}28`,
+            color:p.color, fontSize:'0.9rem', fontWeight:800,
+            letterSpacing:'5px', fontFamily:"'Courier New', monospace",
+            textTransform:'uppercase', transition:'all 0.15s',
+            boxShadow:`inset 0 0 50px ${p.glow}`,
+          }}
+          onPointerEnter={e=>{e.currentTarget.style.borderColor=p.color; e.currentTarget.style.boxShadow=`0 0 24px ${p.glow}, inset 0 0 50px ${p.glow}`;}}
+          onPointerLeave={e=>{e.currentTarget.style.borderColor=p.color+'28'; e.currentTarget.style.boxShadow=`inset 0 0 50px ${p.glow}`;}}>
+            {p.name}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── ADMIN MODAL ─────────────────────────────────────────────────────────────
+function AdminModal({ logs, onClose, onUpdate }) {
+  const [code, setCode]   = useState('');
+  const [authed, setAuth] = useState(false);
+  const [filter, setFilt] = useState('pending');
+
+  const verify = () => { if (code===ADMIN_CODE) setAuth(true); };
+  const shown  = logs.filter(l=>filter==='all'||l.status===filter).slice(0,60);
+
+  if (!authed) return (
+    <div style={{position:'fixed',inset:0,background:'rgba(5,13,20,0.96)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,padding:'24px'}}>
+      <div style={{background:'#090F1C',border:'1px solid #162035',borderRadius:'12px',padding:'32px',width:'100%',maxWidth:'300px',textAlign:'center'}}>
+        <div style={{fontSize:'0.65rem',letterSpacing:'5px',color:'#3A556A',fontFamily:'monospace',marginBottom:'24px'}}>ADMIN ACCESS</div>
+        <input type="password" value={code} onChange={e=>setCode(e.target.value)}
+          onKeyDown={e=>e.key==='Enter'&&verify()} placeholder="——" autoFocus
+          style={{width:'100%',padding:'14px',background:'#050D14',border:'1px solid #162035',borderRadius:'6px',color:'#F8FAFC',fontSize:'1.4rem',textAlign:'center',fontFamily:'monospace',outline:'none',letterSpacing:'8px',marginBottom:'16px'}}/>
+        <button onClick={verify} style={{width:'100%',padding:'13px',background:'#22D3EE',border:'none',borderRadius:'6px',color:'#050D14',fontWeight:800,fontSize:'0.75rem',letterSpacing:'3px',fontFamily:'monospace',cursor:'pointer'}}>ENTER</button>
+        <button onClick={onClose} style={{width:'100%',padding:'13px',background:'none',border:'none',color:'#3A556A',fontSize:'0.72rem',cursor:'pointer',fontFamily:'monospace',marginTop:'6px'}}>cancel</button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{position:'fixed',inset:0,background:'#050D14',display:'flex',flexDirection:'column',zIndex:200}}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'16px 20px',borderBottom:'1px solid #0D1E30',flexShrink:0}}>
+        <div style={{fontSize:'0.65rem',letterSpacing:'4px',color:'#22D3EE',fontFamily:'monospace'}}>ADMIN // PUSH</div>
+        <button onClick={onClose} style={{background:'none',border:'none',color:'#3A556A',fontSize:'0.78rem',cursor:'pointer',fontFamily:'monospace'}}>✕ close</button>
+      </div>
+
+      <div style={{display:'flex',gap:'8px',padding:'12px 20px',borderBottom:'1px solid #0D1E30',flexShrink:0,flexWrap:'wrap'}}>
+        {['pending','approved','rejected','all'].map(f=>(
+          <button key={f} onClick={()=>setFilt(f)} style={{
+            padding:'6px 14px',borderRadius:'20px',cursor:'pointer',
+            background:filter===f?'#22D3EE':'#090F1C',
+            border:`1px solid ${filter===f?'#22D3EE':'#162035'}`,
+            color:filter===f?'#050D14':'#3A556A',
+            fontSize:'0.68rem',fontWeight:700,letterSpacing:'1px',fontFamily:'monospace',
+          }}>{f}</button>
+        ))}
+      </div>
+
+      <div className="scroll" style={{flex:1,padding:'16px 20px'}}>
+        {shown.length===0 && (
+          <div style={{textAlign:'center',color:'#3A556A',fontFamily:'monospace',fontSize:'0.78rem',marginTop:'48px',letterSpacing:'2px'}}>
+            NO {filter.toUpperCase()} LOGS
+          </div>
+        )}
+        {shown.map(log=>{
+          const p = PLAYERS.find(x=>x.id===log.playerId);
+          const color = p?.color||'#22D3EE';
+          return (
+            <div key={log.id} style={{background:'#090F1C',border:'1px solid #162035',borderRadius:'8px',padding:'14px 16px',marginBottom:'10px'}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'10px'}}>
+                <div>
+                  <div style={{fontSize:'0.87rem',fontWeight:600,color:'#D4E4F0',fontFamily:'monospace'}}>{log.choreName}</div>
+                  <div style={{fontSize:'0.68rem',color:'#3A556A',fontFamily:'monospace',marginTop:'3px'}}>
+                    <span style={{color}}>{log.playerName}</span> · {new Date(log.timestamp).toLocaleString()}
+                  </div>
                 </div>
-            );
-        }
-
-        function ChoreCard({ chore, disabled, onClick }) {
-            const [isPressed, setIsPressed] = useState(false);
-
-            return (
-                <button
-                    onClick={onClick}
-                    disabled={disabled}
-                    onTouchStart={() => setIsPressed(true)}
-                    onTouchEnd={() => setIsPressed(false)}
-                    onMouseDown={() => setIsPressed(true)}
-                    onMouseUp={() => setIsPressed(false)}
-                    onMouseLeave={() => setIsPressed(false)}
-                    style={{
-                        background: 'var(--surface)',
-                        border: 'none',
-                        borderRadius: 'var(--radius)',
-                        padding: '20px 12px',
-                        cursor: disabled ? 'not-allowed' : 'pointer',
-                        textAlign: 'center',
-                        opacity: disabled ? 0.4 : 1,
-                        transition: 'transform 0.1s ease',
-                        transform: isPressed ? 'scale(0.95)' : 'scale(1)'
-                    }}
-                >
-                    <div style={{ fontSize: '2.2rem', marginBottom: '8px' }}>
-                        {chore.icon}
-                    </div>
-                    <div style={{
-                        color: 'var(--text)',
-                        fontWeight: 500,
-                        fontSize: '0.85rem',
-                        marginBottom: '4px',
-                        lineHeight: 1.3
-                    }}>
-                        {chore.name}
-                    </div>
-                    <div style={{
-                        color: 'var(--cyan)',
-                        fontWeight: 700,
-                        fontSize: '0.8rem'
-                    }}>
-                        {chore.points} pts
-                    </div>
-                </button>
-            );
-        }
-
-        function AdminModal({ logs, allLogs, onApprove, onReject, onApproveAll, onClose }) {
-            const [code, setCode] = useState('');
-            const [unlocked, setUnlocked] = useState(false);
-            const [error, setError] = useState(false);
-            const [tab, setTab] = useState('pending'); // 'pending' | 'history'
-
-            const checkCode = (value) => {
-                setCode(value);
-                if (value.length === 4) {
-                    if (value === ADMIN_CODE) {
-                        setUnlocked(true);
-                        if (navigator.vibrate) navigator.vibrate(10);
-                    } else {
-                        setError(true);
-                        setCode('');
-                        if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
-                        setTimeout(() => setError(false), 1500);
-                    }
-                }
-            };
-
-            return (
-                <div style={{
-                    position: 'fixed',
-                    inset: 0,
-                    background: 'var(--bg)',
-                    zIndex: 200,
-                    display: 'flex',
-                    flexDirection: 'column'
-                }}>
-                    {/* Header */}
-                    <header style={{
-                        padding: '16px 20px',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        borderBottom: '1px solid var(--surface)'
-                    }}>
-                        <button
-                            onClick={onClose}
-                            style={{
-                                background: 'none',
-                                border: 'none',
-                                color: 'var(--cyan)',
-                                fontSize: '1rem',
-                                fontWeight: 600,
-                                cursor: 'pointer'
-                            }}
-                        >
-                            Done
-                        </button>
-                        <h2 style={{ fontSize: '1.1rem', fontWeight: 600 }}>
-                            {!unlocked ? 'Admin' : tab === 'pending' ? 'Pending Approval' : 'History'}
-                        </h2>
-                        {unlocked && tab === 'pending' && logs.length > 0 ? (
-                            <button
-                                onClick={onApproveAll}
-                                style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    color: 'var(--green)',
-                                    fontSize: '0.9rem',
-                                    fontWeight: 600,
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                Approve All
-                            </button>
-                        ) : (
-                            <div style={{ width: '80px' }} />
-                        )}
-                    </header>
-
-                    {/* Tab Bar (only when unlocked) */}
-                    {unlocked && (
-                        <div style={{
-                            display: 'flex',
-                            borderBottom: '1px solid var(--surface)',
-                            padding: '0 20px'
-                        }}>
-                            {['pending', 'history'].map(t => (
-                                <button
-                                    key={t}
-                                    onClick={() => setTab(t)}
-                                    style={{
-                                        background: 'none',
-                                        border: 'none',
-                                        borderBottom: tab === t ? '2px solid var(--cyan)' : '2px solid transparent',
-                                        color: tab === t ? 'var(--cyan)' : 'var(--text-secondary)',
-                                        fontWeight: 600,
-                                        fontSize: '0.9rem',
-                                        padding: '12px 16px',
-                                        cursor: 'pointer',
-                                        marginBottom: '-1px',
-                                        textTransform: 'capitalize'
-                                    }}
-                                >
-                                    {t === 'pending' ? `Pending${logs.length > 0 ? ` (${logs.length})` : ''}` : 'History'}
-                                </button>
-                            ))}
-                        </div>
-                    )}
-
-                    {/* Content */}
-                    <div style={{ flex: 1, overflow: 'auto', padding: '20px' }}>
-                        {unlocked && tab === 'history' ? (
-                            /* History & Stats Tab */
-                            (() => {
-                                const approved = allLogs.filter(l => l.status === 'approved');
-                                const rejected = allLogs.filter(l => l.status === 'rejected');
-                                const pending  = allLogs.filter(l => l.status === 'pending');
-                                const sorted   = [...allLogs].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                                const totalPts = approved.reduce((s, l) => s + l.points, 0);
-                                const oldest   = allLogs.length ? new Date(Math.min(...allLogs.map(l => new Date(l.timestamp)))) : null;
-                                const stale    = pending.filter(l => Date.now() - new Date(l.timestamp) > 86400000);
-
-                                const fmtDate = (d) => new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-                                const fmtTime = (d) => new Date(d).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-
-                                const statusColor = { approved: 'var(--green)', rejected: 'var(--red)', pending: '#F59E0B' };
-                                const statusLabel = { approved: '✓', rejected: '✕', pending: '…' };
-
-                                return (
-                                    <div>
-                                        {/* Summary stats */}
-                                        <div style={{
-                                            display: 'grid',
-                                            gridTemplateColumns: 'repeat(2, 1fr)',
-                                            gap: '10px',
-                                            marginBottom: '20px'
-                                        }}>
-                                            {[
-                                                { label: 'Total Earned', value: `${totalPts} pts`, color: '#EAB308' },
-                                                { label: 'Chores Done', value: approved.length, color: 'var(--green)' },
-                                                { label: 'Pending', value: pending.length, color: '#F59E0B' },
-                                                { label: 'Rejected', value: rejected.length, color: 'var(--red)' }
-                                            ].map(s => (
-                                                <div key={s.label} style={{
-                                                    background: 'var(--surface)',
-                                                    borderRadius: '12px',
-                                                    padding: '14px',
-                                                    textAlign: 'center'
-                                                }}>
-                                                    <div style={{ fontWeight: 700, fontSize: '1.3rem', color: s.color }}>{s.value}</div>
-                                                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: '2px' }}>{s.label}</div>
-                                                </div>
-                                            ))}
-                                        </div>
-
-                                        {/* Data health flags */}
-                                        {stale.length > 0 && (
-                                            <div style={{
-                                                background: 'rgba(245, 158, 11, 0.12)',
-                                                border: '1px solid rgba(245, 158, 11, 0.3)',
-                                                borderRadius: '12px',
-                                                padding: '12px 16px',
-                                                marginBottom: '16px',
-                                                fontSize: '0.85rem',
-                                                color: '#F59E0B'
-                                            }}>
-                                                ⚠️ {stale.length} pending {stale.length === 1 ? 'chore is' : 'chores are'} over 24h old — review or reject in the Pending tab.
-                                            </div>
-                                        )}
-
-                                        {oldest && (
-                                            <div style={{
-                                                color: 'var(--text-secondary)',
-                                                fontSize: '0.78rem',
-                                                marginBottom: '16px',
-                                                textAlign: 'center'
-                                            }}>
-                                                Data since {fmtDate(oldest)} · {allLogs.length} total records on this device
-                                            </div>
-                                        )}
-
-                                        {/* Log list */}
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                            {sorted.map(log => (
-                                                <div key={log.id} style={{
-                                                    background: 'var(--surface)',
-                                                    borderRadius: '12px',
-                                                    padding: '12px 14px',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '12px',
-                                                    opacity: log.status === 'rejected' ? 0.5 : 1
-                                                }}>
-                                                    <span style={{ fontSize: '1.5rem', flexShrink: 0 }}>{log.choreIcon}</span>
-                                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                                        <div style={{ fontWeight: 600, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                            {log.choreName}
-                                                        </div>
-                                                        <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: '1px' }}>
-                                                            {log.playerName} · {fmtDate(log.timestamp)} {fmtTime(log.timestamp)}
-                                                        </div>
-                                                    </div>
-                                                    <div style={{ color: 'var(--cyan)', fontWeight: 700, fontSize: '0.85rem', flexShrink: 0 }}>
-                                                        {log.status === 'approved' ? '+' : ''}{log.points}
-                                                    </div>
-                                                    <div style={{
-                                                        width: '24px',
-                                                        height: '24px',
-                                                        borderRadius: '50%',
-                                                        background: `${statusColor[log.status]}22`,
-                                                        color: statusColor[log.status],
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        fontWeight: 700,
-                                                        fontSize: '0.8rem',
-                                                        flexShrink: 0
-                                                    }}>
-                                                        {statusLabel[log.status]}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-
-                                        {allLogs.length === 0 && (
-                                            <div style={{ textAlign: 'center', color: 'var(--text-secondary)', marginTop: '60px' }}>
-                                                No history on this device yet.
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })()
-                        ) : !unlocked ? (
-                            /* Code Entry */
-                            <div style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                height: '100%',
-                                gap: '24px'
-                            }}>
-                                <div style={{ fontSize: '4rem' }}>🔐</div>
-                                <input
-                                    type="password"
-                                    inputMode="numeric"
-                                    maxLength={4}
-                                    value={code}
-                                    onChange={(e) => checkCode(e.target.value)}
-                                    placeholder="••••"
-                                    autoFocus
-                                    style={{
-                                        background: 'var(--surface)',
-                                        border: error ? '2px solid var(--red)' : '2px solid transparent',
-                                        borderRadius: '12px',
-                                        padding: '16px',
-                                        fontSize: '2rem',
-                                        fontWeight: 700,
-                                        color: 'var(--text)',
-                                        textAlign: 'center',
-                                        width: '160px',
-                                        letterSpacing: '8px',
-                                        outline: 'none'
-                                    }}
-                                />
-                                {error && (
-                                    <div style={{ color: 'var(--red)', fontSize: '0.9rem' }}>
-                                        Wrong code
-                                    </div>
-                                )}
-                            </div>
-                        ) : logs.length === 0 ? (
-                            /* Empty State */
-                            <div style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                height: '100%',
-                                gap: '16px',
-                                color: 'var(--text-secondary)'
-                            }}>
-                                <div style={{ fontSize: '4rem' }}>✅</div>
-                                <div style={{ fontSize: '1.2rem', fontWeight: 600 }}>All caught up!</div>
-                                <div>No chores waiting for approval</div>
-                            </div>
-                        ) : (
-                            /* Pending List */
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                {logs.map(log => (
-                                    <div
-                                        key={log.id}
-                                        style={{
-                                            background: 'var(--surface)',
-                                            borderRadius: 'var(--radius)',
-                                            padding: '16px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '16px'
-                                        }}
-                                    >
-                                        <span style={{ fontSize: '2rem' }}>{log.choreIcon}</span>
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ fontWeight: 600 }}>{log.choreName}</div>
-                                            <div style={{
-                                                color: 'var(--text-secondary)',
-                                                fontSize: '0.85rem',
-                                                marginTop: '2px'
-                                            }}>
-                                                {log.playerName}
-                                            </div>
-                                        </div>
-                                        <div style={{
-                                            color: 'var(--cyan)',
-                                            fontWeight: 700,
-                                            marginRight: '8px'
-                                        }}>
-                                            +{log.points}
-                                        </div>
-                                        <button
-                                            onClick={() => onReject(log.id)}
-                                            aria-label={`Reject ${log.choreName}`}
-                                            style={{
-                                                background: 'rgba(239, 68, 68, 0.15)',
-                                                border: 'none',
-                                                borderRadius: '10px',
-                                                padding: '10px 14px',
-                                                color: 'var(--red)',
-                                                fontWeight: 600,
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            ✕
-                                        </button>
-                                        <button
-                                            onClick={() => onApprove(log.id)}
-                                            aria-label={`Approve ${log.choreName}`}
-                                            style={{
-                                                background: 'rgba(34, 197, 94, 0.15)',
-                                                border: 'none',
-                                                borderRadius: '10px',
-                                                padding: '10px 14px',
-                                                color: 'var(--green)',
-                                                fontWeight: 600,
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            ✓
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
+                <div style={{fontSize:'0.75rem',fontWeight:700,color:'#22D3EE',fontFamily:'monospace',flexShrink:0,marginLeft:'12px'}}>
+                  {log.points}pts
                 </div>
-            );
-        }
+              </div>
+              {log.status==='pending' ? (
+                <div style={{display:'flex',gap:'8px'}}>
+                  <button onClick={()=>onUpdate(log.id,'approved')} style={{flex:1,padding:'9px',background:'rgba(34,197,94,0.1)',border:'1px solid #22C55E',borderRadius:'6px',color:'#22C55E',fontSize:'0.7rem',fontWeight:700,cursor:'pointer',fontFamily:'monospace',letterSpacing:'1px'}}>✓ APPROVE</button>
+                  <button onClick={()=>onUpdate(log.id,'rejected')} style={{flex:1,padding:'9px',background:'rgba(239,68,68,0.1)',border:'1px solid #EF4444',borderRadius:'6px',color:'#EF4444',fontSize:'0.7rem',fontWeight:700,cursor:'pointer',fontFamily:'monospace',letterSpacing:'1px'}}>✕ REJECT</button>
+                </div>
+              ) : (
+                <div style={{fontSize:'0.68rem',color:log.status==='approved'?'#22C55E':'#EF4444',fontFamily:'monospace',letterSpacing:'1px'}}>{log.status.toUpperCase()}</div>
+              )}
+            </div>
+          );
+        })}
+        <div style={{height:'40px'}}/>
+      </div>
+    </div>
+  );
+}
 
-        // ============================================
-        // RENDER
+// ─── APP ─────────────────────────────────────────────────────────────────────
+function App() {
+  const [player,   setPlayer]   = useState(null);
+  const [showAdmin,setAdmin]    = useState(false);
+  const [logs,     setLogs]     = useState(loadLogs);
+  const [syncStatus,setSyncSt]  = useState(supabase?'idle':'offline');
 
-        // ============================================
+  // ── sync engine ─────────────────────────────────────────────────────────────
+  const sync = useCallback(async () => {
+    if (!supabase) { setSyncSt('offline'); return; }
+    setSyncSt('syncing');
+    let work = loadLogs();
+    try {
+      for (const l of work.filter(x=>x.remoteId==null)) {
+        const {data,error} = await supabase.from('simple_logs').insert(toRow(l)).select().single();
+        if (error) throw error;
+        l.remoteId=data.id; l.synced=true; l.statusDirty=false;
+        if (data.created_at) l.timestamp=data.created_at;
+      }
+      for (const l of work.filter(x=>x.remoteId!=null&&x.statusDirty)) {
+        const {error} = await supabase.from('simple_logs').update({status:l.status}).eq('id',l.remoteId);
+        if (error) throw error; l.statusDirty=false;
+      }
+      const {data:rows,error:selErr} = await supabase.from('simple_logs').select('*').order('created_at',{ascending:false});
+      if (selErr) throw selErr;
+      const byRemote={};
+      work.forEach(l=>{if(l.remoteId!=null) byRemote[String(l.remoteId)]=l;});
+      (rows||[]).forEach(r=>{
+        const ex=byRemote[String(r.id)];
+        if(ex){if(!ex.statusDirty) ex.status=r.status;} else work.push(rowToLocal(r));
+      });
+      const latest=loadLogs(), workById={};
+      work.forEach(l=>{workById[l.id]=l;});
+      latest.forEach(l=>{
+        if(!workById[l.id]) work.push(l);
+        else if(l.statusDirty){workById[l.id].status=l.status; workById[l.id].statusDirty=true;}
+      });
+      work.sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
+      saveLogs(work); setLogs(work.slice()); setSyncSt('synced');
+    } catch(e) {
+      console.warn('sync deferred:', e?.message||e); setSyncSt('offline');
+    }
+  }, []);
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js').catch(() => {});
-            });
-        }
-    </script>
+  useEffect(()=>{sync();},[sync]);
+  useEffect(()=>{
+    const t=setInterval(sync,5000);
+    const onVis=()=>{if(!document.hidden) sync();};
+    const onOnl=()=>sync();
+    const onSto=e=>{if(e.key===STORAGE_KEY) setLogs(loadLogs());};
+    document.addEventListener('visibilitychange',onVis);
+    window.addEventListener('online',onOnl);
+    window.addEventListener('storage',onSto);
+    return ()=>{clearInterval(t); document.removeEventListener('visibilitychange',onVis); window.removeEventListener('online',onOnl); window.removeEventListener('storage',onSto);};
+  },[sync]);
+
+  // ── submit full card (batch) ─────────────────────────────────────────────────
+  const submitCard = useCallback(async (chores) => {
+    const now = Date.now();
+    const newLogs = chores.map((c,i) => ({
+      id:makeId(), remoteId:null, synced:false, statusDirty:false,
+      playerId:player.id, playerName:player.name,
+      choreId:c.id, choreName:c.name, choreIcon:'',
+      points:c.pts, timestamp:new Date(now+i).toISOString(), status:'pending',
+    }));
+    const next = [...newLogs, ...loadLogs()].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
+    saveLogs(next); setLogs(next); sync();
+  }, [player, sync]);
+
+  // ── admin approve/reject ──────────────────────────────────────────────────────
+  const updateLog = useCallback((localId, status) => {
+    const work = loadLogs().map(l=>l.id===localId?{...l,status,statusDirty:true}:l);
+    saveLogs(work); setLogs(work.slice()); sync();
+  }, [sync]);
+
+  return (
+    <div style={{height:'100%'}}>
+      {showAdmin && <AdminModal logs={logs} onClose={()=>setAdmin(false)} onUpdate={updateLog}/>}
+      {!showAdmin && !player && <PlayerSelect onSelect={setPlayer} onAdmin={()=>setAdmin(true)}/>}
+      {!showAdmin && player && (
+        <PlayerCardView
+          player={player} logs={logs}
+          onBack={()=>{setPlayer(null); sync();}}
+          onSubmitCard={submitCard}
+          syncStatus={syncStatus}
+        />
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
 </body>
 </html>
