@@ -3,56 +3,69 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GyattChores — Points Recovery</title>
+<meta name="theme-color" content="#000000">
+<title>Points Recovery — GyattChores</title>
 <style>
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-         max-width: 680px; margin: 48px auto; padding: 0 24px;
-         background: #0a0a0f; color: #e5e7eb; line-height: 1.6; }
-  h1 { color: #00e5ff; font-size: 1.4rem; margin-bottom: 4px; }
-  .sub { color: #4a7a8a; font-size: 0.85rem; margin-bottom: 32px; }
-  .card { background: #0d1f28; border: 1px solid #1a3340;
-          padding: 20px; margin-bottom: 16px; border-radius: 4px; }
-  .player { font-size: 1.1rem; color: #00e5ff; font-weight: 600; margin-bottom: 8px; }
-  .big { font-size: 2rem; font-weight: 700; color: #ffe600; }
-  .big span { font-size: 0.9rem; color: #4a7a8a; font-weight: 400; }
-  table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 0.85rem; }
-  th { text-align: left; color: #4a7a8a; padding: 4px 8px; border-bottom: 1px solid #1a3340; }
-  td { padding: 4px 8px; border-bottom: 1px solid #0d1f28; }
-  .approved { color: #22c55e; }
-  .pending  { color: #ffe600; }
-  .rejected { color: #ef4444; }
-  .empty { color: #4a7a8a; text-align: center; padding: 32px; }
-  .export-btn { background: #00e5ff; color: #0a0a0f; border: none;
-                padding: 10px 20px; font-size: 0.9rem; font-weight: 600;
-                cursor: pointer; margin-top: 24px; width: 100%; }
-  pre { background: #030a0e; padding: 16px; font-size: 0.75rem;
-        overflow-x: auto; color: #4a7a8a; margin-top: 16px;
-        border: 1px solid #1a3340; white-space: pre-wrap; word-break: break-all; }
-  .monthly-grid { display: grid; grid-template-columns: auto 1fr 1fr; gap: 4px 16px;
-                  font-size: 0.85rem; margin-top: 8px; }
-  .month-label { color: #4a7a8a; }
-  .month-pts   { color: #ffe600; font-weight: 600; }
-  .month-count { color: #4a7a8a; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #000; color: #fff; font-family: 'Courier New', Courier, monospace; line-height: 1.6; }
+a { color: #00FF41; text-decoration: none; }
+a:hover { text-decoration: underline; }
+nav { border-bottom: 1px solid #1a1a1a; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: #000; z-index: 10; }
+.nav-brand { font-size: 0.85rem; font-weight: 700; letter-spacing: 4px; color: #fff; text-decoration: none; }
+.nav-links { display: flex; gap: 24px; font-size: 0.72rem; letter-spacing: 1px; }
+.nav-links a { color: #555; }
+.nav-links a:hover { color: #00FF41; }
+.container { max-width: 680px; margin: 0 auto; padding: 52px 24px 80px; }
+h1 { font-size: 1.1rem; font-weight: 900; letter-spacing: 2px; margin-bottom: 6px; }
+.sub { font-size: 0.72rem; color: #444; letter-spacing: 1px; margin-bottom: 36px; }
+.card { border: 1px solid #1a1a1a; padding: 20px; margin-bottom: 12px; }
+.player-name { font-size: 0.72rem; letter-spacing: 4px; color: #00FF41; font-weight: 700; margin-bottom: 10px; text-transform: uppercase; }
+.big { font-size: 2rem; font-weight: 900; color: #fff; }
+.big span { font-size: 0.8rem; color: #444; font-weight: 400; }
+.status-line { font-size: 0.78rem; color: #444; margin-top: 6px; }
+table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 0.82rem; }
+th { text-align: left; color: #444; padding: 6px 0; border-bottom: 1px solid #1a1a1a; font-size: 0.68rem; letter-spacing: 2px; text-transform: uppercase; }
+td { padding: 6px 0; border-bottom: 1px solid #111; color: #bbb; }
+.approved { color: #22C55E; }
+.pending  { color: #F5A623; }
+.rejected { color: #EF4444; }
+.empty { color: #444; text-align: center; padding: 40px; font-size: 0.82rem; }
+.export-btn { background: #00FF41; color: #000; border: none; padding: 12px 20px; font-size: 0.78rem; font-weight: 700; letter-spacing: 2px; cursor: pointer; margin-top: 24px; width: 100%; font-family: 'Courier New', monospace; }
+.export-btn:hover { background: #00cc33; }
+pre { background: #111; border: 1px solid #1a1a1a; padding: 16px; font-size: 0.72rem; overflow-x: auto; color: #444; margin-top: 16px; white-space: pre-wrap; word-break: break-all; }
+.monthly-grid { display: grid; grid-template-columns: auto 1fr 1fr; gap: 4px 20px; font-size: 0.82rem; margin-top: 14px; padding-top: 14px; border-top: 1px solid #1a1a1a; }
+.month-label { color: #444; }
+.month-pts   { color: #fff; font-weight: 700; }
+.month-count { color: #444; }
 </style>
 </head>
 <body>
-<h1>points recovery</h1>
-<p class="sub">reads your device's local storage. open this page on the same browser/device where you use gyattchores.</p>
+<nav>
+  <a href="/" class="nav-brand">GYATTCHORES</a>
+  <div class="nav-links">
+    <a href="/">app</a>
+    <a href="/about.html">about</a>
+  </div>
+</nav>
+<div class="container">
+  <h1>POINTS RECOVERY</h1>
+  <p class="sub">reads this device's local storage — open on the same browser where you use gyattchores</p>
 
-<div id="output"></div>
-<button class="export-btn" onclick="copyJSON()">copy raw json to clipboard</button>
-<pre id="raw"></pre>
+  <div id="output"></div>
+  <button class="export-btn" onclick="copyJSON()">COPY RAW JSON TO CLIPBOARD</button>
+  <pre id="raw"></pre>
+</div>
 
 <script>
 const KEY = 'gyattchores_logs';
 
 function run() {
-  const raw = localStorage.getItem(KEY);
-  const out  = document.getElementById('output');
+  const raw   = localStorage.getItem(KEY);
+  const out   = document.getElementById('output');
   const rawEl = document.getElementById('raw');
 
   if (!raw) {
-    out.innerHTML = '<div class="card"><p class="empty">no data found in localStorage on this device.<br>the points may be in supabase — run the points-recovery github action.</p></div>';
+    out.innerHTML = '<div class="card"><p class="empty">no data found on this device.<br>points may be in supabase — run the points-recovery github action.</p></div>';
     return;
   }
 
@@ -70,19 +83,16 @@ function run() {
 
   let html = '';
 
-  // Per-player summary
   players.forEach(p => {
-    const pLogs     = approved.filter(l => (l.playerName || l.player_name) === p);
-    const allLogs   = logs.filter(l => (l.playerName || l.player_name) === p);
-    const totalPts  = pLogs.reduce((s, l) => s + (l.points || 0), 0);
-    const pending   = allLogs.filter(l => l.status === 'pending').length;
-    const rejected  = allLogs.filter(l => l.status === 'rejected').length;
+    const pLogs    = approved.filter(l => (l.playerName || l.player_name) === p);
+    const allLogs  = logs.filter(l => (l.playerName || l.player_name) === p);
+    const totalPts = pLogs.reduce((s, l) => s + (l.points || 0), 0);
+    const pending  = allLogs.filter(l => l.status === 'pending').length;
+    const rejected = allLogs.filter(l => l.status === 'rejected').length;
 
-    // Monthly breakdown
     const byMonth = {};
     pLogs.forEach(l => {
-      const ts = l.timestamp || l.created_at || '';
-      const m  = ts.slice(0, 7); // "2026-01"
+      const m = (l.timestamp || l.created_at || '').slice(0, 7);
       if (!m) return;
       if (!byMonth[m]) byMonth[m] = { pts: 0, count: 0 };
       byMonth[m].pts   += l.points || 0;
@@ -96,7 +106,6 @@ function run() {
               <div class="month-count">${byMonth[m].count} chores</div>`;
     }).join('');
 
-    // Top 5 chores
     const choreCount = {};
     pLogs.forEach(l => {
       const n = l.choreName || l.chore_name || 'unknown';
@@ -108,22 +117,19 @@ function run() {
 
     html += `
     <div class="card">
-      <div class="player">${p}</div>
-      <div class="big">${totalPts.toLocaleString()} <span>all-time pts (${pLogs.length} approved chores)</span></div>
-      <div style="margin-top:8px;font-size:0.85rem;color:#4a7a8a">
-        ${pending} pending · ${rejected} rejected
-      </div>
-      ${monthRows ? `<div class="monthly-grid" style="margin-top:16px">${monthRows}</div>` : ''}
-      ${topChores ? `<table style="margin-top:16px"><tr><th>chore</th><th>times done</th></tr>${topChores}</table>` : ''}
+      <div class="player-name">${p}</div>
+      <div class="big">${totalPts.toLocaleString()} <span>all-time pts &nbsp;·&nbsp; ${pLogs.length} approved</span></div>
+      <div class="status-line">${pending} pending &nbsp;·&nbsp; ${rejected} rejected</div>
+      ${monthRows ? `<div class="monthly-grid">${monthRows}</div>` : ''}
+      ${topChores ? `<table style="margin-top:16px"><tr><th>chore</th><th>count</th></tr>${topChores}</table>` : ''}
     </div>`;
   });
 
-  // Grand total
   const grand = approved.reduce((s,l) => s + (l.points||0), 0);
   html += `
   <div class="card">
-    <div class="player">total — all players</div>
-    <div class="big">${grand.toLocaleString()} <span>pts · ${approved.length} approved chores · ${logs.length} total logs</span></div>
+    <div class="player-name">all players</div>
+    <div class="big">${grand.toLocaleString()} <span>total pts &nbsp;·&nbsp; ${approved.length} approved &nbsp;·&nbsp; ${logs.length} total logs</span></div>
   </div>`;
 
   out.innerHTML = html || '<div class="card"><p class="empty">no approved logs found.</p></div>';
@@ -131,7 +137,7 @@ function run() {
 
 function copyJSON() {
   const raw = localStorage.getItem(KEY) || '[]';
-  navigator.clipboard.writeText(raw).then(() => alert('copied to clipboard'));
+  navigator.clipboard.writeText(raw).then(() => alert('copied'));
 }
 
 run();

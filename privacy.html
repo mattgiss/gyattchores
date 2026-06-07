@@ -1,74 +1,95 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Privacy Policy — GyattChores</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 680px; margin: 48px auto; padding: 0 24px; color: #1a1a1a; line-height: 1.7; }
-        h1 { font-size: 2rem; margin-bottom: 8px; }
-        h2 { font-size: 1.2rem; margin-top: 36px; margin-bottom: 8px; }
-        .meta { color: #666; margin-bottom: 40px; }
-        a { color: #06b6d4; }
-        @media (prefers-color-scheme: dark) {
-            body { background: #0a0a0f; color: #e5e7eb; }
-            .meta { color: #9ca3af; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#000000">
+<title>Privacy Policy — GyattChores</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #000; color: #fff; font-family: 'Courier New', Courier, monospace; line-height: 1.75; }
+a { color: #00FF41; text-decoration: none; }
+a:hover { text-decoration: underline; }
+nav { border-bottom: 1px solid #1a1a1a; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: #000; z-index: 10; }
+.nav-brand { font-size: 0.85rem; font-weight: 700; letter-spacing: 4px; color: #fff; text-decoration: none; }
+.nav-links { display: flex; gap: 24px; font-size: 0.72rem; letter-spacing: 1px; }
+.nav-links a { color: #555; }
+.nav-links a:hover { color: #00FF41; }
+.container { max-width: 680px; margin: 0 auto; padding: 52px 24px 80px; }
+h1 { font-size: 1.2rem; font-weight: 900; letter-spacing: 2px; margin-bottom: 6px; }
+h2 { font-size: 0.72rem; font-weight: 700; letter-spacing: 3px; color: #00FF41; text-transform: uppercase; margin: 36px 0 10px; }
+p { margin-bottom: 14px; font-size: 0.88rem; color: #bbb; }
+ul { margin: 0 0 14px 0; list-style: none; }
+li { padding-left: 16px; position: relative; margin-bottom: 6px; font-size: 0.88rem; color: #bbb; }
+li::before { content: '—'; position: absolute; left: 0; color: #333; }
+strong { color: #fff; }
+.meta { font-size: 0.7rem; color: #444; letter-spacing: 2px; margin-bottom: 44px; }
+hr { border: none; border-top: 1px solid #1a1a1a; margin: 12px 0; }
+</style>
 </head>
 <body>
-<h1>Privacy Policy</h1>
-<p class="meta">GyattChores · Last updated June 6, 2026 · Effective immediately</p>
+<nav>
+  <a href="/" class="nav-brand">GYATTCHORES</a>
+  <div class="nav-links">
+    <a href="/">app</a>
+    <a href="/about.html">about</a>
+  </div>
+</nav>
+<div class="container">
+  <h1>Privacy Policy</h1>
+  <p class="meta">GYATTCHORES &nbsp;·&nbsp; LAST UPDATED JUNE 6, 2026 &nbsp;·&nbsp; EFFECTIVE IMMEDIATELY</p>
+  <hr>
 
-<h2>What GyattChores is</h2>
-<p>GyattChores is a private family chore tracker. Children tap to log chores they have completed, a parent approves them with a PIN, and points roll into a friendly weekly competition. It is designed to be used within a single household.</p>
+  <h2>What GyattChores is</h2>
+  <p>GyattChores is a private family chore tracker. Children check off chores they have completed, a parent approves them, and points accumulate over time. It is designed for use within a single household.</p>
 
-<h2>Data we collect</h2>
-<p><strong>We collect no personal data.</strong> GyattChores does not require an account, email address, name, phone number, or any identifying information.</p>
-<p>The only information stored by the app is a list of chore log entries, each containing:</p>
-<ul>
+  <h2>Data we collect</h2>
+  <p><strong>We collect no personal data.</strong> GyattChores does not require an account, email address, name, phone number, or any identifying information.</p>
+  <p>The only information stored by the app is a list of chore log entries, each containing:</p>
+  <ul>
     <li>A player nickname chosen by your family (e.g. "bekindhearted")</li>
     <li>The name of the chore completed</li>
     <li>The point value of that chore</li>
     <li>The date and time it was logged</li>
     <li>An approval status (pending, approved, or rejected)</li>
-</ul>
-<p>This information is stored on your device in local storage (browser) or UserDefaults (iOS). It never leaves your device unless you choose to enable optional cross-device sync (see below).</p>
+  </ul>
+  <p>This information is stored on your device in local storage. It never leaves your device unless you choose to enable optional cloud sync.</p>
 
-<h2>Optional cloud sync</h2>
-<p>GyattChores offers optional sync via Supabase so that chore logs can be shared across family members' devices. If you enable sync:</p>
-<ul>
-    <li>The chore log entries described above are stored in a private Supabase database associated with your household.</li>
-    <li>Access is controlled by Supabase's row-level security. No other users can access your data.</li>
-    <li>Supabase's own privacy policy applies to this data: <a href="https://supabase.com/privacy">supabase.com/privacy</a></li>
-</ul>
-<p>Sync is off by default. The app works fully without it.</p>
+  <h2>Optional cloud sync</h2>
+  <p>GyattChores offers optional sync via Supabase so chore logs can be shared across family members' devices. If you enable sync:</p>
+  <ul>
+    <li>The chore log entries described above are stored in a private Supabase database associated with your household</li>
+    <li>Access is controlled by Supabase's row-level security — no other users can access your data</li>
+    <li>Supabase's own privacy policy applies: <a href="https://supabase.com/privacy">supabase.com/privacy</a></li>
+  </ul>
+  <p>Sync is on by default when a Supabase key is present. The app works fully without it.</p>
 
-<h2>Data we do NOT collect</h2>
-<ul>
+  <h2>Data we do not collect</h2>
+  <ul>
     <li>No names, email addresses, or accounts</li>
     <li>No location data</li>
     <li>No device identifiers</li>
     <li>No analytics or crash reporting sent to third parties</li>
     <li>No advertising identifiers</li>
     <li>No data sold or shared with any third party</li>
-</ul>
+  </ul>
 
-<h2>Children's privacy</h2>
-<p>GyattChores is designed for use by children under parental supervision. We do not knowingly collect personal information from children. The player nicknames used in the app are chosen by the parent and are not personal data under COPPA or similar regulations. No data is shared with third parties.</p>
+  <h2>Children's privacy</h2>
+  <p>GyattChores is designed for use by children under parental supervision. We do not knowingly collect personal information from children. The player nicknames used in the app are chosen by the parent and are not personal data under COPPA or similar regulations. No data is shared with third parties.</p>
 
-<h2>Data deletion</h2>
-<p>All local data can be deleted at any time by clearing the app's storage:</p>
-<ul>
-    <li><strong>Web app:</strong> Open browser DevTools → Application → Local Storage → Clear all entries for gyattchores.com</li>
-    <li><strong>iOS app:</strong> Delete and reinstall the app, or go to Settings → General → iPhone Storage → GyattChores → Delete App</li>
-    <li><strong>Cloud sync (if enabled):</strong> Contact the sync database owner (the household that set up Supabase), or delete the Supabase project.</li>
-</ul>
+  <h2>Data deletion</h2>
+  <p>All local data can be deleted at any time by clearing the app's storage:</p>
+  <ul>
+    <li><strong>Web app:</strong> Browser DevTools → Application → Local Storage → clear entries for gyattchores.com</li>
+    <li><strong>iOS app:</strong> Delete and reinstall, or Settings → General → iPhone Storage → GyattChores → Delete App</li>
+    <li><strong>Cloud sync:</strong> Contact the household that set up Supabase, or delete the Supabase project</li>
+  </ul>
 
-<h2>Changes to this policy</h2>
-<p>If this policy changes materially, the "Last updated" date above will be updated and a summary of changes will be posted in the app's release notes.</p>
+  <h2>Changes to this policy</h2>
+  <p>If this policy changes materially, the "Last updated" date above will be updated and a summary posted in the app's release notes.</p>
 
-<h2>Contact</h2>
-<p>GyattChores is a small family project. For any privacy questions, contact us at <a href="mailto:matt@gissentanna.com">matt@gissentanna.com</a>.</p>
+  <h2>Contact</h2>
+  <p>GyattChores is a small family project. For any privacy questions: <a href="mailto:matt@gissentanna.com">matt@gissentanna.com</a></p>
+</div>
 </body>
 </html>
