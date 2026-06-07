@@ -6,7 +6,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#050D14">
+<meta name="theme-color" content="#000000">
 <title>GyattChores</title>
 <link rel="icon" type="image/svg+xml" href="gyattchores-logo-transparent.svg">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -17,7 +17,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; background: #050D14; color: #F8FAFC; overflow: hidden; }
+html, body { height: 100%; background: #000000; color: #FFFFFF; overflow: hidden; }
 body { font-family: 'Courier New', Courier, monospace; -webkit-font-smoothing: antialiased; }
 #root { height: 100%; }
 
@@ -41,7 +41,7 @@ body { font-family: 'Courier New', Courier, monospace; -webkit-font-smoothing: a
 .scroll { overflow-y:auto; -webkit-overflow-scrolling:touch; }
 .scroll::-webkit-scrollbar       { width:2px; }
 .scroll::-webkit-scrollbar-track { background:transparent; }
-.scroll::-webkit-scrollbar-thumb { background:#162035; border-radius:2px; }
+.scroll::-webkit-scrollbar-thumb { background:#2A2A2A; border-radius:2px; }
 </style>
 </head>
 <body>
@@ -185,7 +185,7 @@ function CyberpunkAvatar({ player, levelNum }) {
       <polygon points="50,2 96,26 96,74 50,98 4,74 4,26"
         fill="none" stroke={color} strokeWidth="0.7" opacity="0.3"/>
       <polygon points="50,8 91,30 91,70 50,92 9,70 9,30"
-        fill="#060F1C" stroke={color} strokeWidth="1.8"/>
+        fill="#000000" stroke={color} strokeWidth="1.8"/>
       {[...Array(13)].map((_,i)=>(
         <line key={i} x1="9" x2="91" y1={18+i*5.8} y2={18+i*5.8}
           stroke={color} strokeWidth="0.4" opacity="0.07"/>
@@ -217,23 +217,23 @@ function ChoreRow({ chore, checked, color, glow, onToggle }) {
     <div onClick={onToggle} style={{
       display:'flex', alignItems:'center', gap:'12px',
       padding:'14px 16px', borderRadius:'8px', marginBottom:'8px',
-      background: checked ? `rgba(${r},0.07)` : '#0A1827',
-      border:`1px solid ${checked ? color : '#162035'}`,
+      background: checked ? `rgba(${r},0.07)` : '#111111',
+      border:`1px solid ${checked ? color : '#2A2A2A'}`,
       cursor:'pointer', transition:'all 0.15s',
       boxShadow: checked ? `0 0 12px ${glow}` : 'none',
     }}>
       <div style={{
         width:22, height:22, borderRadius:4, flexShrink:0,
-        border:`2px solid ${checked ? color : '#243550'}`,
+        border:`2px solid ${checked ? color : '#333333'}`,
         background: checked ? color : 'transparent',
         display:'flex', alignItems:'center', justifyContent:'center',
         transition:'all 0.15s',
       }}>
-        {checked && <span style={{color:'#050D14', fontSize:'12px', fontWeight:900, lineHeight:1}}>✓</span>}
+        {checked && <span style={{color:'#000000', fontSize:'12px', fontWeight:900, lineHeight:1}}>✓</span>}
       </div>
       <div style={{
         flex:1, fontSize:'0.87rem', fontWeight:600,
-        color: checked ? '#3A556A' : '#D4E4F0',
+        color: checked ? '#555555' : '#FFFFFF',
         textDecoration: checked ? 'line-through' : 'none',
         fontFamily:"'Courier New', monospace",
         transition:'color 0.15s',
@@ -247,7 +247,7 @@ function ChoreRow({ chore, checked, color, glow, onToggle }) {
           </div>
         )}
         <div style={{fontSize:'0.75rem', fontFamily:'monospace',
-          color: chore.escalLevel>0 ? escalColor : '#3A556A'}}>
+          color: chore.escalLevel>0 ? escalColor : '#555555'}}>
           {chore.currentMinutes}m
         </div>
       </div>
@@ -288,19 +288,19 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus }) {
   const syncDot = syncStatus==='syncing' ? '#EAB308' : syncStatus==='offline' ? '#EF4444' : '#22C55E';
 
   return (
-    <div className="fade-in" style={{display:'flex', flexDirection:'column', height:'100%', background:'#050D14'}}>
+    <div className="fade-in" style={{display:'flex', flexDirection:'column', height:'100%', background:'#000000'}}>
       {/* top bar */}
       <div style={{
         display:'flex', alignItems:'center', justifyContent:'space-between',
-        padding:'14px 20px', borderBottom:'1px solid #0D1E30', flexShrink:0,
+        padding:'14px 20px', borderBottom:'1px solid #1E1E1E', flexShrink:0,
       }}>
         <button onClick={onBack} style={{
-          background:'none', border:'none', color:'#3A556A',
+          background:'none', border:'none', color:'#555555',
           fontSize:'0.75rem', cursor:'pointer', fontFamily:'monospace', letterSpacing:'1px',
         }}>← back</button>
         <div style={{display:'flex', alignItems:'center', gap:'6px'}}>
           <div style={{width:6, height:6, borderRadius:'50%', background:syncDot}}/>
-          <span style={{fontSize:'0.65rem', color:'#3A556A', fontFamily:'monospace', letterSpacing:'2px'}}>
+          <span style={{fontSize:'0.65rem', color:'#555555', fontFamily:'monospace', letterSpacing:'2px'}}>
             {syncStatus==='syncing'?'sync':'live'}
           </span>
         </div>
@@ -332,26 +332,26 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus }) {
               <React.Fragment key={label}>
                 <div style={{textAlign:'center'}}>
                   <div style={{color, fontWeight:700, fontSize:'1.05rem', fontFamily:'monospace'}}>{val}</div>
-                  <div style={{color:'#3A556A', fontSize:'0.62rem', letterSpacing:'2px', fontFamily:'monospace'}}>{label}</div>
+                  <div style={{color:'#555555', fontSize:'0.62rem', letterSpacing:'2px', fontFamily:'monospace'}}>{label}</div>
                 </div>
-                {i < arr.length-1 && <div style={{width:'1px', background:'#0D1E30'}}/>}
+                {i < arr.length-1 && <div style={{width:'1px', background:'#1E1E1E'}}/>}
               </React.Fragment>
             ))}
           </div>
         </div>
 
         {/* divider */}
-        <div style={{height:'1px', background:'#0D1E30', marginBottom:'20px'}}/>
+        <div style={{height:'1px', background:'#1E1E1E', marginBottom:'20px'}}/>
 
         {/* card header */}
         <div style={{
           display:'flex', justifyContent:'space-between', alignItems:'baseline',
           marginBottom:'12px',
         }}>
-          <div style={{fontSize:'0.65rem', letterSpacing:'4px', color:'#3A556A', fontFamily:'monospace'}}>
+          <div style={{fontSize:'0.65rem', letterSpacing:'4px', color:'#555555', fontFamily:'monospace'}}>
             TODAY'S CARD
           </div>
-          <div style={{fontSize:'0.65rem', color:'#3A556A', fontFamily:'monospace'}}>
+          <div style={{fontSize:'0.65rem', color:'#555555', fontFamily:'monospace'}}>
             {doneCount}/{card.chores.length} · est {totalMin}m
           </div>
         </div>
@@ -366,7 +366,7 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus }) {
         {/* escalation legend (shown if any chore is escalated) */}
         {card.chores.some(c=>c.escalLevel>0) && (
           <div style={{
-            fontSize:'0.62rem', color:'#3A556A', fontFamily:'monospace',
+            fontSize:'0.62rem', color:'#555555', fontFamily:'monospace',
             letterSpacing:'1px', marginTop:'4px', marginBottom:'8px',
           }}>
             ↑ = neglected · ↑↑ = long overdue
@@ -398,9 +398,9 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus }) {
           ) : (
             <button onClick={submit} disabled={!allChecked||submitting} style={{
               width:'100%', padding:'17px', borderRadius:'8px', cursor:allChecked?'pointer':'default',
-              background: allChecked ? color : '#090F1C',
-              border:`1px solid ${allChecked ? color : '#162035'}`,
-              color: allChecked ? '#050D14' : '#3A556A',
+              background: allChecked ? color : '#111111',
+              border:`1px solid ${allChecked ? color : '#2A2A2A'}`,
+              color: allChecked ? '#000000' : '#555555',
               fontSize:'0.75rem', fontWeight:800, letterSpacing:'3px',
               fontFamily:'monospace', transition:'all 0.2s',
               boxShadow: allChecked ? `0 0 28px ${glow}` : 'none',
@@ -430,7 +430,7 @@ function PlayerSelect({ onSelect, onAdmin }) {
     <div className="fade-in" style={{
       display:'flex', flexDirection:'column', alignItems:'center',
       justifyContent:'center', height:'100%', padding:'40px 28px',
-      background:'#050D14',
+      background:'#000000',
     }}>
       <div onClick={handleTitle} style={{marginBottom:'56px', cursor:'default', userSelect:'none', textAlign:'center'}}>
         <div style={{
@@ -439,7 +439,7 @@ function PlayerSelect({ onSelect, onAdmin }) {
           WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent',
           fontFamily:"'Courier New', monospace",
         }}>GYATTCHORES</div>
-        <div style={{fontSize:'0.58rem', letterSpacing:'5px', color:'#1A2F45', fontFamily:'monospace', marginTop:'6px'}}>
+        <div style={{fontSize:'0.58rem', letterSpacing:'5px', color:'#333333', fontFamily:'monospace', marginTop:'6px'}}>
           SELECT PLAYER
         </div>
       </div>
@@ -448,7 +448,7 @@ function PlayerSelect({ onSelect, onAdmin }) {
         {PLAYERS.map(p => (
           <button key={p.id} onClick={()=>onSelect(p)} style={{
             padding:'22px', borderRadius:'10px', cursor:'pointer',
-            background:'#090F1C',
+            background:'#111111',
             border:`1px solid ${p.color}28`,
             color:p.color, fontSize:'0.9rem', fontWeight:800,
             letterSpacing:'5px', fontFamily:"'Courier New', monospace",
@@ -476,31 +476,31 @@ function AdminModal({ logs, onClose, onUpdate }) {
 
   if (!authed) return (
     <div style={{position:'fixed',inset:0,background:'rgba(5,13,20,0.96)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,padding:'24px'}}>
-      <div style={{background:'#090F1C',border:'1px solid #162035',borderRadius:'12px',padding:'32px',width:'100%',maxWidth:'300px',textAlign:'center'}}>
-        <div style={{fontSize:'0.65rem',letterSpacing:'5px',color:'#3A556A',fontFamily:'monospace',marginBottom:'24px'}}>ADMIN ACCESS</div>
+      <div style={{background:'#111111',border:'1px solid #2A2A2A',borderRadius:'12px',padding:'32px',width:'100%',maxWidth:'300px',textAlign:'center'}}>
+        <div style={{fontSize:'0.65rem',letterSpacing:'5px',color:'#555555',fontFamily:'monospace',marginBottom:'24px'}}>ADMIN ACCESS</div>
         <input type="password" value={code} onChange={e=>setCode(e.target.value)}
           onKeyDown={e=>e.key==='Enter'&&verify()} placeholder="——" autoFocus
-          style={{width:'100%',padding:'14px',background:'#050D14',border:'1px solid #162035',borderRadius:'6px',color:'#F8FAFC',fontSize:'1.4rem',textAlign:'center',fontFamily:'monospace',outline:'none',letterSpacing:'8px',marginBottom:'16px'}}/>
-        <button onClick={verify} style={{width:'100%',padding:'13px',background:'#22D3EE',border:'none',borderRadius:'6px',color:'#050D14',fontWeight:800,fontSize:'0.75rem',letterSpacing:'3px',fontFamily:'monospace',cursor:'pointer'}}>ENTER</button>
-        <button onClick={onClose} style={{width:'100%',padding:'13px',background:'none',border:'none',color:'#3A556A',fontSize:'0.72rem',cursor:'pointer',fontFamily:'monospace',marginTop:'6px'}}>cancel</button>
+          style={{width:'100%',padding:'14px',background:'#000000',border:'1px solid #2A2A2A',borderRadius:'6px',color:'#FFFFFF',fontSize:'1.4rem',textAlign:'center',fontFamily:'monospace',outline:'none',letterSpacing:'8px',marginBottom:'16px'}}/>
+        <button onClick={verify} style={{width:'100%',padding:'13px',background:'#22D3EE',border:'none',borderRadius:'6px',color:'#000000',fontWeight:800,fontSize:'0.75rem',letterSpacing:'3px',fontFamily:'monospace',cursor:'pointer'}}>ENTER</button>
+        <button onClick={onClose} style={{width:'100%',padding:'13px',background:'none',border:'none',color:'#555555',fontSize:'0.72rem',cursor:'pointer',fontFamily:'monospace',marginTop:'6px'}}>cancel</button>
       </div>
     </div>
   );
 
   return (
-    <div style={{position:'fixed',inset:0,background:'#050D14',display:'flex',flexDirection:'column',zIndex:200}}>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'16px 20px',borderBottom:'1px solid #0D1E30',flexShrink:0}}>
+    <div style={{position:'fixed',inset:0,background:'#000000',display:'flex',flexDirection:'column',zIndex:200}}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'16px 20px',borderBottom:'1px solid #1E1E1E',flexShrink:0}}>
         <div style={{fontSize:'0.65rem',letterSpacing:'4px',color:'#22D3EE',fontFamily:'monospace'}}>ADMIN // PUSH</div>
-        <button onClick={onClose} style={{background:'none',border:'none',color:'#3A556A',fontSize:'0.78rem',cursor:'pointer',fontFamily:'monospace'}}>✕ close</button>
+        <button onClick={onClose} style={{background:'none',border:'none',color:'#555555',fontSize:'0.78rem',cursor:'pointer',fontFamily:'monospace'}}>✕ close</button>
       </div>
 
-      <div style={{display:'flex',gap:'8px',padding:'12px 20px',borderBottom:'1px solid #0D1E30',flexShrink:0,flexWrap:'wrap'}}>
+      <div style={{display:'flex',gap:'8px',padding:'12px 20px',borderBottom:'1px solid #1E1E1E',flexShrink:0,flexWrap:'wrap'}}>
         {['pending','approved','rejected','all'].map(f=>(
           <button key={f} onClick={()=>setFilt(f)} style={{
             padding:'6px 14px',borderRadius:'20px',cursor:'pointer',
-            background:filter===f?'#22D3EE':'#090F1C',
-            border:`1px solid ${filter===f?'#22D3EE':'#162035'}`,
-            color:filter===f?'#050D14':'#3A556A',
+            background:filter===f?'#22D3EE':'#111111',
+            border:`1px solid ${filter===f?'#22D3EE':'#2A2A2A'}`,
+            color:filter===f?'#000000':'#555555',
             fontSize:'0.68rem',fontWeight:700,letterSpacing:'1px',fontFamily:'monospace',
           }}>{f}</button>
         ))}
@@ -508,7 +508,7 @@ function AdminModal({ logs, onClose, onUpdate }) {
 
       <div className="scroll" style={{flex:1,padding:'16px 20px'}}>
         {shown.length===0 && (
-          <div style={{textAlign:'center',color:'#3A556A',fontFamily:'monospace',fontSize:'0.78rem',marginTop:'48px',letterSpacing:'2px'}}>
+          <div style={{textAlign:'center',color:'#555555',fontFamily:'monospace',fontSize:'0.78rem',marginTop:'48px',letterSpacing:'2px'}}>
             NO {filter.toUpperCase()} LOGS
           </div>
         )}
@@ -516,11 +516,11 @@ function AdminModal({ logs, onClose, onUpdate }) {
           const p = PLAYERS.find(x=>x.id===log.playerId);
           const color = p?.color||'#22D3EE';
           return (
-            <div key={log.id} style={{background:'#090F1C',border:'1px solid #162035',borderRadius:'8px',padding:'14px 16px',marginBottom:'10px'}}>
+            <div key={log.id} style={{background:'#111111',border:'1px solid #2A2A2A',borderRadius:'8px',padding:'14px 16px',marginBottom:'10px'}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'10px'}}>
                 <div>
-                  <div style={{fontSize:'0.87rem',fontWeight:600,color:'#D4E4F0',fontFamily:'monospace'}}>{log.choreName}</div>
-                  <div style={{fontSize:'0.68rem',color:'#3A556A',fontFamily:'monospace',marginTop:'3px'}}>
+                  <div style={{fontSize:'0.87rem',fontWeight:600,color:'#FFFFFF',fontFamily:'monospace'}}>{log.choreName}</div>
+                  <div style={{fontSize:'0.68rem',color:'#555555',fontFamily:'monospace',marginTop:'3px'}}>
                     <span style={{color}}>{log.playerName}</span> · {new Date(log.timestamp).toLocaleString()}
                   </div>
                 </div>
