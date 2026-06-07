@@ -1,8 +1,8 @@
 name: Customer Announcement
 
-# Post a plain-language update to the customer-facing Discord channel.
+# Post a plain-language update to the family Discord channel.
 # Triggered manually — write the message in Dad voice, choose when it goes out.
-# Uses DISCORD_ANNOUNCE_WEBHOOK (separate from the dev webhook).
+# Uses DISCORD_WEBHOOK (same channel as ops).
 #
 # TONE GUIDE
 # ──────────
@@ -41,14 +41,13 @@ jobs:
   announce:
     runs-on: ubuntu-latest
     steps:
-      - name: Post to customer Discord
+      - name: Post to Discord
         env:
-          DISCORD_ANNOUNCE_WEBHOOK: ${{ secrets.DISCORD_ANNOUNCE_WEBHOOK }}
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           TITLE:    ${{ github.event.inputs.title }}
           BODY:     ${{ github.event.inputs.body }}
           SIGN_OFF: ${{ github.event.inputs.sign_off }}
         run: |
-          # Append sign-off to body if provided
           if [ -n "$SIGN_OFF" ]; then
             FULL_BODY=$(printf '%s\n\n%s' "$BODY" "$SIGN_OFF")
           else
@@ -59,7 +58,6 @@ jobs:
             --arg title "$TITLE" \
             --arg body  "$FULL_BODY" \
             '{
-              thread_name: $title,
               embeds: [{
                 title: $title,
                 description: $body,
@@ -69,7 +67,7 @@ jobs:
             }')
 
           HTTP=$(curl -s -o /tmp/resp.txt -w "%{http_code}" \
-            -X POST "$DISCORD_ANNOUNCE_WEBHOOK" \
+            -X POST "$DISCORD_WEBHOOK" \
             -H "Content-Type: application/json" -d "$PAYLOAD")
           echo "Discord HTTP: $HTTP"; cat /tmp/resp.txt || true
           [ "$HTTP" = "204" ] || { echo "::error::Discord rejected payload (HTTP $HTTP)"; exit 1; }
