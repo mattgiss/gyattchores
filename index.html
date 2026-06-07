@@ -401,6 +401,17 @@ function PlayerSelect({ onSelect, onAdmin }) {
           </button>
         ))}
       </div>
+
+      <div style={{
+        marginTop:'48px', display:'flex', gap:'24px',
+        fontSize:'0.62rem', fontFamily:'monospace', letterSpacing:'2px',
+      }}>
+        {[['about','/about.html'],['guide','/ebook.html'],['story','/development-story.html']].map(([label,href])=>(
+          <a key={label} href={href} style={{color:'#333', textDecoration:'none'}}
+             onMouseEnter={e=>e.target.style.color='#555'}
+             onMouseLeave={e=>e.target.style.color='#333'}>{label}</a>
+        ))}
+      </div>
     </div>
   );
 }
