@@ -1,15 +1,11 @@
 name: Daily Card Reminder
 
-# Fires every morning at 13:00 UTC (8 AM CT / 9 AM ET).
-# Adjust the cron time to match your timezone:
-#   7 AM CT  = 12:00 UTC
-#   8 AM CT  = 13:00 UTC
-#   9 AM CT  = 14:00 UTC
+# Fires every morning at 15:00 UTC (8 AM MST / 9 AM MDT).
 # Also available via workflow_dispatch to test anytime.
 
 on:
   schedule:
-    - cron: '0 13 * * *'
+    - cron: '0 15 * * *'
   workflow_dispatch:
 
 permissions:
