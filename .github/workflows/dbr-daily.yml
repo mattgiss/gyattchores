@@ -20,30 +20,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: push reports in
+      - name: Post status to Discord
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
           DATE=$(date -u +"%-d %b %Y" | tr '[:upper:]' '[:lower:]')
           STATUS=$(cat docs/dbr/status.json)
-
-          build_field() {
-            local prog="$1"
-            local raw_status blockers_count highs_count top_blocker top_high
-            raw_status=$(echo "$STATUS"     | jq -r ".programs[] | select(.id==\"$prog\") | .status")
-            blockers_count=$(echo "$STATUS" | jq -r ".programs[] | select(.id==\"$prog\") | .blockers | length")
-            highs_count=$(echo "$STATUS"    | jq -r ".programs[] | select(.id==\"$prog\") | .highs | length")
-            top_blocker=$(echo "$STATUS"    | jq -r ".programs[] | select(.id==\"$prog\") | .blockers[0] // \"\"")
-            top_high=$(echo "$STATUS"       | jq -r ".programs[] | select(.id==\"$prog\") | .highs[0] // \"\"")
-
-            local out="${raw_status} · ${blockers_count} blocker(s), ${highs_count} high(s)"
-            if [ -n "$top_blocker" ]; then
-              out="${out}\n→ ${top_blocker}"
-            elif [ -n "$top_high" ]; then
-              out="${out}\n→ ${top_high}"
-            fi
-            printf '%s' "$out"
-          }
 
           TOTAL_RED=$(echo "$STATUS"    | jq '[.programs[] | select(.status=="red")]    | length')
           TOTAL_YELLOW=$(echo "$STATUS" | jq '[.programs[] | select(.status=="yellow")] | length')
@@ -59,52 +41,57 @@ jobs:
           if [ "$TOTAL_RED" -gt 0 ]; then
             SITREP="${TOTAL_RED} blocker(s) active. moving when they clear."
           elif [ "$TOTAL_YELLOW" -gt 0 ]; then
-            SITREP="no blockers. ${TOTAL_YELLOW} program(s) need watching."
+            SITREP="no blockers. ${TOTAL_YELLOW} program(s) watching."
           else
             SITREP="all clear."
           fi
 
+          # Build compact one-line-per-program status board, red first
+          SORTED_IDS=$(echo "$STATUS" | jq -r '
+            .programs
+            | sort_by(if .status=="red" then 0 elif .status=="yellow" then 1 else 2 end)
+            | .[].id')
+
+          BOARD=""
+          while IFS= read -r prog; do
+            raw_status=$(echo "$STATUS" | jq -r ".programs[] | select(.id==\"$prog\") | .status")
+            prog_id=$(echo "$STATUS"    | jq -r ".programs[] | select(.id==\"$prog\") | .id")
+            blocker=$(echo "$STATUS"    | jq -r ".programs[] | select(.id==\"$prog\") | .blockers[0] // \"\"")
+            high=$(echo "$STATUS"       | jq -r ".programs[] | select(.id==\"$prog\") | .highs[0] // \"\"")
+
+            case "$raw_status" in
+              red)    TAG="red   " ;;
+              yellow) TAG="watch " ;;
+              green)  TAG="ok    " ;;
+              *)      TAG="?     " ;;
+            esac
+
+            if [ -n "$blocker" ]; then
+              DETAIL=" — ${blocker}"
+            elif [ -n "$high" ]; then
+              DETAIL=" — ${high}"
+            else
+              DETAIL=""
+            fi
+
+            BOARD="${BOARD}\`${TAG}\` **${prog_id}**${DETAIL}\n"
+          done <<< "$SORTED_IDS"
+
           ISSUES_LINK="https://github.com/${{ github.repository }}/issues"
           TRACKER_LINK="https://github.com/${{ github.repository }}/blob/main/docs/dbr/status.json"
 
-          # Build fields sorted: red first, then yellow, then green
-          SORTED_IDS=$(echo "$STATUS" | jq -r '
-            .programs
-            | sort_by(
-                if .status == "red"    then 0
-                elif .status == "yellow" then 1
-                else 2 end
-              )
-            | .[].id')
-
-          FIELDS_JSON="[]"
-          while IFS= read -r prog; do
-            name=$(echo "$STATUS" | jq -r ".programs[] | select(.id==\"$prog\") | .name" | tr '[:upper:]' '[:lower:]')
-            field_val=$(build_field "$prog")
-            FIELDS_JSON=$(echo "$FIELDS_JSON" | jq \
-              --arg n "$name" \
-              --arg v "$field_val" \
-              '. + [{name: $n, value: $v, inline: false}]')
-          done <<< "$SORTED_IDS"
-
-          # Append links field
-          FIELDS_JSON=$(echo "$FIELDS_JSON" | jq \
-            --arg links "[issues]($ISSUES_LINK) · [tracker]($TRACKER_LINK)" \
-            '. + [{name: "links", value: $links, inline: false}]')
+          DESCRIPTION="${SITREP}\n\n${BOARD}\n[issues](${ISSUES_LINK}) · [tracker](${TRACKER_LINK})"
 
           PAYLOAD=$(jq -n \
-            --arg date      "push // $DATE" \
-            --arg sitrep    "$SITREP" \
-            --argjson fields "$FIELDS_JSON" \
-            --argjson color  "$COLOR" \
+            --arg date  "push // $DATE" \
+            --arg desc  "$DESCRIPTION" \
+            --argjson color "$COLOR" \
             '{
-              thread_name: $date,
               embeds: [{
                 title: $date,
-                description: $sitrep,
+                description: $desc,
                 color: $color,
-                fields: $fields,
-                footer: {text: "push // gyattchores // daily 09:00 et"}
+                footer: {text: "push // gyattchores"}
               }]
             }')
 

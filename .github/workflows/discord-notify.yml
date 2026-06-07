@@ -1,258 +1,48 @@
 name: Discord Notifications
 
+# posts to discord when something lands on main.
+# branch activity, pr opens, and reviews are internal noise — skip them.
+
 on:
   push:
-    branches: ['**']
-  pull_request:
-    types: [opened, closed, reopened, synchronize, review_requested]
-  pull_request_review:
-    types: [submitted]
-  issues:
-    types: [opened, closed, reopened, assigned]
-  create:
-  delete:
+    branches: [main]
   workflow_dispatch:
-    inputs:
-      test_message:
-        description: 'Send a test notification to Discord'
-        required: false
-        default: 'true'
 
 jobs:
   notify:
     runs-on: ubuntu-latest
+    env:
+      DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
     steps:
-      # ── Shared helper: post to Discord and surface errors ────────────────────
-      # Each step below builds $PAYLOAD then calls this inline function.
-
-      # ── Test / first-deploy confirmation ─────────────────────────────────────
-      # Fires on: manual workflow_dispatch OR push to main (deploy confirmation)
-      - name: Test notification
-        if: >
-          github.event_name == 'workflow_dispatch' ||
-          (github.event_name == 'push' && github.ref == 'refs/heads/main')
+      - name: Post to Discord
         env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-        run: |
-          PAYLOAD=$(jq -n '{
-            thread_name: "✅ GyattChores Notifications Active",
-            embeds: [{
-              title: "✅ GyattChores Notifications Active",
-              description: "Discord integration is connected and working. You will receive notifications for pushes, PRs, issues, reviews, and branch changes.",
-              color: 5763719,
-              fields: [
-                {name: "Covers", value: "Pushes · PRs · Reviews · Issues · Branches/Tags", inline: false},
-                {name: "Daily DBR", value: "Program status posts automatically at 9am ET", inline: false},
-                {name: "Branch cleanup", value: "Merged stale branches auto-deleted every Monday", inline: false}
-              ],
-              footer: {text: "gyattchores • github.com/mattgiss/gyattchores"}
-            }]
-          }')
-
-          HTTP=$(curl -s -o /tmp/discord_resp.txt -w "%{http_code}" -X POST "$DISCORD_WEBHOOK" \
-            -H "Content-Type: application/json" -d "$PAYLOAD")
-          echo "Discord HTTP: $HTTP"; cat /tmp/discord_resp.txt || true
-          [ "$HTTP" = "204" ] || { echo "::error::Discord rejected payload (HTTP $HTTP)"; exit 1; }
-
-      # ── Push ─────────────────────────────────────────────────────────────────
-      - name: Notify push
-        if: github.event_name == 'push'
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           COMMIT_MSG: ${{ github.event.head_commit.message }}
-          AUTHOR: ${{ github.event.head_commit.author.name }}
-          BRANCH: ${{ github.ref_name }}
+          AUTHOR:     ${{ github.event.head_commit.author.name }}
         run: |
           SHORT_SHA="${{ github.sha }}"
           SHORT_SHA="${SHORT_SHA:0:7}"
           COMMIT_URL="https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
           FIRST_LINE=$(echo "$COMMIT_MSG" | head -1)
 
-          if [ "$BRANCH" = "main" ]; then
-            TITLE="🚀 Deployed to main"
-            COLOR=5763719
-          else
-            TITLE="⬆️ Push to ${BRANCH}"
-            COLOR=10181046
-          fi
-
           PAYLOAD=$(jq -n \
-            --arg title "$TITLE" \
-            --arg desc "**${FIRST_LINE}**" \
-            --arg sha "[${SHORT_SHA}](${COMMIT_URL})" \
+            --arg desc  "**${FIRST_LINE}**" \
+            --arg sha   "[${SHORT_SHA}](${COMMIT_URL})" \
             --arg author "$AUTHOR" \
-            --arg branch "$BRANCH" \
-            --argjson color "$COLOR" \
-            '{thread_name: $title, embeds: [{title: $title, description: $desc, color: $color, fields: [
-              {name: "Branch", value: $branch, inline: true},
-              {name: "Author", value: $author, inline: true},
-              {name: "Commit", value: $sha, inline: true}
-            ], footer: {text: "gyattchores"}}]}')
+            '{
+              embeds: [{
+                title: "deployed to main",
+                description: $desc,
+                color: 5763719,
+                fields: [
+                  {name: "commit", value: $sha,    inline: true},
+                  {name: "by",     value: $author, inline: true}
+                ],
+                footer: {text: "push // gyattchores"}
+              }]
+            }')
 
-          HTTP=$(curl -s -o /tmp/discord_resp.txt -w "%{http_code}" -X POST "$DISCORD_WEBHOOK" \
-            -H "Content-Type: application/json" -d "$PAYLOAD")
-          echo "Discord HTTP: $HTTP"; cat /tmp/discord_resp.txt || true
-          [ "$HTTP" = "204" ] || { echo "::error::Discord rejected payload (HTTP $HTTP)"; exit 1; }
-
-      # ── Pull Request ─────────────────────────────────────────────────────────
-      - name: Notify PR
-        if: github.event_name == 'pull_request'
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          PR_NUM: ${{ github.event.pull_request.number }}
-          AUTHOR: ${{ github.event.pull_request.user.login }}
-          ACTION: ${{ github.event.action }}
-          MERGED: ${{ github.event.pull_request.merged }}
-          BASE: ${{ github.event.pull_request.base.ref }}
-          HEAD: ${{ github.event.pull_request.head.ref }}
-        run: |
-          if [ "$ACTION" = "closed" ] && [ "$MERGED" = "true" ]; then
-            TITLE="🎉 PR Merged"; COLOR=5763719
-          elif [ "$ACTION" = "closed" ]; then
-            TITLE="❌ PR Closed"; COLOR=15158332
-          elif [ "$ACTION" = "opened" ]; then
-            TITLE="📬 PR Opened"; COLOR=3447003
-          elif [ "$ACTION" = "reopened" ]; then
-            TITLE="🔄 PR Reopened"; COLOR=16776960
-          elif [ "$ACTION" = "synchronize" ]; then
-            TITLE="🔃 PR Updated"; COLOR=8421504
-          elif [ "$ACTION" = "review_requested" ]; then
-            TITLE="👀 Review Requested"; COLOR=16776960
-          else
-            TITLE="PR: ${ACTION}"; COLOR=8421504
-          fi
-
-          PAYLOAD=$(jq -n \
-            --arg title "$TITLE" \
-            --arg desc "**[#${PR_NUM}: ${PR_TITLE}](${PR_URL})**" \
-            --arg author "$AUTHOR" \
-            --arg branch "${HEAD} → ${BASE}" \
-            --argjson color "$COLOR" \
-            '{thread_name: $title, embeds: [{title: $title, description: $desc, color: $color, fields: [
-              {name: "Author", value: $author, inline: true},
-              {name: "Branch", value: $branch, inline: true}
-            ], footer: {text: "gyattchores"}}]}')
-
-          HTTP=$(curl -s -o /tmp/discord_resp.txt -w "%{http_code}" -X POST "$DISCORD_WEBHOOK" \
-            -H "Content-Type: application/json" -d "$PAYLOAD")
-          echo "Discord HTTP: $HTTP"; cat /tmp/discord_resp.txt || true
-          [ "$HTTP" = "204" ] || { echo "::error::Discord rejected payload (HTTP $HTTP)"; exit 1; }
-
-      # ── PR Review ────────────────────────────────────────────────────────────
-      - name: Notify PR review
-        if: github.event_name == 'pull_request_review'
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          PR_NUM: ${{ github.event.pull_request.number }}
-          REVIEWER: ${{ github.event.review.user.login }}
-          STATE: ${{ github.event.review.state }}
-          BODY: ${{ github.event.review.body }}
-        run: |
-          case "$STATE" in
-            approved)            TITLE="✅ PR Approved";        COLOR=5763719  ;;
-            changes_requested)   TITLE="🔁 Changes Requested";  COLOR=15158332 ;;
-            *)                   TITLE="💬 PR Reviewed";         COLOR=8421504  ;;
-          esac
-
-          EXCERPT=$(echo "$BODY" | head -c 200)
-
-          PAYLOAD=$(jq -n \
-            --arg title "$TITLE" \
-            --arg desc "**[#${PR_NUM}: ${PR_TITLE}](${PR_URL})**" \
-            --arg reviewer "$REVIEWER" \
-            --arg excerpt "$EXCERPT" \
-            --argjson color "$COLOR" \
-            '{thread_name: $title, embeds: [{title: $title, description: $desc, color: $color, fields: (
-              [{name: "Reviewer", value: $reviewer, inline: true}] +
-              (if $excerpt != "" then [{name: "Comment", value: $excerpt, inline: false}] else [] end)
-            ), footer: {text: "gyattchores"}}]}')
-
-          HTTP=$(curl -s -o /tmp/discord_resp.txt -w "%{http_code}" -X POST "$DISCORD_WEBHOOK" \
-            -H "Content-Type: application/json" -d "$PAYLOAD")
-          echo "Discord HTTP: $HTTP"; cat /tmp/discord_resp.txt || true
-          [ "$HTTP" = "204" ] || { echo "::error::Discord rejected payload (HTTP $HTTP)"; exit 1; }
-
-      # ── Issues ───────────────────────────────────────────────────────────────
-      - name: Notify issue
-        if: github.event_name == 'issues'
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-          ISSUE_TITLE: ${{ github.event.issue.title }}
-          ISSUE_URL: ${{ github.event.issue.html_url }}
-          ISSUE_NUM: ${{ github.event.issue.number }}
-          AUTHOR: ${{ github.event.issue.user.login }}
-          ACTION: ${{ github.event.action }}
-        run: |
-          case "$ACTION" in
-            opened)   TITLE="🐛 Issue Opened";  COLOR=15158332 ;;
-            closed)   TITLE="✅ Issue Closed";   COLOR=5763719  ;;
-            reopened) TITLE="🔄 Issue Reopened"; COLOR=16776960 ;;
-            assigned) TITLE="👤 Issue Assigned"; COLOR=3447003  ;;
-            *)        TITLE="Issue: ${ACTION}";  COLOR=8421504  ;;
-          esac
-
-          PAYLOAD=$(jq -n \
-            --arg title "$TITLE" \
-            --arg desc "**[#${ISSUE_NUM}: ${ISSUE_TITLE}](${ISSUE_URL})**" \
-            --arg author "$AUTHOR" \
-            --argjson color "$COLOR" \
-            '{thread_name: $title, embeds: [{title: $title, description: $desc, color: $color, fields: [
-              {name: "Author", value: $author, inline: true}
-            ], footer: {text: "gyattchores"}}]}')
-
-          HTTP=$(curl -s -o /tmp/discord_resp.txt -w "%{http_code}" -X POST "$DISCORD_WEBHOOK" \
-            -H "Content-Type: application/json" -d "$PAYLOAD")
-          echo "Discord HTTP: $HTTP"; cat /tmp/discord_resp.txt || true
-          [ "$HTTP" = "204" ] || { echo "::error::Discord rejected payload (HTTP $HTTP)"; exit 1; }
-
-      # ── Branch / Tag created ─────────────────────────────────────────────────
-      - name: Notify create
-        if: github.event_name == 'create'
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-          REF_TYPE: ${{ github.event.ref_type }}
-          REF: ${{ github.event.ref }}
-          CREATOR: ${{ github.actor }}
-        run: |
-          if [ "$REF_TYPE" = "tag" ]; then ICON="🏷️"; else ICON="🌿"; fi
-          REF_TYPE_CAP="${REF_TYPE^}"
-
-          PAYLOAD=$(jq -n \
-            --arg title "${ICON} ${REF_TYPE_CAP} Created: ${REF}" \
-            --arg creator "$CREATOR" \
-            '{thread_name: $title, embeds: [{title: $title, color: 3447003, fields: [
-              {name: "By", value: $creator, inline: true}
-            ], footer: {text: "gyattchores"}}]}')
-
-          HTTP=$(curl -s -o /tmp/discord_resp.txt -w "%{http_code}" -X POST "$DISCORD_WEBHOOK" \
-            -H "Content-Type: application/json" -d "$PAYLOAD")
-          echo "Discord HTTP: $HTTP"; cat /tmp/discord_resp.txt || true
-          [ "$HTTP" = "204" ] || { echo "::error::Discord rejected payload (HTTP $HTTP)"; exit 1; }
-
-      # ── Branch / Tag deleted ─────────────────────────────────────────────────
-      - name: Notify delete
-        if: github.event_name == 'delete'
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-          REF_TYPE: ${{ github.event.ref_type }}
-          REF: ${{ github.event.ref }}
-          ACTOR: ${{ github.actor }}
-        run: |
-          if [ "$REF_TYPE" = "tag" ]; then ICON="🏷️"; else ICON="🌿"; fi
-          REF_TYPE_CAP="${REF_TYPE^}"
-
-          PAYLOAD=$(jq -n \
-            --arg title "${ICON} ${REF_TYPE_CAP} Deleted: ${REF}" \
-            --arg actor "$ACTOR" \
-            '{thread_name: $title, embeds: [{title: $title, color: 8421504, fields: [
-              {name: "By", value: $actor, inline: true}
-            ], footer: {text: "gyattchores"}}]}')
-
-          HTTP=$(curl -s -o /tmp/discord_resp.txt -w "%{http_code}" -X POST "$DISCORD_WEBHOOK" \
+          HTTP=$(curl -s -o /tmp/discord_resp.txt -w "%{http_code}" \
+            -X POST "$DISCORD_WEBHOOK" \
             -H "Content-Type: application/json" -d "$PAYLOAD")
           echo "Discord HTTP: $HTTP"; cat /tmp/discord_resp.txt || true
           [ "$HTTP" = "204" ] || { echo "::error::Discord rejected payload (HTTP $HTTP)"; exit 1; }
