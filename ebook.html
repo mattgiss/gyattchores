@@ -1,799 +1,191 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GyattChores - Complete Guide</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --primary: #6366F1;
-            --accent: #EC4899;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            line-height: 1.6;
-            transition: background-color 0.3s, color 0.3s;
-        }
-
-        body.light {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #1F2937;
-        }
-
-        body.dark {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            color: #E5E7EB;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .header {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 12px;
-            padding: 30px;
-            margin-bottom: 30px;
-            text-align: center;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        }
-
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .header p {
-            font-size: 1.125rem;
-            opacity: 0.9;
-        }
-
-        .nav-buttons {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-top: 20px;
-        }
-
-        .nav-button {
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.875rem;
-            color: white;
-            text-decoration: none;
-            transition: all 0.3s;
-        }
-
-        .nav-button:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-2px);
-        }
-
-        .theme-toggle {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
-            border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1.125rem;
-            color: white;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            z-index: 1000;
-        }
-
-        .theme-toggle:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-
-        .card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 12px;
-            padding: 30px;
-            margin-bottom: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        }
-
-        body.light .card {
-            background: rgba(255, 255, 255, 0.95);
-        }
-
-        body.dark .card {
-            background: rgba(30, 30, 50, 0.8);
-        }
-
-        h2 {
-            font-size: 2rem;
-            margin-bottom: 15px;
-            color: var(--primary);
-        }
-
-        h3 {
-            font-size: 1.5rem;
-            margin-top: 25px;
-            margin-bottom: 12px;
-            color: var(--accent);
-        }
-
-        h4 {
-            font-size: 1.25rem;
-            margin-top: 20px;
-            margin-bottom: 10px;
-        }
-
-        p {
-            margin-bottom: 15px;
-        }
-
-        ul, ol {
-            margin-left: 25px;
-            margin-bottom: 15px;
-        }
-
-        li {
-            margin-bottom: 8px;
-        }
-
-        code {
-            background: rgba(0, 0, 0, 0.2);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9em;
-        }
-
-        pre {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 20px;
-            border-radius: 8px;
-            overflow-x: auto;
-            margin-bottom: 15px;
-        }
-
-        pre code {
-            background: none;
-            padding: 0;
-        }
-
-        .toc {
-            background: rgba(99, 102, 241, 0.1);
-            border-left: 4px solid var(--primary);
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        .toc ul {
-            list-style: none;
-            margin-left: 0;
-        }
-
-        .toc li {
-            margin-bottom: 8px;
-        }
-
-        .toc a {
-            color: var(--primary);
-            text-decoration: none;
-            transition: color 0.3s;
-        }
-
-        .toc a:hover {
-            color: var(--accent);
-            text-decoration: underline;
-        }
-
-        .highlight {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(236, 72, 153, 0.2));
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
-        }
-
-        .warning {
-            background: rgba(239, 68, 68, 0.1);
-            border-left: 4px solid #EF4444;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-        }
-
-        .success {
-            background: rgba(34, 197, 94, 0.1);
-            border-left: 4px solid #22C55E;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-        }
-
-        .info {
-            background: rgba(59, 130, 246, 0.1);
-            border-left: 4px solid #3B82F6;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-            background: rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        th {
-            background: rgba(99, 102, 241, 0.2);
-            font-weight: 600;
-        }
-
-        .emoji {
-            font-size: 1.2em;
-            margin-right: 5px;
-        }
-
-        .back-to-top {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            opacity: 0;
-            transition: opacity 0.3s, transform 0.3s;
-        }
-
-        .back-to-top.visible {
-            opacity: 1;
-        }
-
-        .back-to-top:hover {
-            transform: translateY(-3px);
-        }
-
-        .section {
-            scroll-margin-top: 20px;
-        }
-
-        blockquote {
-            border-left: 4px solid var(--accent);
-            padding-left: 20px;
-            margin: 20px 0;
-            font-style: italic;
-            opacity: 0.9;
-        }
-
-        .footer {
-            text-align: center;
-            padding: 30px;
-            margin-top: 50px;
-            opacity: 0.7;
-        }
-
-        @media (max-width: 768px) {
-            .header h1 {
-                font-size: 2rem;
-            }
-
-            .container {
-                padding: 15px;
-            }
-
-            .card {
-                padding: 20px;
-            }
-
-            .theme-toggle {
-                top: 10px;
-                right: 10px;
-                padding: 10px 15px;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#000000">
+<title>Family Guide — GyattChores</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #000; color: #fff; font-family: 'Courier New', Courier, monospace; line-height: 1.75; }
+a { color: #00FF41; text-decoration: none; }
+a:hover { text-decoration: underline; }
+nav { border-bottom: 1px solid #1a1a1a; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: #000; z-index: 10; }
+.nav-brand { font-size: 0.85rem; font-weight: 700; letter-spacing: 4px; color: #fff; text-decoration: none; }
+.nav-links { display: flex; gap: 24px; font-size: 0.72rem; letter-spacing: 1px; }
+.nav-links a { color: #555; }
+.nav-links a:hover { color: #00FF41; }
+.container { max-width: 680px; margin: 0 auto; padding: 52px 24px 80px; }
+h1 { font-size: 1.2rem; font-weight: 900; letter-spacing: 2px; margin-bottom: 6px; }
+h2 { font-size: 0.72rem; font-weight: 700; letter-spacing: 3px; color: #00FF41; text-transform: uppercase; margin: 44px 0 14px; }
+h3 { font-size: 0.88rem; font-weight: 700; color: #fff; margin: 24px 0 8px; letter-spacing: 1px; }
+h4 { font-size: 0.85rem; font-weight: 700; color: #fff; margin: 18px 0 6px; }
+p { margin-bottom: 14px; font-size: 0.88rem; color: #bbb; }
+ul, ol { margin: 0 0 14px 0; list-style: none; }
+li { padding-left: 16px; position: relative; margin-bottom: 6px; font-size: 0.88rem; color: #bbb; }
+ul li::before { content: '—'; position: absolute; left: 0; color: #333; }
+ol { counter-reset: item; }
+ol li { counter-increment: item; }
+ol li::before { content: counter(item) '.'; position: absolute; left: 0; color: #444; }
+strong { color: #fff; }
+code { font-family: 'Courier New', monospace; font-size: 0.85em; color: #00FF41; }
+hr { border: none; border-top: 1px solid #1a1a1a; margin: 14px 0; }
+.meta { font-size: 0.7rem; color: #444; letter-spacing: 2px; margin-bottom: 44px; }
+.note { border: 1px solid #1a1a1a; padding: 16px; margin-bottom: 16px; }
+.note.warn { border-color: #F5A623; }
+.note.ok   { border-color: #22C55E; }
+.note h4 { margin-top: 0; }
+.note.warn h4 { color: #F5A623; }
+.note.ok h4   { color: #22C55E; }
+table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.82rem; }
+th { text-align: left; color: #444; padding: 8px 0; border-bottom: 1px solid #1a1a1a; font-size: 0.68rem; letter-spacing: 2px; text-transform: uppercase; }
+td { padding: 8px 0; border-bottom: 1px solid #111; color: #bbb; }
+td:first-child { color: #fff; }
+.toc { border: 1px solid #1a1a1a; padding: 20px; margin-bottom: 36px; }
+.toc ul { margin: 0; }
+.toc li::before { content: ''; }
+.toc li { padding: 0; }
+.toc a { color: #555; font-size: 0.82rem; }
+.toc a:hover { color: #00FF41; }
+.footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid #1a1a1a; font-size: 0.72rem; color: #333; letter-spacing: 1px; }
+</style>
 </head>
-<body class="dark">
-    <button class="theme-toggle" onclick="toggleTheme()">
-        <span id="theme-icon">☀️</span>
-    </button>
+<body>
+<nav>
+  <a href="/" class="nav-brand">GYATTCHORES</a>
+  <div class="nav-links">
+    <a href="/">app</a>
+    <a href="/about.html">about</a>
+    <a href="/development-story.html">story</a>
+  </div>
+</nav>
+<div class="container">
 
-    <button class="back-to-top" onclick="scrollToTop()">
-        ↑ Back to Top
-    </button>
+  <h1>FAMILY GUIDE</h1>
+  <p class="meta">HOW TO USE GYATTCHORES</p>
+  <hr>
 
-    <div class="container">
-        <div class="header">
-            <h1>🎯 GyattChores</h1>
-            <p>A Complete Family Guide to Your Chore Tracking System</p>
-            <div class="nav-buttons">
-                <a href="index.html" class="nav-button">🏠 Back to Dashboard</a>
-                <a href="development-story.html" class="nav-button">📖 Development Story</a>
-                <a href="#quick-start" class="nav-button">🚀 Quick Start</a>
-                <a href="#maintenance" class="nav-button">🔧 Maintenance</a>
-            </div>
-        </div>
+  <div class="toc">
+    <h4 style="margin-bottom:12px; font-size:0.68rem; letter-spacing:3px; color:#444;">CONTENTS</h4>
+    <ul>
+      <li><a href="#how-it-works">How it works</a></li>
+      <li><a href="#for-kids">For kids — using the daily card</a></li>
+      <li><a href="#for-parents">For parents — approving chores</a></li>
+      <li><a href="#escalation">Escalation system</a></li>
+      <li><a href="#levels">Levels and ranks</a></li>
+      <li><a href="#admin">Admin access</a></li>
+      <li><a href="#troubleshooting">Troubleshooting</a></li>
+    </ul>
+  </div>
 
-        <div class="card">
-            <h2 id="introduction" class="section">📚 Introduction</h2>
-            <p>Welcome to <strong>GyattChores</strong> - your family's gamified chore tracking system! This guide will help everyone in the family understand how to use and maintain the app.</p>
+  <h2 id="how-it-works">How it works</h2>
+  <p>GyattChores is a daily chore card system. Every day, each player gets a card of 3 chores targeting 25 minutes of focused work. Check them all off, submit the card, wait for approval. Points accumulate. Neglected chores escalate and surface first on the next card.</p>
+  <p>The goal isn't to pick chores — it's to do what's on your card. The app tells you what matters right now.</p>
 
-            <div class="highlight">
-                <h4>🎮 What Makes GyattChores Special?</h4>
-                <ul>
-                    <li><strong>Points System</strong> - Earn points for every completed chore (250 points = $1)</li>
-                    <li><strong>GOAT Competition</strong> - Weekly contest to be the Greatest Of All Time</li>
-                    <li><strong>Achievements</strong> - Unlock 24 achievements across 5 categories</li>
-                    <li><strong>Smart Cooldowns</strong> - Chores become available at realistic intervals</li>
-                    <li><strong>Wall Display</strong> - Optimized for your wall-mounted tablet</li>
-                </ul>
-            </div>
-        </div>
+  <h2 id="for-kids">For kids — using the daily card</h2>
+  <ol>
+    <li><strong>Open the app</strong> — tap your name on the player select screen</li>
+    <li><strong>See your card</strong> — 3 chores are waiting, estimated 25 minutes total</li>
+    <li><strong>Check them off</strong> — tap a chore row to mark it done</li>
+    <li><strong>Submit when complete</strong> — the submit button activates once all 3 are checked</li>
+    <li><strong>Wait for approval</strong> — a parent reviews and approves or rejects each chore</li>
+    <li><strong>Points land</strong> — approved chores add points to your total</li>
+  </ol>
 
-        <div class="card">
-            <h2 id="quick-start" class="section">🚀 Quick Start</h2>
+  <div class="note">
+    <h4>Your card is set for the day</h4>
+    <p>The same card shows all day. It's generated in the morning based on which chores have been neglected the longest. Finish it and you're done until tomorrow.</p>
+  </div>
 
-            <h3>For Kids: How to Complete Chores</h3>
-            <ol>
-                <li><strong>Look at Available Chores</strong> - Check what chores you can do right now</li>
-                <li><strong>Claim a Chore</strong> - Tap the "Claim" button when you're ready to do it</li>
-                <li><strong>Do the Chore</strong> - Actually complete the task!</li>
-                <li><strong>Wait for Approval</strong> - Your chore goes to "Pending" until a parent checks it</li>
-                <li><strong>Get Points</strong> - Once approved, points are added to your total</li>
-            </ol>
+  <h2 id="for-parents">For parents — approving chores</h2>
+  <ol>
+    <li><strong>Tap GYATTCHORES 5 times quickly</strong> on the player select screen to open admin</li>
+    <li><strong>Enter code</strong> — <code>7874</code></li>
+    <li><strong>Review pending chores</strong> — each submitted chore appears with player name and timestamp</li>
+    <li><strong>Approve or reject</strong> — APPROVE gives the points, REJECT sends it back without triggering escalation</li>
+  </ol>
 
-            <div class="info">
-                <p><strong>💡 Pro Tip:</strong> Some chores have cooldowns! Daily chores (like feeding pets) can be done every day. Weekly chores (like vacuuming) can only be done once per week. Check the "Coming Soon" section to see when chores will be available again.</p>
-            </div>
+  <div class="note warn">
+    <h4>Approve promptly</h4>
+    <p>Quick feedback keeps kids motivated. A rejected chore means they can try again — explain why it didn't pass so they know what to fix.</p>
+  </div>
 
-            <h3>For Parents: How to Manage Chores</h3>
-            <ol>
-                <li><strong>Enter Admin Mode</strong> - Tap the lock icon and enter code: <code>0413</code></li>
-                <li><strong>Review Pending Chores</strong> - Check if chores were actually completed</li>
-                <li><strong>Approve or Reject</strong> - Tap ✅ to approve or ❌ to reject</li>
-                <li><strong>Create Custom Tasks</strong> - Add one-time tasks with custom point values</li>
-                <li><strong>Manage Players</strong> - Add/remove family members if needed</li>
-            </ol>
+  <h2 id="escalation">Escalation system</h2>
+  <p>Every chore tracks the last time it was approved. The longer a chore goes without being done, the more time it costs on the card — and the higher it surfaces in the next day's assignment.</p>
 
-            <div class="warning">
-                <p><strong>⚠️ Important:</strong> Approving chores with code <code>7874</code> is required for points to count. Rejected chores don't trigger cooldowns, so kids can try again!</p>
-            </div>
-        </div>
+  <table>
+    <thead>
+      <tr><th>Indicator</th><th>Meaning</th><th>Effect</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>(none)</td><td>Recently done or first time</td><td>Base time cost</td></tr>
+      <tr><td><code>!</code></td><td>Neglected</td><td>Increased time cost</td></tr>
+      <tr><td><code>!!</code></td><td>Long overdue</td><td>Maximum time cost, shown first</td></tr>
+    </tbody>
+  </table>
 
-        <div class="card">
-            <h2 id="how-it-works" class="section">⚙️ How It Works</h2>
+  <div class="note ok">
+    <h4>Consistency is the reward</h4>
+    <p>Keep up with your card every day and chores stay at their base time. Fall behind and they get heavier. The incentive is a lighter card tomorrow, not more points.</p>
+  </div>
 
-            <h3>The Points System</h3>
-            <p>Every chore has a point value based on how hard it is:</p>
+  <h2 id="levels">Levels and ranks</h2>
+  <p>Points from approved chores accumulate toward your rank. There are 10 levels:</p>
 
-            <table>
-                <thead>
-                    <tr>
-                        <th>Chore Type</th>
-                        <th>Example</th>
-                        <th>Points</th>
-                        <th>Dollar Value</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Easy</td>
-                        <td>Get Mail, Set Table</td>
-                        <td>250</td>
-                        <td>$1.00</td>
-                    </tr>
-                    <tr>
-                        <td>Medium</td>
-                        <td>Take Out Trash, Sweep</td>
-                        <td>375-500</td>
-                        <td>$1.50-$2.00</td>
-                    </tr>
-                    <tr>
-                        <td>Hard</td>
-                        <td>Load Dishwasher, Clean Room</td>
-                        <td>625-750</td>
-                        <td>$2.50-$3.00</td>
-                    </tr>
-                </tbody>
-            </table>
+  <table>
+    <thead>
+      <tr><th>Rank</th><th>Points needed</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>RECRUIT</td><td>0</td></tr>
+      <tr><td>OPERATOR</td><td>100</td></tr>
+      <tr><td>RUNNER</td><td>300</td></tr>
+      <tr><td>GHOST</td><td>600</td></tr>
+      <tr><td>HACKER</td><td>1,000</td></tr>
+      <tr><td>PHANTOM</td><td>1,500</td></tr>
+      <tr><td>SPECTER</td><td>2,500</td></tr>
+      <tr><td>WRAITH</td><td>4,000</td></tr>
+      <tr><td>SHADOW</td><td>6,000</td></tr>
+      <tr><td>LEGEND</td><td>9,000</td></tr>
+    </tbody>
+  </table>
 
-            <h3>Cooldown System</h3>
-            <p>Chores have realistic cooldowns to match how often they actually need doing:</p>
+  <p>Your streak counts consecutive days where at least one chore was approved. A streak of 0 means nothing was approved yesterday.</p>
 
-            <table>
-                <thead>
-                    <tr>
-                        <th>Frequency</th>
-                        <th>Cooldown</th>
-                        <th>Examples</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Daily</td>
-                        <td>24 hours</td>
-                        <td>Feed pets, Set/Clear table, Get mail</td>
-                    </tr>
-                    <tr>
-                        <td>Every Other Day</td>
-                        <td>48 hours</td>
-                        <td>Pick up poop, Wash dishes, Water plants</td>
-                    </tr>
-                    <tr>
-                        <td>2-3x per Week</td>
-                        <td>72 hours</td>
-                        <td>Sweep floor, Fold laundry</td>
-                    </tr>
-                    <tr>
-                        <td>Weekly</td>
-                        <td>168 hours (7 days)</td>
-                        <td>Vacuum, Clean room, Take out trash/recycling</td>
-                    </tr>
-                </tbody>
-            </table>
+  <h2 id="admin">Admin access</h2>
+  <ul>
+    <li><strong>How to open:</strong> Tap "GYATTCHORES" title 5 times within 2 seconds on the player select screen</li>
+    <li><strong>Code:</strong> <code>7874</code></li>
+    <li><strong>Filter views:</strong> pending / approved / rejected / all</li>
+    <li><strong>Approve:</strong> confirms the chore was done, awards points</li>
+    <li><strong>Reject:</strong> marks it rejected, no points, no escalation impact</li>
+  </ul>
 
-            <h3>Weekly GOAT Competition</h3>
-            <div class="success">
-                <p><strong>🐐 GOAT = Greatest Of All Time</strong></p>
-                <ul>
-                    <li>Every week (Monday to Sunday), compete to earn the most points</li>
-                    <li>The person with the highest total becomes the GOAT of the Week</li>
-                    <li>If there's a tie, you're both CO-GOATs!</li>
-                    <li>Everything resets Monday at midnight for a fresh start</li>
-                    <li>Your personal best is saved forever</li>
-                </ul>
-            </div>
+  <h2 id="troubleshooting">Troubleshooting</h2>
 
-            <h3>Achievement System</h3>
-            <p>Unlock 24 achievements across 5 categories:</p>
+  <div class="note warn">
+    <h4>Card not updating</h4>
+    <p>The card is cached for the day. If something looks wrong, clear the browser's local storage and reload. On iOS Safari: Settings → Safari → Advanced → Website Data → gyattchores.com → Delete.</p>
+  </div>
 
-            <ul>
-                <li><strong>🌱 Chore Milestones</strong> - Complete 1, 10, 50, 100, 250, or 500 total chores</li>
-                <li><strong>💎 Point Milestones</strong> - Earn 1K, 5K, 10K, or 25K total points</li>
-                <li><strong>👑 Weekly Performance</strong> - Win GOAT 1, 3, or 5 times; earn 5K+ in one week</li>
-                <li><strong>🔥 Streaks</strong> - Complete chores 3, 7, 14, or 30 days in a row</li>
-                <li><strong>⭐ Special</strong> - Early Bird, Night Owl, Speed Demon, Overachiever</li>
-            </ul>
-        </div>
+  <div class="note warn">
+    <h4>Points not appearing after approval</h4>
+    <p>The app syncs every 5 seconds. Wait a moment and the player's point total will update. If offline, it syncs when the connection returns.</p>
+  </div>
 
-        <div class="card">
-            <h2 id="maintenance" class="section">🔧 Family Maintenance Guide</h2>
+  <div class="note warn">
+    <h4>Submit button not activating</h4>
+    <p>All 3 chores on the card must be checked before submit activates. Check each row — a chore row turns green with a [+] when marked.</p>
+  </div>
 
-            <h3>Weekly Tasks (For Parents)</h3>
-            <ol>
-                <li><strong>Review Pending Chores</strong> - Check and approve/reject any pending items</li>
-                <li><strong>Check Weekly Totals</strong> - See who's winning the GOAT competition</li>
-                <li><strong>Announce GOAT Winner</strong> - Celebrate the winner on Sunday/Monday!</li>
-                <li><strong>Monitor Cooldowns</strong> - Make sure important chores aren't stuck on cooldown</li>
-            </ol>
+  <div class="note warn">
+    <h4>App shows "offline"</h4>
+    <p>The app works without a connection — logs save locally and sync when back online. The offline indicator in the top-right corner turns green once the Supabase connection is restored.</p>
+  </div>
 
-            <h3>Monthly Tasks (For Parents)</h3>
-            <ol>
-                <li><strong>Process Payouts</strong> - Check the "Next Payout" card for amounts owed</li>
-                <li><strong>Review Achievement Progress</strong> - Celebrate milestones reached</li>
-                <li><strong>Adjust Chore Values</strong> - If needed, update point values in Admin panel</li>
-            </ol>
-
-            <div class="info">
-                <h4>💰 How Payouts Work</h4>
-                <p>The app tracks points automatically. At the end of each month:</p>
-                <ol>
-                    <li>Check the "Next Payout" amount on each player's card</li>
-                    <li>Pay out the money (250 points = $1)</li>
-                    <li>The app automatically resets for the next month</li>
-                </ol>
-            </div>
-
-            <h3>Adding New Chores</h3>
-            <p>To add a permanent chore (requires database access):</p>
-            <ol>
-                <li>Go to your Supabase dashboard</li>
-                <li>Navigate to the <code>chores</code> table</li>
-                <li>Click "Insert row"</li>
-                <li>Fill in: name, base_value (points), max_per_day (usually 1), icon (emoji), cooldown_hours</li>
-                <li>Save and refresh the app</li>
-            </ol>
-
-            <p>For one-time tasks, use the "Custom Task" feature in Admin mode!</p>
-
-            <h3>Troubleshooting</h3>
-
-            <div class="warning">
-                <h4>🐛 Common Issues</h4>
-                <ul>
-                    <li>
-                        <strong>Chore won't claim</strong> - Check if it's on cooldown in "Coming Soon"
-                    </li>
-                    <li>
-                        <strong>Points not showing</strong> - Make sure the chore was approved, not just claimed
-                    </li>
-                    <li>
-                        <strong>Weekly total seems wrong</strong> - Only approved chores count toward GOAT
-                    </li>
-                    <li>
-                        <strong>App not refreshing</strong> - It auto-refreshes every 15 minutes, or manually refresh your browser
-                    </li>
-                    <li>
-                        <strong>Cooldown after rejection</strong> - This is a bug if it happens! Only approved chores should trigger cooldowns
-                    </li>
-                </ul>
-            </div>
-        </div>
-
-        <div class="card">
-            <h2 id="admin-codes" class="section">🔐 Admin Access</h2>
-
-            <div class="highlight">
-                <h4>Access Codes</h4>
-                <ul>
-                    <li><strong>Login Password:</strong> <code>0413</code> - Unlocks admin mode</li>
-                    <li><strong>Approval Code:</strong> <code>7874</code> - Required to approve/reject chores</li>
-                </ul>
-                <p><em>Keep these codes private! Only parents should have access.</em></p>
-            </div>
-
-            <h3>Admin Panel Features</h3>
-            <ul>
-                <li><strong>Approve/Reject Chores</strong> - Review pending completions</li>
-                <li><strong>Create Custom Tasks</strong> - Add one-time chores with custom points</li>
-                <li><strong>View Achievement Stats</strong> - See progress toward unlocking achievements</li>
-                <li><strong>Manage Players</strong> - Add or remove family members</li>
-                <li><strong>Force Weekly Reset</strong> - Manually start a new week (use with caution!)</li>
-            </ul>
-        </div>
-
-        <div class="card">
-            <h2 id="technical" class="section">💻 Technical Details</h2>
-
-            <h3>What Powers GyattChores?</h3>
-            <ul>
-                <li><strong>Frontend:</strong> React 18 (loaded via CDN)</li>
-                <li><strong>Database:</strong> Supabase (PostgreSQL)</li>
-                <li><strong>Hosting:</strong> GitHub Pages</li>
-                <li><strong>Security:</strong> Row Level Security (RLS) enabled</li>
-                <li><strong>Cost:</strong> $0/month (Supabase free tier)</li>
-            </ul>
-
-            <h3>Database Tables</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Table</th>
-                        <th>Purpose</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><code>players</code></td>
-                        <td>Family members (bekindhearted, titan)</td>
-                    </tr>
-                    <tr>
-                        <td><code>chores</code></td>
-                        <td>Available chores with point values and cooldowns</td>
-                    </tr>
-                    <tr>
-                        <td><code>chore_completions</code></td>
-                        <td>Historical record of all completed chores</td>
-                    </tr>
-                    <tr>
-                        <td><code>achievements</code></td>
-                        <td>24 achievement definitions</td>
-                    </tr>
-                    <tr>
-                        <td><code>player_achievements</code></td>
-                        <td>Which achievements each player has earned</td>
-                    </tr>
-                    <tr>
-                        <td><code>player_stats</code></td>
-                        <td>Statistics for achievement tracking</td>
-                    </tr>
-                    <tr>
-                        <td><code>weekly_resets</code></td>
-                        <td>Tracks weekly reset history</td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <h3>Security Features</h3>
-            <div class="success">
-                <ul>
-                    <li>✅ Row Level Security (RLS) enabled on all tables</li>
-                    <li>✅ Production React builds (optimized performance)</li>
-                    <li>✅ Secure database policies</li>
-                    <li>✅ Client-side validation</li>
-                    <li>✅ Approval workflow prevents gaming the system</li>
-                </ul>
-            </div>
-        </div>
-
-        <div class="card">
-            <h2 id="tips" class="section">💡 Tips for Success</h2>
-
-            <h3>For Kids</h3>
-            <ul>
-                <li>🎯 <strong>Check daily</strong> - Look at the wall display every morning to see what's available</li>
-                <li>⚡ <strong>Do easy chores first</strong> - Build momentum with quick wins</li>
-                <li>📅 <strong>Track your streak</strong> - Try to complete at least one chore every day</li>
-                <li>🏆 <strong>Chase achievements</strong> - Check your stats to see what you're close to unlocking</li>
-                <li>📊 <strong>Beat your personal best</strong> - Even if you don't win GOAT, beat your own record!</li>
-            </ul>
-
-            <h3>For Parents</h3>
-            <ul>
-                <li>✅ <strong>Approve promptly</strong> - Quick feedback keeps kids motivated</li>
-                <li>🎉 <strong>Celebrate milestones</strong> - Make a big deal of new achievements</li>
-                <li>🤝 <strong>Be fair</strong> - Check chores thoroughly before approving</li>
-                <li>💬 <strong>Use rejections as teaching moments</strong> - Explain why a chore wasn't done well enough</li>
-                <li>🎯 <strong>Adjust as needed</strong> - If a chore's point value feels off, change it!</li>
-            </ul>
-
-            <div class="highlight">
-                <h4>🌟 Success Strategies</h4>
-                <ul>
-                    <li><strong>Make it visible</strong> - The wall-mounted tablet keeps it top of mind</li>
-                    <li><strong>Create traditions</strong> - Sunday night GOAT announcements, achievement celebrations</li>
-                    <li><strong>Friendly competition</strong> - Encourage kids to compete against their own records, not just each other</li>
-                    <li><strong>Bonus opportunities</strong> - Use custom tasks for extra jobs beyond regular chores</li>
-                </ul>
-            </div>
-        </div>
-
-        <div class="card">
-            <h2 id="faq" class="section">❓ Frequently Asked Questions</h2>
-
-            <h3>Can I do the same chore multiple times in one day?</h3>
-            <p>No. Each chore can only be claimed once per day per person. This prevents gaming the system.</p>
-
-            <h3>What happens if I reject a chore?</h3>
-            <p>The chore is marked as rejected, no points are awarded, and the cooldown is NOT triggered. The kid can claim it again immediately after fixing the issue.</p>
-
-            <h3>How do ties work for GOAT?</h3>
-            <p>Both players are declared CO-GOATs! The system handles ties automatically and both get the achievement credit.</p>
-
-            <h3>Can I change point values?</h3>
-            <p>Yes! Use the Admin panel to adjust chore point values if something feels too high or too low.</p>
-
-            <h3>What if someone forgets to claim a chore?</h3>
-            <p>Parents can create a custom task with the appropriate point value and assign it retroactively.</p>
-
-            <h3>How often does the app refresh?</h3>
-            <p>Automatically every 15 minutes. You can also manually refresh your browser anytime.</p>
-
-            <h3>What's the maximum I can earn in a week?</h3>
-            <p>Theoretically unlimited! But realistically, if you did every available chore, you could earn 4,000-6,000 points per week depending on cooldowns.</p>
-        </div>
-
-        <div class="card">
-            <h2 id="version" class="section">📋 Version & Updates</h2>
-
-            <h3>Version 1.1 (December 2025)</h3>
-            <div class="success">
-                <h4>✨ Current Features</h4>
-                <ul>
-                    <li>Chore claim and approval workflow</li>
-                    <li>Weekly GOAT competition with tie handling</li>
-                    <li>24 achievements across 5 categories</li>
-                    <li>Smart cooldown system (daily, 48h, 72h, weekly)</li>
-                    <li>Personal best tracking</li>
-                    <li>Dark/Light mode</li>
-                    <li>Tablet-optimized display</li>
-                    <li>15-minute auto-refresh</li>
-                    <li>Row Level Security enabled</li>
-                    <li>Production React builds</li>
-                </ul>
-            </div>
-
-            <h3>Recent Improvements</h3>
-            <ul>
-                <li>🔒 <strong>Security hardening</strong> - RLS enabled, production builds</li>
-                <li>🐛 <strong>Bug fix</strong> - Rejected chores no longer trigger cooldowns</li>
-                <li>📱 <strong>Tablet optimization</strong> - 40% larger fonts for wall display</li>
-                <li>⏱️ <strong>Cooldown system</strong> - Realistic chore frequencies</li>
-                <li>📖 <strong>Documentation</strong> - This guide + development story</li>
-            </ul>
-        </div>
-
-        <div class="footer">
-            <p>Built with ❤️ for bekindhearted and titan</p>
-            <p>GyattChores v1.1 | December 2025</p>
-            <div style="margin-top: 15px;">
-                <a href="index.html" class="nav-button">🏠 Return to Dashboard</a>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // Theme toggle
-        function toggleTheme() {
-            const body = document.body;
-            const icon = document.getElementById('theme-icon');
-
-            if (body.classList.contains('dark')) {
-                body.classList.remove('dark');
-                body.classList.add('light');
-                icon.textContent = '🌙';
-                localStorage.setItem('theme', 'light');
-            } else {
-                body.classList.remove('light');
-                body.classList.add('dark');
-                icon.textContent = '☀️';
-                localStorage.setItem('theme', 'dark');
-            }
-        }
-
-        // Load saved theme
-        window.addEventListener('DOMContentLoaded', () => {
-            const savedTheme = localStorage.getItem('theme') || 'dark';
-            const icon = document.getElementById('theme-icon');
-
-            if (savedTheme === 'light') {
-                document.body.classList.remove('dark');
-                document.body.classList.add('light');
-                icon.textContent = '🌙';
-            }
-        });
-
-        // Back to top button
-        const backToTop = document.querySelector('.back-to-top');
-
-        window.addEventListener('scroll', () => {
-            if (window.pageYOffset > 300) {
-                backToTop.classList.add('visible');
-            } else {
-                backToTop.classList.remove('visible');
-            }
-        });
-
-        function scrollToTop() {
-            window.scrollTo({
-                top: 0,
-                behavior: 'smooth'
-            });
-        }
-
-        // Smooth scroll for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth'
-                    });
-                }
-            });
-        });
-    </script>
+  <div class="footer">
+    built by matthew gissentanna &nbsp;·&nbsp; for bekindhearted and titan &nbsp;·&nbsp; <a href="/about.html">about</a> &nbsp;·&nbsp; <a href="/privacy.html">privacy</a>
+  </div>
+</div>
 </body>
 </html>
