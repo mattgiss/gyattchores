@@ -1,10 +1,9 @@
-name: Daily Business Review
+name: Business Review
 
-# push reports in every morning at 09:00 et.
+# fires when status.json changes on main (user-impacting updates only)
+# or manually via workflow_dispatch. no schedule — push sends when it matters.
 
 on:
-  schedule:
-    - cron: '0 14 * * *'
   push:
     branches: [main]
     paths:
