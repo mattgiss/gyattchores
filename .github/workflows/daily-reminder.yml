@@ -1,0 +1,45 @@
+name: Daily Card Reminder
+
+# Fires every morning at 13:00 UTC (8 AM CT / 9 AM ET).
+# Adjust the cron time to match your timezone:
+#   7 AM CT  = 12:00 UTC
+#   8 AM CT  = 13:00 UTC
+#   9 AM CT  = 14:00 UTC
+# Also available via workflow_dispatch to test anytime.
+
+on:
+  schedule:
+    - cron: '0 13 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post card reminder to Discord
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          DATE=$(date -u +"%-d %b" | tr '[:upper:]' '[:lower:]')
+          DOW=$(date -u +"%A" | tr '[:upper:]' '[:lower:]')
+
+          PAYLOAD=$(jq -n \
+            --arg title "cards are ready — ${DOW}, ${DATE}" \
+            --arg desc  "bekindhearted · titan\n\nyour chores for today are assigned. open the app, check them off, submit the card.\n\ngyattchores.com" \
+            '{
+              embeds: [{
+                title: $title,
+                description: $desc,
+                color: 65,
+                footer: { text: "gyattchores" }
+              }]
+            }')
+
+          HTTP=$(curl -s -o /tmp/resp.txt -w "%{http_code}" \
+            -X POST "$DISCORD_WEBHOOK" \
+            -H "Content-Type: application/json" -d "$PAYLOAD")
+          echo "Discord HTTP: $HTTP"; cat /tmp/resp.txt || true
+          [ "$HTTP" = "204" ] || { echo "::error::reminder failed (HTTP $HTTP)"; exit 1; }
