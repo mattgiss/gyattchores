@@ -6,7 +6,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#ffffff">
 <title>GyattChores</title>
 <link rel="icon" type="image/svg+xml" href="gyattchores-logo-transparent.svg">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -17,7 +17,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; background: #0D121A; color: #fff; overflow: hidden; }
+html, body { height: 100%; background: #fff; color: #111; overflow: hidden; }
 body { font-family: 'Courier New', Courier, monospace; -webkit-font-smoothing: antialiased; }
 #root { height: 100%; }
 
@@ -36,7 +36,7 @@ body { font-family: 'Courier New', Courier, monospace; -webkit-font-smoothing: a
 .scroll { overflow-y:auto; -webkit-overflow-scrolling:touch; }
 .scroll::-webkit-scrollbar       { width:2px; }
 .scroll::-webkit-scrollbar-track { background:transparent; }
-.scroll::-webkit-scrollbar-thumb { background:#222; border-radius:2px; }
+.scroll::-webkit-scrollbar-thumb { background:#ccc; border-radius:2px; }
 
 button { -webkit-tap-highlight-color: transparent; }
 </style>
@@ -49,7 +49,7 @@ const { useState, useEffect, useCallback, useRef } = React;
 // ─── CONFIG ──────────────────────────────────────────────────────────────────
 const ADMIN_CODE        = '7874';
 const STORAGE_KEY       = 'gyattchores_logs';
-const ACCENT            = '#00FF41';
+const ACCENT            = '#F23861';
 const SUPABASE_URL      = 'https://ukshxdoqgwoxobjdclpx.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrc2h4ZG9xZ3dveG9iamRjbHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3MjI2NDEsImV4cCI6MjA4MDI5ODY0MX0.UGNrsfG6goEA0PPWG4x7gxBueA7D5Oe9uWI-iCXIar0';
 const supabase = window.supabase?.createClient
@@ -178,25 +178,25 @@ function ChoreRow({ chore, checked, onToggle }) {
   return (
     <div onClick={onToggle} style={{
       display:'flex', alignItems:'center', gap:'12px',
-      padding:'14px 0', borderBottom:'1px solid #1a1a1a',
+      padding:'14px 0', borderBottom:'1px solid #e5e5e5',
       cursor:'pointer',
     }}>
       <span style={{
-        color: checked ? ACCENT : '#666',
+        color: checked ? ACCENT : '#bbb',
         fontFamily:'monospace', fontSize:'0.9rem', flexShrink:0, userSelect:'none',
       }}>
         {checked ? '[+]' : '[ ]'}
       </span>
       <span style={{
         flex:1, fontFamily:'monospace', fontSize:'0.88rem',
-        color: checked ? '#444' : '#fff',
+        color: checked ? '#bbb' : '#111',
         textDecoration: checked ? 'line-through' : 'none',
       }}>
         {chore.name}
       </span>
       <span style={{
         fontFamily:'monospace', fontSize:'0.75rem', flexShrink:0,
-        color: escalLabel ? escalColor : '#666',
+        color: escalLabel ? escalColor : '#bbb',
       }}>
         {escalLabel ? `${escalLabel} ` : ''}{chore.currentMinutes}m
       </span>
@@ -234,13 +234,13 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus }) {
   };
 
   const syncLabel = syncStatus==='syncing' ? 'sync...' : syncStatus==='offline' ? 'offline' : 'live';
-  const syncColor = syncStatus==='offline' ? '#EF4444' : syncStatus==='syncing' ? '#F5A623' : '#444';
+  const syncColor = syncStatus==='offline' ? '#EF4444' : syncStatus==='syncing' ? '#F5A623' : '#bbb';
 
   return (
     <div className="fade-in" style={{display:'flex', flexDirection:'column', height:'100%'}}>
       <div style={{
         display:'flex', alignItems:'center', justifyContent:'space-between',
-        padding:'12px 20px', borderBottom:'1px solid #1a1a1a', flexShrink:0,
+        padding:'12px 20px', borderBottom:'1px solid #e5e5e5', flexShrink:0,
       }}>
         <button onClick={onBack} style={{
           background:'none', border:'none', color:'#999',
@@ -261,7 +261,7 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus }) {
             player
           </div>
           <div style={{
-            fontSize:'1.4rem', fontWeight:900, color:'#fff',
+            fontSize:'1.4rem', fontWeight:900, color:'#111',
             fontFamily:'monospace', letterSpacing:'3px', textTransform:'uppercase',
           }}>
             {player.name}
@@ -275,7 +275,7 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus }) {
 
           <div style={{
             display:'flex', gap:'0', marginTop:'20px',
-            borderTop:'1px solid #1a1a1a', borderBottom:'1px solid #1a1a1a',
+            borderTop:'1px solid #e5e5e5', borderBottom:'1px solid #e5e5e5',
           }}>
             {[
               {label:'pts',    val:totalPts.toLocaleString()},
@@ -284,7 +284,7 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus }) {
             ].map(({label,val},i,arr)=>(
               <div key={label} style={{
                 flex:1, padding:'12px 0', textAlign:'center',
-                borderRight: i<arr.length-1 ? '1px solid #1a1a1a' : 'none',
+                borderRight: i<arr.length-1 ? '1px solid #e5e5e5' : 'none',
               }}>
                 <div style={{fontSize:'1rem', fontWeight:700, color:ACCENT, fontFamily:'monospace'}}>{val}</div>
                 <div style={{fontSize:'0.6rem', color:'#888', fontFamily:'monospace', letterSpacing:'2px', marginTop:'2px'}}>{label}</div>
@@ -321,7 +321,7 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus }) {
 
         {pending>0 && !card.submitted && (
           <div style={{
-            padding:'10px 14px', border:'1px solid #333',
+            padding:'10px 14px', border:'1px solid #F5A623',
             fontSize:'0.72rem', color:'#F5A623', fontFamily:'monospace',
             letterSpacing:'1px', marginBottom:'16px',
           }}>
@@ -342,8 +342,8 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus }) {
             <button onClick={submit} disabled={!allChecked||submitting} style={{
               width:'100%', padding:'17px', cursor:allChecked?'pointer':'default',
               background: allChecked ? ACCENT : 'transparent',
-              border:`1px solid ${allChecked ? ACCENT : '#2a2a2a'}`,
-              color: allChecked ? '#000' : '#555',
+              border:`1px solid ${allChecked ? ACCENT : '#e0e0e0'}`,
+              color: allChecked ? '#fff' : '#aaa',
               fontSize:'0.75rem', fontWeight:800, letterSpacing:'3px',
               fontFamily:'monospace', transition:'all 0.15s',
             }}>
@@ -389,14 +389,14 @@ function PlayerSelect({ onSelect, onAdmin }) {
             display:'block', width:'100%',
             padding:'18px 20px', marginBottom:'8px',
             background:'transparent',
-            border:'1px solid #2a2a2a',
-            color:'#fff', fontSize:'0.88rem', fontWeight:700,
+            border:'1px solid #e0e0e0',
+            color:'#111', fontSize:'0.88rem', fontWeight:700,
             letterSpacing:'4px', fontFamily:'monospace',
             textAlign:'left', cursor:'pointer',
             transition:'border-color 0.1s, color 0.1s',
           }}
           onPointerEnter={e=>{e.currentTarget.style.borderColor=ACCENT; e.currentTarget.style.color=ACCENT;}}
-          onPointerLeave={e=>{e.currentTarget.style.borderColor='#2a2a2a'; e.currentTarget.style.color='#fff';}}>
+          onPointerLeave={e=>{e.currentTarget.style.borderColor='#e0e0e0'; e.currentTarget.style.color='#111';}}>
             {'> '}{p.name}
           </button>
         ))}
@@ -427,30 +427,30 @@ function AdminModal({ logs, onClose, onUpdate }) {
 
   if (!authed) return (
     <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.97)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,padding:'24px'}}>
-      <div style={{background:'#0D121A',border:'1px solid #2a2a2a',padding:'32px',width:'100%',maxWidth:'300px',textAlign:'center'}}>
+      <div style={{background:'#fff',border:'1px solid #e0e0e0',padding:'32px',width:'100%',maxWidth:'300px',textAlign:'center'}}>
         <div style={{fontSize:'0.65rem',letterSpacing:'5px',color:'#888',fontFamily:'monospace',marginBottom:'24px'}}>ADMIN ACCESS</div>
         <input type="password" value={code} onChange={e=>setCode(e.target.value)}
           onKeyDown={e=>e.key==='Enter'&&verify()} placeholder="——" autoFocus
-          style={{width:'100%',padding:'14px',background:'#0D121A',border:'1px solid #2a2a2a',color:'#fff',fontSize:'1.4rem',textAlign:'center',fontFamily:'monospace',outline:'none',letterSpacing:'8px',marginBottom:'16px'}}/>
-        <button onClick={verify} style={{width:'100%',padding:'13px',background:ACCENT,border:'none',color:'#000',fontWeight:800,fontSize:'0.75rem',letterSpacing:'3px',fontFamily:'monospace',cursor:'pointer'}}>ENTER</button>
+          style={{width:'100%',padding:'14px',background:'#f5f5f5',border:'1px solid #e0e0e0',color:'#111',fontSize:'1.4rem',textAlign:'center',fontFamily:'monospace',outline:'none',letterSpacing:'8px',marginBottom:'16px'}}/>
+        <button onClick={verify} style={{width:'100%',padding:'13px',background:ACCENT,border:'none',color:'#fff',fontWeight:800,fontSize:'0.75rem',letterSpacing:'3px',fontFamily:'monospace',cursor:'pointer'}}>ENTER</button>
         <button onClick={onClose} style={{width:'100%',padding:'13px',background:'none',border:'none',color:'#888',fontSize:'0.72rem',cursor:'pointer',fontFamily:'monospace',marginTop:'6px'}}>cancel</button>
       </div>
     </div>
   );
 
   return (
-    <div style={{position:'fixed',inset:0,background:'#0D121A',display:'flex',flexDirection:'column',zIndex:200}}>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 20px',borderBottom:'1px solid #1a1a1a',flexShrink:0}}>
+    <div style={{position:'fixed',inset:0,background:'#fff',display:'flex',flexDirection:'column',zIndex:200}}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 20px',borderBottom:'1px solid #e5e5e5',flexShrink:0}}>
         <div style={{fontSize:'0.65rem',letterSpacing:'4px',color:ACCENT,fontFamily:'monospace'}}>ADMIN</div>
         <button onClick={onClose} style={{background:'none',border:'none',color:'#999',fontSize:'0.78rem',cursor:'pointer',fontFamily:'monospace'}}>✕ close</button>
       </div>
 
-      <div style={{display:'flex',gap:'8px',padding:'12px 20px',borderBottom:'1px solid #1a1a1a',flexShrink:0,flexWrap:'wrap'}}>
+      <div style={{display:'flex',gap:'8px',padding:'12px 20px',borderBottom:'1px solid #e5e5e5',flexShrink:0,flexWrap:'wrap'}}>
         {['pending','approved','rejected','all'].map(f=>(
           <button key={f} onClick={()=>setFilt(f)} style={{
             padding:'5px 12px', cursor:'pointer',
             background: filter===f ? ACCENT : 'transparent',
-            border:`1px solid ${filter===f ? ACCENT : '#2a2a2a'}`,
+            border:`1px solid ${filter===f ? ACCENT : '#e0e0e0'}`,
             color: filter===f ? '#000' : '#999',
             fontSize:'0.68rem', fontWeight:700, letterSpacing:'1px', fontFamily:'monospace',
           }}>{f}</button>
@@ -464,10 +464,10 @@ function AdminModal({ logs, onClose, onUpdate }) {
           </div>
         )}
         {shown.map(log => (
-          <div key={log.id} style={{border:'1px solid #1a1a1a',padding:'14px 16px',marginBottom:'8px'}}>
+          <div key={log.id} style={{border:'1px solid #e5e5e5',padding:'14px 16px',marginBottom:'8px'}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'10px'}}>
               <div>
-                <div style={{fontSize:'0.87rem',fontWeight:600,color:'#fff',fontFamily:'monospace'}}>{log.choreName}</div>
+                <div style={{fontSize:'0.87rem',fontWeight:600,color:'#111',fontFamily:'monospace'}}>{log.choreName}</div>
                 <div style={{fontSize:'0.68rem',color:'#888',fontFamily:'monospace',marginTop:'3px'}}>
                   {log.playerName} · {new Date(log.timestamp).toLocaleString()}
                 </div>
