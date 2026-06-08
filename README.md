@@ -1,25 +1,24 @@
 # GyattChores
 
-A simple, gamified family chore tracker. Kids tap to log the chores they've done, a parent approves them with a PIN, and points roll up into a friendly weekly competition.
+A gamified family chore tracker. Each day a kid builds a **~25-minute card** of chores — picking what they want, with the app suggesting more to fill the time — then submits it for a parent to approve. Approved chores earn **XP**, a **daily streak** multiplies it, and the kid levels up like they're shipping a better version of themselves.
 
 **Live site:** [gyattchores.com](https://gyattchores.com)
 
 ## How it works
 
-1. **Pick a player** — tap a player card (e.g. 🦁 bekindhearted or 🦖 titan).
-2. **Log a chore** — tap any chore tile. It's recorded as **pending** and earns no points yet.
-3. **Parent approves** — open the ✓ menu, enter the admin PIN, and approve (or reject) pending chores. Approving awards the chore's points.
-4. **Compete** — approved points count toward **Today** and **This Week** totals. The player leading the week gets a 👑.
-
-Points reset naturally each week (the "This Week" total only counts approved chores logged since Monday).
+1. **Pick a player** — tap a name (bekindhearted or megadinolava).
+2. **Build today's card** — pick the chores you want up to a **25-minute budget**, then tap **fill to 25m** to top it up with smart suggestions (most-neglected chores first). Lock it in.
+3. **Do the work & submit** — check off each chore as you finish; the submit button activates once they're all checked.
+4. **Parent approves** — tap the **GYATTCHORES** title 5× on the player-select screen, enter the family admin code, then approve or reject each pending chore.
+5. **Earn XP & level up** — approved chores add XP. Keep a daily streak and a **momentum multiplier** boosts the XP you earn (up to **2× at a 10-day streak**). Your level shows as a **version number** (v1.0 → v1.1 → …). Neglected chores **escalate** — they cost more minutes and get suggested first.
 
 ## Data & storage
 
 GyattChores is **local-first with optional cloud sync**:
 
-- **Always saves locally first.** Every chore is written to the browser's `localStorage` (key: `gyattchores_logs`) instantly. Logging never blocks on the network and **can never fail because a server is down** — the bug that earlier showed *"Could not save… reconnecting."*
-- **Syncs across devices when it can.** If the shared Supabase backend is reachable, logs sync in the background so each kid's phone and the parent's admin screen see the same data. New local entries are pushed; shared rows are pulled and merged.
-- **Degrades gracefully.** If the backend is unreachable (e.g. a paused free-tier project), the app keeps working offline, shows a small "Offline — saved on this device" hint, and syncs automatically once the backend is back.
+- **Always saves locally first.** Every chore log is written to the browser's `localStorage` (key: `gyattchores_logs`) instantly. Submitting never blocks on the network and **can never fail because a server is down**.
+- **Syncs across devices when it can.** If the shared Supabase backend is reachable, logs sync in the background so each kid's phone and the parent's admin screen see the same data. New local entries are pushed; shared rows are pulled and merged. (Approvals self-heal if a row was lost server-side — they're re-created rather than silently dropped.)
+- **Degrades gracefully.** If the backend is unreachable (e.g. a paused free-tier project), the app keeps working offline, shows an "offline" hint in the header, and syncs automatically once the backend is back.
 
 Same-device tabs also stay in sync via the browser `storage` event.
 
@@ -27,35 +26,36 @@ Same-device tabs also stay in sync via the browser `storage` event.
 
 Sync is optional — the app works fully without it. To turn it on:
 
-1. In your Supabase project, open **SQL Editor** and run [`simple-logs-schema.sql`](simple-logs-schema.sql). This creates the `simple_logs` table and the row-level-security policies the app needs.
+1. In your Supabase project, open **SQL Editor** and run [`simple-logs-schema.sql`](simple-logs-schema.sql). This creates the `simple_logs` table and the row-level-security policies the app needs — **including the `update` policy**, which the approval flow depends on.
 2. Set your project URL and **anon public** key near the top of the `<script>` block in `index.html` (`SUPABASE_URL` / `SUPABASE_ANON_KEY`).
 
 If the table is missing or the project is paused, the app simply stays in local-only mode until it's available.
 
 ## Features
 
-- **Tap-to-log chores** — 17 chores, each worth a set number of points.
-- **Parent approval workflow** — chores stay pending until approved with the admin PIN, so points can't be self-awarded.
-- **Approve all** — clear the whole pending queue in one tap.
-- **Today / This Week totals** — per-player point tallies.
-- **Weekly leader** — the top scorer this week is marked with a crown.
-- **Installable PWA** — add to an iOS/Android home screen; runs fully offline.
+- **Pick-your-own daily card** — choose chores up to a 25-minute budget; the app auto-suggests more (same-area and most-neglected first) to reach 25 minutes, so every day is a full, short session.
+- **Escalation** — the longer a chore goes undone, the more minutes it costs and the higher it's suggested (`!` neglected, `!!` long overdue).
+- **Parent approval workflow** — chores stay pending until approved with the admin code, so XP can't be self-awarded.
+- **XP, momentum & version-number levels** — approved chores earn XP; a daily streak multiplies it up to 2×; your level is shown as a version of yourself (v1.0 → v1.1 → …), and XP only ever grows.
+- **Streaks** — consecutive days with an approved chore keep your momentum alive.
+- **Cross-device sync** — an optional Supabase backend keeps each kid's phone and the parent's admin view in sync.
+- **Build-freshness indicator** — the header shows the running build version next to the sync state: **blue** when you're on the latest deploy, **red** when a newer one is live (time to refresh).
+- **Installable PWA** — add to an iOS/Android home screen; logs save locally and keep working offline.
 
-## Chores & points
+## Chores
 
-| Chore | Points | Chore | Points |
-|-------|-------:|-------|-------:|
-| 💩 Pick up Poop | 500 | 🌱 Water Plants | 250 |
-| 🧹 Vacuum | 500 | 🐕 Feed Alfred | 250 |
-| 📬 Get Mail | 250 | 🐱 Feed Chevy | 250 |
-| 🗑️ Trash | 375 | 🧹 Sweep | 375 |
-| 🍽️ Dishes | 500 | 🧽 Wipe Counters | 375 |
-| 🫧 Load Dishwasher | 625 | 👕 Fold Laundry | 500 |
-| ✨ Unload Dishwasher | 500 | 🍴 Set Table | 250 |
-| 🛏️ Clean Room | 750 | 🧹 Clear Table | 250 |
-| 🚿 Clean Bathroom | 750 | | |
+GyattChores ships with **27 chores** across the house. Each has a **base time in minutes** (≈3–25 min) that **escalates** the longer it goes undone, so neglected chores cost more and surface first when building the next card. The daily card targets **25 minutes** of work.
 
-> Players, chores, point values, and the admin PIN are defined at the top of the `<script>` block in `index.html` (the `PLAYERS`, `CHORES`, and `ADMIN_CODE` constants). Edit them there to customize.
+| Area | Examples |
+|------|----------|
+| Kitchen | load/unload dishwasher, wipe counters, sweep, empty trash |
+| Bathroom | scrub toilet, wipe mirrors, sweep, empty trash |
+| Laundry | start/switch/fold laundry, collect dirty laundry |
+| Floors | vacuum living room, pick up clutter, wipe dining table |
+| Outdoor | pick up dog poop, take out trash/recycling, water plants |
+| Bedroom | make bed, pick up floor, put away clean clothes |
+
+> Players, the chore pool, and the (hashed) admin code are defined at the top of the `<script>` block in `index.html` — the `PLAYERS`, `CHORE_POOL`, and `ADMIN_CODE_HASH` constants. The `BUILD` constant just below them is the build version shown in the app; **bump it on every deploy** so the freshness indicator stays accurate.
 
 ## Tech stack
 
@@ -64,9 +64,9 @@ If the table is missing or the project is paused, the app simply stays in local-
 | UI | React 18 (via CDN) + Babel Standalone (in-browser JSX) |
 | Storage | Browser `localStorage` (source of truth) |
 | Sync (optional) | Supabase (`simple_logs` table) for cross-device sharing |
-| Styling | Hand-written CSS (Material-inspired dark theme) |
+| Styling | Hand-written CSS — terminal aesthetic (light, monospace, pink accent) |
 | Hosting | GitHub Pages (custom domain via `CNAME`) |
-| Mobile | PWA (add-to-home-screen) + a native SwiftUI app (see below) |
+| Mobile | Installable PWA (add-to-home-screen) |
 
 There is **no build step**. The entire web app is a single self-contained `index.html`; Supabase is used only as an optional background sync layer.
 
@@ -80,7 +80,7 @@ python -m http.server 8000
 # then open http://localhost:8000/index.html
 ```
 
-Opening `index.html` directly via `file://` also works in most browsers.
+Opening `index.html` directly via `file://` also works in most browsers (the build-freshness check just stays grey, since there's nothing to compare against).
 
 > A ready-to-use preview config lives in `.claude/launch.json` (serves the app on port 8766).
 
@@ -89,16 +89,19 @@ Opening `index.html` directly via `file://` also works in most browsers.
 The site is hosted on **GitHub Pages** from `main`, with the custom domain set in `CNAME`. Pushing to `main` triggers a Pages rebuild:
 
 ```bash
+# bump the BUILD constant in index.html first, then:
 git add .
 git commit -m "Update GyattChores"
 git push origin main
 ```
 
+Bumping `BUILD` on each deploy is what lets the in-app indicator tell a freshly-loaded copy from a stale cached one.
+
 ## Native iOS app
 
-A native SwiftUI app (iPhone + Apple Watch) lives in [`GyattChoresApp/`](GyattChoresApp/). It mirrors the web app's design and uses the same local-storage model (`UserDefaults`, key `gyattchores_logs`), including a Shortcuts/App Intent for logging a chore by voice.
+The [`GyattChoresApp/`](GyattChoresApp/) directory holds Swift sources for an earlier, **tap-to-log** version of the design (iPhone + Apple Watch), including a Shortcuts/App Intent for logging a chore by voice. It predates the current daily-card / XP model in the web app and isn't kept in sync with it.
 
-> Note: the Xcode project file is not committed — the directory contains the Swift sources (`Models/`, `Views/`, `Services/`, `Intents/`). To build, create a new Xcode app target and add these sources.
+> Note: the Xcode project file is not committed — the directory contains only the Swift sources (`Models/`, `Views/`, `Services/`, `Intents/`). To build, create a new Xcode app target and add these sources.
 
 ## Project structure
 
@@ -109,16 +112,15 @@ gyattchores/
 ├── CNAME                   # Custom domain for GitHub Pages
 ├── apple-touch-icon.png    # iOS home-screen icon
 ├── gyattchores-logo*.svg   # Logo variants
+├── about.html / ebook.html / development-story.html   # Public about, guide, and story pages
 ├── SECURITY.md             # Security model & disclosure
-├── GyattChoresApp/         # Native SwiftUI app (iPhone + Watch)
-├── development-narrative.md / development-story.html   # The build journey
-├── ebook.md / ebook.html   # Long-form write-up of the project
-└── leveling-progression-examples.md   # Design notes for a future leveling system
+├── GyattChoresApp/         # Earlier native SwiftUI app (iPhone + Watch)
+└── docs/governance/        # Lightweight service-management docs
 ```
 
 ## Security
 
-All chore data lives in the browser's `localStorage` on each device; the optional Supabase sync stores only non-sensitive chore logs, written with the project's public anon key under permissive row-level-security policies (it's a private family app). The admin PIN is a lightweight, client-side "are you a grown-up?" gate, **not** a real security boundary. See [SECURITY.md](SECURITY.md).
+All chore data lives in the browser's `localStorage` on each device; the optional Supabase sync stores only non-sensitive chore logs, written with the project's public anon key under permissive row-level-security policies (it's a private family app). The admin code is a lightweight, client-side "are you a grown-up?" gate — stored as a hash rather than plaintext, but **not** a real security boundary. See [SECURITY.md](SECURITY.md).
 
 ## Governance & operations
 
@@ -131,7 +133,7 @@ This repository is run under a lightweight, ITIL 4-aligned **Service Management 
 
 ## History
 
-This started as a Supabase-backed app, was rewritten into a simple offline-first localStorage app, and is now **local-first with optional Supabase sync** — local storage is always the source of truth, and the cloud is a best-effort sync layer that the app no longer depends on to function. That journey is preserved in [`development-narrative.md`](development-narrative.md) and the [`ebook`](ebook.md).
+This started as a Supabase-backed tap-to-log app, was rewritten into a simple offline-first localStorage app, became **local-first with optional Supabase sync**, and most recently turned into a daily-card game: kids build a 25-minute card, earn XP with streak-based momentum, and level up by version number. That journey is preserved in [`development-narrative.md`](development-narrative.md) and the [`ebook`](ebook.md).
 
 ## License
 
@@ -139,4 +141,4 @@ MIT License — feel free to fork and adapt for your family.
 
 ---
 
-**Created with love for bekindhearted and titan** · *Built by Matthew Gissentanna*
+**Created with love for bekindhearted and megadinolava** · *Built by Matthew Gissentanna*
