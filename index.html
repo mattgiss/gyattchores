@@ -54,6 +54,7 @@ const hashCode = s => { let h=2166136261>>>0; for (let i=0;i<s.length;i++){ h^=s
 const ADMIN_CODE_HASH   = 1305456521;
 const STORAGE_KEY       = 'gyattchores_logs';
 const ACCENT            = '#F23861';
+const BUILD             = '2026.06.08';   // bump on every deploy — drives the build-freshness indicator
 const SUPABASE_URL      = 'https://ukshxdoqgwoxobjdclpx.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrc2h4ZG9xZ3dveG9iamRjbHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3MjI2NDEsImV4cCI6MjA4MDI5ODY0MX0.UGNrsfG6goEA0PPWG4x7gxBueA7D5Oe9uWI-iCXIar0';
 const supabase = window.supabase?.createClient
@@ -256,11 +257,30 @@ function ChoreRow({ chore, checked, onToggle }) {
   );
 }
 
+// ─── SYNC + BUILD INDICATOR ───────────────────────────────────────────────────
+// Shows the sync state plus the build version. The build is BLUE when this is
+// the latest deployed build, RED when a newer one is live (you're on a cached/
+// stale copy — refresh), and grey when it can't be checked (e.g. offline).
+function SyncIndicator({ syncStatus, buildStatus }) {
+  const syncLabel = syncStatus==='syncing' ? 'sync...' : syncStatus==='offline' ? 'offline' : 'live';
+  const syncColor = syncStatus==='offline' ? '#EF4444' : syncStatus==='syncing' ? '#F5A623' : '#bbb';
+  const buildColor = buildStatus==='latest' ? '#3B82F6' : buildStatus==='stale' ? '#EF4444' : '#bbb';
+  const buildTitle = buildStatus==='stale'  ? 'A newer build is live — refresh to update'
+                   : buildStatus==='latest' ? 'You have the latest build'
+                   : 'Build status unknown';
+  return (
+    <span style={{display:'flex', gap:'8px', alignItems:'baseline', fontFamily:'monospace'}}>
+      <span style={{fontSize:'0.65rem', color:syncColor, letterSpacing:'2px'}}>{syncLabel}</span>
+      <span style={{fontSize:'0.58rem', color:buildColor, letterSpacing:'1px'}} title={buildTitle}>build {BUILD}</span>
+    </span>
+  );
+}
+
 // ─── CHORE PICKER ────────────────────────────────────────────────────────────
 // A full day is ~25 min of work. The player picks what they want, then we
 // auto-suggest sensible short chores to fill the rest — building the habit of
 // doing a little every day so nothing piles up into a long chore.
-function ChorePicker({ player, logs, syncStatus, onBack, onConfirm }) {
+function ChorePicker({ player, logs, syncStatus, buildStatus, onBack, onConfirm }) {
   const pool = pickableChores(player.id, logs);
   const [picked, setPicked]       = useState([]);  // all selected ids
   const [suggested, setSuggested] = useState([]);  // subset of picked we auto-added
@@ -291,9 +311,6 @@ function ChorePicker({ player, logs, syncStatus, onBack, onConfirm }) {
     setSuggested([...new Set([...suggested.filter(id=>next.includes(id)), ...added])]);
   };
 
-  const syncLabel = syncStatus==='syncing' ? 'sync...' : syncStatus==='offline' ? 'offline' : 'live';
-  const syncColor = syncStatus==='offline' ? '#EF4444' : syncStatus==='syncing' ? '#F5A623' : '#bbb';
-
   return (
     <div className="fade-in" style={{display:'flex', flexDirection:'column', height:'100%'}}>
       <div style={{
@@ -304,9 +321,7 @@ function ChorePicker({ player, logs, syncStatus, onBack, onConfirm }) {
           background:'none', border:'none', color:'#999',
           fontSize:'0.75rem', cursor:'pointer', fontFamily:'monospace', letterSpacing:'1px',
         }}>← back</button>
-        <span style={{fontSize:'0.65rem', color:syncColor, fontFamily:'monospace', letterSpacing:'2px'}}>
-          {syncLabel}
-        </span>
+        <SyncIndicator syncStatus={syncStatus} buildStatus={buildStatus} />
       </div>
 
       <div className="scroll" style={{flex:1, padding:'28px 20px 0'}}>
@@ -404,7 +419,7 @@ function ChorePicker({ player, logs, syncStatus, onBack, onConfirm }) {
 }
 
 // ─── PLAYER CARD VIEW ────────────────────────────────────────────────────────
-function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus }) {
+function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus, buildStatus }) {
   const streak   = getStreak(player.id, logs);
   const xp       = getXP(player.id, logs);
   const rank     = getRank(xp);
@@ -416,7 +431,7 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus }) {
   if (!card) {
     return (
       <ChorePicker
-        player={player} logs={logs} syncStatus={syncStatus}
+        player={player} logs={logs} syncStatus={syncStatus} buildStatus={buildStatus}
         onBack={onBack}
         onConfirm={chores => setCard(buildCard(player.id, chores))}
       />
@@ -444,9 +459,6 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus }) {
     } finally { setSubmit(false); }
   };
 
-  const syncLabel = syncStatus==='syncing' ? 'sync...' : syncStatus==='offline' ? 'offline' : 'live';
-  const syncColor = syncStatus==='offline' ? '#EF4444' : syncStatus==='syncing' ? '#F5A623' : '#bbb';
-
   return (
     <div className="fade-in" style={{display:'flex', flexDirection:'column', height:'100%'}}>
       <div style={{
@@ -457,9 +469,7 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus }) {
           background:'none', border:'none', color:'#999',
           fontSize:'0.75rem', cursor:'pointer', fontFamily:'monospace', letterSpacing:'1px',
         }}>← back</button>
-        <span style={{fontSize:'0.65rem', color:syncColor, fontFamily:'monospace', letterSpacing:'2px'}}>
-          {syncLabel}
-        </span>
+        <SyncIndicator syncStatus={syncStatus} buildStatus={buildStatus} />
       </div>
 
       <div className="scroll" style={{flex:1, padding:'28px 20px 0'}}>
@@ -752,6 +762,7 @@ function App() {
   const [showAdmin, setAdmin]   = useState(false);
   const [logs,      setLogs]    = useState(loadLogs);
   const [syncStatus,setSyncSt]  = useState(supabase?'idle':'offline');
+  const [buildStatus,setBuild]  = useState('unknown');   // 'latest' | 'stale' | 'unknown'
 
   const sync = useCallback(async () => {
     if (!supabase) { setSyncSt('offline'); return; }
@@ -810,6 +821,27 @@ function App() {
   }, []);
 
   useEffect(()=>{sync();},[sync]);
+
+  // Compare this running build against the live one. Fetch index.html fresh
+  // (cache-busted, no-store) and read its BUILD constant — if it differs, this
+  // copy is stale (a newer build is deployed but we're running a cached one).
+  useEffect(()=>{
+    let cancelled=false;
+    const check=()=>{
+      fetch(`/index.html?cb=${Date.now()}`, {cache:'no-store'})
+        .then(r=> r.ok ? r.text() : Promise.reject())
+        .then(txt=>{
+          if (cancelled) return;
+          const m = txt.match(/const BUILD\s*=\s*'([^']+)'/);
+          if (m) setBuild(m[1]===BUILD ? 'latest' : 'stale');
+        })
+        .catch(()=>{ if(!cancelled) setBuild('unknown'); });
+    };
+    check();
+    const t=setInterval(check, 60000);
+    return ()=>{ cancelled=true; clearInterval(t); };
+  },[]);
+
   useEffect(()=>{
     const t=setInterval(sync,5000);
     const onVis=()=>{if(!document.hidden) sync();};
@@ -848,6 +880,7 @@ function App() {
           onBack={()=>{setPlayer(null); sync();}}
           onSubmitCard={submitCard}
           syncStatus={syncStatus}
+          buildStatus={buildStatus}
         />
       )}
     </div>
