@@ -121,35 +121,30 @@ const enrichChore = (chore, days) => {
   return { ...chore, neglectDays:days, currentMinutes:chore.tiers[tier], escalLevel:tier };
 };
 
-const seededRand = n => { const x=Math.sin(n)*10000; return x-Math.floor(x); };
+// How many minutes of chores a player can put on their daily card.
+const DAILY_MINUTES = 25;
 
-const generateCard = (playerId, logs) => {
-  const cached = localStorage.getItem(cardKey(playerId));
-  if (cached) return JSON.parse(cached);
-
-  const seed = parseInt(new Date().toDateString().replace(/\D/g,'')) + parseInt(playerId);
-  const enriched = CHORE_POOL
+// The chore pool, enriched with each chore's current minutes/escalation for this
+// player, ranked most-neglected first so the overdue stuff surfaces as a
+// suggestion — but the player picks what actually goes on the card.
+const pickableChores = (playerId, logs) =>
+  CHORE_POOL
     .map(c => enrichChore(c, neglectDays(c.id, playerId, logs)))
-    .sort((a,b) => {
-      if (b.neglectDays !== a.neglectDays) return b.neglectDays - a.neglectDays;
-      return seededRand(seed + a.id.charCodeAt(0)) - seededRand(seed + b.id.charCodeAt(0));
-    });
+    .sort((a,b) => (b.neglectDays - a.neglectDays) || (a.currentMinutes - b.currentMinutes));
 
-  const selected = [];
-  let total = 0;
-  for (const c of enriched) {
-    if (selected.length >= 3) break;
-    if (total + c.currentMinutes <= 27) { selected.push(c); total += c.currentMinutes; }
-  }
-  for (const c of enriched) {
-    if (selected.length >= 3) break;
-    if (!selected.find(s => s.id===c.id)) selected.push(c);
-  }
+const loadCard = playerId => {
+  const cached = localStorage.getItem(cardKey(playerId));
+  return cached ? JSON.parse(cached) : null;
+};
 
-  const card = { date:new Date().toDateString(), chores:selected, checked:[false,false,false], submitted:false };
+// Build a fresh card from the chores the player picked.
+const buildCard = (playerId, chores) => {
+  const card = { date:new Date().toDateString(), chores, checked:chores.map(()=>false), submitted:false };
   localStorage.setItem(cardKey(playerId), JSON.stringify(card));
   return card;
 };
+
+const clearCard = playerId => localStorage.removeItem(cardKey(playerId));
 
 const saveCard = (playerId, card) => localStorage.setItem(cardKey(playerId), JSON.stringify(card));
 
@@ -204,13 +199,135 @@ function ChoreRow({ chore, checked, onToggle }) {
   );
 }
 
+// ─── CHORE PICKER ────────────────────────────────────────────────────────────
+function ChorePicker({ player, logs, syncStatus, onBack, onConfirm }) {
+  const pool = pickableChores(player.id, logs);
+  const [picked, setPicked] = useState([]);            // chore ids
+
+  const chosen    = pool.filter(c => picked.includes(c.id));
+  const total     = chosen.reduce((s,c)=>s+c.currentMinutes, 0);
+  const remaining = DAILY_MINUTES - total;
+
+  const toggle = c => {
+    if (picked.includes(c.id)) setPicked(picked.filter(id=>id!==c.id));
+    else if (c.currentMinutes <= remaining) setPicked([...picked, c.id]);
+  };
+
+  const syncLabel = syncStatus==='syncing' ? 'sync...' : syncStatus==='offline' ? 'offline' : 'live';
+  const syncColor = syncStatus==='offline' ? '#EF4444' : syncStatus==='syncing' ? '#F5A623' : '#bbb';
+
+  return (
+    <div className="fade-in" style={{display:'flex', flexDirection:'column', height:'100%'}}>
+      <div style={{
+        display:'flex', alignItems:'center', justifyContent:'space-between',
+        padding:'12px 20px', borderBottom:'1px solid #e5e5e5', flexShrink:0,
+      }}>
+        <button onClick={onBack} style={{
+          background:'none', border:'none', color:'#999',
+          fontSize:'0.75rem', cursor:'pointer', fontFamily:'monospace', letterSpacing:'1px',
+        }}>← back</button>
+        <span style={{fontSize:'0.65rem', color:syncColor, fontFamily:'monospace', letterSpacing:'2px'}}>
+          {syncLabel}
+        </span>
+      </div>
+
+      <div className="scroll" style={{flex:1, padding:'28px 20px 0'}}>
+        <div style={{fontSize:'0.65rem', color:'#888', fontFamily:'monospace', letterSpacing:'3px', marginBottom:'6px'}}>
+          build today's card
+        </div>
+        <div style={{fontSize:'0.82rem', color:'#111', fontFamily:'monospace', marginBottom:'2px'}}>
+          pick the chores you want — up to {DAILY_MINUTES} minutes
+        </div>
+
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginTop:'18px', marginBottom:'5px'}}>
+          <span style={{fontSize:'0.65rem', color:'#888', fontFamily:'monospace', letterSpacing:'2px'}}>
+            {chosen.length} picked
+          </span>
+          <span style={{fontSize:'0.72rem', color:ACCENT, fontFamily:'monospace', fontWeight:700}}>
+            {total} / {DAILY_MINUTES}m
+          </span>
+        </div>
+        <div style={{height:'4px', background:'#eee', borderRadius:'2px', overflow:'hidden', marginBottom:'18px'}}>
+          <div style={{height:'100%', width:`${Math.min(100,(total/DAILY_MINUTES)*100)}%`, background:ACCENT, transition:'width 0.2s'}}/>
+        </div>
+
+        <div style={{marginBottom:'16px'}}>
+          {pool.map(c => {
+            const on         = picked.includes(c.id);
+            const tooBig     = !on && c.currentMinutes > remaining;
+            const escalLabel = ['', '!', '!!'][c.escalLevel] || '';
+            const escalColor = ['#555', '#F5A623', '#EF4444'][c.escalLevel];
+            return (
+              <div key={c.id} onClick={()=>{ if(!tooBig) toggle(c); }} style={{
+                display:'flex', alignItems:'center', gap:'12px',
+                padding:'14px 0', borderBottom:'1px solid #e5e5e5',
+                cursor: tooBig ? 'default' : 'pointer', opacity: tooBig ? 0.35 : 1,
+              }}>
+                <span style={{
+                  color: on ? ACCENT : '#bbb',
+                  fontFamily:'monospace', fontSize:'0.9rem', flexShrink:0, userSelect:'none',
+                }}>
+                  {on ? '[+]' : '[ ]'}
+                </span>
+                <span style={{
+                  flex:1, fontFamily:'monospace', fontSize:'0.88rem',
+                  color: on ? ACCENT : '#111',
+                }}>
+                  {c.name}
+                </span>
+                <span style={{
+                  fontFamily:'monospace', fontSize:'0.75rem', flexShrink:0,
+                  color: escalLabel ? escalColor : '#bbb',
+                }}>
+                  {escalLabel ? `${escalLabel} ` : ''}{c.currentMinutes}m
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
+        {pool.some(c=>c.escalLevel>0) && (
+          <div style={{fontSize:'0.62rem', color:'#777', fontFamily:'monospace', letterSpacing:'1px', marginBottom:'16px'}}>
+            ! = neglected &nbsp; !! = long overdue
+          </div>
+        )}
+        <div style={{height:'24px'}}/>
+      </div>
+
+      <div style={{padding:'14px 20px', borderTop:'1px solid #e5e5e5', flexShrink:0}}>
+        <button onClick={()=>{ if(chosen.length) onConfirm(chosen); }} disabled={!chosen.length} style={{
+          width:'100%', padding:'17px', cursor:chosen.length?'pointer':'default',
+          background: chosen.length ? ACCENT : 'transparent',
+          border:`1px solid ${chosen.length ? ACCENT : '#e0e0e0'}`,
+          color: chosen.length ? '#fff' : '#aaa',
+          fontSize:'0.75rem', fontWeight:800, letterSpacing:'3px',
+          fontFamily:'monospace', transition:'all 0.15s',
+        }}>
+          {chosen.length ? `LOCK IN ${chosen.length} CHORE${chosen.length>1?'S':''} · ${total}M` : 'PICK AT LEAST ONE CHORE'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── PLAYER CARD VIEW ────────────────────────────────────────────────────────
 function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus }) {
   const totalPts = getTotalPts(player.id, logs);
   const level    = getLevel(totalPts);
   const streak   = getStreak(player.id, logs);
-  const [card, setCard]         = useState(() => generateCard(player.id, logs));
+  const [card, setCard]         = useState(() => loadCard(player.id));
   const [submitting, setSubmit] = useState(false);
+
+  // No card built for today yet — let the player pick their own chores.
+  if (!card) {
+    return (
+      <ChorePicker
+        player={player} logs={logs} syncStatus={syncStatus}
+        onBack={onBack}
+        onConfirm={chores => setCard(buildCard(player.id, chores))}
+      />
+    );
+  }
 
   const totalMin   = card.chores.reduce((s,c)=>s+c.currentMinutes,0);
   const allChecked = card.checked.every(Boolean);
@@ -299,6 +416,12 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus }) {
         }}>
           <span style={{fontSize:'0.65rem', color:'#888', fontFamily:'monospace', letterSpacing:'3px'}}>
             today's card
+            {!card.submitted && (
+              <button onClick={()=>{ clearCard(player.id); setCard(null); }} style={{
+                marginLeft:'10px', background:'none', border:'none', color:ACCENT,
+                fontSize:'0.62rem', cursor:'pointer', fontFamily:'monospace', letterSpacing:'1px',
+              }}>↻ re-pick</button>
+            )}
           </span>
           <span style={{fontSize:'0.65rem', color:'#888', fontFamily:'monospace'}}>
             {doneCount}/{card.chores.length} · {totalMin}m
@@ -510,23 +633,43 @@ function App() {
         l.remoteId=data.id; l.synced=true; l.statusDirty=false;
         if (data.created_at) l.timestamp=data.created_at;
       }
+      // Push status changes (approve/reject). Confirm with .select() and clear
+      // the dirty flag only when a row was actually updated — a silently dropped
+      // update (0 rows, no error) is left dirty so it retries instead of vanishing.
       for (const l of work.filter(x=>x.remoteId!=null&&x.statusDirty)) {
-        const {error} = await supabase.from('simple_logs').update({status:l.status}).eq('id',l.remoteId);
-        if (error) throw error; l.statusDirty=false;
+        const {data,error} = await supabase.from('simple_logs').update({status:l.status}).eq('id',l.remoteId).select();
+        if (error) throw error;
+        if (data && data.length) l.statusDirty=false;
       }
       const {data:rows,error:selErr} = await supabase.from('simple_logs').select('*').order('created_at',{ascending:false});
       if (selErr) throw selErr;
+      const remoteIds=new Set((rows||[]).map(r=>String(r.id)));
+      // Self-heal orphaned rows: if a dirty log points at a remote row that no
+      // longer exists (e.g. the table was reset), the update can never land —
+      // recreate the row so the approval actually propagates.
+      for (const l of work) {
+        if (l.statusDirty && l.remoteId!=null && !remoteIds.has(String(l.remoteId))) {
+          const {data,error} = await supabase.from('simple_logs').insert(toRow(l)).select().single();
+          if (error) throw error;
+          l.remoteId=data.id; l.synced=true; l.statusDirty=false;
+          if (data.created_at) l.timestamp=data.created_at;
+          remoteIds.add(String(data.id));
+        }
+      }
       const byRemote={};
       work.forEach(l=>{if(l.remoteId!=null) byRemote[String(l.remoteId)]=l;});
       (rows||[]).forEach(r=>{
         const ex=byRemote[String(r.id)];
         if(ex){if(!ex.statusDirty) ex.status=r.status;} else work.push(rowToLocal(r));
       });
+      // Re-apply changes made locally while this sync was in flight. Only when
+      // the status genuinely differs, so we never re-dirty (and re-push forever)
+      // a change we just confirmed.
       const latest=loadLogs(), workById={};
       work.forEach(l=>{workById[l.id]=l;});
       latest.forEach(l=>{
         if(!workById[l.id]) work.push(l);
-        else if(l.statusDirty){workById[l.id].status=l.status; workById[l.id].statusDirty=true;}
+        else if(l.statusDirty && workById[l.id].status!==l.status){workById[l.id].status=l.status; workById[l.id].statusDirty=true;}
       });
       work.sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
       saveLogs(work); setLogs(work.slice()); setSyncSt('synced');
