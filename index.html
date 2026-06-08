@@ -174,7 +174,6 @@ const saveCard = (playerId, card) => localStorage.setItem(cardKey(playerId), JSO
 // ─── XP / RANK / STREAK ───────────────────────────────────────────────────────
 // Call-of-Duty-style progression: XP comes fast, levels are short so rank-ups
 // hit often, and momentum (a daily streak) multiplies the XP you earn.
-const RANKS = ['RECRUIT','OPERATIVE','RAIDER','GHOST','HACKER','PHANTOM','SPECTER','WRAITH','SHADOW','LEGEND'];
 const DAY_MS              = 86400000;
 const LEVELS_PER_PRESTIGE = 50;
 
@@ -209,9 +208,8 @@ const getRank = xp => {
   while (into >= xpToNext(level)) { into -= xpToNext(level); level++; }
   const prestige     = Math.floor((level-1) / LEVELS_PER_PRESTIGE);
   const displayLevel = ((level-1) % LEVELS_PER_PRESTIGE) + 1;
-  const rank         = RANKS[Math.min(RANKS.length-1, Math.floor((displayLevel-1)/5))];
   const need         = xpToNext(level);
-  return { level, displayLevel, prestige, rank, into, need, pct: Math.round(into/need*100) };
+  return { level, displayLevel, prestige, into, need, pct: Math.round(into/need*100) };
 };
 
 const getStreak = (playerId, logs) => {
@@ -481,7 +479,7 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus }) {
             fontSize:'0.65rem', color:ACCENT, fontFamily:'monospace',
             letterSpacing:'4px', marginTop:'4px',
           }}>
-            {rank.prestige>0 ? '★'.repeat(Math.min(rank.prestige,5)) + ' ' : ''}{rank.rank} // LV.{rank.displayLevel}
+            {rank.prestige>0 ? '★'.repeat(Math.min(rank.prestige,5)) + ' ' : ''}LV.{rank.displayLevel}
           </div>
 
           {/* XP progress to next level */}
