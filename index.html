@@ -178,9 +178,11 @@ const saveCard = (playerId, card) => localStorage.setItem(cardKey(playerId), JSO
 // other device) sees the picker again instead of what the kid already submitted.
 const cardFromLogs = (playerId, logs) => {
   const today  = new Date().toDateString();
+  // Include rejected too, so a parent's rejection stays visible on the card
+  // (marked ✗) instead of the chore silently disappearing.
   const todays = logs.filter(l =>
     l.playerId === playerId &&
-    (l.status === 'pending' || l.status === 'approved') &&
+    (l.status === 'pending' || l.status === 'approved' || l.status === 'rejected') &&
     new Date(l.timestamp).toDateString() === today
   );
   if (!todays.length) return null;
@@ -251,9 +253,15 @@ const getStreak = (playerId, logs) => {
 };
 
 // ─── CHORE ROW ───────────────────────────────────────────────────────────────
-function ChoreRow({ chore, checked, onToggle }) {
+function ChoreRow({ chore, checked, onToggle, status }) {
   const escalLabel = ['', '!', '!!'][chore.escalLevel] || '';
   const escalColor = ['#555', '#F5A623', '#EF4444'][chore.escalLevel];
+  // Once submitted, the right side reports the parent's verdict instead of minutes.
+  const statusMeta = {
+    approved: { txt:'✓ approved', col:'#16A34A' },
+    rejected: { txt:'✗ rejected', col:'#EF4444' },
+    pending:  { txt:'· awaiting', col:'#F5A623' },
+  }[status];
   return (
     <div onClick={onToggle} style={{
       display:'flex', alignItems:'center', gap:'12px',
@@ -273,12 +281,21 @@ function ChoreRow({ chore, checked, onToggle }) {
       }}>
         {chore.name}
       </span>
-      <span style={{
-        fontFamily:'monospace', fontSize:'0.75rem', flexShrink:0,
-        color: escalLabel ? escalColor : '#bbb',
-      }}>
-        {escalLabel ? `${escalLabel} ` : ''}{chore.currentMinutes}m
-      </span>
+      {statusMeta ? (
+        <span style={{
+          fontFamily:'monospace', fontSize:'0.72rem', flexShrink:0,
+          color: statusMeta.col, letterSpacing:'1px',
+        }}>
+          {statusMeta.txt}
+        </span>
+      ) : (
+        <span style={{
+          fontFamily:'monospace', fontSize:'0.75rem', flexShrink:0,
+          color: escalLabel ? escalColor : '#bbb',
+        }}>
+          {escalLabel ? `${escalLabel} ` : ''}{chore.currentMinutes}m
+        </span>
+      )}
     </div>
   );
 }
@@ -475,6 +492,24 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus, buildS
   const doneCount  = view.checked.filter(Boolean).length;
   const pending    = logs.filter(l=>l.playerId===player.id&&l.status==='pending').length;
 
+  // Per-chore approval state for today, read from the synced logs so a parent's
+  // approve/reject actually shows up on the card (the card object itself only
+  // tracks checked/submitted, not approval). Approved/rejected win over pending
+  // if more than one log exists for a chore.
+  const today = new Date().toDateString();
+  const statusByChore = {};
+  const rankStatus = { approved:3, rejected:2, pending:1 };
+  logs.forEach(l => {
+    if (l.playerId!==player.id || new Date(l.timestamp).toDateString()!==today) return;
+    const cur = statusByChore[l.choreId];
+    if (!cur || (rankStatus[l.status]||0) > (rankStatus[cur]||0)) statusByChore[l.choreId] = l.status;
+  });
+  // On a submitted card a chore with no log yet is awaiting approval.
+  const choreStatus = c => statusByChore[c.id] || (view.submitted ? 'pending' : null);
+  const nApproved = view.chores.filter(c=>choreStatus(c)==='approved').length;
+  const nRejected = view.chores.filter(c=>choreStatus(c)==='rejected').length;
+  const nTotal    = view.chores.length;
+
   const toggle = i => {
     if (!card || view.submitted) return;
     const next = { ...card, checked: card.checked.map((v,idx)=>idx===i?!v:v) };
@@ -593,6 +628,7 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus, buildS
           {view.chores.map((chore,i) => (
             <ChoreRow key={chore.id} chore={chore}
               checked={view.checked[i]}
+              status={choreStatus(chore)}
               onToggle={()=>toggle(i)}/>
           ))}
         </div>
@@ -614,15 +650,28 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus, buildS
         )}
 
         <div style={{paddingBottom:'40px'}}>
-          {view.submitted ? (
-            <div style={{
-              padding:'16px', textAlign:'center',
-              border:`1px solid ${ACCENT}`,
-              fontSize:'0.72rem', color:ACCENT, fontFamily:'monospace', letterSpacing:'3px',
-            }}>
-              SUBMITTED — AWAITING APPROVAL
-            </div>
-          ) : (
+          {view.submitted ? (() => {
+            // Reflect what the parent has actually done, not just "submitted".
+            const allApproved = nApproved===nTotal;
+            const someApproved = nApproved>0 && nApproved<nTotal;
+            const color = nRejected>0 ? '#EF4444' : allApproved ? '#16A34A' : ACCENT;
+            const label = nRejected>0
+              ? `${nRejected} REJECTED · ${nApproved}/${nTotal} APPROVED`
+              : allApproved
+                ? `ALL APPROVED ✓ · +${view.chores.reduce((s,c)=>s+(c.pts||0),0)} PTS`
+                : someApproved
+                  ? `${nApproved}/${nTotal} APPROVED · REST AWAITING`
+                  : 'SUBMITTED — AWAITING APPROVAL';
+            return (
+              <div style={{
+                padding:'16px', textAlign:'center',
+                border:`1px solid ${color}`,
+                fontSize:'0.72rem', color, fontFamily:'monospace', letterSpacing:'3px',
+              }}>
+                {label}
+              </div>
+            );
+          })() : (
             <button onClick={submit} disabled={!allChecked||submitting} style={{
               width:'100%', padding:'17px', cursor:allChecked?'pointer':'default',
               background: allChecked ? ACCENT : 'transparent',
