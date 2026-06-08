@@ -52,8 +52,8 @@ hr { border: none; border-top: 1px solid #e5e5e5; margin: 14px 0; }
   <hr>
 
   <h2>What this is</h2>
-  <p>GyattChores is a chore tracking app built for one family. Kids get a daily card of three chores targeting 25 minutes of focused work. When they're done, they submit the card and dad approves it. Points accumulate. Neglected chores escalate and surface at the top of the next card.</p>
-  <p>The idea is simple: instead of asking kids what they want to do, the app tells them what needs to be done right now. Consistency keeps the card light. Skipping makes it heavier.</p>
+  <p>GyattChores is a chore tracking app built for one family. Each day a kid builds a card of about 25 minutes of work — they pick the chores they want, and the app suggests more to fill the time. When they're done, they submit the card and dad approves it. XP accumulates and your level climbs. Neglected chores escalate and get suggested first.</p>
+  <p>The idea is simple: do a little every day so nothing piles up into a big chore. Kids choose what to tackle, the app keeps the day at ~25 minutes, and keeping a daily streak builds momentum that multiplies the XP you earn. Skipping makes tomorrow heavier.</p>
 
   <blockquote>Pomodoro for kids. 25 minutes of focused work, every day.</blockquote>
 
@@ -61,16 +61,16 @@ hr { border: none; border-top: 1px solid #e5e5e5; margin: 14px 0; }
 
   <div class="player-card">
     <div class="player-name">bekindhearted</div>
-    <p class="player-desc">Player 1. Co-designer of the point system. Finds bugs by using the app and reports them at dinner. Strong opinions about which chores are worth more points.</p>
+    <p class="player-desc">Player 1. Co-designer of the point system. Finds bugs by using the app and reports them at dinner. Asked to pick her own chores instead of having them chosen for her — which is exactly how the card works now.</p>
   </div>
 
   <div class="player-card">
-    <div class="player-name">titan</div>
+    <div class="player-name">megadinolava</div>
     <p class="player-desc">Player 2. Quality assurance. Noticed that the old system let you claim the same chore repeatedly. The approval workflow exists because of this discovery.</p>
   </div>
 
   <h2>How we built it</h2>
-  <p>Built over weekends by Matthew Gissentanna with feedback from the kids. The feature set came from actual use — not a roadmap. Cooldowns were invented after someone claimed "feed pets" three times in one day. The daily card system came from asking why they weren't using the app unprompted.</p>
+  <p>Built over weekends by Matthew Gissentanna with feedback from the kids. The feature set came from actual use — not a roadmap. The one-card-per-day rule was invented after someone claimed the same chore three times in one day. The daily card came from asking why they weren't using the app unprompted — and letting kids pick their own chores came from one who didn't want them chosen for her.</p>
   <p>The app is a single HTML file with no build step. React and Supabase are loaded from CDN. Edit the file, push to GitHub, done.</p>
 
   <h2>Tech stack</h2>
@@ -83,11 +83,11 @@ hr { border: none; border-top: 1px solid #e5e5e5; margin: 14px 0; }
 
   <h2>Design principles</h2>
   <ul>
-    <li>Tell kids what to do, don't ask — daily card pushes tasks to them</li>
-    <li>Consistency is the reward — keep up and the card stays at 25 minutes</li>
+    <li>Let kids choose, then help — they pick their chores and the app suggests more to reach 25 minutes</li>
+    <li>Momentum is the reward — keep a daily streak and your XP multiplies while chores stay light</li>
     <li>No accounts, no personal data, no third-party tracking</li>
     <li>Single file, no build tools — change it in 60 seconds</li>
-    <li>Parent approval is non-negotiable — points don't count until checked</li>
+    <li>Parent approval is non-negotiable — XP doesn't count until checked</li>
   </ul>
 
   <h2>Roadmap</h2>
@@ -103,7 +103,7 @@ hr { border: none; border-top: 1px solid #e5e5e5; margin: 14px 0; }
   <p>This is a private family app, but questions are welcome: <a href="mailto:matt@gissentanna.com">matt@gissentanna.com</a></p>
 
   <div class="footer">
-    built by matthew gissentanna &nbsp;·&nbsp; for bekindhearted and titan &nbsp;·&nbsp; <a href="/privacy.html">privacy</a>
+    built by matthew gissentanna &nbsp;·&nbsp; for bekindhearted and megadinolava &nbsp;·&nbsp; <a href="/privacy.html">privacy</a>
   </div>
 </div>
 </body>
