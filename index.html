@@ -172,6 +172,32 @@ const clearCard = playerId => localStorage.removeItem(cardKey(playerId));
 
 const saveCard = (playerId, card) => localStorage.setItem(cardKey(playerId), JSON.stringify(card));
 
+// Reconstruct today's already-submitted card from the synced logs. The card
+// object itself only lives in the picking device's localStorage — only the
+// resulting chore logs sync between devices — so without this a parent (or any
+// other device) sees the picker again instead of what the kid already submitted.
+const cardFromLogs = (playerId, logs) => {
+  const today  = new Date().toDateString();
+  const todays = logs.filter(l =>
+    l.playerId === playerId &&
+    (l.status === 'pending' || l.status === 'approved') &&
+    new Date(l.timestamp).toDateString() === today
+  );
+  if (!todays.length) return null;
+  // De-dupe by chore — a chore is only on the card once.
+  const seen = new Set();
+  const chores = [];
+  for (const l of todays) {
+    if (seen.has(l.choreId)) continue;
+    seen.add(l.choreId);
+    const base = CHORE_POOL.find(c => c.id === l.choreId);
+    chores.push(base
+      ? enrichChore(base, neglectDays(l.choreId, playerId, logs))
+      : { id:l.choreId, name:l.choreName, cat:'', pts:l.points, currentMinutes:0, escalLevel:0, neglectDays:0 });
+  }
+  return { date:today, chores, checked:chores.map(()=>true), submitted:true };
+};
+
 // ─── XP / RANK / STREAK ───────────────────────────────────────────────────────
 // Call-of-Duty-style progression: XP comes fast, levels are short so rank-ups
 // hit often, and momentum (a daily streak) multiplies the XP you earn.
@@ -427,8 +453,14 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus, buildS
   const [card, setCard]         = useState(() => loadCard(player.id));
   const [submitting, setSubmit] = useState(false);
 
-  // No card built for today yet — let the player pick their own chores.
-  if (!card) {
+  // The card the player is actively picking/checking lives in this device's
+  // localStorage. If there's none here, fall back to reconstructing today's
+  // already-submitted card from the synced logs, so every device shows what
+  // the kid picked instead of re-offering the picker.
+  const view = card || cardFromLogs(player.id, logs);
+
+  // No card here and nothing submitted yet — let the player pick their chores.
+  if (!view) {
     return (
       <ChorePicker
         player={player} logs={logs} syncStatus={syncStatus} buildStatus={buildStatus}
@@ -438,19 +470,19 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus, buildS
     );
   }
 
-  const totalMin   = card.chores.reduce((s,c)=>s+c.currentMinutes,0);
-  const allChecked = card.checked.every(Boolean);
-  const doneCount  = card.checked.filter(Boolean).length;
+  const totalMin   = view.chores.reduce((s,c)=>s+c.currentMinutes,0);
+  const allChecked = view.checked.every(Boolean);
+  const doneCount  = view.checked.filter(Boolean).length;
   const pending    = logs.filter(l=>l.playerId===player.id&&l.status==='pending').length;
 
   const toggle = i => {
-    if (card.submitted) return;
+    if (!card || view.submitted) return;
     const next = { ...card, checked: card.checked.map((v,idx)=>idx===i?!v:v) };
     setCard(next); saveCard(player.id, next);
   };
 
   const submit = async () => {
-    if (!allChecked || submitting || card.submitted) return;
+    if (!allChecked || submitting || !card || card.submitted) return;
     setSubmit(true);
     try {
       await onSubmitCard(card.chores);
@@ -545,7 +577,7 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus, buildS
         }}>
           <span style={{fontSize:'0.65rem', color:'#888', fontFamily:'monospace', letterSpacing:'3px'}}>
             today's card
-            {!card.submitted && (
+            {!view.submitted && (
               <button onClick={()=>{ clearCard(player.id); setCard(null); }} style={{
                 marginLeft:'10px', background:'none', border:'none', color:ACCENT,
                 fontSize:'0.62rem', cursor:'pointer', fontFamily:'monospace', letterSpacing:'1px',
@@ -553,25 +585,25 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus, buildS
             )}
           </span>
           <span style={{fontSize:'0.65rem', color:'#888', fontFamily:'monospace'}}>
-            {doneCount}/{card.chores.length} · {totalMin}m
+            {doneCount}/{view.chores.length} · {totalMin}m
           </span>
         </div>
 
         <div style={{marginBottom:'16px'}}>
-          {card.chores.map((chore,i) => (
+          {view.chores.map((chore,i) => (
             <ChoreRow key={chore.id} chore={chore}
-              checked={card.checked[i]}
+              checked={view.checked[i]}
               onToggle={()=>toggle(i)}/>
           ))}
         </div>
 
-        {card.chores.some(c=>c.escalLevel>0) && (
+        {view.chores.some(c=>c.escalLevel>0) && (
           <div style={{fontSize:'0.62rem', color:'#777', fontFamily:'monospace', letterSpacing:'1px', marginBottom:'16px'}}>
             ! = neglected &nbsp; !! = long overdue
           </div>
         )}
 
-        {pending>0 && !card.submitted && (
+        {pending>0 && !view.submitted && (
           <div style={{
             padding:'10px 14px', border:'1px solid #F5A623',
             fontSize:'0.72rem', color:'#F5A623', fontFamily:'monospace',
@@ -582,7 +614,7 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus, buildS
         )}
 
         <div style={{paddingBottom:'40px'}}>
-          {card.submitted ? (
+          {view.submitted ? (
             <div style={{
               padding:'16px', textAlign:'center',
               border:`1px solid ${ACCENT}`,
