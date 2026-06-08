@@ -63,7 +63,7 @@ const supabase = window.supabase?.createClient
 // ─── PLAYERS ─────────────────────────────────────────────────────────────────
 const PLAYERS = [
   { id:'1', name:'bekindhearted' },
-  { id:'2', name:'titan'         },
+  { id:'2', name:'megadinolava'  },
 ];
 
 // ─── CHORE POOL ──────────────────────────────────────────────────────────────
@@ -174,8 +174,7 @@ const saveCard = (playerId, card) => localStorage.setItem(cardKey(playerId), JSO
 // ─── XP / RANK / STREAK ───────────────────────────────────────────────────────
 // Call-of-Duty-style progression: XP comes fast, levels are short so rank-ups
 // hit often, and momentum (a daily streak) multiplies the XP you earn.
-const DAY_MS              = 86400000;
-const LEVELS_PER_PRESTIGE = 50;
+const DAY_MS = 86400000;
 
 // Streak multiplier — a day's chores are worth more XP the longer the run, up to 2x.
 const momentumMult = streak => 1 + Math.min(streak, 10) * 0.1;
@@ -202,14 +201,17 @@ const getXP = (playerId, logs) => {
   return xp;
 };
 
-// Resolve lifetime XP into level, rank tier, prestige, and progress to next level.
+// Each level is framed as a version number — every level-up ships a new, better
+// release of yourself (v1.0 → v1.1 → … → v2.0). Ten minor versions roll into a
+// new major version.
+const toVersion = lvl => `v${Math.floor((lvl-1)/10)+1}.${(lvl-1)%10}`;
+
+// Resolve lifetime XP into a level/version and progress toward the next one.
 const getRank = xp => {
   let level=1, into=xp;
   while (into >= xpToNext(level)) { into -= xpToNext(level); level++; }
-  const prestige     = Math.floor((level-1) / LEVELS_PER_PRESTIGE);
-  const displayLevel = ((level-1) % LEVELS_PER_PRESTIGE) + 1;
-  const need         = xpToNext(level);
-  return { level, displayLevel, prestige, into, need, pct: Math.round(into/need*100) };
+  const need = xpToNext(level);
+  return { level, version:toVersion(level), nextVersion:toVersion(level+1), into, need, pct: Math.round(into/need*100) };
 };
 
 const getStreak = (playerId, logs) => {
@@ -479,7 +481,7 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus }) {
             fontSize:'0.65rem', color:ACCENT, fontFamily:'monospace',
             letterSpacing:'4px', marginTop:'4px',
           }}>
-            {rank.prestige>0 ? '★'.repeat(Math.min(rank.prestige,5)) + ' ' : ''}LV.{rank.displayLevel}
+            {rank.version}
           </div>
 
           {/* XP progress to next level */}
@@ -489,7 +491,7 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus }) {
                 {rank.into} / {rank.need} XP
               </span>
               <span style={{fontSize:'0.6rem', color:'#888', fontFamily:'monospace', letterSpacing:'1px'}}>
-                LV.{rank.displayLevel+1} →
+                {rank.nextVersion} →
               </span>
             </div>
             <div style={{height:'6px', background:'#eee', borderRadius:'3px', overflow:'hidden'}}>
@@ -512,9 +514,9 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus }) {
             borderTop:'1px solid #e5e5e5', borderBottom:'1px solid #e5e5e5',
           }}>
             {[
-              {label:'xp',     val:xp.toLocaleString()},
-              {label:'streak', val:streak},
-              {label:'level',  val:rank.displayLevel},
+              {label:'xp',      val:xp.toLocaleString()},
+              {label:'streak',  val:streak},
+              {label:'version', val:rank.version},
             ].map(({label,val},i,arr)=>(
               <div key={label} style={{
                 flex:1, padding:'12px 0', textAlign:'center',
