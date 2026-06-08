@@ -132,6 +132,25 @@ const pickableChores = (playerId, logs) =>
     .map(c => enrichChore(c, neglectDays(c.id, playerId, logs)))
     .sort((a,b) => (b.neglectDays - a.neglectDays) || (a.currentMinutes - b.currentMinutes));
 
+// Top a selection up to the daily budget with chores that "make sense": same
+// room/category as what's already picked first, then the most-neglected, always
+// the short everyday stuff. The goal is a full ~25-minute card, not a token one.
+const suggestFill = (pickedIds, pool, cap) => {
+  const result = [...pickedIds];
+  const cats   = new Set(pool.filter(c=>pickedIds.includes(c.id)).map(c=>c.cat));
+  let total    = pool.filter(c=>pickedIds.includes(c.id)).reduce((s,c)=>s+c.currentMinutes,0);
+  const candidates = pool
+    .filter(c => !pickedIds.includes(c.id))
+    .sort((a,b) => {
+      const aff = (cats.has(b.cat)?1:0) - (cats.has(a.cat)?1:0);   // same-area first
+      return aff || (b.neglectDays - a.neglectDays) || (b.currentMinutes - a.currentMinutes);
+    });
+  for (const c of candidates) {
+    if (total + c.currentMinutes <= cap) { result.push(c.id); total += c.currentMinutes; }
+  }
+  return result;
+};
+
 const loadCard = playerId => {
   const cached = localStorage.getItem(cardKey(playerId));
   return cached ? JSON.parse(cached) : null;
@@ -200,17 +219,38 @@ function ChoreRow({ chore, checked, onToggle }) {
 }
 
 // ─── CHORE PICKER ────────────────────────────────────────────────────────────
+// A full day is ~25 min of work. The player picks what they want, then we
+// auto-suggest sensible short chores to fill the rest — building the habit of
+// doing a little every day so nothing piles up into a long chore.
 function ChorePicker({ player, logs, syncStatus, onBack, onConfirm }) {
   const pool = pickableChores(player.id, logs);
-  const [picked, setPicked] = useState([]);            // chore ids
+  const [picked, setPicked]       = useState([]);  // all selected ids
+  const [suggested, setSuggested] = useState([]);  // subset of picked we auto-added
 
   const chosen    = pool.filter(c => picked.includes(c.id));
   const total     = chosen.reduce((s,c)=>s+c.currentMinutes, 0);
   const remaining = DAILY_MINUTES - total;
 
+  const minUnpicked = pool.filter(c=>!picked.includes(c.id)).reduce((m,c)=>Math.min(m,c.currentMinutes), Infinity);
+  const canAddMore  = minUnpicked <= remaining;             // a chore still fits the budget
+  const full        = total >= DAILY_MINUTES - 5;           // 20+ min counts as a full day
+  const ready       = chosen.length >= 1 && (full || !canAddMore);
+
   const toggle = c => {
-    if (picked.includes(c.id)) setPicked(picked.filter(id=>id!==c.id));
-    else if (c.currentMinutes <= remaining) setPicked([...picked, c.id]);
+    if (picked.includes(c.id)) {
+      setPicked(picked.filter(id=>id!==c.id));
+      setSuggested(suggested.filter(id=>id!==c.id));
+    } else if (c.currentMinutes <= remaining) {
+      setPicked([...picked, c.id]);                          // a manual pick, not a suggestion
+      setSuggested(suggested.filter(id=>id!==c.id));
+    }
+  };
+
+  const fill = () => {
+    const next  = suggestFill(picked, pool, DAILY_MINUTES);
+    const added = next.filter(id=>!picked.includes(id));
+    setPicked(next);
+    setSuggested([...new Set([...suggested.filter(id=>next.includes(id)), ...added])]);
   };
 
   const syncLabel = syncStatus==='syncing' ? 'sync...' : syncStatus==='offline' ? 'offline' : 'live';
@@ -236,7 +276,7 @@ function ChorePicker({ player, logs, syncStatus, onBack, onConfirm }) {
           build today's card
         </div>
         <div style={{fontSize:'0.82rem', color:'#111', fontFamily:'monospace', marginBottom:'2px'}}>
-          pick the chores you want — up to {DAILY_MINUTES} minutes
+          pick what you want — then fill to {DAILY_MINUTES} min
         </div>
 
         <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginTop:'18px', marginBottom:'5px'}}>
@@ -254,6 +294,7 @@ function ChorePicker({ player, logs, syncStatus, onBack, onConfirm }) {
         <div style={{marginBottom:'16px'}}>
           {pool.map(c => {
             const on         = picked.includes(c.id);
+            const isSug      = suggested.includes(c.id);
             const tooBig     = !on && c.currentMinutes > remaining;
             const escalLabel = ['', '!', '!!'][c.escalLevel] || '';
             const escalColor = ['#555', '#F5A623', '#EF4444'][c.escalLevel];
@@ -274,6 +315,9 @@ function ChorePicker({ player, logs, syncStatus, onBack, onConfirm }) {
                   color: on ? ACCENT : '#111',
                 }}>
                   {c.name}
+                  {isSug && (
+                    <span style={{marginLeft:'8px', fontSize:'0.6rem', color:'#bbb', letterSpacing:'1px'}}>suggested</span>
+                  )}
                 </span>
                 <span style={{
                   fontFamily:'monospace', fontSize:'0.75rem', flexShrink:0,
@@ -295,15 +339,26 @@ function ChorePicker({ player, logs, syncStatus, onBack, onConfirm }) {
       </div>
 
       <div style={{padding:'14px 20px', borderTop:'1px solid #e5e5e5', flexShrink:0}}>
-        <button onClick={()=>{ if(chosen.length) onConfirm(chosen); }} disabled={!chosen.length} style={{
-          width:'100%', padding:'17px', cursor:chosen.length?'pointer':'default',
-          background: chosen.length ? ACCENT : 'transparent',
-          border:`1px solid ${chosen.length ? ACCENT : '#e0e0e0'}`,
-          color: chosen.length ? '#fff' : '#aaa',
+        {canAddMore && (
+          <button onClick={fill} style={{
+            width:'100%', padding:'13px', marginBottom:'8px', cursor:'pointer',
+            background:'transparent', border:`1px solid ${ACCENT}`, color:ACCENT,
+            fontSize:'0.72rem', fontWeight:700, letterSpacing:'2px', fontFamily:'monospace',
+          }}>
+            {chosen.length ? `✨ FILL TO ${DAILY_MINUTES}M` : `✨ SUGGEST A ${DAILY_MINUTES}-MIN CARD`}
+          </button>
+        )}
+        <button onClick={()=>{ if(ready) onConfirm(chosen); }} disabled={!ready} style={{
+          width:'100%', padding:'17px', cursor:ready?'pointer':'default',
+          background: ready ? ACCENT : 'transparent',
+          border:`1px solid ${ready ? ACCENT : '#e0e0e0'}`,
+          color: ready ? '#fff' : '#aaa',
           fontSize:'0.75rem', fontWeight:800, letterSpacing:'3px',
           fontFamily:'monospace', transition:'all 0.15s',
         }}>
-          {chosen.length ? `LOCK IN ${chosen.length} CHORE${chosen.length>1?'S':''} · ${total}M` : 'PICK AT LEAST ONE CHORE'}
+          {ready
+            ? `LOCK IN ${chosen.length} CHORE${chosen.length>1?'S':''} · ${total}M`
+            : chosen.length ? `ADD MORE TO REACH ${DAILY_MINUTES}M` : `PICK OR SUGGEST CHORES`}
         </button>
       </div>
     </div>
