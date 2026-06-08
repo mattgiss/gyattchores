@@ -47,7 +47,11 @@ button { -webkit-tap-highlight-color: transparent; }
 const { useState, useEffect, useCallback, useRef } = React;
 
 // ─── CONFIG ──────────────────────────────────────────────────────────────────
-const ADMIN_CODE        = '7874';
+// Admin code is stored as an FNV-1a hash rather than plaintext so it isn't
+// sitting in the page source. (Obfuscation, not real security — it's a
+// client-side app — but it keeps the code out of casual view.)
+const hashCode = s => { let h=2166136261>>>0; for (let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619)>>>0; } return h; };
+const ADMIN_CODE_HASH   = 1305456521;
 const STORAGE_KEY       = 'gyattchores_logs';
 const ACCENT            = '#F23861';
 const SUPABASE_URL      = 'https://ukshxdoqgwoxobjdclpx.supabase.co';
@@ -167,14 +171,49 @@ const clearCard = playerId => localStorage.removeItem(cardKey(playerId));
 
 const saveCard = (playerId, card) => localStorage.setItem(cardKey(playerId), JSON.stringify(card));
 
-// ─── LEVEL / STREAK ──────────────────────────────────────────────────────────
-const RANKS      = ['RECRUIT','OPERATOR','RUNNER','GHOST','HACKER','PHANTOM','SPECTER','WRAITH','SHADOW','LEGEND'];
-const THRESHOLDS = [0,100,300,600,1000,1500,2500,4000,6000,9000];
+// ─── XP / RANK / STREAK ───────────────────────────────────────────────────────
+// Call-of-Duty-style progression: XP comes fast, levels are short so rank-ups
+// hit often, and momentum (a daily streak) multiplies the XP you earn.
+const RANKS = ['RECRUIT','OPERATIVE','RAIDER','GHOST','HACKER','PHANTOM','SPECTER','WRAITH','SHADOW','LEGEND'];
+const DAY_MS              = 86400000;
+const LEVELS_PER_PRESTIGE = 50;
 
-const getLevel = pts => {
-  for (let i=THRESHOLDS.length-1; i>=0; i--) if (pts>=THRESHOLDS[i]) return {num:i+1, rank:RANKS[i]};
-  return {num:1, rank:'RECRUIT'};
+// Streak multiplier — a day's chores are worth more XP the longer the run, up to 2x.
+const momentumMult = streak => 1 + Math.min(streak, 10) * 0.1;
+
+// XP needed to go from `lvl` to `lvl+1`. Short, gently rising → frequent level-ups.
+const xpToNext = lvl => 60 + (lvl - 1) * 20;
+
+// Lifetime XP. Approved chores are bucketed by day and each day's points are
+// scaled by that day's running streak multiplier, so consecutive days bank XP
+// faster. XP only ever grows; breaking a streak just resets the multiplier.
+const getXP = (playerId, logs) => {
+  const byDay = {};
+  logs.filter(l => l.playerId===playerId && l.status==='approved').forEach(l => {
+    const d = new Date(l.timestamp); d.setHours(0,0,0,0);
+    byDay[d.getTime()] = (byDay[d.getTime()] || 0) + l.points;
+  });
+  const days = Object.keys(byDay).map(Number).sort((a,b)=>a-b);
+  let xp=0, run=0, prev=null;
+  for (const day of days) {
+    run = (prev!==null && day-prev===DAY_MS) ? run+1 : 1;
+    xp += Math.round(byDay[day] * momentumMult(run-1));   // first day of a run = 1x
+    prev = day;
+  }
+  return xp;
 };
+
+// Resolve lifetime XP into level, rank tier, prestige, and progress to next level.
+const getRank = xp => {
+  let level=1, into=xp;
+  while (into >= xpToNext(level)) { into -= xpToNext(level); level++; }
+  const prestige     = Math.floor((level-1) / LEVELS_PER_PRESTIGE);
+  const displayLevel = ((level-1) % LEVELS_PER_PRESTIGE) + 1;
+  const rank         = RANKS[Math.min(RANKS.length-1, Math.floor((displayLevel-1)/5))];
+  const need         = xpToNext(level);
+  return { level, displayLevel, prestige, rank, into, need, pct: Math.round(into/need*100) };
+};
+
 const getStreak = (playerId, logs) => {
   let streak=0; const d=new Date(); d.setHours(0,0,0,0);
   for (let i=0; i<365; i++) {
@@ -183,7 +222,6 @@ const getStreak = (playerId, logs) => {
   }
   return streak;
 };
-const getTotalPts = (playerId, logs) => logs.filter(l=>l.playerId===playerId&&l.status==='approved').reduce((s,l)=>s+l.points,0);
 
 // ─── CHORE ROW ───────────────────────────────────────────────────────────────
 function ChoreRow({ chore, checked, onToggle }) {
@@ -367,9 +405,10 @@ function ChorePicker({ player, logs, syncStatus, onBack, onConfirm }) {
 
 // ─── PLAYER CARD VIEW ────────────────────────────────────────────────────────
 function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus }) {
-  const totalPts = getTotalPts(player.id, logs);
-  const level    = getLevel(totalPts);
   const streak   = getStreak(player.id, logs);
+  const xp       = getXP(player.id, logs);
+  const rank     = getRank(xp);
+  const mult     = momentumMult(streak);
   const [card, setCard]         = useState(() => loadCard(player.id));
   const [submitting, setSubmit] = useState(false);
 
@@ -442,17 +481,42 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus }) {
             fontSize:'0.65rem', color:ACCENT, fontFamily:'monospace',
             letterSpacing:'4px', marginTop:'4px',
           }}>
-            {level.rank} // LV.{level.num}
+            {rank.prestige>0 ? '★'.repeat(Math.min(rank.prestige,5)) + ' ' : ''}{rank.rank} // LV.{rank.displayLevel}
           </div>
+
+          {/* XP progress to next level */}
+          <div style={{marginTop:'14px'}}>
+            <div style={{display:'flex', justifyContent:'space-between', marginBottom:'5px'}}>
+              <span style={{fontSize:'0.6rem', color:'#888', fontFamily:'monospace', letterSpacing:'1px'}}>
+                {rank.into} / {rank.need} XP
+              </span>
+              <span style={{fontSize:'0.6rem', color:'#888', fontFamily:'monospace', letterSpacing:'1px'}}>
+                LV.{rank.displayLevel+1} →
+              </span>
+            </div>
+            <div style={{height:'6px', background:'#eee', borderRadius:'3px', overflow:'hidden'}}>
+              <div style={{height:'100%', width:`${rank.pct}%`, background:ACCENT, transition:'width 0.4s'}}/>
+            </div>
+          </div>
+
+          {/* Momentum — reward the streak */}
+          {streak>0 && (
+            <div style={{
+              marginTop:'10px', fontSize:'0.62rem', fontFamily:'monospace',
+              letterSpacing:'1px', color:'#F5A623',
+            }}>
+              🔥 {streak}-day streak · {mult.toFixed(1)}x momentum
+            </div>
+          )}
 
           <div style={{
             display:'flex', gap:'0', marginTop:'20px',
             borderTop:'1px solid #e5e5e5', borderBottom:'1px solid #e5e5e5',
           }}>
             {[
-              {label:'pts',    val:totalPts.toLocaleString()},
+              {label:'xp',     val:xp.toLocaleString()},
               {label:'streak', val:streak},
-              {label:'level',  val:level.num},
+              {label:'level',  val:rank.displayLevel},
             ].map(({label,val},i,arr)=>(
               <div key={label} style={{
                 flex:1, padding:'12px 0', textAlign:'center',
@@ -580,14 +644,26 @@ function PlayerSelect({ onSelect, onAdmin }) {
         ))}
       </div>
 
-      <div style={{
-        marginTop:'48px', display:'flex', gap:'24px',
-        fontSize:'0.62rem', fontFamily:'monospace', letterSpacing:'2px',
-      }}>
-        {[['about','/about.html'],['guide','/ebook.html'],['story','/development-story.html']].map(([label,href])=>(
-          <a key={label} href={href} style={{color:'#555', textDecoration:'none'}}
-             onMouseEnter={e=>e.target.style.color='#888'}
-             onMouseLeave={e=>e.target.style.color='#555'}>{label}</a>
+      <div style={{width:'100%', maxWidth:'300px', marginTop:'40px'}}>
+        {[
+          ['ABOUT', '/about.html',              'What GyattChores is and why a family turned chores into a game. The two-minute version.'],
+          ['GUIDE', '/ebook.html',              'Daily cards, XP, streaks, approvals — the full playbook for running the game at home.'],
+          ['STORY', '/development-story.html',  'A dad and two kids, one weekend, one HTML file. The bugs and features that shaped it.'],
+        ].map(([label,href,desc])=>(
+          <a key={label} href={href} style={{
+            display:'block', width:'100%', padding:'15px 18px', marginBottom:'10px',
+            background:'transparent', border:'1px solid #e0e0e0', textDecoration:'none',
+            transition:'border-color 0.1s',
+          }}
+          onPointerEnter={e=>{e.currentTarget.style.borderColor=ACCENT;}}
+          onPointerLeave={e=>{e.currentTarget.style.borderColor='#e0e0e0';}}>
+            <div style={{fontSize:'0.8rem', fontWeight:700, letterSpacing:'3px', color:ACCENT, fontFamily:'monospace'}}>
+              {'> '}{label}
+            </div>
+            <div style={{fontSize:'0.66rem', color:'#777', fontFamily:'monospace', letterSpacing:'0.5px', marginTop:'6px', lineHeight:1.55}}>
+              {desc}
+            </div>
+          </a>
         ))}
       </div>
     </div>
@@ -600,7 +676,7 @@ function AdminModal({ logs, onClose, onUpdate }) {
   const [authed, setAuth] = useState(false);
   const [filter, setFilt] = useState('pending');
 
-  const verify = () => { if (code===ADMIN_CODE) setAuth(true); };
+  const verify = () => { if (hashCode(code)===ADMIN_CODE_HASH) setAuth(true); };
   const shown  = logs.filter(l=>filter==='all'||l.status===filter).slice(0,60);
 
   if (!authed) return (
