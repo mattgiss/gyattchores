@@ -1,0 +1,24 @@
+name: CI
+
+# Validates pull requests before they can merge into main. For this single-file
+# app the meaningful gate is "does it still parse/compile" — a syntax error in
+# the inline app script ships a white screen, and there's no build step to catch
+# it otherwise. Wire this in as a required status check on the main branch rule.
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install validator dependency
+        run: npm install --no-save @babel/standalone@7
+      - name: Validate build (manifest, service worker, app script)
+        run: node scripts/validate-build.mjs
