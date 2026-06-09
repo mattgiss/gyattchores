@@ -262,8 +262,14 @@ function ChoreRow({ chore, checked, onToggle, status }) {
     rejected: { txt:'✗ rejected', col:'#EF4444' },
     pending:  { txt:'· awaiting', col:'#F5A623' },
   }[status];
+  // Before submission the row is a toggle (done/not done); once a verdict is in
+  // it's read-only. Expose the right semantics + keyboard support either way.
+  const a11y = status
+    ? { 'aria-label': `${chore.name}, ${ {approved:'approved', rejected:'rejected', pending:'awaiting approval'}[status] }` }
+    : { role:'checkbox', 'aria-checked':checked, tabIndex:0, 'aria-label':chore.name,
+        onKeyDown:e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); onToggle(); } } };
   return (
-    <div onClick={onToggle} style={{
+    <div onClick={onToggle} {...a11y} style={{
       display:'flex', alignItems:'center', gap:'12px',
       padding:'14px 0', borderBottom:'1px solid #e5e5e5',
       cursor:'pointer',
@@ -360,7 +366,7 @@ function ChorePicker({ player, logs, syncStatus, buildStatus, onBack, onConfirm 
         display:'flex', alignItems:'center', justifyContent:'space-between',
         padding:'12px 20px', borderBottom:'1px solid #e5e5e5', flexShrink:0,
       }}>
-        <button onClick={onBack} style={{
+        <button onClick={onBack} aria-label="Go back" style={{
           background:'none', border:'none', color:'#999',
           fontSize:'0.75rem', cursor:'pointer', fontFamily:'monospace', letterSpacing:'1px',
         }}>← back</button>
@@ -532,7 +538,7 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus, buildS
         display:'flex', alignItems:'center', justifyContent:'space-between',
         padding:'12px 20px', borderBottom:'1px solid #e5e5e5', flexShrink:0,
       }}>
-        <button onClick={onBack} style={{
+        <button onClick={onBack} aria-label="Go back" style={{
           background:'none', border:'none', color:'#999',
           fontSize:'0.75rem', cursor:'pointer', fontFamily:'monospace', letterSpacing:'1px',
         }}>← back</button>
@@ -613,7 +619,7 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus, buildS
           <span style={{fontSize:'0.65rem', color:'#888', fontFamily:'monospace', letterSpacing:'3px'}}>
             today's card
             {!view.submitted && (
-              <button onClick={()=>{ clearCard(player.id); setCard(null); }} style={{
+              <button onClick={()=>{ clearCard(player.id); setCard(null); }} aria-label="Re-pick today's chores" style={{
                 marginLeft:'10px', background:'none', border:'none', color:ACCENT,
                 fontSize:'0.62rem', cursor:'pointer', fontFamily:'monospace', letterSpacing:'1px',
               }}>↻ re-pick</button>
@@ -787,7 +793,7 @@ function AdminModal({ logs, onClose, onUpdate }) {
     <div style={{position:'fixed',inset:0,background:'#fff',display:'flex',flexDirection:'column',zIndex:200}}>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 20px',borderBottom:'1px solid #e5e5e5',flexShrink:0}}>
         <div style={{fontSize:'0.65rem',letterSpacing:'4px',color:ACCENT,fontFamily:'monospace'}}>ADMIN</div>
-        <button onClick={onClose} style={{background:'none',border:'none',color:'#999',fontSize:'0.78rem',cursor:'pointer',fontFamily:'monospace'}}>✕ close</button>
+        <button onClick={onClose} aria-label="Close admin panel" style={{background:'none',border:'none',color:'#999',fontSize:'0.78rem',cursor:'pointer',fontFamily:'monospace'}}>✕ close</button>
       </div>
 
       <div style={{display:'flex',gap:'8px',padding:'12px 20px',borderBottom:'1px solid #e5e5e5',flexShrink:0,flexWrap:'wrap'}}>
@@ -969,6 +975,18 @@ function App() {
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+<script>
+// Register the service worker so the app shell is cached for offline use and
+// fast repeat loads. Kept out of the Babel script so it runs even if JSX
+// transform is slow, and failures are non-fatal (the app works without it).
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(err =>
+      console.warn('Service worker registration failed:', err)
+    );
+  });
+}
 </script>
 </body>
 </html>
