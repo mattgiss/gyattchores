@@ -61,11 +61,16 @@ Keep the momentum        ── This register is reviewed every quarter.
 - **Done when:** a direct push to `main` is rejected and a PR is required.
 
 ### CA-02 — Document break-glass & recovery (reduce bus factor)
-- **Goal:** G2 · **Priority:** P1 · **Addresses:** GAP-02 · **Status:** ⬜
+- **Goal:** G2 · **Priority:** P1 · **Addresses:** GAP-02 · **Status:** 🟦
 - **Action:** Record, in a secure location: GitHub account-recovery method,
   2FA backup codes, the custom-domain/DNS registrar, the Discord server owner,
   and the Supabase project owner. Nominate a secondary recovery contact.
   Maintain at least one recent `backup-stable-*` branch.
+- **Progress:** Recovery runbook written —
+  [Break-Glass & Recovery](break-glass-and-recovery.md) — with the asset
+  inventory, per-scenario procedures, and a quarterly drill. **Remaining owner
+  actions** (tracked as checklists in §4/§6 of that doc): populate the secure
+  vault with credentials/backup codes and nominate a secondary recovery contact.
 - **Done when:** a written recovery runbook exists and a second person (or
   secure vault) can recover access.
 
