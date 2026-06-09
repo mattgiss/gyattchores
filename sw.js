@@ -17,9 +17,9 @@ const LOCAL_SHELL = [
 // must NOT block the whole install (addAll is all-or-nothing). Cached
 // best-effort; whatever misses is filled in later by the fetch handler.
 const CDN_ASSETS = [
-  'https://unpkg.com/react@18/umd/react.production.min.js',
-  'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js',
-  'https://unpkg.com/@babel/standalone/babel.min.js',
+  'https://unpkg.com/react@18.3.1/umd/react.production.min.js',
+  'https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js',
+  'https://unpkg.com/@babel/standalone@7.29.7/babel.min.js',
 ];
 
 self.addEventListener('install', (e) => {

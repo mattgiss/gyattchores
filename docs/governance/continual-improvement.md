@@ -109,12 +109,19 @@ Keep the momentum        ── This register is reviewed every quarter.
   delivers `204`.
 
 ### CA-07 — Establish a dependency-review cadence
-- **Goal:** G5 · **Priority:** P3 · **Addresses:** GAP-07 · **Status:** ⬜
+- **Goal:** G5 · **Priority:** P3 · **Addresses:** GAP-07 · **Status:** ✅
 - **Action:** Pin CDN dependencies (React, Babel, Supabase) to explicit major
   versions; record them in the CMDB table
   ([governance README §5](README.md#5-service-configuration-cmdb-lite)); review
   quarterly for security advisories. (Dependabot doesn't cover CDN `<script>`
   tags, so this is a manual control.)
+- **Done:** Pinned to exact versions in `index.html` and `sw.js` — React
+  18.3.1, React-DOM 18.3.1, `@babel/standalone` 7.29.7, `@supabase/supabase-js`
+  2.108.0. The three unpkg scripts also carry **Subresource Integrity**
+  (`sha384` + `crossorigin`), so a tampered/compromised CDN file is refused by
+  the browser (verified: a modified byte blocks the load). Versions recorded in
+  the CMDB (§5). **Quarterly review** owner action: check for advisories, bump
+  versions, and recompute the SRI hashes when bumping.
 - **Done when:** the dependency inventory is documented and on the review
   calendar.
 

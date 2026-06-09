@@ -109,7 +109,7 @@ is the map used during incidents and changes.
 | Monitoring | Automation | `.github/workflows/discord-notify.yml` | Event notifications. |
 | Notification destination | External | Discord **Forum** channel | Needs `thread_name` per post (KE-002). |
 | Secret | Credential | `DISCORD_WEBHOOK` (Actions secret) | Rotate if exposed (CA-06). |
-| Dependencies | Library | React, Babel, (Supabase) via CDN | Pin & review quarterly (CA-07). |
+| Dependencies | Library | React 18.3.1, React-DOM 18.3.1, `@babel/standalone` 7.29.7 (unpkg, SRI-pinned); `@supabase/supabase-js` 2.108.0 (jsdelivr) | Pinned to exact versions; unpkg scripts carry `sha384` SRI. Review quarterly; recompute SRI on bump (CA-07). |
 | Source of truth (data) | Data store | Browser `localStorage` / iOS `UserDefaults`, key `gyattchores_logs` | Local-first; per-device. |
 
 ---
