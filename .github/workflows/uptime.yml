@@ -1,0 +1,50 @@
+name: Uptime Check
+
+# Synthetic monitor (CA-05): the live site is GitHub Pages on a custom domain —
+# an outage there raises no repo event, so nothing else would notice. This polls
+# the site on a schedule and alerts Discord (and fails the run) on a non-200.
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'   # every 15 minutes
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    env:
+      DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+      URL: https://gyattchores.com
+    steps:
+      - name: Probe live site
+        run: |
+          # Two attempts before alerting, to ride out a transient blip.
+          probe() { curl -s -o /dev/null -w "%{http_code}" --max-time 20 "$URL" || echo "000"; }
+          HTTP=$(probe)
+          if [ "$HTTP" != "200" ]; then sleep 15; HTTP=$(probe); fi
+          echo "GET $URL -> HTTP $HTTP"
+
+          if [ "$HTTP" = "200" ]; then
+            echo "site up"; exit 0
+          fi
+
+          echo "::error::Live site returned HTTP $HTTP"
+          if [ -n "$DISCORD_WEBHOOK" ]; then
+            RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            PAYLOAD=$(jq -n \
+              --arg url "$URL" \
+              --arg code "$HTTP" \
+              --arg run "[view run]($RUN_URL)" \
+              '{
+                embeds: [{
+                  title: "🔴 site DOWN",
+                  description: ("**\($url)** returned HTTP **\($code)**"),
+                  color: 15158332,
+                  fields: [ {name: "details", value: $run, inline: true} ],
+                  footer: {text: "uptime // gyattchores"}
+                }]
+              }')
+            curl -s -o /dev/null -X POST "$DISCORD_WEBHOOK" \
+              -H "Content-Type: application/json" -d "$PAYLOAD" || true
+          fi
+          exit 1
