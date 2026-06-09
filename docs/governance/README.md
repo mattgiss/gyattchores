@@ -24,6 +24,7 @@ understand *how this service is run* and *how to keep it healthy*.
 | See the current governance posture and gaps | [Governance Audit](governance-audit.md) |
 | Make a change safely (branch → PR → deploy → rollback) | [Change Enablement & Deployment](change-enablement.md) |
 | Respond to an outage or recurring fault | [Incident & Problem Management](incident-and-problem-management.md) |
+| Recover lost access or a failed dependency | [Break-Glass & Recovery](break-glass-and-recovery.md) |
 | Understand the Discord alerting & what events mean | [Monitoring & Event Management](monitoring-and-event-management.md) |
 | Manage access, secrets, and supply chain | [Information Security Management](information-security-management.md) |
 | See the prioritised improvement backlog | [Continual Improvement Register](continual-improvement.md) |
