@@ -54,7 +54,7 @@ const hashCode = s => { let h=2166136261>>>0; for (let i=0;i<s.length;i++){ h^=s
 const ADMIN_CODE_HASH   = 1305456521;
 const STORAGE_KEY       = 'gyattchores_logs';
 const ACCENT            = '#F23861';
-const BUILD             = '2026.08.31';   // bump on every deploy — drives the build-freshness indicator
+const BUILD             = '2026.08.31.1'; // bump on every deploy — drives the build-freshness indicator
 const SUPABASE_URL      = 'https://ukshxdoqgwoxobjdclpx.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrc2h4ZG9xZ3dveG9iamRjbHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3MjI2NDEsImV4cCI6MjA4MDI5ODY0MX0.UGNrsfG6goEA0PPWG4x7gxBueA7D5Oe9uWI-iCXIar0';
 const supabase = window.supabase?.createClient
@@ -250,6 +250,41 @@ const getStreak = (playerId, logs) => {
     if (!has) break; streak++; d.setDate(d.getDate()-1);
   }
   return streak;
+};
+
+// ─── DAILY MINUTES LOG ─────────────────────────────────────────────────────────
+// How many days of the daily log the home-page grid shows.
+const LOG_DAYS = 30;
+
+// The minute value a chore contributed to a daily card. New logs record the
+// exact minutes the card was budgeted at (escalation included). Older logs and
+// rows pulled from another device predate that field, so fall back to the
+// chore's base tier — the minutes an un-escalated card is budgeted against —
+// and finally to the stored points for any chore no longer in the pool.
+const choreMinutes = log => {
+  if (typeof log.minutes === 'number') return log.minutes;
+  const c = CHORE_POOL.find(c => c.id === log.choreId);
+  return c ? c.tiers[0] : (log.points || 0);
+};
+
+// Minutes of *approved* chores a player completed on each local day, keyed by
+// that day's midnight timestamp. Approved (parent-verified) is what counts
+// everywhere else in the app — streaks, XP — so the log follows the same rule.
+const minutesByDay = (playerId, logs) => {
+  const byDay = {};
+  logs.filter(l => l.playerId===playerId && l.status==='approved').forEach(l => {
+    const d = new Date(l.timestamp); d.setHours(0,0,0,0);
+    byDay[d.getTime()] = (byDay[d.getTime()] || 0) + choreMinutes(l);
+  });
+  return byDay;
+};
+
+// The last LOG_DAYS day-start timestamps, oldest → newest (today last).
+const recentDays = () => {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const days = [];
+  for (let i=LOG_DAYS-1; i>=0; i--) { const d=new Date(today); d.setDate(d.getDate()-i); days.push(d.getTime()); }
+  return days;
 };
 
 // ─── CHORE ROW ───────────────────────────────────────────────────────────────
@@ -771,8 +806,62 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus, buildS
   );
 }
 
+// ─── DAILY LOG ───────────────────────────────────────────────────────────────
+// A HelloHabit-style "who cleared 25 minutes today" grid for the home page. One
+// row per player: a filled cell for every day they completed ≥25 minutes of
+// approved chores, faded for a partial day, blank for a day off.
+function DailyLog({ logs }) {
+  const days     = recentDays();
+  const anyLogs  = logs.some(l => l.status==='approved');
+
+  return (
+    <div style={{width:'100%', maxWidth:'300px', marginTop:'40px'}}>
+      <div style={{fontSize:'0.6rem', letterSpacing:'4px', color:'#666', fontFamily:'monospace', textAlign:'center', marginBottom:'4px'}}>
+        25-MINUTE DAILY LOG
+      </div>
+      <div style={{fontSize:'0.54rem', letterSpacing:'1px', color:'#aaa', fontFamily:'monospace', textAlign:'center', marginBottom:'18px'}}>
+        last {LOG_DAYS} days · a filled square = ≥25 min approved
+      </div>
+
+      {!anyLogs ? (
+        <div style={{fontSize:'0.62rem', color:'#999', fontFamily:'monospace', letterSpacing:'1px', textAlign:'center', lineHeight:1.7, padding:'4px 0'}}>
+          no approved chores yet —<br/>clear a 25-minute card to start the grid
+        </div>
+      ) : PLAYERS.map(p => {
+        const byDay = minutesByDay(p.id, logs);
+        const hits  = days.filter(d => (byDay[d]||0) >= DAILY_MINUTES).length;
+        const pct   = Math.round(hits / LOG_DAYS * 100);
+        return (
+          <div key={p.id} style={{marginBottom:'18px'}}>
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:'7px'}}>
+              <div style={{fontSize:'0.72rem', fontWeight:700, color:'#111', fontFamily:'monospace', letterSpacing:'1px'}}>{p.name}</div>
+              <div style={{fontSize:'0.66rem', fontWeight:700, color:ACCENT, fontFamily:'monospace'}}>{hits}/{LOG_DAYS} · {pct}%</div>
+            </div>
+            <div style={{display:'grid', gridTemplateColumns:`repeat(${LOG_DAYS}, 1fr)`, gap:'2px'}}>
+              {days.map((d,i) => {
+                const mins    = byDay[d] || 0;
+                const frac    = Math.min(mins / DAILY_MINUTES, 1);
+                const isToday = i === days.length-1;
+                const bg      = mins === 0 ? '#ededed' : `rgba(242,56,97,${(0.30 + frac*0.70).toFixed(2)})`;
+                return (
+                  <div key={d}
+                    title={`${new Date(d).toLocaleDateString()} — ${mins} min${mins>=DAILY_MINUTES?' ✓':''}`}
+                    style={{
+                      aspectRatio:'1', borderRadius:'2px', background:bg,
+                      boxShadow: isToday ? `0 0 0 1px ${mins>=DAILY_MINUTES?ACCENT:'#bbb'}` : 'none',
+                    }}/>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── PLAYER SELECT ───────────────────────────────────────────────────────────
-function PlayerSelect({ onSelect, onAdmin }) {
+function PlayerSelect({ onSelect, onAdmin, logs }) {
   const [taps, setTaps] = useState(0);
   const tapTimer        = useRef(null);
 
@@ -816,6 +905,8 @@ function PlayerSelect({ onSelect, onAdmin }) {
           </button>
         ))}
       </div>
+
+      <DailyLog logs={logs}/>
 
       <div style={{width:'100%', maxWidth:'300px', marginTop:'40px'}}>
         {[
@@ -1022,7 +1113,7 @@ function App() {
       id:makeId(), remoteId:null, synced:false, statusDirty:false,
       playerId:player.id, playerName:player.name,
       choreId:c.id, choreName:c.name, choreIcon:'',
-      points:c.pts, timestamp:new Date(now+i).toISOString(), status:'pending',
+      points:c.pts, minutes:c.currentMinutes, timestamp:new Date(now+i).toISOString(), status:'pending',
     }));
     const next = [...newLogs, ...loadLogs()].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
     saveLogs(next); setLogs(next); sync();
@@ -1036,7 +1127,7 @@ function App() {
   return (
     <div style={{height:'100%'}}>
       {showAdmin && <AdminModal logs={logs} onClose={()=>setAdmin(false)} onUpdate={updateLog}/>}
-      {!showAdmin && !player && <PlayerSelect onSelect={setPlayer} onAdmin={()=>setAdmin(true)}/>}
+      {!showAdmin && !player && <PlayerSelect onSelect={setPlayer} onAdmin={()=>setAdmin(true)} logs={logs}/>}
       {!showAdmin && player && (
         <PlayerCardView
           player={player} logs={logs}
