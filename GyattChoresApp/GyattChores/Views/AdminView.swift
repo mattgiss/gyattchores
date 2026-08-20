@@ -6,31 +6,49 @@ struct AdminView: View {
     @State private var adminCode = ""
     @State private var isUnlocked = false
     @State private var showError = false
+    @State private var shakeOffset: CGFloat = 0
 
     private let correctCode = "7874"
 
     var body: some View {
         NavigationStack {
-            Group {
-                if isUnlocked {
-                    approvalList
-                } else {
-                    codeEntry
+            ZStack {
+                AppTheme.backgroundDark
+                    .ignoresSafeArea()
+
+                Group {
+                    if isUnlocked {
+                        approvalList
+                    } else {
+                        codeEntry
+                    }
                 }
             }
-            .navigationTitle(isUnlocked ? "Pending Approval" : "Admin")
+            .navigationTitle(isUnlocked ? "Pending" : "Admin")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(AppTheme.backgroundDark, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Done") { dismiss() }
+                    Button("Done") {
+                        HapticManager.shared.tabSwitch()
+                        dismiss()
+                    }
+                    .foregroundColor(AppTheme.accent)
                 }
 
                 if isUnlocked && !store.pendingLogs.isEmpty {
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button("Approve All") {
-                            store.approveAll()
+                        Button {
+                            withAnimation(.spring(response: 0.3)) {
+                                store.approveAll()
+                            }
+                        } label: {
+                            Text("Approve All")
+                                .fontWeight(.bold)
+                                .foregroundStyle(AppTheme.accentGradient)
                         }
-                        .fontWeight(.semibold)
                     }
                 }
             }
@@ -43,25 +61,37 @@ struct AdminView: View {
         VStack(spacing: 32) {
             Spacer()
 
-            Image(systemName: "lock.shield.fill")
-                .font(.system(size: 60))
-                .foregroundStyle(.orange.gradient)
+            // Lock icon with glow
+            ZStack {
+                Image(systemName: "lock.shield.fill")
+                    .font(.system(size: 60))
+                    .foregroundStyle(AppTheme.primaryGradient)
+                    .blur(radius: 20)
+                    .opacity(0.5)
 
+                Image(systemName: "lock.shield.fill")
+                    .font(.system(size: 60))
+                    .foregroundStyle(AppTheme.primaryGradient)
+            }
+
+            // Code input
             SecureField("Enter Code", text: $adminCode)
                 .textFieldStyle(.plain)
-                .font(.system(size: 24, design: .monospaced))
+                .font(.system(size: 28, weight: .bold, design: .monospaced))
+                .foregroundColor(.white)
                 .multilineTextAlignment(.center)
                 .keyboardType(.numberPad)
                 .padding()
                 .background {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(.secondarySystemGroupedBackground))
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(AppTheme.backgroundCard)
                         .overlay {
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(showError ? Color.red : Color.clear, lineWidth: 2)
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(showError ? Color.red : AppTheme.backgroundCardLight, lineWidth: 2)
                         }
                 }
-                .frame(maxWidth: 180)
+                .frame(maxWidth: 200)
+                .offset(x: shakeOffset)
                 .onChange(of: adminCode) { _, newValue in
                     if newValue.count == 4 {
                         checkCode()
@@ -71,7 +101,8 @@ struct AdminView: View {
             if showError {
                 Text("Incorrect code")
                     .foregroundStyle(.red)
-                    .font(.caption)
+                    .font(.caption.weight(.medium))
+                    .transition(.opacity)
             }
 
             Spacer()
@@ -82,17 +113,36 @@ struct AdminView: View {
 
     private func checkCode() {
         if adminCode == correctCode {
-            withAnimation {
+            HapticManager.shared.approved()
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
                 isUnlocked = true
             }
-            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         } else {
-            showError = true
+            HapticManager.shared.rejected()
+            withAnimation {
+                showError = true
+            }
             adminCode = ""
-            UINotificationFeedbackGenerator().notificationOccurred(.error)
+
+            // Shake animation
+            withAnimation(.spring(response: 0.1, dampingFraction: 0.2)) {
+                shakeOffset = 10
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                withAnimation(.spring(response: 0.1, dampingFraction: 0.2)) {
+                    shakeOffset = -10
+                }
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                withAnimation(.spring(response: 0.1, dampingFraction: 0.2)) {
+                    shakeOffset = 0
+                }
+            }
 
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                showError = false
+                withAnimation {
+                    showError = false
+                }
             }
         }
     }
@@ -102,80 +152,116 @@ struct AdminView: View {
     private var approvalList: some View {
         Group {
             if store.pendingLogs.isEmpty {
-                ContentUnavailableView(
-                    "All Caught Up",
-                    systemImage: "checkmark.circle.fill",
-                    description: Text("No chores waiting for approval")
-                )
-            } else {
-                List {
-                    ForEach(store.pendingLogs) { log in
-                        PendingLogRow(log: log)
-                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                Button {
-                                    store.approve(log)
-                                } label: {
-                                    Label("Approve", systemImage: "checkmark")
-                                }
-                                .tint(.green)
-                            }
-                            .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                                Button(role: .destructive) {
-                                    store.reject(log)
-                                } label: {
-                                    Label("Reject", systemImage: "xmark")
-                                }
-                            }
+                VStack(spacing: 16) {
+                    ZStack {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 60))
+                            .foregroundStyle(AppTheme.accentGradient)
+                            .blur(radius: 15)
+                            .opacity(0.5)
+
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 60))
+                            .foregroundStyle(AppTheme.accentGradient)
                     }
+
+                    Text("All Caught Up!")
+                        .font(.title2.weight(.bold))
+                        .foregroundColor(.white)
+
+                    Text("No chores waiting for approval")
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.5))
                 }
-                .listStyle(.insetGrouped)
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 12) {
+                        ForEach(store.pendingLogs) { log in
+                            PendingLogCard(log: log)
+                        }
+                    }
+                    .padding()
+                }
             }
         }
     }
 }
 
-// MARK: - Pending Log Row
+// MARK: - Pending Log Card
 
-struct PendingLogRow: View {
+struct PendingLogCard: View {
     let log: ChoreLog
     @EnvironmentObject var store: ChoreStore
 
-    private var playerName: String {
-        store.players.first { $0.id == log.playerId }?.name ?? "Unknown"
-    }
-
-    private var playerAvatar: String {
-        store.players.first { $0.id == log.playerId }?.avatar ?? "👤"
+    private var player: Player? {
+        store.players.first { $0.id == log.playerId }
     }
 
     var body: some View {
         HStack(spacing: 16) {
+            // Chore icon
             Text(log.choreIcon)
-                .font(.system(size: 36))
+                .font(.system(size: 40))
 
+            // Info
             VStack(alignment: .leading, spacing: 4) {
                 Text(log.choreName)
                     .font(.headline)
+                    .foregroundColor(.white)
 
-                HStack(spacing: 8) {
-                    Text(playerAvatar)
-                    Text(playerName)
-                        .foregroundStyle(.secondary)
+                if let player = player {
+                    HStack(spacing: 6) {
+                        Text(player.avatar)
+                        Text(player.name)
+                            .foregroundStyle(player.theme.gradient)
+                    }
+                    .font(.subheadline)
                 }
-                .font(.subheadline)
 
                 Text(log.timestamp, style: .relative)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(.white.opacity(0.4))
             }
 
             Spacer()
 
+            // Points
             Text("+\(log.points)")
-                .font(.headline)
-                .foregroundStyle(.cyan)
+                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .foregroundStyle(AppTheme.accentGradient)
+
+            // Action buttons
+            HStack(spacing: 8) {
+                Button {
+                    withAnimation(.spring(response: 0.3)) {
+                        store.reject(log)
+                    }
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.red)
+                        .frame(width: 36, height: 36)
+                        .background(Color.red.opacity(0.2), in: Circle())
+                }
+
+                Button {
+                    withAnimation(.spring(response: 0.3)) {
+                        store.approve(log)
+                    }
+                } label: {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(AppTheme.accent)
+                        .frame(width: 36, height: 36)
+                        .background(AppTheme.accent.opacity(0.2), in: Circle())
+                }
+            }
         }
-        .padding(.vertical, 8)
+        .padding(16)
+        .background {
+            RoundedRectangle(cornerRadius: 16)
+                .fill(AppTheme.backgroundCard)
+        }
     }
 }
 

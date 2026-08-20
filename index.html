@@ -6,16 +6,15 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#0A0A0F">
+    <meta name="theme-color" content="#0f0f23">
     <title>GyattChores</title>
     <link rel="icon" type="image/svg+xml" href="gyattchores-logo-transparent.svg">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         * {
             box-sizing: border-box;
@@ -24,18 +23,38 @@
         }
 
         :root {
-            --bg: #0A0A0F;
-            --surface: #16161D;
-            --surface-elevated: #1E1E28;
-            --text: #F8FAFC;
-            --text-secondary: #94A3B8;
-            --cyan: #22D3EE;
-            --cyan-glow: rgba(34, 211, 238, 0.15);
-            --green: #22C55E;
-            --red: #EF4444;
-            --purple: #A855F7;
+            /* Dark theme - matching iOS app */
+            --bg-dark: #0f0f23;
+            --bg-card: #1a1a2e;
+            --bg-card-light: #25253d;
+
+            /* Accent colors */
+            --accent: #00d4aa;
+            --accent-secondary: #7eed56;
+
+            /* Player themes */
+            --flame-primary: #ff6b6b;
+            --flame-secondary: #ee5a24;
+            --ocean-primary: #4facfe;
+            --ocean-secondary: #00f2fe;
+
+            /* Tier colors */
+            --bronze: #cd7f32;
+            --silver: #c0c0c0;
+            --gold: #ffd700;
+            --diamond: #b9f2ff;
+
+            /* Text */
+            --text: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.5);
+            --text-muted: rgba(255, 255, 255, 0.3);
+
+            /* Other */
+            --red: #ff6b6b;
+            --green: #00d4aa;
             --radius: 16px;
-            --radius-lg: 24px;
+            --radius-lg: 20px;
+            --radius-xl: 28px;
         }
 
         html, body {
@@ -45,7 +64,7 @@
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg);
+            background: var(--bg-dark);
             color: var(--text);
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
@@ -55,7 +74,6 @@
             height: 100%;
         }
 
-        /* Safe area for notch */
         @supports (padding: env(safe-area-inset-top)) {
             body {
                 padding-top: env(safe-area-inset-top);
@@ -68,7 +86,7 @@
         /* Animations */
         @keyframes pop {
             0% { transform: scale(0.8); opacity: 0; }
-            50% { transform: scale(1.05); }
+            50% { transform: scale(1.08); }
             100% { transform: scale(1); opacity: 1; }
         }
 
@@ -77,22 +95,52 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
+        @keyframes glow {
+            0%, 100% { filter: blur(15px); opacity: 0.6; }
+            50% { filter: blur(20px); opacity: 0.8; }
         }
 
-        .animate-pop {
-            animation: pop 0.3s ease-out;
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-8px); }
+            40% { transform: translateX(8px); }
+            60% { transform: translateX(-8px); }
+            80% { transform: translateX(8px); }
         }
 
-        .animate-fade {
-            animation: fadeIn 0.2s ease-out;
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
         }
 
-        /* Hide scrollbar but allow scroll */
-        ::-webkit-scrollbar {
-            display: none;
+        .animate-pop { animation: pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .animate-fade { animation: fadeIn 0.3s ease-out; }
+        .animate-shake { animation: shake 0.4s ease-in-out; }
+        .animate-bounce { animation: bounce 0.3s ease-out; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { display: none; }
+
+        /* Gradients */
+        .gradient-accent {
+            background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .gradient-flame {
+            background: linear-gradient(135deg, var(--flame-primary), var(--flame-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .gradient-ocean {
+            background: linear-gradient(135deg, var(--ocean-primary), var(--ocean-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
     </style>
 </head>
@@ -103,12 +151,19 @@
         const { useState, useEffect, useCallback } = React;
 
         // ============================================
-        // DATA
+        // DATA & THEME
         // ============================================
 
+        const PLAYER_THEMES = [
+            { name: 'Flame', primary: '#ff6b6b', secondary: '#ee5a24' },
+            { name: 'Ocean', primary: '#4facfe', secondary: '#00f2fe' },
+            { name: 'Sunset', primary: '#fa709a', secondary: '#fee140' },
+            { name: 'Aurora', primary: '#a8edea', secondary: '#fed6e3' }
+        ];
+
         const PLAYERS = [
-            { id: '1', name: 'BeKindHearted', avatar: '🦁' },
-            { id: '2', name: 'MegoDinoLava', avatar: '🦖' }
+            { id: '1', name: 'BeKindHearted', avatar: '🦁', themeIndex: 0 },
+            { id: '2', name: 'MegoDinoLava', avatar: '🦖', themeIndex: 1 }
         ];
 
         const CHORES = [
@@ -116,7 +171,7 @@
             { id: '2', name: 'Vacuum', points: 500, icon: '🧹' },
             { id: '3', name: 'Get Mail', points: 250, icon: '📬' },
             { id: '4', name: 'Trash', points: 375, icon: '🗑️' },
-            { id: '5', name: 'Dishes', points: 500, icon: '🍽️' },
+            { id: '5', name: 'Wash Dishes', points: 500, icon: '🍽️' },
             { id: '6', name: 'Load Dishwasher', points: 625, icon: '🫧' },
             { id: '7', name: 'Unload Dishwasher', points: 500, icon: '✨' },
             { id: '8', name: 'Clean Room', points: 750, icon: '🛏️' },
@@ -128,8 +183,17 @@
             { id: '14', name: 'Wipe Counters', points: 375, icon: '🧽' },
             { id: '15', name: 'Fold Laundry', points: 500, icon: '👕' },
             { id: '16', name: 'Set Table', points: 250, icon: '🍴' },
-            { id: '17', name: 'Clear Table', points: 250, icon: '🧹' }
+            { id: '17', name: 'Clear Table', points: 250, icon: '🧺' }
         ];
+
+        const getTier = (points) => {
+            if (points >= 700) return { name: 'diamond', color: '#b9f2ff' };
+            if (points >= 500) return { name: 'gold', color: '#ffd700' };
+            if (points >= 300) return { name: 'silver', color: '#c0c0c0' };
+            return { name: 'bronze', color: '#cd7f32' };
+        };
+
+        const getPlayerTheme = (player) => PLAYER_THEMES[player.themeIndex] || PLAYER_THEMES[0];
 
         const ADMIN_CODE = '7874';
 
@@ -145,13 +209,12 @@
             });
             const [showSuccess, setShowSuccess] = useState(null);
             const [showAdmin, setShowAdmin] = useState(false);
+            const [streak, setStreak] = useState(0);
 
-            // Save logs to localStorage
             useEffect(() => {
                 localStorage.setItem('gyattchores_logs', JSON.stringify(logs));
             }, [logs]);
 
-            // Calculate points
             const getWeeklyPoints = (playerId) => {
                 const weekStart = new Date();
                 weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1);
@@ -187,7 +250,6 @@
                 return best;
             }, null);
 
-            // Log a chore
             const logChore = (chore) => {
                 if (!selectedPlayer) return;
 
@@ -195,6 +257,8 @@
                     id: Date.now().toString(),
                     playerId: selectedPlayer.id,
                     playerName: selectedPlayer.name,
+                    playerAvatar: selectedPlayer.avatar,
+                    playerThemeIndex: selectedPlayer.themeIndex,
                     choreId: chore.id,
                     choreName: chore.name,
                     choreIcon: chore.icon,
@@ -205,14 +269,16 @@
 
                 setLogs(prev => [newLog, ...prev]);
                 setShowSuccess(chore);
+                setStreak(s => s + 1);
 
-                // Haptic feedback
-                if (navigator.vibrate) navigator.vibrate(10);
+                if (navigator.vibrate) {
+                    // Multi-tap pattern for satisfaction
+                    navigator.vibrate([10, 30, 10, 30, 20]);
+                }
 
-                setTimeout(() => setShowSuccess(null), 1500);
+                setTimeout(() => setShowSuccess(null), 1800);
             };
 
-            // Approve/reject
             const approve = (logId) => {
                 setLogs(prev => prev.map(log =>
                     log.id === logId ? { ...log, status: 'approved' } : log
@@ -224,48 +290,48 @@
                 setLogs(prev => prev.map(log =>
                     log.id === logId ? { ...log, status: 'rejected' } : log
                 ));
+                if (navigator.vibrate) navigator.vibrate([30, 30, 30]);
             };
 
             const approveAll = () => {
                 setLogs(prev => prev.map(log =>
                     log.status === 'pending' ? { ...log, status: 'approved' } : log
                 ));
-                if (navigator.vibrate) navigator.vibrate([10, 50, 10]);
+                if (navigator.vibrate) navigator.vibrate([10, 30, 10, 30, 10, 30, 50]);
             };
+
+            const playerTheme = selectedPlayer ? getPlayerTheme(selectedPlayer) : null;
 
             return (
                 <div style={{
                     height: '100%',
                     display: 'flex',
                     flexDirection: 'column',
-                    background: 'var(--bg)'
+                    background: 'var(--bg-dark)'
                 }}>
                     {/* Header */}
                     <header style={{
                         padding: '16px 20px',
                         display: 'flex',
                         justifyContent: 'space-between',
-                        alignItems: 'center',
-                        borderBottom: '1px solid var(--surface)'
+                        alignItems: 'center'
                     }}>
                         <h1 style={{
                             fontSize: '1.5rem',
-                            fontWeight: 700,
-                            background: 'linear-gradient(135deg, var(--cyan), var(--purple))',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent'
-                        }}>
+                            fontWeight: 800,
+                            letterSpacing: '-0.02em'
+                        }} className="gradient-accent">
                             GyattChores
                         </h1>
                         <button
                             onClick={() => setShowAdmin(true)}
                             style={{
-                                background: 'var(--surface)',
+                                background: 'var(--bg-card)',
                                 border: 'none',
-                                borderRadius: '12px',
-                                padding: '10px 14px',
+                                borderRadius: '14px',
+                                padding: '12px 16px',
                                 color: 'var(--text)',
-                                fontSize: '1rem',
+                                fontSize: '1.1rem',
                                 cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
@@ -273,21 +339,21 @@
                                 position: 'relative'
                             }}
                         >
-                            <span>✓</span>
+                            <span style={{ opacity: 0.8 }}>✓</span>
                             {pendingLogs.length > 0 && (
                                 <span style={{
                                     position: 'absolute',
-                                    top: '-6px',
-                                    right: '-6px',
-                                    background: 'var(--red)',
+                                    top: '-8px',
+                                    right: '-8px',
+                                    background: 'linear-gradient(135deg, var(--flame-primary), var(--flame-secondary))',
                                     color: 'white',
                                     fontSize: '0.7rem',
                                     fontWeight: 700,
-                                    padding: '2px 6px',
-                                    borderRadius: '10px',
-                                    minWidth: '18px',
+                                    padding: '4px 8px',
+                                    borderRadius: '12px',
+                                    minWidth: '22px',
                                     textAlign: 'center'
-                                }}>
+                                }} className="animate-bounce">
                                     {pendingLogs.length}
                                 </span>
                             )}
@@ -298,13 +364,15 @@
                     <main style={{
                         flex: 1,
                         overflow: 'auto',
-                        padding: '20px'
+                        padding: '0 16px 100px'
                     }}>
-                        {/* Player Selection */}
+                        {/* Player Selection - Horizontal Scroll */}
                         <div style={{
                             display: 'flex',
                             gap: '12px',
-                            marginBottom: '20px'
+                            marginBottom: '20px',
+                            overflowX: 'auto',
+                            paddingBottom: '8px'
                         }}>
                             {PLAYERS.map(player => (
                                 <PlayerCard
@@ -312,42 +380,27 @@
                                     player={player}
                                     isSelected={selectedPlayer?.id === player.id}
                                     isLeader={leader?.player.id === player.id && leader.pts > 0}
-                                    points={getWeeklyPoints(player.id)}
-                                    onClick={() => setSelectedPlayer(player)}
+                                    weeklyPoints={getWeeklyPoints(player.id)}
+                                    todayPoints={getTodayPoints(player.id)}
+                                    onClick={() => {
+                                        setSelectedPlayer(player);
+                                        if (navigator.vibrate) navigator.vibrate(5);
+                                    }}
                                 />
                             ))}
                         </div>
 
-                        {/* Stats */}
-                        {selectedPlayer && (
-                            <div style={{
-                                display: 'flex',
-                                gap: '12px',
-                                marginBottom: '24px'
-                            }} className="animate-fade">
-                                <StatPill
-                                    label="Today"
-                                    value={getTodayPoints(selectedPlayer.id)}
-                                    color="orange"
-                                />
-                                <StatPill
-                                    label="This Week"
-                                    value={getWeeklyPoints(selectedPlayer.id)}
-                                    color="cyan"
-                                />
-                            </div>
-                        )}
-
-                        {/* Chores Grid */}
+                        {/* Chores Grid - 3 columns */}
                         <div style={{
                             display: 'grid',
-                            gridTemplateColumns: 'repeat(2, 1fr)',
-                            gap: '12px'
+                            gridTemplateColumns: 'repeat(3, 1fr)',
+                            gap: '10px'
                         }}>
                             {CHORES.map(chore => (
                                 <ChoreCard
                                     key={chore.id}
                                     chore={chore}
+                                    playerTheme={playerTheme}
                                     disabled={!selectedPlayer}
                                     onClick={() => logChore(chore)}
                                 />
@@ -357,33 +410,11 @@
 
                     {/* Success Overlay */}
                     {showSuccess && (
-                        <div style={{
-                            position: 'fixed',
-                            inset: 0,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            background: 'rgba(0,0,0,0.6)',
-                            backdropFilter: 'blur(8px)',
-                            zIndex: 100
-                        }} className="animate-pop">
-                            <div style={{
-                                background: 'var(--surface)',
-                                borderRadius: 'var(--radius-lg)',
-                                padding: '40px',
-                                textAlign: 'center'
-                            }}>
-                                <div style={{ fontSize: '4rem', marginBottom: '16px' }}>
-                                    {showSuccess.icon}
-                                </div>
-                                <div style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '8px' }}>
-                                    Logged!
-                                </div>
-                                <div style={{ color: 'var(--cyan)', fontWeight: 600 }}>
-                                    +{showSuccess.points} pts
-                                </div>
-                            </div>
-                        </div>
+                        <SuccessOverlay
+                            chore={showSuccess}
+                            player={selectedPlayer}
+                            streak={streak}
+                        />
                     )}
 
                     {/* Admin Modal */}
@@ -404,125 +435,314 @@
         // COMPONENTS
         // ============================================
 
-        function PlayerCard({ player, isSelected, isLeader, points, onClick }) {
+        function PlayerCard({ player, isSelected, isLeader, weeklyPoints, todayPoints, onClick }) {
+            const theme = getPlayerTheme(player);
+
             return (
                 <button
                     onClick={onClick}
                     style={{
-                        flex: 1,
-                        background: isSelected ? 'var(--cyan-glow)' : 'var(--surface)',
-                        border: isSelected ? '2px solid var(--cyan)' : '2px solid transparent',
+                        minWidth: '140px',
+                        background: isSelected ? 'var(--bg-card-light)' : 'var(--bg-card)',
+                        border: isSelected
+                            ? `2px solid ${theme.primary}`
+                            : '2px solid transparent',
                         borderRadius: 'var(--radius-lg)',
-                        padding: '20px 16px',
+                        padding: '16px 14px',
                         cursor: 'pointer',
                         textAlign: 'center',
-                        transition: 'all 0.2s ease',
-                        transform: isSelected ? 'scale(1.02)' : 'scale(1)'
+                        transition: 'all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                        transform: isSelected ? 'scale(1.02)' : 'scale(1)',
+                        boxShadow: isSelected
+                            ? `0 8px 24px ${theme.primary}40`
+                            : 'none',
+                        position: 'relative',
+                        overflow: 'visible'
                     }}
                 >
-                    <div style={{ position: 'relative', display: 'inline-block' }}>
-                        <span style={{ fontSize: '3rem' }}>{player.avatar}</span>
+                    {/* Glow effect when selected */}
+                    {isSelected && (
+                        <div style={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -60%)',
+                            width: '60px',
+                            height: '60px',
+                            background: `linear-gradient(135deg, ${theme.primary}, ${theme.secondary})`,
+                            borderRadius: '50%',
+                            filter: 'blur(20px)',
+                            opacity: 0.5,
+                            animation: 'glow 2s ease-in-out infinite'
+                        }} />
+                    )}
+
+                    <div style={{ position: 'relative', display: 'inline-block', zIndex: 1 }}>
+                        <span style={{ fontSize: '2.8rem' }}>{player.avatar}</span>
                         {isLeader && (
                             <span style={{
                                 position: 'absolute',
                                 top: '-8px',
-                                right: '-12px',
-                                fontSize: '1.2rem'
+                                right: '-14px',
+                                fontSize: '1.1rem'
                             }}>👑</span>
                         )}
                     </div>
+
                     <div style={{
-                        color: 'var(--text)',
+                        color: isSelected ? 'var(--text)' : 'var(--text-secondary)',
                         fontWeight: 600,
                         marginTop: '8px',
-                        fontSize: '0.9rem'
+                        fontSize: '0.85rem',
+                        whiteSpace: 'nowrap',
+                        position: 'relative',
+                        zIndex: 1
                     }}>
                         {player.name}
                     </div>
+
+                    {/* Weekly points */}
                     <div style={{
-                        color: 'var(--text-secondary)',
-                        fontSize: '0.8rem',
-                        marginTop: '4px'
+                        marginTop: '6px',
+                        position: 'relative',
+                        zIndex: 1
                     }}>
-                        {points} pts
+                        <span style={{
+                            fontSize: '1.2rem',
+                            fontWeight: 800,
+                            background: isSelected
+                                ? `linear-gradient(135deg, ${theme.primary}, ${theme.secondary})`
+                                : 'linear-gradient(135deg, rgba(255,255,255,0.5), rgba(255,255,255,0.3))',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            backgroundClip: 'text'
+                        }}>
+                            {weeklyPoints}
+                        </span>
+                        <div style={{
+                            fontSize: '0.65rem',
+                            color: 'var(--text-muted)',
+                            marginTop: '2px'
+                        }}>
+                            this week
+                        </div>
                     </div>
+
+                    {/* Today's points pill */}
+                    {todayPoints > 0 && (
+                        <div style={{
+                            marginTop: '8px',
+                            padding: '4px 10px',
+                            background: 'rgba(0, 212, 170, 0.15)',
+                            borderRadius: '12px',
+                            display: 'inline-block',
+                            position: 'relative',
+                            zIndex: 1
+                        }}>
+                            <span style={{
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                color: 'var(--accent)'
+                            }}>
+                                +{todayPoints} today
+                            </span>
+                        </div>
+                    )}
                 </button>
             );
         }
 
-        function StatPill({ label, value, color }) {
-            const colors = {
-                orange: '#F59E0B',
-                cyan: 'var(--cyan)'
-            };
-
-            return (
-                <div style={{
-                    background: 'var(--surface)',
-                    borderRadius: '100px',
-                    padding: '10px 16px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px'
-                }}>
-                    <span style={{
-                        width: '8px',
-                        height: '8px',
-                        borderRadius: '50%',
-                        background: colors[color]
-                    }} />
-                    <div>
-                        <div style={{ fontWeight: 700, fontSize: '1rem' }}>{value}</div>
-                        <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>{label}</div>
-                    </div>
-                </div>
-            );
-        }
-
-        function ChoreCard({ chore, disabled, onClick }) {
+        function ChoreCard({ chore, playerTheme, disabled, onClick }) {
             const [isPressed, setIsPressed] = useState(false);
+            const tier = getTier(chore.points);
 
             return (
                 <button
                     onClick={onClick}
                     disabled={disabled}
-                    onTouchStart={() => setIsPressed(true)}
+                    onTouchStart={() => !disabled && setIsPressed(true)}
                     onTouchEnd={() => setIsPressed(false)}
-                    onMouseDown={() => setIsPressed(true)}
+                    onMouseDown={() => !disabled && setIsPressed(true)}
                     onMouseUp={() => setIsPressed(false)}
                     onMouseLeave={() => setIsPressed(false)}
                     style={{
-                        background: 'var(--surface)',
+                        background: 'var(--bg-card)',
                         border: 'none',
                         borderRadius: 'var(--radius)',
-                        padding: '20px 12px',
+                        padding: '14px 8px',
                         cursor: disabled ? 'not-allowed' : 'pointer',
                         textAlign: 'center',
-                        opacity: disabled ? 0.4 : 1,
-                        transition: 'transform 0.1s ease',
-                        transform: isPressed ? 'scale(0.95)' : 'scale(1)'
+                        opacity: disabled ? 0.5 : 1,
+                        transition: 'transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                        transform: isPressed ? 'scale(0.94)' : 'scale(1)',
+                        position: 'relative',
+                        overflow: 'hidden'
                     }}
                 >
-                    <div style={{ fontSize: '2.2rem', marginBottom: '8px' }}>
-                        {chore.icon}
-                    </div>
+                    {/* Bottom tier accent */}
                     <div style={{
-                        color: 'var(--text)',
+                        position: 'absolute',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        height: '35px',
+                        background: `linear-gradient(to top, ${tier.color}${disabled ? '10' : '25'}, transparent)`,
+                        borderRadius: '0 0 var(--radius) var(--radius)',
+                        pointerEvents: 'none'
+                    }} />
+
+                    {/* Icon with glow */}
+                    <div style={{ position: 'relative', zIndex: 1 }}>
+                        {!disabled && (
+                            <span style={{
+                                position: 'absolute',
+                                top: '50%',
+                                left: '50%',
+                                transform: 'translate(-50%, -50%)',
+                                fontSize: '2rem',
+                                filter: 'blur(10px)',
+                                opacity: 0.4
+                            }}>
+                                {chore.icon}
+                            </span>
+                        )}
+                        <span style={{ fontSize: '1.8rem', position: 'relative' }}>
+                            {chore.icon}
+                        </span>
+                    </div>
+
+                    <div style={{
+                        color: 'rgba(255,255,255,0.85)',
                         fontWeight: 500,
-                        fontSize: '0.85rem',
-                        marginBottom: '4px',
-                        lineHeight: 1.3
+                        fontSize: '0.7rem',
+                        marginTop: '6px',
+                        lineHeight: 1.3,
+                        height: '26px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        position: 'relative',
+                        zIndex: 1
                     }}>
                         {chore.name}
                     </div>
+
                     <div style={{
-                        color: 'var(--cyan)',
-                        fontWeight: 700,
-                        fontSize: '0.8rem'
+                        fontWeight: 800,
+                        fontSize: '0.9rem',
+                        marginTop: '4px',
+                        background: !disabled && playerTheme
+                            ? `linear-gradient(135deg, ${playerTheme.primary}, ${playerTheme.secondary})`
+                            : `linear-gradient(135deg, ${tier.color}, ${tier.color})`,
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
+                        position: 'relative',
+                        zIndex: 1
                     }}>
-                        {chore.points} pts
+                        {chore.points}
                     </div>
                 </button>
+            );
+        }
+
+        function SuccessOverlay({ chore, player, streak }) {
+            const theme = player ? getPlayerTheme(player) : PLAYER_THEMES[0];
+
+            return (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'rgba(0,0,0,0.7)',
+                    backdropFilter: 'blur(12px)',
+                    zIndex: 100
+                }} className="animate-pop">
+                    <div style={{
+                        background: 'var(--bg-card)',
+                        borderRadius: 'var(--radius-xl)',
+                        padding: '36px 48px',
+                        textAlign: 'center',
+                        border: `2px solid ${theme.primary}60`,
+                        boxShadow: `0 0 60px ${theme.primary}30`,
+                        position: 'relative'
+                    }}>
+                        {/* Glowing emoji */}
+                        <div style={{ position: 'relative', marginBottom: '16px' }}>
+                            <span style={{
+                                position: 'absolute',
+                                top: '50%',
+                                left: '50%',
+                                transform: 'translate(-50%, -50%)',
+                                fontSize: '5rem',
+                                filter: 'blur(25px)',
+                                opacity: 0.5
+                            }}>
+                                {chore.icon}
+                            </span>
+                            <span style={{ fontSize: '4.5rem', position: 'relative' }}>
+                                {chore.icon}
+                            </span>
+                        </div>
+
+                        {/* Points */}
+                        <div style={{
+                            fontSize: '3rem',
+                            fontWeight: 900,
+                            background: 'linear-gradient(135deg, var(--accent), var(--accent-secondary))',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            backgroundClip: 'text',
+                            letterSpacing: '-0.02em'
+                        }}>
+                            +{chore.points}
+                        </div>
+
+                        <div style={{
+                            color: 'var(--text-secondary)',
+                            fontSize: '0.9rem',
+                            marginTop: '4px'
+                        }}>
+                            pts
+                        </div>
+
+                        {/* Player */}
+                        {player && (
+                            <div style={{
+                                marginTop: '16px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '8px',
+                                color: 'var(--text-secondary)'
+                            }}>
+                                <span style={{ fontSize: '1.2rem' }}>{player.avatar}</span>
+                                <span style={{ fontWeight: 500 }}>{player.name}</span>
+                            </div>
+                        )}
+
+                        {/* Streak */}
+                        {streak > 1 && (
+                            <div style={{
+                                marginTop: '12px',
+                                padding: '6px 12px',
+                                background: 'rgba(255, 165, 0, 0.15)',
+                                borderRadius: '12px',
+                                display: 'inline-block'
+                            }}>
+                                <span style={{
+                                    fontSize: '0.85rem',
+                                    fontWeight: 700,
+                                    color: '#ffa500'
+                                }}>
+                                    🔥 {streak} streak!
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                </div>
             );
         }
 
@@ -536,11 +756,11 @@
                 if (value.length === 4) {
                     if (value === ADMIN_CODE) {
                         setUnlocked(true);
-                        if (navigator.vibrate) navigator.vibrate(10);
+                        if (navigator.vibrate) navigator.vibrate([10, 50, 10]);
                     } else {
                         setError(true);
                         setCode('');
-                        if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
+                        if (navigator.vibrate) navigator.vibrate([30, 50, 30, 50, 30]);
                         setTimeout(() => setError(false), 1500);
                     }
                 }
@@ -550,7 +770,7 @@
                 <div style={{
                     position: 'fixed',
                     inset: 0,
-                    background: 'var(--bg)',
+                    background: 'var(--bg-dark)',
                     zIndex: 200,
                     display: 'flex',
                     flexDirection: 'column'
@@ -560,15 +780,14 @@
                         padding: '16px 20px',
                         display: 'flex',
                         justifyContent: 'space-between',
-                        alignItems: 'center',
-                        borderBottom: '1px solid var(--surface)'
+                        alignItems: 'center'
                     }}>
                         <button
                             onClick={onClose}
                             style={{
                                 background: 'none',
                                 border: 'none',
-                                color: 'var(--cyan)',
+                                color: 'var(--accent)',
                                 fontSize: '1rem',
                                 fontWeight: 600,
                                 cursor: 'pointer'
@@ -576,8 +795,12 @@
                         >
                             Done
                         </button>
-                        <h2 style={{ fontSize: '1.1rem', fontWeight: 600 }}>
-                            {unlocked ? 'Pending Approval' : 'Admin'}
+                        <h2 style={{
+                            fontSize: '1.1rem',
+                            fontWeight: 600,
+                            color: 'var(--text)'
+                        }}>
+                            {unlocked ? 'Pending' : 'Admin'}
                         </h2>
                         {unlocked && logs.length > 0 ? (
                             <button
@@ -585,10 +808,12 @@
                                 style={{
                                     background: 'none',
                                     border: 'none',
-                                    color: 'var(--green)',
                                     fontSize: '0.9rem',
-                                    fontWeight: 600,
-                                    cursor: 'pointer'
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    background: 'linear-gradient(135deg, var(--accent), var(--accent-secondary))',
+                                    WebkitBackgroundClip: 'text',
+                                    WebkitTextFillColor: 'transparent'
                                 }}
                             >
                                 Approve All
@@ -608,9 +833,22 @@
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 height: '100%',
-                                gap: '24px'
+                                gap: '28px'
                             }}>
-                                <div style={{ fontSize: '4rem' }}>🔐</div>
+                                {/* Glowing lock icon */}
+                                <div style={{ position: 'relative' }}>
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '50%',
+                                        left: '50%',
+                                        transform: 'translate(-50%, -50%)',
+                                        fontSize: '4rem',
+                                        filter: 'blur(20px)',
+                                        opacity: 0.4
+                                    }}>🔐</div>
+                                    <div style={{ fontSize: '4rem', position: 'relative' }}>🔐</div>
+                                </div>
+
                                 <input
                                     type="password"
                                     inputMode="numeric"
@@ -619,22 +857,27 @@
                                     onChange={(e) => checkCode(e.target.value)}
                                     placeholder="••••"
                                     autoFocus
+                                    className={error ? 'animate-shake' : ''}
                                     style={{
-                                        background: 'var(--surface)',
-                                        border: error ? '2px solid var(--red)' : '2px solid transparent',
-                                        borderRadius: '12px',
-                                        padding: '16px',
+                                        background: 'var(--bg-card)',
+                                        border: error ? '2px solid var(--red)' : '2px solid var(--bg-card-light)',
+                                        borderRadius: '16px',
+                                        padding: '18px',
                                         fontSize: '2rem',
                                         fontWeight: 700,
                                         color: 'var(--text)',
                                         textAlign: 'center',
-                                        width: '160px',
-                                        letterSpacing: '8px',
+                                        width: '180px',
+                                        letterSpacing: '10px',
                                         outline: 'none'
                                     }}
                                 />
                                 {error && (
-                                    <div style={{ color: 'var(--red)', fontSize: '0.9rem' }}>
+                                    <div style={{
+                                        color: 'var(--red)',
+                                        fontSize: '0.9rem',
+                                        fontWeight: 500
+                                    }}>
                                         Wrong code
                                     </div>
                                 )}
@@ -647,76 +890,125 @@
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 height: '100%',
-                                gap: '16px',
-                                color: 'var(--text-secondary)'
+                                gap: '20px'
                             }}>
-                                <div style={{ fontSize: '4rem' }}>✅</div>
-                                <div style={{ fontSize: '1.2rem', fontWeight: 600 }}>All caught up!</div>
-                                <div>No chores waiting for approval</div>
+                                <div style={{ position: 'relative' }}>
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '50%',
+                                        left: '50%',
+                                        transform: 'translate(-50%, -50%)',
+                                        fontSize: '4rem',
+                                        filter: 'blur(15px)',
+                                        opacity: 0.4,
+                                        color: 'var(--accent)'
+                                    }}>✅</div>
+                                    <div style={{ fontSize: '4rem', position: 'relative' }}>✅</div>
+                                </div>
+                                <div style={{
+                                    fontSize: '1.3rem',
+                                    fontWeight: 700,
+                                    color: 'var(--text)'
+                                }}>
+                                    All Caught Up!
+                                </div>
+                                <div style={{ color: 'var(--text-secondary)' }}>
+                                    No chores waiting for approval
+                                </div>
                             </div>
                         ) : (
                             /* Pending List */
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                {logs.map(log => (
-                                    <div
-                                        key={log.id}
-                                        style={{
-                                            background: 'var(--surface)',
-                                            borderRadius: 'var(--radius)',
-                                            padding: '16px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '16px'
-                                        }}
-                                    >
-                                        <span style={{ fontSize: '2rem' }}>{log.choreIcon}</span>
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ fontWeight: 600 }}>{log.choreName}</div>
-                                            <div style={{
-                                                color: 'var(--text-secondary)',
-                                                fontSize: '0.85rem',
-                                                marginTop: '2px'
-                                            }}>
-                                                {log.playerName}
+                                {logs.map(log => {
+                                    const theme = PLAYER_THEMES[log.playerThemeIndex] || PLAYER_THEMES[0];
+                                    return (
+                                        <div
+                                            key={log.id}
+                                            style={{
+                                                background: 'var(--bg-card)',
+                                                borderRadius: 'var(--radius)',
+                                                padding: '16px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '14px'
+                                            }}
+                                        >
+                                            <span style={{ fontSize: '2.2rem' }}>{log.choreIcon}</span>
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <div style={{
+                                                    fontWeight: 600,
+                                                    color: 'var(--text)'
+                                                }}>
+                                                    {log.choreName}
+                                                </div>
+                                                <div style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px',
+                                                    marginTop: '4px'
+                                                }}>
+                                                    <span>{log.playerAvatar}</span>
+                                                    <span style={{
+                                                        fontSize: '0.85rem',
+                                                        background: `linear-gradient(135deg, ${theme.primary}, ${theme.secondary})`,
+                                                        WebkitBackgroundClip: 'text',
+                                                        WebkitTextFillColor: 'transparent'
+                                                    }}>
+                                                        {log.playerName}
+                                                    </span>
+                                                </div>
                                             </div>
+                                            <div style={{
+                                                fontWeight: 700,
+                                                fontSize: '1rem',
+                                                marginRight: '8px',
+                                                background: 'linear-gradient(135deg, var(--accent), var(--accent-secondary))',
+                                                WebkitBackgroundClip: 'text',
+                                                WebkitTextFillColor: 'transparent'
+                                            }}>
+                                                +{log.points}
+                                            </div>
+                                            <button
+                                                onClick={() => onReject(log.id)}
+                                                style={{
+                                                    background: 'rgba(255, 107, 107, 0.15)',
+                                                    border: 'none',
+                                                    borderRadius: '12px',
+                                                    width: '38px',
+                                                    height: '38px',
+                                                    color: 'var(--red)',
+                                                    fontWeight: 700,
+                                                    fontSize: '1rem',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center'
+                                                }}
+                                            >
+                                                ✕
+                                            </button>
+                                            <button
+                                                onClick={() => onApprove(log.id)}
+                                                style={{
+                                                    background: 'rgba(0, 212, 170, 0.15)',
+                                                    border: 'none',
+                                                    borderRadius: '12px',
+                                                    width: '38px',
+                                                    height: '38px',
+                                                    color: 'var(--accent)',
+                                                    fontWeight: 700,
+                                                    fontSize: '1rem',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center'
+                                                }}
+                                            >
+                                                ✓
+                                            </button>
                                         </div>
-                                        <div style={{
-                                            color: 'var(--cyan)',
-                                            fontWeight: 700,
-                                            marginRight: '8px'
-                                        }}>
-                                            +{log.points}
-                                        </div>
-                                        <button
-                                            onClick={() => onReject(log.id)}
-                                            style={{
-                                                background: 'rgba(239, 68, 68, 0.15)',
-                                                border: 'none',
-                                                borderRadius: '10px',
-                                                padding: '10px 14px',
-                                                color: 'var(--red)',
-                                                fontWeight: 600,
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            ✕
-                                        </button>
-                                        <button
-                                            onClick={() => onApprove(log.id)}
-                                            style={{
-                                                background: 'rgba(34, 197, 94, 0.15)',
-                                                border: 'none',
-                                                borderRadius: '10px',
-                                                padding: '10px 14px',
-                                                color: 'var(--green)',
-                                                fontWeight: 600,
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            ✓
-                                        </button>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
                     </div>

@@ -41,16 +41,14 @@ class ChoreStore: ObservableObject {
         let log = ChoreLog(player: player, chore: chore)
         logs.insert(log, at: 0)
         save()
-
-        // Haptic feedback
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        // Haptics handled by caller for custom patterns
     }
 
     func approve(_ log: ChoreLog) {
         if let index = logs.firstIndex(where: { $0.id == log.id }) {
             logs[index].status = .approved
             save()
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            HapticManager.shared.approved()
         }
     }
 
@@ -58,16 +56,17 @@ class ChoreStore: ObservableObject {
         if let index = logs.firstIndex(where: { $0.id == log.id }) {
             logs[index].status = .rejected
             save()
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            HapticManager.shared.rejected()
         }
     }
 
     func approveAll() {
+        let count = pendingLogs.count
         for i in logs.indices where logs[i].status == .pending {
             logs[i].status = .approved
         }
         save()
-        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        HapticManager.shared.approvedAll(count: count)
     }
 
     // MARK: - Persistence
@@ -99,6 +98,7 @@ class ChoreStore: ObservableObject {
             return false
         }
         logChore(chore, for: player)
+        HapticManager.shared.choreLogged(points: chore.points)
         return true
     }
 }

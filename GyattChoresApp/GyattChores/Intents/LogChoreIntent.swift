@@ -58,26 +58,9 @@ struct LogPoopIntent: AppIntent {
         store.logChore(chore, for: player)
         return .result(dialog: "Poop picked up! +500 pts for \(player.name)")
     }
-}
 
-struct LogDishesIntent: AppIntent {
-    static var title: LocalizedStringResource = "Log Dishes"
-    static var description = IntentDescription("Quick log dish washing")
-
-    @Parameter(title: "Player")
-    var playerName: String
-
-    @MainActor
-    func perform() async throws -> some IntentResult & ProvidesDialog {
-        let store = ChoreStore()
-
-        guard let chore = store.chores.first(where: { $0.name == "Wash Dishes" }),
-              let player = store.players.first(where: { $0.name.lowercased().contains(playerName.lowercased()) }) else {
-            return .result(dialog: "Couldn't log chore")
-        }
-
-        store.logChore(chore, for: player)
-        return .result(dialog: "Dishes done! +500 pts for \(player.name)")
+    static var parameterSummary: some ParameterSummary {
+        Summary("Log poop pickup for \(\.$playerName)")
     }
 }
 
@@ -100,6 +83,10 @@ struct LogFeedDogIntent: AppIntent {
         store.logChore(chore, for: player)
         return .result(dialog: "Alfred fed! +250 pts for \(player.name)")
     }
+
+    static var parameterSummary: some ParameterSummary {
+        Summary("Log feeding Alfred for \(\.$playerName)")
+    }
 }
 
 struct LogFeedCatIntent: AppIntent {
@@ -121,6 +108,10 @@ struct LogFeedCatIntent: AppIntent {
         store.logChore(chore, for: player)
         return .result(dialog: "Chevy fed! +250 pts for \(player.name)")
     }
+
+    static var parameterSummary: some ParameterSummary {
+        Summary("Log feeding Chevy for \(\.$playerName)")
+    }
 }
 
 // MARK: - App Shortcuts Provider
@@ -130,8 +121,7 @@ struct GyattChoresShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: LogChoreIntent(),
             phrases: [
-                "Log a chore in \(.applicationName)",
-                "Log \(\.$choreName) for \(\.$playerName) in \(.applicationName)"
+                "Log a chore in \(.applicationName)"
             ],
             shortTitle: "Log Chore",
             systemImageName: "checkmark.circle"
@@ -140,8 +130,7 @@ struct GyattChoresShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: LogPoopIntent(),
             phrases: [
-                "Log poop pickup in \(.applicationName)",
-                "I picked up poop"
+                "Log poop pickup in \(.applicationName)"
             ],
             shortTitle: "Log Poop",
             systemImageName: "leaf"
@@ -150,8 +139,7 @@ struct GyattChoresShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: LogFeedDogIntent(),
             phrases: [
-                "I fed the dog",
-                "Log feeding Alfred in \(.applicationName)"
+                "Feed the dog in \(.applicationName)"
             ],
             shortTitle: "Feed Dog",
             systemImageName: "dog"
@@ -160,8 +148,7 @@ struct GyattChoresShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: LogFeedCatIntent(),
             phrases: [
-                "I fed the cat",
-                "Log feeding Chevy in \(.applicationName)"
+                "Feed the cat in \(.applicationName)"
             ],
             shortTitle: "Feed Cat",
             systemImageName: "cat"
