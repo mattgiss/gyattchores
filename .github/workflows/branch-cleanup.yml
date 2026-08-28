@@ -109,6 +109,12 @@ jobs:
             fi
           done
 
+          # Report to the job log (the Discord post is best-effort)
+          echo "=== Would delete / deleted ==="
+          [ -n "$DELETED_LIST" ] && printf "$DELETED_LIST" || echo "None"
+          echo "=== Kept ==="
+          [ -n "$KEPT_LIST" ] && printf "$KEPT_LIST" || echo "None"
+
           # Post report to Discord
           if [ -n "$DISCORD_WEBHOOK" ]; then
             if [ "$DRY_RUN" = "false" ]; then
@@ -132,7 +138,6 @@ jobs:
               --arg deleted "$DELETED_TEXT" \
               --arg kept    "$KEPT_TEXT" \
               '{
-                thread_name: $title,
                 embeds: [{
                   title: $title,
                   description: $mode,
