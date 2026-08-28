@@ -52,12 +52,15 @@ Keep the momentum        ── This register is reviewed every quarter.
 > **Priority:** P1 (now) · P2 (next) · P3 (soon)
 
 ### CA-01 — Enable branch protection on `main`
-- **Goal:** G1 · **Priority:** P1 · **Addresses:** GAP-01, GAP-03, GAP-05 · **Status:** ⬜
+- **Goal:** G1 · **Priority:** P1 · **Addresses:** GAP-01, GAP-03, GAP-05 · **Status:** ✅
 - **Action:** GitHub → Settings → Branches → Add rule for `main`:
   require a pull request before merging; require status checks to pass (the
   CA-04 check); block force-pushes and deletion. (Single-maintainer note: keep
   "require approvals" optional but mandate the self-attestation comment from
   Change Enablement §6, or set 1 approval if a reviewer exists.)
+- **Done:** Enabled 2026-06-07 (see the 2026-06-07 "infrastructure green"
+  status update); re-verified via the GitHub API on 2026-08-28 — `main`
+  reports `protected: true` and all changes since have landed via PRs.
 - **Done when:** a direct push to `main` is rejected and a PR is required.
 
 ### CA-02 — Document break-glass & recovery (reduce bus factor)
@@ -82,21 +85,28 @@ Keep the momentum        ── This register is reviewed every quarter.
 - **Done when:** new PRs carry a completed checklist/verification table.
 
 ### CA-04 — Add a CI quality gate
-- **Goal:** G1, G4 · **Priority:** P2 · **Addresses:** GAP-04, KE-004 · **Status:** ⬜
+- **Goal:** G1, G4 · **Priority:** P2 · **Addresses:** GAP-04, KE-004 · **Status:** ✅
 - **Action:** Add a lightweight workflow that runs on every PR to `main`:
   validate that `index.html` parses, JSON/manifest files are well-formed, and
   required assets (`CNAME`, icons, referenced logos) exist. Register it as the
   required status check in CA-01. Optionally surface its result to the Discord
   feed.
+- **Done:** `.github/workflows/ci.yml` + `scripts/validate-build.mjs` shipped
+  in PR #49 (2026-06-09): validates `manifest.json`, `sw.js`, and that the
+  inline JSX app script compiles. Runs on every PR to `main`.
 - **Done when:** a malformed change to `index.html` blocks the merge.
 
 ### CA-05 — Formalise the deployment record & add a synthetic check
-- **Goal:** G4 · **Priority:** P2 · **Addresses:** GAP-05 · **Status:** ⬜
+- **Goal:** G4 · **Priority:** P2 · **Addresses:** GAP-05 · **Status:** ✅
 - **Action:** (a) Treat the deploy Discord event + merge commit as the
   deployment record; add a one-line entry per production release if a
   `CHANGELOG` is adopted. (b) Add a **scheduled** workflow that fetches
   [gyattchores.com](https://gyattchores.com) and alerts on non-200 — detecting
   live-site outages no repo event would reveal.
+- **Done:** `.github/workflows/uptime.yml` shipped in PR #52 (2026-06-09):
+  probes the live site every 15 minutes and posts a 🔴 Discord alert on
+  non-200. 1,200+ scheduled runs to date, all green as of 2026-08-28. The
+  deploy Discord event + merge commit serve as the deployment record.
 - **Done when:** a down live site raises a 🔴 exception in the feed.
 
 ### CA-06 — Secret hygiene: scanning, push protection, rotation
@@ -105,6 +115,10 @@ Keep the momentum        ── This register is reviewed every quarter.
   `DISCORD_WEBHOOK`** (it was exposed in chat) per the
   [rotation procedure](monitoring-and-event-management.md#52-rotating-the-webhook-security-hygiene).
   Confirm no `service_role` key is anywhere in history.
+- **Progress:** Webhook **rotated 2026-06-07** (recorded in the
+  "infrastructure green" status update); Discord notifications have delivered
+  successfully since. **Remaining owner action:** confirm secret scanning +
+  push protection are enabled in repo Settings → Code security.
 - **Done when:** scanning is on, the webhook is rotated, and a test notification
   delivers `204`.
 
@@ -138,9 +152,16 @@ Keep the momentum        ── This register is reviewed every quarter.
   this change set.)*
 
 ### CA-10 — Branch hygiene
-- **Goal:** G5 · **Priority:** P3 · **Addresses:** GAP-10 · **Status:** ⬜
+- **Goal:** G5 · **Priority:** P3 · **Addresses:** GAP-10 · **Status:** 🟦
 - **Action:** Delete merged branches; keep `main` + active work + the latest
   `backup-stable-*`. Review at each quarterly cadence.
+- **Progress:** The original 9 stale branches were deleted 2026-06-07, and
+  `.github/workflows/branch-cleanup.yml` now runs every Monday, deleting
+  branches fully merged into `main` and older than 7 days (keeps `main`,
+  `backup-*`, protected). **Limitation:** PRs are squash-merged, so a merged
+  branch's tip is not an ancestor of `main` and the workflow's
+  identical/behind check keeps it — squash-merged branches (~24 as of
+  2026-08-28) still need a manual prune at each quarterly review.
 - **Done when:** only active and intentionally-retained branches remain.
 
 ### CA-11 — Operational runbooks (this SMS)
@@ -162,13 +183,19 @@ Keep the momentum        ── This register is reviewed every quarter.
 
 ---
 
-## 5. Progress snapshot (2026-06-06)
+## 5. Progress snapshot (2026-08-28)
 
 | Status | Count | Items |
 |---|---|---|
-| ✅ Done | 3 | CA-08, CA-09, CA-11 |
-| 🟦 In progress | 2 | CA-03, CA-06 |
-| ⬜ Open | 6 | CA-01, CA-02, CA-04, CA-05, CA-07, CA-10 |
+| ✅ Done | 7 | CA-01, CA-04, CA-05, CA-07, CA-08, CA-09, CA-11 |
+| 🟦 In progress | 4 | CA-02, CA-03, CA-06, CA-10 |
+| ⬜ Open | 0 | — |
+
+All Wave P1/P2 controls are built and running (branch protection, CI gate,
+uptime check, runbooks). What remains on the in-progress items is owner
+follow-through: populate the recovery vault and nominate a secondary contact
+(CA-02), keep using the PR checklist (CA-03), confirm secret scanning + push
+protection (CA-06), and prune squash-merged branches quarterly (CA-10).
 
 **Maturity trajectory:** baseline Level 2 → on completion of Wave P1+P2,
 expected Level 3 ("Defined") across Change, Access, Incident, and Monitoring.
