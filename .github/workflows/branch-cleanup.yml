@@ -1,7 +1,11 @@
 name: Stale Branch Cleanup
 
 # Runs every Monday. Also available as a manual trigger.
-# Deletes branches that are fully merged into main and older than 7 days.
+# Deletes branches that are merged into main and older than 7 days.
+# A branch counts as merged if either:
+#   - its commits are all in main (compare status identical/behind), or
+#   - a closed PR from this branch was merged at the branch's current tip
+#     (squash/rebase merges rewrite history, so ancestry alone misses them).
 # Always keeps: main, backup-*, and any protected branch.
 # Posts a cleanup report to Discord.
 
@@ -17,6 +21,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: read
 
 jobs:
   cleanup:
@@ -30,6 +35,7 @@ jobs:
       - name: Clean merged stale branches
         run: |
           NOW=$(date +%s)
+          OWNER="${REPO%%/*}"
           DELETED_LIST=""
           KEPT_LIST=""
           DELETED_COUNT=0
@@ -46,38 +52,57 @@ jobs:
               continue
             fi
 
-            # Get commit comparison: how does this branch relate to main?
+            # Tip sha + age of last commit, from one branch lookup
+            BRANCH_INFO=$(curl -s \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              "https://api.github.com/repos/${REPO}/branches/${BRANCH}")
+            TIP=$(echo "$BRANCH_INFO" | jq -r '.commit.sha // empty')
+            LAST_COMMIT_DATE=$(echo "$BRANCH_INFO" \
+              | jq -r '.commit.commit.committer.date // "1970-01-01T00:00:00Z"')
+            LAST_TS=$(date -d "$LAST_COMMIT_DATE" +%s 2>/dev/null || echo 0)
+            DAYS_OLD=$(( (NOW - LAST_TS) / 86400 ))
+
+            # Merge test 1 — ancestry: how does this branch relate to main?
             COMPARE=$(curl -s \
               -H "Authorization: Bearer $GITHUB_TOKEN" \
               "https://api.github.com/repos/${REPO}/compare/main...${BRANCH}" \
               | jq -r '.status // "error"')
 
-            # Get age of last commit on this branch
-            LAST_COMMIT_DATE=$(curl -s \
-              -H "Authorization: Bearer $GITHUB_TOKEN" \
-              "https://api.github.com/repos/${REPO}/branches/${BRANCH}" \
-              | jq -r '.commit.commit.committer.date // "1970-01-01T00:00:00Z"')
-            LAST_TS=$(date -d "$LAST_COMMIT_DATE" +%s 2>/dev/null || echo 0)
-            DAYS_OLD=$(( (NOW - LAST_TS) / 86400 ))
-
-            # Delete only if: all commits are already in main AND branch is > 7 days old
+            MERGE_KIND=""
             if [ "$COMPARE" = "identical" ] || [ "$COMPARE" = "behind" ]; then
+              MERGE_KIND="merged"
+            elif [ -n "$TIP" ]; then
+              # Merge test 2 — squash/rebase: a merged PR whose recorded head
+              # sha is exactly this branch's current tip. Commits pushed after
+              # the merge make the shas differ, so the branch is kept.
+              MERGED_PR=$(curl -s \
+                -H "Authorization: Bearer $GITHUB_TOKEN" \
+                "https://api.github.com/repos/${REPO}/pulls?head=${OWNER}:${BRANCH}&state=closed&per_page=100" \
+                | jq -r --arg tip "$TIP" \
+                  '[.[] | select(.merged_at != null and .head.sha == $tip)] | first | .number // empty')
+              if [ -n "$MERGED_PR" ]; then
+                MERGE_KIND="squash-merged in #${MERGED_PR}"
+              fi
+            fi
+
+            # Delete only if merged (either test) AND branch is > 7 days old
+            if [ -n "$MERGE_KIND" ]; then
               if [ "$DAYS_OLD" -gt 7 ]; then
                 if [ "$DRY_RUN" = "false" ]; then
                   HTTP=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE \
                     -H "Authorization: Bearer $GITHUB_TOKEN" \
                     "https://api.github.com/repos/${REPO}/git/refs/heads/${BRANCH}")
                   if [ "$HTTP" = "204" ]; then
-                    DELETED_LIST="${DELETED_LIST}~~${BRANCH}~~ (${DAYS_OLD}d, merged)\n"
+                    DELETED_LIST="${DELETED_LIST}~~${BRANCH}~~ (${DAYS_OLD}d, ${MERGE_KIND})\n"
                     DELETED_COUNT=$((DELETED_COUNT + 1))
                   else
                     KEPT_LIST="${KEPT_LIST}${BRANCH} (delete failed: HTTP ${HTTP})\n"
                   fi
                 else
-                  DELETED_LIST="${DELETED_LIST}${BRANCH} (${DAYS_OLD}d, merged — would delete)\n"
+                  DELETED_LIST="${DELETED_LIST}${BRANCH} (${DAYS_OLD}d, ${MERGE_KIND} — would delete)\n"
                 fi
               else
-                KEPT_LIST="${KEPT_LIST}${BRANCH} (${DAYS_OLD}d, merged but recent — kept)\n"
+                KEPT_LIST="${KEPT_LIST}${BRANCH} (${DAYS_OLD}d, ${MERGE_KIND} but recent — kept)\n"
               fi
             else
               KEPT_LIST="${KEPT_LIST}${BRANCH} (${DAYS_OLD}d, has unmerged commits — kept)\n"
