@@ -32,8 +32,8 @@ jobs:
       # Public anon key — the same one shipped to every browser in index.html.
       SUPABASE_URL: https://ukshxdoqgwoxobjdclpx.supabase.co
       SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrc2h4ZG9xZ3dveG9iamRjbHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3MjI2NDEsImV4cCI6MjA4MDI5ODY0MX0.UGNrsfG6goEA0PPWG4x7gxBueA7D5Oe9uWI-iCXIar0
-      ID_BEKINDHEARTED: ${{ vars.DISCORD_ID_BEKINDHEARTED || '1187443921434125390' }}
-      ID_MEGADINOLAVA: ${{ vars.DISCORD_ID_MEGADINOLAVA || '883027596834219823' }}
+      ID_BEKINDHEARTED: ${{ vars.DISCORD_ID_BEKINDHEARTED || '1340117651732824174' }}
+      ID_MEGADINOLAVA: ${{ vars.DISCORD_ID_MEGADINOLAVA || '1519426019436531786' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
