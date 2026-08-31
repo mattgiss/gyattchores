@@ -7,10 +7,10 @@ name: Card Notify
 # detected by diffing each run's id→status snapshot against the previous
 # one, kept in the Actions cache; the first run baselines silently.
 #
-# Mentions: set repository Actions variables DISCORD_ID_BEKINDHEARTED and
-# DISCORD_ID_MEGADINOLAVA (Settings → Secrets and variables → Actions →
-# Variables) to the kids' numeric Discord user IDs and the messages will
-# truly @mention them; until then their usernames appear as plain text.
+# Mentions: the kids' numeric Discord user IDs are defaulted below so the
+# messages truly @mention them; repository Actions variables
+# DISCORD_ID_BEKINDHEARTED / DISCORD_ID_MEGADINOLAVA override the defaults
+# (Settings → Secrets and variables → Actions → Variables) if they change.
 
 on:
   schedule:
@@ -32,8 +32,8 @@ jobs:
       # Public anon key — the same one shipped to every browser in index.html.
       SUPABASE_URL: https://ukshxdoqgwoxobjdclpx.supabase.co
       SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrc2h4ZG9xZ3dveG9iamRjbHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3MjI2NDEsImV4cCI6MjA4MDI5ODY0MX0.UGNrsfG6goEA0PPWG4x7gxBueA7D5Oe9uWI-iCXIar0
-      ID_BEKINDHEARTED: ${{ vars.DISCORD_ID_BEKINDHEARTED }}
-      ID_MEGADINOLAVA: ${{ vars.DISCORD_ID_MEGADINOLAVA }}
+      ID_BEKINDHEARTED: ${{ vars.DISCORD_ID_BEKINDHEARTED || '1187443921434125390' }}
+      ID_MEGADINOLAVA: ${{ vars.DISCORD_ID_MEGADINOLAVA || '883027596834219823' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
