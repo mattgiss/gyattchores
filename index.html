@@ -54,7 +54,7 @@ const hashCode = s => { let h=2166136261>>>0; for (let i=0;i<s.length;i++){ h^=s
 const ADMIN_CODE_HASH   = 1305456521;
 const STORAGE_KEY       = 'gyattchores_logs';
 const ACCENT            = '#F23861';
-const BUILD             = '2026.06.08';   // bump on every deploy — drives the build-freshness indicator
+const BUILD             = '2026.08.31';   // bump on every deploy — drives the build-freshness indicator
 const SUPABASE_URL      = 'https://ukshxdoqgwoxobjdclpx.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrc2h4ZG9xZ3dveG9iamRjbHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3MjI2NDEsImV4cCI6MjA4MDI5ODY0MX0.UGNrsfG6goEA0PPWG4x7gxBueA7D5Oe9uWI-iCXIar0';
 const supabase = window.supabase?.createClient
@@ -329,19 +329,23 @@ function SyncIndicator({ syncStatus, buildStatus }) {
 // A full day is ~25 min of work. The player picks what they want, then we
 // auto-suggest sensible short chores to fill the rest — building the habit of
 // doing a little every day so nothing piles up into a long chore.
-function ChorePicker({ player, logs, syncStatus, buildStatus, onBack, onConfirm }) {
-  const pool = pickableChores(player.id, logs);
+// In `bonus` mode (the bonus round, after the day's card is in) there's no
+// minute cap and no fill-to-25 — pick anything not already logged today and
+// every chore counts at normal points.
+function ChorePicker({ player, logs, syncStatus, buildStatus, onBack, onConfirm, bonus=false, excludeIds }) {
+  const pool = pickableChores(player.id, logs).filter(c => !(excludeIds && excludeIds.has(c.id)));
   const [picked, setPicked]       = useState([]);  // all selected ids
   const [suggested, setSuggested] = useState([]);  // subset of picked we auto-added
+  const [locking, setLocking]     = useState(false);
 
   const chosen    = pool.filter(c => picked.includes(c.id));
   const total     = chosen.reduce((s,c)=>s+c.currentMinutes, 0);
-  const remaining = DAILY_MINUTES - total;
+  const remaining = (bonus ? Infinity : DAILY_MINUTES) - total;
 
   const minUnpicked = pool.filter(c=>!picked.includes(c.id)).reduce((m,c)=>Math.min(m,c.currentMinutes), Infinity);
-  const canAddMore  = minUnpicked <= remaining;             // a chore still fits the budget
+  const canAddMore  = !bonus && minUnpicked <= remaining;   // a chore still fits the budget
   const full        = total >= DAILY_MINUTES - 5;           // 20+ min counts as a full day
-  const ready       = chosen.length >= 1 && (full || !canAddMore);
+  const ready       = chosen.length >= 1 && (bonus || full || !canAddMore);
 
   const toggle = c => {
     if (picked.includes(c.id)) {
@@ -375,10 +379,10 @@ function ChorePicker({ player, logs, syncStatus, buildStatus, onBack, onConfirm 
 
       <div className="scroll" style={{flex:1, padding:'28px 20px 0'}}>
         <div style={{fontSize:'0.65rem', color:'#888', fontFamily:'monospace', letterSpacing:'3px', marginBottom:'6px'}}>
-          build today's card
+          {bonus ? 'bonus round' : "build today's card"}
         </div>
         <div style={{fontSize:'0.82rem', color:'#111', fontFamily:'monospace', marginBottom:'2px'}}>
-          pick what you want — then fill to {DAILY_MINUTES} min
+          {bonus ? 'log extra chores — no cap, all normal points' : `pick what you want — then fill to ${DAILY_MINUTES} min`}
         </div>
 
         <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginTop:'18px', marginBottom:'5px'}}>
@@ -386,12 +390,14 @@ function ChorePicker({ player, logs, syncStatus, buildStatus, onBack, onConfirm 
             {chosen.length} picked
           </span>
           <span style={{fontSize:'0.72rem', color:ACCENT, fontFamily:'monospace', fontWeight:700}}>
-            {total} / {DAILY_MINUTES}m
+            {bonus ? `${total}m` : `${total} / ${DAILY_MINUTES}m`}
           </span>
         </div>
-        <div style={{height:'4px', background:'#eee', borderRadius:'2px', overflow:'hidden', marginBottom:'18px'}}>
-          <div style={{height:'100%', width:`${Math.min(100,(total/DAILY_MINUTES)*100)}%`, background:ACCENT, transition:'width 0.2s'}}/>
-        </div>
+        {!bonus && (
+          <div style={{height:'4px', background:'#eee', borderRadius:'2px', overflow:'hidden', marginBottom:'18px'}}>
+            <div style={{height:'100%', width:`${Math.min(100,(total/DAILY_MINUTES)*100)}%`, background:ACCENT, transition:'width 0.2s'}}/>
+          </div>
+        )}
 
         <div style={{marginBottom:'16px'}}>
           {pool.map(c => {
@@ -450,7 +456,7 @@ function ChorePicker({ player, logs, syncStatus, buildStatus, onBack, onConfirm 
             {chosen.length ? `✨ FILL TO ${DAILY_MINUTES}M` : `✨ SUGGEST A ${DAILY_MINUTES}-MIN CARD`}
           </button>
         )}
-        <button onClick={()=>{ if(ready) onConfirm(chosen); }} disabled={!ready} style={{
+        <button onClick={()=>{ if(ready && !locking){ setLocking(true); onConfirm(chosen); } }} disabled={!ready||locking} style={{
           width:'100%', padding:'17px', cursor:ready?'pointer':'default',
           background: ready ? ACCENT : 'transparent',
           border:`1px solid ${ready ? ACCENT : '#e0e0e0'}`,
@@ -458,9 +464,12 @@ function ChorePicker({ player, logs, syncStatus, buildStatus, onBack, onConfirm 
           fontSize:'0.75rem', fontWeight:800, letterSpacing:'3px',
           fontFamily:'monospace', transition:'all 0.15s',
         }}>
-          {ready
-            ? `LOCK IN ${chosen.length} CHORE${chosen.length>1?'S':''} · ${total}M`
-            : chosen.length ? `ADD MORE TO REACH ${DAILY_MINUTES}M` : `PICK OR SUGGEST CHORES`}
+          {locking ? '...'
+            : ready
+              ? bonus
+                ? `LOG ${chosen.length} BONUS CHORE${chosen.length>1?'S':''} · ${total}M`
+                : `LOCK IN ${chosen.length} CHORE${chosen.length>1?'S':''} · ${total}M`
+              : chosen.length ? `ADD MORE TO REACH ${DAILY_MINUTES}M` : bonus ? `PICK CHORES TO LOG` : `PICK OR SUGGEST CHORES`}
         </button>
       </div>
     </div>
@@ -475,6 +484,7 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus, buildS
   const mult     = momentumMult(streak);
   const [card, setCard]         = useState(() => loadCard(player.id));
   const [submitting, setSubmit] = useState(false);
+  const [bonusPicking, setBonusPicking] = useState(false);
 
   // The card the player is actively picking/checking lives in this device's
   // localStorage. If there's none here, fall back to reconstructing today's
@@ -515,6 +525,41 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus, buildS
   const nApproved = view.chores.filter(c=>choreStatus(c)==='approved').length;
   const nRejected = view.chores.filter(c=>choreStatus(c)==='rejected').length;
   const nTotal    = view.chores.length;
+
+  // Bonus-round chores: today's logs that aren't on the card. The bonus round
+  // logs chores directly (no second check-off pass — the work is already done),
+  // so the card object alone doesn't tell the whole day. On a device that
+  // reconstructed the card from logs this is empty — everything shows on the
+  // card there, which is fine: the split is cosmetic, approval flow is the same.
+  const cardIds  = new Set(view.chores.map(c=>c.id));
+  const seenB    = new Set();
+  const bonusRows = [];
+  logs.forEach(l => {
+    if (l.playerId!==player.id || new Date(l.timestamp).toDateString()!==today) return;
+    if (l.status!=='pending' && l.status!=='approved' && l.status!=='rejected') return;
+    if (cardIds.has(l.choreId) || seenB.has(l.choreId)) return;
+    seenB.add(l.choreId);
+    const base = CHORE_POOL.find(c=>c.id===l.choreId);
+    bonusRows.push(base
+      ? enrichChore(base, neglectDays(l.choreId, player.id, logs))
+      : { id:l.choreId, name:l.choreName, cat:'', pts:l.points, currentMinutes:0, escalLevel:0, neglectDays:0 });
+  });
+  const bonusMin    = bonusRows.reduce((s,c)=>s+c.currentMinutes,0);
+  // A chore can be logged once per day, card or bonus — after that its
+  // "cooldown" restarts on approval and it comes back tomorrow at base minutes.
+  const loggedToday = new Set([...cardIds, ...bonusRows.map(c=>c.id)]);
+  const bonusLeft   = CHORE_POOL.filter(c=>!loggedToday.has(c.id)).length;
+
+  if (bonusPicking) {
+    return (
+      <ChorePicker
+        player={player} logs={logs} syncStatus={syncStatus} buildStatus={buildStatus}
+        bonus excludeIds={loggedToday}
+        onBack={()=>setBonusPicking(false)}
+        onConfirm={async chores => { await onSubmitCard(chores); setBonusPicking(false); }}
+      />
+    );
+  }
 
   const toggle = i => {
     if (!card || view.submitted) return;
@@ -639,6 +684,25 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus, buildS
           ))}
         </div>
 
+        {bonusRows.length>0 && (
+          <div style={{marginBottom:'16px'}}>
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:'4px'}}>
+              <span style={{fontSize:'0.65rem', color:'#888', fontFamily:'monospace', letterSpacing:'3px'}}>
+                bonus round
+              </span>
+              <span style={{fontSize:'0.65rem', color:'#888', fontFamily:'monospace'}}>
+                {bonusRows.length} · {bonusMin}m
+              </span>
+            </div>
+            {bonusRows.map(chore => (
+              <ChoreRow key={chore.id} chore={chore}
+                checked={true}
+                status={statusByChore[chore.id] || 'pending'}
+                onToggle={()=>{}}/>
+            ))}
+          </div>
+        )}
+
         {view.chores.some(c=>c.escalLevel>0) && (
           <div style={{fontSize:'0.62rem', color:'#777', fontFamily:'monospace', letterSpacing:'1px', marginBottom:'16px'}}>
             ! = neglected &nbsp; !! = long overdue
@@ -660,22 +724,34 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus, buildS
             // Reflect what the parent has actually done, not just "submitted".
             const allApproved = nApproved===nTotal;
             const someApproved = nApproved>0 && nApproved<nTotal;
+            const bonusPts = bonusRows.filter(c=>statusByChore[c.id]==='approved').reduce((s,c)=>s+(c.pts||0),0);
             const color = nRejected>0 ? '#EF4444' : allApproved ? '#16A34A' : ACCENT;
             const label = nRejected>0
               ? `${nRejected} REJECTED · ${nApproved}/${nTotal} APPROVED`
               : allApproved
-                ? `ALL APPROVED ✓ · +${view.chores.reduce((s,c)=>s+(c.pts||0),0)} PTS`
+                ? `ALL APPROVED ✓ · +${view.chores.reduce((s,c)=>s+(c.pts||0),0)+bonusPts} PTS`
                 : someApproved
                   ? `${nApproved}/${nTotal} APPROVED · REST AWAITING`
                   : 'SUBMITTED — AWAITING APPROVAL';
             return (
-              <div style={{
-                padding:'16px', textAlign:'center',
-                border:`1px solid ${color}`,
-                fontSize:'0.72rem', color, fontFamily:'monospace', letterSpacing:'3px',
-              }}>
-                {label}
-              </div>
+              <React.Fragment>
+                <div style={{
+                  padding:'16px', textAlign:'center',
+                  border:`1px solid ${color}`,
+                  fontSize:'0.72rem', color, fontFamily:'monospace', letterSpacing:'3px',
+                }}>
+                  {label}
+                </div>
+                {bonusLeft>0 && (
+                  <button onClick={()=>setBonusPicking(true)} style={{
+                    width:'100%', padding:'15px', marginTop:'10px', cursor:'pointer',
+                    background:'transparent', border:`1px solid ${ACCENT}`, color:ACCENT,
+                    fontSize:'0.72rem', fontWeight:800, letterSpacing:'3px', fontFamily:'monospace',
+                  }}>
+                    ➕ BONUS ROUND — LOG MORE
+                  </button>
+                )}
+              </React.Fragment>
             );
           })() : (
             <button onClick={submit} disabled={!allChecked||submitting} style={{
