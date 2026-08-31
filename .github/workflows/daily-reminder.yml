@@ -18,11 +18,10 @@ jobs:
       - name: Post card reminder to Discord
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-          # Optional numeric Discord user IDs (repo Actions variables). When
-          # set, the reminder truly @mentions the kids; until then their
-          # usernames appear as plain text.
-          ID_BEKINDHEARTED: ${{ vars.DISCORD_ID_BEKINDHEARTED }}
-          ID_MEGADINOLAVA: ${{ vars.DISCORD_ID_MEGADINOLAVA }}
+          # The kids' numeric Discord user IDs (defaulted; repo Actions
+          # variables override) — these make the reminder truly @mention them.
+          ID_BEKINDHEARTED: ${{ vars.DISCORD_ID_BEKINDHEARTED || '1187443921434125390' }}
+          ID_MEGADINOLAVA: ${{ vars.DISCORD_ID_MEGADINOLAVA || '883027596834219823' }}
         run: |
           DATE=$(date -u +"%-d %b" | tr '[:upper:]' '[:lower:]')
           DOW=$(date -u +"%A" | tr '[:upper:]' '[:lower:]')
