@@ -18,14 +18,25 @@ jobs:
       - name: Post card reminder to Discord
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          # Optional numeric Discord user IDs (repo Actions variables). When
+          # set, the reminder truly @mentions the kids; until then their
+          # usernames appear as plain text.
+          ID_BEKINDHEARTED: ${{ vars.DISCORD_ID_BEKINDHEARTED }}
+          ID_MEGADINOLAVA: ${{ vars.DISCORD_ID_MEGADINOLAVA }}
         run: |
           DATE=$(date -u +"%-d %b" | tr '[:upper:]' '[:lower:]')
           DOW=$(date -u +"%A" | tr '[:upper:]' '[:lower:]')
 
+          if [ -n "$ID_BEKINDHEARTED" ]; then WHO_B="<@${ID_BEKINDHEARTED}>"; else WHO_B="@bekindhearted12_29866"; fi
+          if [ -n "$ID_MEGADINOLAVA" ];  then WHO_M="<@${ID_MEGADINOLAVA}>";  else WHO_M="@dreadeddragon_"; fi
+
           PAYLOAD=$(jq -n \
+            --arg content "${WHO_B} ${WHO_M} — today's cards are open!" \
             --arg title "cards are ready — ${DOW}, ${DATE}" \
-            --arg desc  "bekindhearted · titan\n\nyour chores for today are assigned. open the app, check them off, submit the card.\n\ngyattchores.com" \
+            --arg desc  "bekindhearted · megadinolava\n\npick your chores, fill to 25 minutes, check them off, submit. big day? the bonus round opens after your card is in — no cap.\n\ngyattchores.com" \
             '{
+              content: $content,
+              allowed_mentions: { parse: ["users"] },
               embeds: [{
                 title: $title,
                 description: $desc,
