@@ -14,6 +14,8 @@
 #   DISCORD_WEBHOOK                  — where to post
 #   ID_BEKINDHEARTED, ID_MEGADINOLAVA— optional numeric Discord user IDs;
 #                                      when set, messages truly @mention
+#   ID_DAD          — optional Discord user ID pinged when a kid submits
+#                     their chores for the day (time to review)
 #   STATE_DIR   — snapshot directory (default: state)
 #   FIXTURE_CURRENT — test hook: read rows from this file instead of Supabase
 #   DISCORD_DRYRUN  — test hook: print the payload instead of posting
@@ -69,12 +71,63 @@ mention() {
   esac
 }
 
+# ── streak / motivational stats ──────────────────────────────────────────────
+# Mirrors the app: a streak day is a Denver-local day with ≥1 approved chore,
+# counted back from today (getStreak in index.html). The UTC→Denver offset is
+# applied uniformly, so a DST boundary can shift a day's edge by an hour —
+# fine for a motivational line. Sets STREAK, YSTREAK (chain ending yesterday,
+# for "streak on the line" when today isn't approved yet), PTS_TODAY, PTS_WEEK.
+TZ_NAME="America/Denver"
+OFF=$(TZ=$TZ_NAME date +%z)
+OFF_S=$(( (${OFF:0:1}1) * (10#${OFF:1:2}*3600 + 10#${OFF:3:2}*60) ))
+TODAY_LOCAL=$(TZ=$TZ_NAME date +%Y-%m-%d)
+WEEK_AGO=$(TZ=$TZ_NAME date -d '-6 day' +%Y-%m-%d)
+
+player_stats() {  # $1 player_id
+  local DAYS
+  DAYS=$(jq -r --arg p "$1" --argjson off "$OFF_S" '
+    [ .[] | select(.player_id==$p and .status=="approved")
+      | (.created_at | sub("\\.[0-9]+";"") | sub("\\+00:00$";"Z") | (try fromdateiso8601 catch 0))
+      | . + $off | strftime("%Y-%m-%d") ] | unique | .[]' current.json)
+  STREAK=0; local i=0 D
+  while D=$(TZ=$TZ_NAME date -d "-$i day" +%Y-%m-%d) && grep -qx "$D" <<<"$DAYS"; do
+    STREAK=$((STREAK+1)); i=$((i+1))
+  done
+  YSTREAK=0; i=1
+  while D=$(TZ=$TZ_NAME date -d "-$i day" +%Y-%m-%d) && grep -qx "$D" <<<"$DAYS"; do
+    YSTREAK=$((YSTREAK+1)); i=$((i+1))
+  done
+  PTS_TODAY=$(jq -r --arg p "$1" --argjson off "$OFF_S" --arg d "$TODAY_LOCAL" '
+    [ .[] | select(.player_id==$p and .status=="approved")
+      | select(((.created_at | sub("\\.[0-9]+";"") | sub("\\+00:00$";"Z") | (try fromdateiso8601 catch 0)) + $off | strftime("%Y-%m-%d")) == $d)
+      | .points ] | add // 0' current.json)
+  PTS_WEEK=$(jq -r --arg p "$1" --argjson off "$OFF_S" --arg d "$WEEK_AGO" '
+    [ .[] | select(.player_id==$p and .status=="approved")
+      | select(((.created_at | sub("\\.[0-9]+";"") | sub("\\+00:00$";"Z") | (try fromdateiso8601 catch 0)) + $off | strftime("%Y-%m-%d")) >= $d)
+      | .points ] | add // 0' current.json)
+}
+
+stat_line() {  # uses STREAK/YSTREAK/PTS_TODAY/PTS_WEEK set by player_stats
+  local SL MULT
+  if [ "$STREAK" -gt 0 ]; then
+    MULT=$(( STREAK<10 ? STREAK : 10 ))   # app: momentum = 1 + min(streak,10)*0.1
+    SL="🔥 ${STREAK}-day streak · $(awk -v m="$MULT" 'BEGIN{printf "%.1f", 1+m*0.1}')x momentum"
+  elif [ "$YSTREAK" -gt 0 ]; then
+    SL="🔥 ${YSTREAK}-day streak on the line — today still counts!"
+  else
+    SL="💪 fresh start — day 1 begins now"
+  fi
+  echo "${SL} · ${PTS_TODAY} pts today · ${PTS_WEEK} pts this week"
+}
+
 # ── build one message per player with activity ───────────────────────────────
 CONTENT=""
 EMBEDS="[]"
 for PID in $(jq -r '[.[] | select(.prev==null or (.prev=="pending" and (.status=="approved" or .status=="rejected"))) | .player_id] | unique | .[]' annotated.json); do
   PNAME=$(jq -r --arg p "$PID" '[.[] | select(.player_id==$p)] | last | .player_name' annotated.json)
   WHO=$(mention "$PID" "$PNAME")
+  player_stats "$PID"
+  STATS=$(stat_line)
 
   N_NEW=$(jq -r --arg p "$PID" '[.[] | select(.player_id==$p and .prev==null)] | length' annotated.json)
   N_APR=$(jq -r --arg p "$PID" '[.[] | select(.player_id==$p and .prev=="pending" and .status=="approved")] | length' annotated.json)
@@ -85,7 +138,11 @@ for PID in $(jq -r '[.[] | select(.prev==null or (.prev=="pending" and (.status=
 
   LINES=""
   if [ "$N_NEW" -gt 0 ]; then
-    CONTENT="${CONTENT}🃏 ${WHO} submitted ${N_NEW} chore(s) — waiting for approval\n"
+    if [ -n "${ID_DAD:-}" ]; then
+      CONTENT="${CONTENT}🃏 ${WHO} submitted ${N_NEW} chore(s) — <@${ID_DAD}> time to review!\n"
+    else
+      CONTENT="${CONTENT}🃏 ${WHO} submitted ${N_NEW} chore(s) — waiting for approval\n"
+    fi
     LINES="${LINES}**submitted** ($((N_NEW)) · ${P_NEW} pts):\n$(jq -r --arg p "$PID" '[.[] | select(.player_id==$p and .prev==null) | "· " + .chore_name] | join("\n")' annotated.json)\n"
   fi
   if [ "$N_APR" -gt 0 ]; then
@@ -100,6 +157,7 @@ for PID in $(jq -r '[.[] | select(.prev==null or (.prev=="pending" and (.status=
   fi
 
   [ -n "$LINES" ] || continue
+  LINES="${LINES}\n${STATS}"
   EMBEDS=$(jq -c --arg name "$PNAME" --arg desc "$(printf '%b' "$LINES" | head -c 3500)" \
     '. + [{title: $name, description: $desc, color: 15874145, footer: {text:"gyattchores · card notify"}}]' <<<"$EMBEDS")
 done
