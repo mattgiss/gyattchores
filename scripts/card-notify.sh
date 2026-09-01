@@ -2,7 +2,17 @@
 # Card Notify — diff the shared Supabase chore log against the last run's
 # snapshot and post Discord updates: submissions (new logs), awards
 # (pending → approved, with a CLEARED banner when nothing is left waiting),
-# and chores sent back (pending → rejected).
+# and chores sent back (pending → rejected). Also:
+#
+#   • Approve-by-reaction: each submission message is remembered; when the
+#     approver reacts ✅ the pending chores in it are approved (❌ rejects)
+#     straight in Supabase, and the kid's app picks it up on its normal
+#     sync. Reading reactions requires DISCORD_BOT_TOKEN — a bot invited to
+#     the channel with View Channel / Read Message History / Add Reactions.
+#     Without the token everything else still works; the app stays the way
+#     to approve.
+#   • Stale-approval reminder: chores pending longer than 12 hours ping the
+#     approver, repeating at most every 12 hours until they're handled.
 #
 # The simple_logs table has no updated_at column, so approvals are detected
 # by comparing each run's id→status snapshot with the previous one (kept in
@@ -12,31 +22,134 @@
 # Env:
 #   SUPABASE_URL, SUPABASE_ANON_KEY  — the public anon key from index.html
 #   DISCORD_WEBHOOK                  — where to post
+#   DISCORD_BOT_TOKEN — optional; enables approve-by-reaction (see above)
 #   ID_BEKINDHEARTED, ID_MEGADINOLAVA— optional numeric Discord user IDs;
 #                                      when set, messages truly @mention
-#   ID_DAD          — optional Discord user ID pinged when a kid submits
-#                     their chores for the day (time to review)
-#   STATE_DIR   — snapshot directory (default: state)
-#   FIXTURE_CURRENT — test hook: read rows from this file instead of Supabase
-#   DISCORD_DRYRUN  — test hook: print the payload instead of posting
+#   ID_DAD          — Discord user ID pinged on submissions and stale
+#                     approvals; also the only user whose ✅/❌ count
+#   STATE_DIR       — snapshot directory (default: state)
+#   FIXTURE_CURRENT   — test hook: read rows from this file, don't fetch
+#   FIXTURE_REACTIONS — test hook: JSON {message_id: "approve"|"reject"}
+#   FIXTURE_PATCH_LOG — test hook: record PATCHes here instead of sending
+#   DISCORD_DRYRUN    — test hook: print payloads instead of posting
 set -euo pipefail
 
 STATE_DIR="${STATE_DIR:-state}"
 mkdir -p "$STATE_DIR"
+NOW=$(date +%s)
+
+api() { curl -sf -H "apikey: ${SUPABASE_ANON_KEY}" -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" "$@"; }
+
+# ── set chore-log rows to a new status (approve-by-reaction) ─────────────────
+set_status() {  # $1 comma-separated ids, $2 new status
+  if [ -n "${FIXTURE_PATCH_LOG:-}" ]; then
+    echo "PATCH $2: $1" >> "$FIXTURE_PATCH_LOG"
+    return 0
+  fi
+  api -X PATCH "${SUPABASE_URL}/rest/v1/simple_logs?id=in.($1)&status=eq.pending" \
+    -H "Content-Type: application/json" -H "Prefer: return=representation" \
+    -d "{\"status\":\"$2\"}" | jq -r 'length as $n | "updated \($n) row(s)"'
+}
+
+# ── reaction verdict for one tracked message ─────────────────────────────────
+reaction_verdict() {  # $1 message_id → prints approve|reject|(nothing)
+  if [ -n "${FIXTURE_REACTIONS:-}" ]; then
+    jq -r --arg m "$1" '.[$m] // empty' "$FIXTURE_REACTIONS"
+    return 0
+  fi
+  [ -n "${DISCORD_BOT_TOKEN:-}" ] && [ -n "${CHANNEL_ID:-}" ] || return 0
+  local EMOJI VERDICT
+  for EMOJI in "%E2%9C%85 approve" "%E2%9D%8C reject"; do
+    VERDICT=${EMOJI#* }
+    if curl -sf -H "Authorization: Bot ${DISCORD_BOT_TOKEN}" \
+        "https://discord.com/api/v10/channels/${CHANNEL_ID}/messages/$1/reactions/${EMOJI%% *}?limit=100" \
+      | jq -e --arg u "${ID_DAD:-}" 'map(.id) | index($u)' >/dev/null 2>&1; then
+      echo "$VERDICT"; return 0
+    fi
+  done
+}
+
+# Channel id for reaction reads/seeds — the webhook knows its own channel.
+CHANNEL_ID=""
+if [ -n "${DISCORD_BOT_TOKEN:-}" ] && [ -z "${FIXTURE_REACTIONS:-}" ] && [ -z "${DISCORD_DRYRUN:-}" ]; then
+  CHANNEL_ID=$(curl -sf "$DISCORD_WEBHOOK" | jq -r '.channel_id // empty' || true)
+fi
+
+# ── process outstanding approval messages before fetching, so a reaction
+#    turns into an award message in this same run ─────────────────────────────
+APPROVALS="$STATE_DIR/approvals.json"
+[ -f "$APPROVALS" ] || echo "[]" > "$APPROVALS"
+REMAINING="[]"
+while IFS=$'\t' read -r MID IDS TS; do
+  [ -n "$MID" ] || continue
+  if [ $(( NOW - TS )) -gt $(( 7*86400 )) ]; then continue; fi   # too old, stop tracking
+  VERDICT=$(reaction_verdict "$MID")
+  case "$VERDICT" in
+    approve) echo "reaction ✅ on $MID → approving"; set_status "$IDS" approved ;;
+    reject)  echo "reaction ❌ on $MID → rejecting"; set_status "$IDS" rejected ;;
+    *) REMAINING=$(jq -c --arg m "$MID" --arg i "$IDS" --argjson t "$TS" \
+         '. + [{message_id:$m, log_ids:$i, ts:$t}]' <<<"$REMAINING") ;;
+  esac
+done < <(jq -r '.[] | [.message_id, .log_ids, .ts] | @tsv' "$APPROVALS")
+echo "$REMAINING" > "$APPROVALS"
 
 # ── fetch the last 60 days of logs ───────────────────────────────────────────
 if [ -n "${FIXTURE_CURRENT:-}" ]; then
   cp "$FIXTURE_CURRENT" current.json
 else
   SINCE=$(date -u -d '60 days ago' +%Y-%m-%dT00:00:00Z)
-  curl -sf --retry 2 \
-    "${SUPABASE_URL}/rest/v1/simple_logs?select=id,player_id,player_name,chore_name,points,status,created_at&created_at=gte.${SINCE}&order=created_at.asc" \
-    -H "apikey: ${SUPABASE_ANON_KEY}" -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
-    -o current.json
+  api --retry 2 -o current.json \
+    "${SUPABASE_URL}/rest/v1/simple_logs?select=id,player_id,player_name,chore_name,points,status,created_at&created_at=gte.${SINCE}&order=created_at.asc"
 fi
 jq -e 'type=="array"' current.json >/dev/null   # sanity: got a row array
 
 jq 'map({key:(.id|tostring), value:.status}) | from_entries' current.json > snapshot.new
+
+# ── who to ping ──────────────────────────────────────────────────────────────
+# player_id 1 = bekindhearted, 2 = megadinolava (formerly "titan").
+mention() {
+  case "$1" in
+    1) if [ -n "${ID_BEKINDHEARTED:-}" ]; then echo "<@${ID_BEKINDHEARTED}>"; else echo "**bekindhearted** (@bekindhearted12_29866)"; fi ;;
+    2) if [ -n "${ID_MEGADINOLAVA:-}" ];  then echo "<@${ID_MEGADINOLAVA}>";  else echo "**megadinolava** (@dreadeddragon_)"; fi ;;
+    *) echo "**$2**" ;;
+  esac
+}
+
+post_payload() {  # $1 payload json → prints created message id (or nothing)
+  if [ -n "${DISCORD_DRYRUN:-}" ]; then
+    echo "--- payload ---" >&2; jq . <<<"$1" >&2
+    echo "dryrun-mid"
+    return 0
+  fi
+  local RESP HTTP
+  RESP=$(curl -s -w '\n%{http_code}' -X POST "${DISCORD_WEBHOOK}?wait=true" \
+    -H "Content-Type: application/json" -d "$1")
+  HTTP=${RESP##*$'\n'}
+  echo "Discord HTTP: $HTTP" >&2
+  case "$HTTP" in
+    200) jq -r '.id // empty' <<<"${RESP%$'\n'*}" ;;
+    204) ;;  # no body (shouldn't happen with wait=true)
+    *) echo "::error::discord post failed (HTTP $HTTP)" >&2; return 1 ;;
+  esac
+}
+
+# ── stale-approval reminder: pending > 12h pings the approver ────────────────
+STALE_TS_FILE="$STATE_DIR/stale_ts"
+CUTOFF=$(date -u -d '12 hours ago' +%Y-%m-%dT%H:%M:%SZ)
+STALE=$(jq --arg c "$CUTOFF" '[.[] | select(.status=="pending" and .created_at < $c)]' current.json)
+STALE_N=$(jq 'length' <<<"$STALE")
+LAST_STALE=$(cat "$STALE_TS_FILE" 2>/dev/null || echo 0)
+if [ "$STALE_N" -gt 0 ] && [ $(( NOW - LAST_STALE )) -ge $(( 12*3600 )) ]; then
+  WHO_DAD=$([ -n "${ID_DAD:-}" ] && echo "<@${ID_DAD}>" || echo "hey dad")
+  SUMMARY=$(jq -r 'group_by(.player_name) | map("\(.[0].player_name): \(length)") | join(" · ")' <<<"$STALE")
+  DETAIL=$(jq -r 'group_by(.player_name) | map("**\(.[0].player_name)**\n" + (map("· \(.chore_name)") | join("\n"))) | join("\n\n")' <<<"$STALE")
+  PAYLOAD=$(jq -n --arg content "⏰ ${WHO_DAD} — ${STALE_N} chore(s) waiting more than 12h (${SUMMARY}). the kids are waiting!" \
+    --arg desc "$(head -c 3500 <<<"$DETAIL")" \
+    '{content:$content, embeds:[{title:"waiting for approval", description:$desc, color:16098851, footer:{text:"gyattchores · card notify"}}], allowed_mentions:{parse:["users"]}}')
+  post_payload "$PAYLOAD" >/dev/null
+  echo "$NOW" > "$STALE_TS_FILE"
+  echo "stale reminder sent ($STALE_N pending > 12h)"
+fi
 
 # ── first run: baseline silently ─────────────────────────────────────────────
 if [ ! -f "$STATE_DIR/snapshot.json" ]; then
@@ -60,16 +173,6 @@ if [ "$NEW_N" = 0 ] && [ "$APR_N" = 0 ] && [ "$REJ_N" = 0 ]; then
   echo "nothing to report"
   exit 0
 fi
-
-# ── who to ping ──────────────────────────────────────────────────────────────
-# player_id 1 = bekindhearted, 2 = megadinolava (formerly "titan").
-mention() {
-  case "$1" in
-    1) if [ -n "${ID_BEKINDHEARTED:-}" ]; then echo "<@${ID_BEKINDHEARTED}>"; else echo "**bekindhearted** (@bekindhearted12_29866)"; fi ;;
-    2) if [ -n "${ID_MEGADINOLAVA:-}" ];  then echo "<@${ID_MEGADINOLAVA}>";  else echo "**megadinolava** (@dreadeddragon_)"; fi ;;
-    *) echo "**$2**" ;;
-  esac
-}
 
 # ── streak / motivational stats ──────────────────────────────────────────────
 # Mirrors the app: a streak day is a Denver-local day with ≥1 approved chore,
@@ -162,15 +265,29 @@ for PID in $(jq -r '[.[] | select(.prev==null or (.prev=="pending" and (.status=
     '. + [{title: $name, description: $desc, color: 15874145, footer: {text:"gyattchores · card notify"}}]' <<<"$EMBEDS")
 done
 
-PAYLOAD=$(jq -n --arg content "$(printf '%b' "$CONTENT" | head -c 1900)" --argjson embeds "$EMBEDS" \
-  '{content: $content, embeds: $embeds, allowed_mentions: {parse: ["users"]}}')
-
-if [ -n "${DISCORD_DRYRUN:-}" ]; then
-  echo "--- payload ---"; jq . <<<"$PAYLOAD"
-  exit 0
+NEW_PENDING_IDS=$(jq -r '[.[] | select(.prev==null and .status=="pending") | .id | tostring] | join(",")' annotated.json)
+CAN_REACT=$([ -n "${DISCORD_BOT_TOKEN:-}${FIXTURE_REACTIONS:-}" ] && echo yes || echo "")
+FOOT=""
+if [ -n "$NEW_PENDING_IDS" ] && [ -n "$CAN_REACT" ]; then
+  FOOT="\nreact ✅ to approve all · ❌ to send back"
 fi
 
-HTTP=$(curl -s -o /tmp/resp.txt -w "%{http_code}" -X POST "$DISCORD_WEBHOOK" \
-  -H "Content-Type: application/json" -d "$PAYLOAD")
-echo "Discord HTTP: $HTTP"; cat /tmp/resp.txt 2>/dev/null || true
-[ "$HTTP" = "204" ] || { echo "::error::card notify failed (HTTP $HTTP)"; exit 1; }
+PAYLOAD=$(jq -n --arg content "$(printf '%b' "${CONTENT}${FOOT}" | head -c 1900)" --argjson embeds "$EMBEDS" \
+  '{content: $content, embeds: $embeds, allowed_mentions: {parse: ["users"]}}')
+
+MID=$(post_payload "$PAYLOAD")
+
+# ── remember submission messages so a ✅/❌ reaction can settle them ──────────
+if [ -n "$MID" ] && [ -n "$NEW_PENDING_IDS" ] && [ -n "$CAN_REACT" ]; then
+  jq -c --arg m "$MID" --arg i "$NEW_PENDING_IDS" --argjson t "$NOW" \
+    '. + [{message_id:$m, log_ids:$i, ts:$t}]' "$APPROVALS" > "$APPROVALS.tmp" && mv "$APPROVALS.tmp" "$APPROVALS"
+  echo "tracking $MID for approval reactions (${NEW_PENDING_IDS})"
+  # Seed the two reactions so approving is one tap.
+  if [ -n "${DISCORD_BOT_TOKEN:-}" ] && [ -n "${CHANNEL_ID:-}" ]; then
+    for E in %E2%9C%85 %E2%9D%8C; do
+      curl -sf -X PUT -H "Authorization: Bot ${DISCORD_BOT_TOKEN}" \
+        "https://discord.com/api/v10/channels/${CHANNEL_ID}/messages/${MID}/reactions/${E}/@me" \
+        -o /dev/null || echo "::warning::could not seed reaction ${E} (check bot permissions)"
+    done
+  fi
+fi
