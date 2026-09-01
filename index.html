@@ -54,7 +54,7 @@ const hashCode = s => { let h=2166136261>>>0; for (let i=0;i<s.length;i++){ h^=s
 const ADMIN_CODE_HASH   = 1305456521;
 const STORAGE_KEY       = 'gyattchores_logs';
 const ACCENT            = '#F23861';
-const BUILD             = '2026.08.31.1'; // bump on every deploy — drives the build-freshness indicator
+const BUILD             = '2026.08.31.2'; // bump on every deploy — drives the build-freshness indicator
 const SUPABASE_URL      = 'https://ukshxdoqgwoxobjdclpx.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrc2h4ZG9xZ3dveG9iamRjbHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3MjI2NDEsImV4cCI6MjA4MDI5ODY0MX0.UGNrsfG6goEA0PPWG4x7gxBueA7D5Oe9uWI-iCXIar0';
 const supabase = window.supabase?.createClient
@@ -1013,7 +1013,9 @@ function AdminModal({ logs, onClose, onUpdate }) {
 // ─── APP ─────────────────────────────────────────────────────────────────────
 function App() {
   const [player,    setPlayer]  = useState(null);
-  const [showAdmin, setAdmin]   = useState(false);
+  // #admin deep-links straight to the approval panel (the Discord messages
+  // link here). It only skips the 5-tap gesture — the admin code still gates.
+  const [showAdmin, setAdmin]   = useState(() => window.location.hash === '#admin');
   const [logs,      setLogs]    = useState(loadLogs);
   const [syncStatus,setSyncSt]  = useState(supabase?'idle':'offline');
   const [buildStatus,setBuild]  = useState('unknown');   // 'latest' | 'stale' | 'unknown'
@@ -1124,9 +1126,21 @@ function App() {
     saveLogs(work); setLogs(work.slice()); sync();
   }, [sync]);
 
+  // Tapping the approval link while the app is already open lands here as a
+  // hash change on the existing tab — open the panel then too.
+  useEffect(() => {
+    const onHash = () => { if (window.location.hash === '#admin') setAdmin(true); };
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+  const closeAdmin = () => {
+    setAdmin(false);
+    if (window.location.hash === '#admin') history.replaceState(null, '', window.location.pathname);
+  };
+
   return (
     <div style={{height:'100%'}}>
-      {showAdmin && <AdminModal logs={logs} onClose={()=>setAdmin(false)} onUpdate={updateLog}/>}
+      {showAdmin && <AdminModal logs={logs} onClose={closeAdmin} onUpdate={updateLog}/>}
       {!showAdmin && !player && <PlayerSelect onSelect={setPlayer} onAdmin={()=>setAdmin(true)} logs={logs}/>}
       {!showAdmin && player && (
         <PlayerCardView
