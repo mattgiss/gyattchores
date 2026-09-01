@@ -143,7 +143,7 @@ if [ "$STALE_N" -gt 0 ] && [ $(( NOW - LAST_STALE )) -ge $(( 12*3600 )) ]; then
   WHO_DAD=$([ -n "${ID_DAD:-}" ] && echo "<@${ID_DAD}>" || echo "hey dad")
   SUMMARY=$(jq -r 'group_by(.player_name) | map("\(.[0].player_name): \(length)") | join(" · ")' <<<"$STALE")
   DETAIL=$(jq -r 'group_by(.player_name) | map("**\(.[0].player_name)**\n" + (map("· \(.chore_name)") | join("\n"))) | join("\n\n")' <<<"$STALE")
-  PAYLOAD=$(jq -n --arg content "⏰ ${WHO_DAD} — ${STALE_N} chore(s) waiting more than 12h (${SUMMARY}). the kids are waiting!" \
+  PAYLOAD=$(jq -n --arg content "⏰ ${WHO_DAD} — ${STALE_N} chore(s) waiting more than 12h (${SUMMARY}). the kids are waiting! → <https://gyattchores.com/#admin>" \
     --arg desc "$(head -c 3500 <<<"$DETAIL")" \
     '{content:$content, embeds:[{title:"waiting for approval", description:$desc, color:16098851, footer:{text:"gyattchores · card notify"}}], allowed_mentions:{parse:["users"]}}')
   post_payload "$PAYLOAD" >/dev/null
@@ -242,7 +242,7 @@ for PID in $(jq -r '[.[] | select(.prev==null or (.prev=="pending" and (.status=
   LINES=""
   if [ "$N_NEW" -gt 0 ]; then
     if [ -n "${ID_DAD:-}" ]; then
-      CONTENT="${CONTENT}🃏 ${WHO} submitted ${N_NEW} chore(s) — <@${ID_DAD}> time to review!\n"
+      CONTENT="${CONTENT}🃏 ${WHO} submitted ${N_NEW} chore(s) — <@${ID_DAD}> time to review → <https://gyattchores.com/#admin>\n"
     else
       CONTENT="${CONTENT}🃏 ${WHO} submitted ${N_NEW} chore(s) — waiting for approval\n"
     fi
