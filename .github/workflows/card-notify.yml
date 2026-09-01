@@ -3,9 +3,14 @@ name: Card Notify
 # Polls the shared Supabase chore log every 10 minutes and posts Discord
 # updates via scripts/card-notify.sh: submissions (new logs), awards
 # (pending → approved, with a CLEARED banner when nothing is left waiting),
-# and chores sent back. The table has no updated_at column, so approvals are
-# detected by diffing each run's id→status snapshot against the previous
-# one, kept in the Actions cache; the first run baselines silently.
+# chores sent back, and a stale-approval reminder when chores sit pending
+# more than 12 hours (repeated at most every 12 hours). With the
+# DISCORD_BOT_TOKEN secret set, submission messages also support
+# approve-by-reaction: dad reacting ✅ approves those chores (❌ rejects)
+# directly in Supabase, and the app picks it up on its normal sync.
+# The table has no updated_at column, so approvals are detected by diffing
+# each run's id→status snapshot against the previous one, kept in the
+# Actions cache; the first run baselines silently.
 #
 # Mentions: the kids' numeric Discord user IDs are defaulted below so the
 # messages truly @mention them; repository Actions variables
@@ -29,6 +34,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+      # Optional: a bot token unlocks approve-by-reaction (✅/❌ on submission
+      # messages). Create a bot at discord.com/developers/applications, invite
+      # it to the server with View Channel + Read Message History + Add
+      # Reactions, and store its token as the DISCORD_BOT_TOKEN secret.
+      DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
       # Public anon key — the same one shipped to every browser in index.html.
       SUPABASE_URL: https://ukshxdoqgwoxobjdclpx.supabase.co
       SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrc2h4ZG9xZ3dveG9iamRjbHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3MjI2NDEsImV4cCI6MjA4MDI5ODY0MX0.UGNrsfG6goEA0PPWG4x7gxBueA7D5Oe9uWI-iCXIar0
