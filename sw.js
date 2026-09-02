@@ -1,7 +1,7 @@
 // GyattChores Service Worker
 // Caches the app shell for reliable offline use and fast repeat loads.
 
-const CACHE = 'gyattchores-v2';
+const CACHE = 'gyattchores-v3';
 
 // Local app shell — these must cache for the app to load offline, so a failure
 // here should fail the install (and the worker retries on the next load).
@@ -39,7 +39,7 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-// Cache-first for shell assets; network-first for Supabase API calls.
+// Network-first for the app shell and Supabase; cache-first for static assets.
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
 
@@ -49,7 +49,26 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // Cache-first for everything else (app shell, CDN assets).
+  // Network-first for the page itself (navigations, index.html): this worker
+  // file rarely changes between deploys, so a cache-first shell would keep
+  // installed clients on an old build indefinitely. Fresh copy when online,
+  // cached copy as the offline fallback. Cache-busted probes (?cb=) are the
+  // build-freshness check — don't let them pile up in the cache.
+  const isShell = e.request.mode === 'navigate' || url.pathname === '/' || url.pathname === '/index.html';
+  if (isShell && url.origin === self.location.origin) {
+    e.respondWith(
+      fetch(e.request).then((response) => {
+        if (response.ok && !url.search) {
+          const clone = response.clone();
+          caches.open(CACHE).then((c) => c.put(e.request, clone));
+        }
+        return response;
+      }).catch(() => caches.match(e.request).then((c) => c || caches.match('/index.html')))
+    );
+    return;
+  }
+
+  // Cache-first for everything else (icons, manifest, CDN assets).
   e.respondWith(
     caches.match(e.request).then((cached) => {
       if (cached) return cached;

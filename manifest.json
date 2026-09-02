@@ -1,7 +1,7 @@
 {
   "name": "GyattChores",
   "short_name": "GyattChores",
-  "description": "Gamified family chore tracker. Kids tap to log chores, parents approve, points roll into a weekly competition.",
+  "description": "Gamified family chore tracker. Kids build a 25-minute daily card, parents approve, XP and streaks climb.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -36,7 +36,7 @@
       "sizes": "390x844",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Chore grid with player points"
+      "label": "Player select with the 30-day completion log"
     }
   ],
   "prefer_related_applications": false

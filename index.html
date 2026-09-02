@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -54,7 +54,7 @@ const hashCode = s => { let h=2166136261>>>0; for (let i=0;i<s.length;i++){ h^=s
 const ADMIN_CODE_HASH   = 1305456521;
 const STORAGE_KEY       = 'gyattchores_logs';
 const ACCENT            = '#F23861';
-const BUILD             = '2026.08.31.2'; // bump on every deploy — drives the build-freshness indicator
+const BUILD             = '2026.08.31.3'; // bump on every deploy — drives the build-freshness indicator
 const SUPABASE_URL      = 'https://ukshxdoqgwoxobjdclpx.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrc2h4ZG9xZ3dveG9iamRjbHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3MjI2NDEsImV4cCI6MjA4MDI5ODY0MX0.UGNrsfG6goEA0PPWG4x7gxBueA7D5Oe9uWI-iCXIar0';
 const supabase = window.supabase?.createClient
@@ -214,11 +214,24 @@ const xpToNext = lvl => 60 + (lvl - 1) * 20;
 // Lifetime XP. Approved chores are bucketed by day and each day's points are
 // scaled by that day's running streak multiplier, so consecutive days bank XP
 // faster. XP only ever grows; breaking a streak just resets the multiplier.
-const getXP = (playerId, logs) => {
-  const byDay = {};
+// Approved logs for a player, collapsed to one per chore per local day. The
+// game only allows a chore once per day, so any extra rows are sync
+// duplicates — they must not double-bank XP or minutes.
+const approvedOncePerDay = (playerId, logs) => {
+  const seen = new Set(), out = [];
   logs.filter(l => l.playerId===playerId && l.status==='approved').forEach(l => {
     const d = new Date(l.timestamp); d.setHours(0,0,0,0);
-    byDay[d.getTime()] = (byDay[d.getTime()] || 0) + l.points;
+    const key = `${d.getTime()}|${l.choreId}`;
+    if (seen.has(key)) return;
+    seen.add(key); out.push({ day:d.getTime(), log:l });
+  });
+  return out;
+};
+
+const getXP = (playerId, logs) => {
+  const byDay = {};
+  approvedOncePerDay(playerId, logs).forEach(({day, log}) => {
+    byDay[day] = (byDay[day] || 0) + log.points;
   });
   const days = Object.keys(byDay).map(Number).sort((a,b)=>a-b);
   let xp=0, run=0, prev=null;
@@ -272,9 +285,8 @@ const choreMinutes = log => {
 // everywhere else in the app — streaks, XP — so the log follows the same rule.
 const minutesByDay = (playerId, logs) => {
   const byDay = {};
-  logs.filter(l => l.playerId===playerId && l.status==='approved').forEach(l => {
-    const d = new Date(l.timestamp); d.setHours(0,0,0,0);
-    byDay[d.getTime()] = (byDay[d.getTime()] || 0) + choreMinutes(l);
+  approvedOncePerDay(playerId, logs).forEach(({day, log}) => {
+    byDay[day] = (byDay[day] || 0) + choreMinutes(log);
   });
   return byDay;
 };
@@ -939,6 +951,8 @@ function AdminModal({ logs, onClose, onUpdate }) {
   const [code, setCode]   = useState('');
   const [authed, setAuth] = useState(false);
   const [filter, setFilt] = useState('pending');
+  const [armed, setArmed] = useState(false);   // approve-all needs a second tap
+  const pendingAll = logs.filter(l=>l.status==='pending');
 
   const verify = () => { if (hashCode(code)===ADMIN_CODE_HASH) setAuth(true); };
   const shown  = logs.filter(l=>filter==='all'||l.status===filter).slice(0,60);
@@ -974,6 +988,22 @@ function AdminModal({ logs, onClose, onUpdate }) {
           }}>{f}</button>
         ))}
       </div>
+
+      {filter==='pending' && pendingAll.length>1 && (
+        <div style={{padding:'12px 20px 0',flexShrink:0}}>
+          <button
+            onClick={()=>{
+              if (!armed) { setArmed(true); setTimeout(()=>setArmed(false), 4000); return; }
+              pendingAll.forEach(l=>onUpdate(l.id,'approved')); setArmed(false);
+            }}
+            style={{width:'100%',padding:'11px',cursor:'pointer',
+              background: armed ? '#22C55E' : 'transparent', border:'1px solid #22C55E',
+              color: armed ? '#fff' : '#22C55E',
+              fontSize:'0.7rem',fontWeight:800,letterSpacing:'2px',fontFamily:'monospace'}}>
+            {armed ? `TAP AGAIN TO APPROVE ALL ${pendingAll.length}` : `✓ APPROVE ALL (${pendingAll.length})`}
+          </button>
+        </div>
+      )}
 
       <div className="scroll" style={{flex:1,padding:'16px 20px'}}>
         {shown.length===0 && (
@@ -1020,8 +1050,17 @@ function App() {
   const [syncStatus,setSyncSt]  = useState(supabase?'idle':'offline');
   const [buildStatus,setBuild]  = useState('unknown');   // 'latest' | 'stale' | 'unknown'
 
+  // One sync at a time. The 5s poll, visibility/online events, and a fresh
+  // submission can all fire while a sync is mid-insert; a second pass would
+  // re-read localStorage, still see the rows without a remoteId, and insert
+  // them again — that is how duplicate chores reached the server. Overlapping
+  // requests are coalesced into a single follow-up run instead.
+  const syncing   = useRef(false);
+  const syncAgain = useRef(false);
   const sync = useCallback(async () => {
     if (!supabase) { setSyncSt('offline'); return; }
+    if (syncing.current) { syncAgain.current = true; return; }
+    syncing.current = true;
     setSyncSt('syncing');
     let work = loadLogs();
     try {
@@ -1073,6 +1112,9 @@ function App() {
       saveLogs(work); setLogs(work.slice()); setSyncSt('synced');
     } catch(e) {
       console.warn('sync deferred:', e?.message||e); setSyncSt('offline');
+    } finally {
+      syncing.current = false;
+      if (syncAgain.current) { syncAgain.current = false; sync(); }
     }
   }, []);
 
