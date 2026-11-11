@@ -24,7 +24,7 @@ object SyncConfig {
 class HttpStatusException(val code: Int, body: String) : IOException("HTTP $code: ${body.take(200)}")
 
 /** Minimal PostgREST client over HttpURLConnection. */
-class Supabase(private val baseUrl: String = SyncConfig.URL, private val key: String = SyncConfig.ANON_KEY) : LogApi, PicksApi {
+class Supabase(private val baseUrl: String = SyncConfig.URL, private val key: String = SyncConfig.ANON_KEY) : LogApi, StateApi {
     private val json = Json { ignoreUnknownKeys = true; explicitNulls = false }
 
     @Serializable
@@ -45,10 +45,9 @@ class Supabase(private val baseUrl: String = SyncConfig.URL, private val key: St
     @Serializable private data class StatusPatch(val status: String)
 
     @Serializable
-    private data class PickRow(
-        @SerialName("player_id") val playerId: String,
-        val day: String,
-        @SerialName("chore_ids") val choreIds: List<String>,
+    private data class StateRow(
+        val key: String,
+        val items: List<String>,
         @SerialName("updated_at") val updatedAt: String,
     )
 
@@ -73,14 +72,14 @@ class Supabase(private val baseUrl: String = SyncConfig.URL, private val key: St
         }
     }
 
-    override fun upsertPick(pick: RemotePick) {
-        val body = json.encodeToString(listOf(PickRow(pick.playerId, pick.day, pick.choreIds, Instant.ofEpochMilli(pick.updatedAt).toString())))
-        call("POST", "parent_picks?on_conflict=player_id,day", body, prefer = "resolution=merge-duplicates,return=minimal")
+    override fun upsert(entry: RemoteEntry) {
+        val body = json.encodeToString(listOf(StateRow(entry.key, entry.items, Instant.ofEpochMilli(entry.updatedAt).toString())))
+        call("POST", "family_state?on_conflict=key", body, prefer = "resolution=merge-duplicates,return=minimal")
     }
 
-    override fun selectPicks(fromDay: String): List<RemotePick> =
-        json.decodeFromString<List<PickRow>>(call("GET", "parent_picks?select=*&day=gte.${enc(fromDay)}", null))
-            .map { RemotePick(it.playerId, it.day, it.choreIds, parseTime(it.updatedAt)) }
+    override fun selectState(): List<RemoteEntry> =
+        json.decodeFromString<List<StateRow>>(call("GET", "family_state?select=*", null))
+            .map { RemoteEntry(it.key, it.items, parseTime(it.updatedAt)) }
 
     private fun call(method: String, path: String, body: String?, prefer: String = "return=representation"): String {
         val c = URL("$baseUrl/rest/v1/$path").openConnection() as HttpURLConnection

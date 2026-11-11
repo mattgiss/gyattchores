@@ -33,6 +33,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.window.layout.FoldingFeature
 import androidx.window.layout.WindowInfoTracker
 import com.gyattchores.app.ui.AdminScreen
+import com.gyattchores.app.ui.DaresScreen
 import com.gyattchores.app.ui.GyattTheme
 import com.gyattchores.app.ui.Hinge
 import com.gyattchores.app.ui.HomeScreen
@@ -69,9 +70,12 @@ class MainActivity : FragmentActivity() {
                 val players by vm.store.players.collectAsState()
                 val cards by vm.store.cards.collectAsState()
                 val syncStatus by vm.syncStatus.collectAsState()
+                val shared by vm.store.state.collectAsState()
+                val me by vm.store.me.collectAsState()
                 // Saved state, so fold/unfold and process death land on the same screen.
                 var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
                 var adminOpen by rememberSaveable { mutableStateOf(false) }
+                var daresOpen by rememberSaveable { mutableStateOf(false) }
                 val selected = players.firstOrNull { it.id == selectedId }
 
                 // The Z Fold 7's inner screen is ~750dp wide, which is "Medium", so two panes start there.
@@ -83,15 +87,17 @@ class MainActivity : FragmentActivity() {
                 // Book posture or a flat inner screen: split the panes at the vertical hinge.
                 val hingeX = if (f != null && f.orientation == FoldingFeature.Orientation.VERTICAL) f.bounds.left else null
 
-                BackHandler(enabled = adminOpen || selected != null) {
-                    if (adminOpen) adminOpen = false else selectedId = null
+                val myId = me
+                val showDares = daresOpen && myId != null
+                BackHandler(enabled = adminOpen || showDares || selected != null) {
+                    if (adminOpen) adminOpen = false else if (showDares) daresOpen = false else selectedId = null
                 }
 
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    val now = vm.now()
                     val home = @androidx.compose.runtime.Composable { m: Modifier ->
-                        HomeScreen(players, logs, vm.store.poolById, now, vm.zone, selectedId.takeIf { twoPane && !adminOpen }, syncStatus,
-                            onPick = { adminOpen = false; selectedId = it.id }, onAdmin = { adminOpen = true }, modifier = m)
+                        HomeScreen(vm, players, logs, shared, me, selectedId.takeIf { twoPane && !adminOpen && !showDares }, syncStatus,
+                            onPick = { adminOpen = false; daresOpen = false; selectedId = it.id }, onAdmin = { daresOpen = false; adminOpen = true },
+                            onDares = { adminOpen = false; daresOpen = true }, modifier = m)
                     }
                     if (twoPane) {
                         Row(Modifier.fillMaxSize().safeDrawingPadding()) {
@@ -101,6 +107,7 @@ class MainActivity : FragmentActivity() {
                             Box(Modifier.weight(1f).fillMaxHeight()) {
                                 when {
                                     adminOpen -> AdminScreen(vm, logs, players, onBack = { adminOpen = false })
+                                    showDares -> DaresScreen(vm, players, logs, shared, myId!!, onBack = { daresOpen = false })
                                     selected != null -> PlayerScreen(vm, selected, logs, cards, hinge, onBack = null)
                                     else -> Text("> pick a player", color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.align(Alignment.Center).width(200.dp))
@@ -111,6 +118,7 @@ class MainActivity : FragmentActivity() {
                         Box(Modifier.fillMaxSize().safeDrawingPadding()) {
                             when {
                                 adminOpen -> AdminScreen(vm, logs, players, onBack = { adminOpen = false })
+                                showDares -> DaresScreen(vm, players, logs, shared, myId!!, onBack = { daresOpen = false })
                                 selected != null -> PlayerScreen(vm, selected, logs, cards, hinge, onBack = { selectedId = null })
                                 else -> home(Modifier)
                             }

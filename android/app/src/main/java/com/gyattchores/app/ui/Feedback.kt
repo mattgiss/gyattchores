@@ -53,15 +53,21 @@ class Feedback(context: Context) {
 
     fun lockIn() { buzz(VibrationEffect.EFFECT_HEAVY_CLICK); play("lock") { synth(N(60, 70, wave = 1f), N(67, 70, wave = 1f), N(72, 160, wave = 1f)) } }
 
-    /** Card submitted. [matched] adds a sparkle for hitting a parent's hidden pick. */
-    fun submit(matched: Boolean) {
-        if (matched) {
-            pattern(longArrayOf(0, 25, 45, 25, 45, 40, 90, 20, 40, 20, 40, 120), intArrayOf(0, 90, 0, 130, 0, 180, 0, 120, 0, 180, 0, 255))
-            play("submit+") { synth(N(72, 80), N(76, 80), N(79, 80), N(84, 200), N(0, 60), N(88, 45), N(91, 45), N(95, 45), N(100, 220, gain = 0.8f)) }
-        } else {
-            pattern(longArrayOf(0, 25, 45, 25, 45, 80), intArrayOf(0, 90, 0, 130, 0, 200))
-            play("submit") { synth(N(72, 80), N(76, 80), N(79, 80), N(84, 240)) }
-        }
+    fun submit() {
+        pattern(longArrayOf(0, 25, 45, 25, 45, 80), intArrayOf(0, 90, 0, 130, 0, 200))
+        play("submit") { synth(N(72, 80), N(76, 80), N(79, 80), N(84, 240)) }
+    }
+
+    /** A dare placed: a sly little two-step. */
+    fun dare() {
+        pattern(longArrayOf(0, 20, 60, 30), intArrayOf(0, 120, 0, 200))
+        play("dare") { synth(N(70, 60, wave = 0.6f), N(0, 30), N(77, 50, wave = 0.6f), N(82, 140, wave = 0.6f)) }
+    }
+
+    /** Yesterday's dares landed: sparkle. */
+    fun dareLanded() {
+        pattern(longArrayOf(0, 20, 40, 20, 40, 120), intArrayOf(0, 120, 0, 180, 0, 255))
+        play("landed") { synth(N(88, 45), N(91, 45), N(95, 45), N(100, 220, gain = 0.8f)) }
     }
 
     /** Parent approved a chore: a coin-like two-note chime. */

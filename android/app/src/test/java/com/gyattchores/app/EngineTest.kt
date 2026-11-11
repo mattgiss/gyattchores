@@ -3,6 +3,7 @@ package com.gyattchores.app
 import com.gyattchores.app.engine.Engine
 import com.gyattchores.app.model.Chore
 import com.gyattchores.app.model.ChoreLog
+import com.gyattchores.app.model.Dare
 import com.gyattchores.app.model.Status
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.int
@@ -84,10 +85,41 @@ class EngineTest {
         assertEquals(8, Engine.xp("1", logs, zone))
     }
 
-    @Test fun parentPickDoublesPoints() {
-        val toilet = poolMap.getValue("scrub-toilet")
-        assertEquals(20, Engine.pointsFor(toilet, parentPicked = false))
-        assertEquals(40, Engine.pointsFor(toilet, parentPicked = true))
+    @Test fun daresScoreForGuesserAndDoerAfterMidnight() {
+        val d10 = LocalDate.of(2026, 11, 10)
+        val noon = d10.atTime(12, 0).atZone(zone).toInstant().toEpochMilli()
+        val logs = listOf(log("scrub-toilet", noon, player = "2"), log("make-bed", noon, Status.PENDING, player = "2"))
+        val dares = listOf(
+            Dare("1", "2", "scrub-toilet", "2026-11-10"), // lands
+            Dare("3", "2", "scrub-toilet", "2026-11-10"), // lands (second guesser)
+            Dare("1", "2", "make-bed", "2026-11-10"),     // not approved, so it doesn't land
+        )
+        // Same day: hidden and unscored.
+        assertEquals(0, Engine.dareXp("1", dares, logs, d10, zone))
+        // Next day: guessers get 10 each, the doer gets 5 per person who dared it.
+        val d11 = d10.plusDays(1)
+        assertEquals(10, Engine.dareXp("1", dares, logs, d11, zone))
+        assertEquals(10, Engine.dareXp("3", dares, logs, d11, zone))
+        assertEquals(10, Engine.dareXp("2", dares, logs, d11, zone))
+    }
+
+    @Test fun dareRules() {
+        val three = List(3) { Dare("1", "2", "c$it", "2026-11-10") }
+        assertEquals(null, Engine.dareBlocked("1", "2", emptyList(), targetSubmitted = false))
+        assertTrue(Engine.dareBlocked("1", "1", emptyList(), false)!!.contains("yourself"))
+        assertTrue(Engine.dareBlocked("1", "2", emptyList(), true)!!.contains("locked"))
+        assertTrue(Engine.dareBlocked("1", "2", three, false)!!.contains("3"))
+    }
+
+    @Test fun weekPointsCountsChoresSinceMondayAndSettledDares() {
+        val tue = LocalDate.of(2026, 11, 10) // a Tuesday
+        assertEquals(LocalDate.of(2026, 11, 9), Engine.weekStart(tue))
+        fun noon(d: LocalDate) = d.atTime(12, 0).atZone(zone).toInstant().toEpochMilli()
+        val logs = listOf(log("make-bed", noon(tue.minusDays(2))), log("make-bed", noon(tue.minusDays(1))), log("scrub-toilet", noon(tue)))
+        val dares = listOf(Dare("2", "1", "make-bed", "2026-11-09"), Dare("2", "1", "scrub-toilet", "2026-11-10"))
+        // Sunday's chore is last week. Monday 8 + Tuesday 20 + doer bonus for Monday's settled dare 5.
+        assertEquals(33, Engine.weekPoints("1", logs, dares, tue, zone))
+        assertEquals(10, Engine.weekPoints("2", logs, dares, tue, zone))
     }
 
     @Test fun adminHash() {

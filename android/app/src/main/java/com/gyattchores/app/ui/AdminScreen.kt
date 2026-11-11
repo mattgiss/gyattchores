@@ -43,7 +43,6 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import com.gyattchores.app.AppViewModel
 import com.gyattchores.app.model.ChoreLog
-import com.gyattchores.app.model.EnrichedChore
 import com.gyattchores.app.model.Player
 import com.gyattchores.app.model.Status
 import java.time.Instant
@@ -111,8 +110,7 @@ private fun AdminContent(vm: AppViewModel, logs: List<ChoreLog>, players: List<P
     val fmt = remember { DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT).withZone(vm.zone) }
     var editing by remember { mutableStateOf<Player?>(null) }
     var adding by remember { mutableStateOf(false) }
-    var pickingFor by remember { mutableStateOf<Player?>(null) }
-    val picks by vm.store.pickEntries.collectAsState()
+    val me by vm.store.me.collectAsState()
 
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
         item {
@@ -125,7 +123,7 @@ private fun AdminContent(vm: AppViewModel, logs: List<ChoreLog>, players: List<P
         if (shown.isEmpty()) item { Text("nothing $filter", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 24.dp)) }
         items(shown, key = { it.id }) { l ->
             Column(Modifier.padding(vertical = 10.dp)) {
-                Text("${l.playerName} · ${l.choreName}" + if (l.parentPick) " ★ your pick, 2x" else "", style = MaterialTheme.typography.bodyLarge)
+                Text("${l.playerName} · ${l.choreName}", style = MaterialTheme.typography.bodyLarge)
                 Text("${l.points} xp · ${l.minutes?.let { "${it}m · " } ?: ""}${fmt.format(Instant.ofEpochMilli(l.timestamp))} · ${l.status}",
                     style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (l.status == Status.PENDING) Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 6.dp)) {
@@ -135,18 +133,12 @@ private fun AdminContent(vm: AppViewModel, logs: List<ChoreLog>, players: List<P
             }
             HorizontalDivider()
         }
-        item { SectionLabel("today's picks · hidden from kids") }
-        item { Text("pick chores for each kid. they can't see these; a match earns 2x xp when they submit.",
-            style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-        items(players, key = { "pick" + it.id }) { p ->
-            val mine = picks["${p.id}|${vm.today()}"]?.choreIds.orEmpty()
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(p.name)
-                    Text(if (mine.isEmpty()) "no picks yet" else mine.joinToString { vm.store.poolById[it]?.name ?: it },
-                        style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                TextButton(onClick = { pickingFor = p }) { Text(if (mine.isEmpty()) "pick" else "change") }
+        item { SectionLabel("this phone belongs to") }
+        item {
+            Text("dares are made as this person. only a parent can change it.",
+                style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                for (p in players) FilterChip(selected = p.id == me, onClick = { vm.setMe(p) }, label = { Text(p.name) })
             }
         }
         item { SectionLabel("players") }
@@ -159,11 +151,6 @@ private fun AdminContent(vm: AppViewModel, logs: List<ChoreLog>, players: List<P
         item { OutlinedButton(onClick = { adding = true }, modifier = Modifier.padding(vertical = 12.dp)) { Text("+ add player") } }
     }
 
-    pickingFor?.let { p ->
-        PicksDialog(p.name, vm.pickable(p.id, logs), picks["${p.id}|${vm.today()}"]?.choreIds.orEmpty(), onDismiss = { pickingFor = null }) {
-            vm.setParentPicks(p, it); pickingFor = null
-        }
-    }
     editing?.let { p ->
         NameDialog("Edit player", p.name, onDismiss = { editing = null },
             onRemove = if (players.size > 1) ({ vm.removePlayer(p); editing = null }) else null) { vm.renamePlayer(p, it); editing = null }
@@ -183,26 +170,6 @@ private fun NameDialog(title: String, initial: String, onDismiss: () -> Unit, on
             }
         },
         confirmButton = { TextButton(onClick = { onSave(name) }, enabled = name.isNotBlank()) { Text("save") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("cancel") } },
-    )
-}
-
-/** The parent's picker for one kid: the same list the kid sees, most overdue first. */
-@Composable
-private fun PicksDialog(name: String, pool: List<EnrichedChore>, initial: List<String>, onDismiss: () -> Unit, onSave: (List<String>) -> Unit) {
-    var picked by remember { mutableStateOf(initial) }
-    val fb = LocalFeedback.current
-    AlertDialog(
-        onDismissRequest = onDismiss, title = { Text("Picks for $name · ${pool.filter { it.id in picked }.sumOf { it.currentMinutes }}m") },
-        text = {
-            LazyColumn(Modifier.heightIn(max = 440.dp)) {
-                items(pool, key = { it.id }) { c ->
-                    ChoreRow(c.name, c.currentMinutes, c.escalLevel, checked = c.id in picked,
-                        onToggle = { fb.tick(c.id !in picked); picked = if (c.id in picked) picked - c.id else picked + c.id })
-                }
-            }
-        },
-        confirmButton = { TextButton(onClick = { onSave(picked) }) { Text("save") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("cancel") } },
     )
 }

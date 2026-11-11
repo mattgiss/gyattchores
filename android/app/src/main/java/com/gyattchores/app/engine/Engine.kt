@@ -2,6 +2,7 @@ package com.gyattchores.app.engine
 
 import com.gyattchores.app.model.Chore
 import com.gyattchores.app.model.ChoreLog
+import com.gyattchores.app.model.Dare
 import com.gyattchores.app.model.EnrichedChore
 import com.gyattchores.app.model.Rank
 import com.gyattchores.app.model.Status
@@ -79,13 +80,6 @@ object Engine {
         return total >= FULL_DAY_MINUTES || !canAddMore
     }
 
-    // ─── Parent picks ───────────────────────────────────────────────────────
-
-    /** A chore that matches one of the parent's hidden picks for the day earns this many times its points. */
-    const val PARENT_PICK_MULT = 2
-
-    fun pointsFor(chore: Chore, parentPicked: Boolean): Int = if (parentPicked) chore.pts * PARENT_PICK_MULT else chore.pts
-
     // ─── XP / rank / streak ─────────────────────────────────────────────────
 
     fun momentumMult(streak: Int): Double = 1 + minOf(streak, 10) * 0.1
@@ -143,6 +137,53 @@ object Engine {
         var n = 0
         while (n < 365 && d in days) { n++; d = d.minusDays(1) }
         return n
+    }
+
+    // ─── Dares ──────────────────────────────────────────────────────────────
+
+    const val MAX_DARES_PER_DAY = 3
+    /** What the guesser earns for a dare that lands. */
+    const val DARE_GUESSER_POINTS = 10
+    /** What the doer earns per person who dared the chore they did. */
+    const val DARE_DOER_POINTS = 5
+
+    /** A dare lands when its target has an approved log of that chore on that day. */
+    fun dareLanded(d: Dare, logs: List<ChoreLog>, zone: ZoneId): Boolean = logs.any {
+        it.playerId == d.target && it.choreId == d.choreId && it.status == Status.APPROVED && dayOf(it.timestamp, zone).toString() == d.day
+    }
+
+    /** Dares settle at midnight: only days before [today] are revealed and scored. */
+    fun settled(d: Dare, today: LocalDate): Boolean = d.day < today.toString()
+
+    /** Points a player earned from one dare, as guesser and/or doer. 0 unless it landed. */
+    fun darePoints(playerId: String, d: Dare, logs: List<ChoreLog>, zone: ZoneId): Int =
+        if (!dareLanded(d, logs, zone)) 0
+        else (if (d.from == playerId) DARE_GUESSER_POINTS else 0) + (if (d.target == playerId) DARE_DOER_POINTS else 0)
+
+    /** Lifetime XP from settled dares. Flat points on top of chore XP (no streak multiplier). */
+    fun dareXp(playerId: String, dares: List<Dare>, logs: List<ChoreLog>, today: LocalDate, zone: ZoneId): Int =
+        dares.filter { settled(it, today) && (it.from == playerId || it.target == playerId) }.sumOf { darePoints(playerId, it, logs, zone) }
+
+    /**
+     * Why [from] can't add this dare, or null if they can. [mineToday] is every dare [from] has
+     * made today; [targetSubmitted] is whether the target already submitted today.
+     */
+    fun dareBlocked(from: String, target: String, mineToday: List<Dare>, targetSubmitted: Boolean): String? = when {
+        from == target -> "you can't dare yourself"
+        targetSubmitted -> "locked — they already submitted today"
+        mineToday.size >= MAX_DARES_PER_DAY -> "that's all $MAX_DARES_PER_DAY dares for today"
+        else -> null
+    }
+
+    /** Monday of the week containing [today]. */
+    fun weekStart(today: LocalDate): LocalDate = today.minusDays((today.dayOfWeek.value - 1).toLong())
+
+    /** This week's leaderboard score: approved chore points since Monday plus settled dare points. */
+    fun weekPoints(playerId: String, logs: List<ChoreLog>, dares: List<Dare>, today: LocalDate, zone: ZoneId): Int {
+        val start = weekStart(today)
+        val chores = approvedOncePerDay(playerId, logs, zone).filter { it.first >= start }.sumOf { it.second.points }
+        val fromDares = dares.filter { settled(it, today) && it.day >= start.toString() }.sumOf { darePoints(playerId, it, logs, zone) }
+        return chores + fromDares
     }
 
     // ─── Daily minutes log ──────────────────────────────────────────────────

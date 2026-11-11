@@ -5,9 +5,9 @@ import com.gyattchores.app.model.Card
 import com.gyattchores.app.model.Chore
 import com.gyattchores.app.model.ChoreLog
 import com.gyattchores.app.model.Player
-import com.gyattchores.app.sync.LocalPick
+import com.gyattchores.app.sync.LocalEntry
 import com.gyattchores.app.sync.LogSync
-import com.gyattchores.app.sync.PickSync
+import com.gyattchores.app.sync.StateSync
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -37,16 +37,24 @@ class Store(context: Context) {
     private val _cards = MutableStateFlow(read("cards.json") ?: emptyMap<String, Card>())
     val cards: StateFlow<Map<String, Card>> = _cards.asStateFlow()
 
-    /** Parents' hidden picks with their sync state. Keyed "playerId|yyyy-MM-dd". */
-    private val _pickEntries = MutableStateFlow(read("parent_picks_v2.json") ?: emptyMap<String, LocalPick>())
-    val pickEntries: StateFlow<Map<String, LocalPick>> = _pickEntries.asStateFlow()
+    /**
+     * Lists shared between the family's phones (see `family_state`): each person's dares for a day
+     * under "dare|<fromId>|<yyyy-MM-dd>" as "targetId:choreId" items, and the player list.
+     */
+    private val _state = MutableStateFlow(read("family_state.json") ?: emptyMap<String, LocalEntry>())
+    val state: StateFlow<Map<String, LocalEntry>> = _state.asStateFlow()
 
-    @Synchronized fun setPicks(playerId: String, date: String, choreIds: List<String>, now: Long) {
+    @Synchronized fun setState(key: String, items: List<String>, now: Long) {
         // An emptied list is kept (not removed) so "cleared" also reaches other devices.
-        val kept = _pickEntries.value.filterKeys { it.substringAfter('|') >= date }
-        _pickEntries.value = kept + ("$playerId|$date" to LocalPick(choreIds, now, dirty = true))
-        write("parent_picks_v2.json", _pickEntries.value)
+        _state.value = _state.value + (key to LocalEntry(items, now, dirty = true))
+        write("family_state.json", _state.value)
     }
+
+    /** Whose phone this is. Dares are made as this player. */
+    private val _me = MutableStateFlow(read<String>("me.json"))
+    val me: StateFlow<String?> = _me.asStateFlow()
+
+    @Synchronized fun setMe(playerId: String) { _me.value = playerId; write("me.json", playerId) }
 
     /** Applies a finished sync pass, keeping anything that changed locally while it ran. */
     @Synchronized fun applySyncedLogs(synced: List<ChoreLog>) {
@@ -54,17 +62,26 @@ class Store(context: Context) {
         write("logs.json", _logs.value)
     }
 
-    @Synchronized fun applySyncedPicks(synced: Map<String, LocalPick>) {
-        _pickEntries.value = PickSync.reconcile(synced, _pickEntries.value)
-        write("parent_picks_v2.json", _pickEntries.value)
+    @Synchronized fun applySyncedState(synced: Map<String, LocalEntry>) {
+        _state.value = StateSync.reconcile(synced, _state.value)
+        write("family_state.json", _state.value)
+        // The player list and removals travel in the shared state; adopt them when another phone changed them.
+        _state.value[KEY_PLAYERS]?.takeIf { !it.dirty && it.items.isNotEmpty() }?.let { e ->
+            val list = e.items.map { Player(it.substringBefore(':'), it.substringAfter(':')) }
+            if (list != _players.value) { _players.value = list; write("players.json", list) }
+        }
+        _state.value[KEY_REMOVED]?.takeIf { !it.dirty }?.let { e ->
+            if (e.items.toSet() != removedPlayers) { removedPlayers = e.items.toSet(); write("removed_players.json", removedPlayers) }
+        }
     }
 
     /** Players removed on this device, so sync doesn't add them straight back from old logs. */
     private var removedPlayers: Set<String> = read("removed_players.json") ?: emptySet()
 
-    @Synchronized fun markRemoved(playerId: String) {
+    @Synchronized fun markRemoved(playerId: String, now: Long) {
         removedPlayers = removedPlayers + playerId
         write("removed_players.json", removedPlayers)
+        setState(KEY_REMOVED, removedPlayers.sorted(), now)
     }
 
     /** Adds players that appear in synced logs but aren't known here (e.g. added on another phone). */
@@ -72,7 +89,7 @@ class Store(context: Context) {
         val known = _players.value.map { it.id }.toSet() + removedPlayers
         val fresh = _logs.value.sortedByDescending { it.timestamp }.filter { it.playerId !in known }
             .distinctBy { it.playerId }.map { Player(it.playerId, it.playerName) }
-        if (fresh.isNotEmpty()) savePlayers(_players.value + fresh.sortedBy { it.id })
+        if (fresh.isNotEmpty()) savePlayers(_players.value + fresh.sortedBy { it.id }, System.currentTimeMillis())
     }
 
     @Synchronized fun addLogs(new: List<ChoreLog>) {
@@ -96,9 +113,10 @@ class Store(context: Context) {
         write("cards.json", _cards.value)
     }
 
-    @Synchronized fun savePlayers(players: List<Player>) {
+    @Synchronized fun savePlayers(players: List<Player>, now: Long) {
         _players.value = players
         write("players.json", players)
+        setState(KEY_PLAYERS, players.map { "${it.id}:${it.name}" }, now)
     }
 
     private inline fun <reified T> read(name: String): T? = runCatching {
@@ -113,6 +131,8 @@ class Store(context: Context) {
     }
 
     companion object {
+        const val KEY_PLAYERS = "players"
+        const val KEY_REMOVED = "removed_players"
         val DEFAULT_PLAYERS = listOf(Player("1", "bekindhearted"), Player("2", "megadinolava"))
     }
 }

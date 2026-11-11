@@ -72,6 +72,9 @@ data class Card(
     val submitted: Boolean = false,
 )
 
+/** A secret guess: [from] dares that [target] will do [choreId] on [day] (yyyy-MM-dd). */
+data class Dare(val from: String, val target: String, val choreId: String, val day: String)
+
 data class Rank(
     val level: Int,
     val version: String,

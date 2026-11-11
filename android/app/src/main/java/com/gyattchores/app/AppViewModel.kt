@@ -16,7 +16,9 @@ import java.util.concurrent.atomic.AtomicBoolean
 import androidx.lifecycle.viewModelScope
 import com.gyattchores.app.sync.HttpStatusException
 import com.gyattchores.app.sync.LogSync
-import com.gyattchores.app.sync.PickSync
+import com.gyattchores.app.sync.StateSync
+import com.gyattchores.app.sync.LocalEntry
+import com.gyattchores.app.model.Dare
 import com.gyattchores.app.sync.Supabase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -64,43 +66,64 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun clearCard(player: Player) = store.clearCard(player.id, today().toString())
 
     /** One pending log per chore, with the minutes the card budgeted. */
-    /** Returns how many chores matched the parent's hidden picks. */
-    fun submit(player: Player, card: Card): Int {
-        if (card.submitted || !card.checked.all { it }) return 0
-        val new = card.choreIds.mapIndexed { i, id -> newLog(player, id, card.minutes[i]) }
-        store.addLogs(new)
+    fun submit(player: Player, card: Card) {
+        if (card.submitted || !card.checked.all { it }) return
+        store.addLogs(card.choreIds.mapIndexed { i, id -> newLog(player, id, card.minutes[i]) })
         store.saveCard(player.id, card.copy(submitted = true))
         requestSync()
-        return new.count { it.parentPick }
     }
 
     /** Bonus round: extra chores logged straight away, no minute cap, normal points. */
-    fun logBonus(player: Player, chosen: List<EnrichedChore>): Int {
-        val new = chosen.map { newLog(player, it.id, it.currentMinutes) }
-        store.addLogs(new)
+    fun logBonus(player: Player, chosen: List<EnrichedChore>) {
+        store.addLogs(chosen.map { newLog(player, it.id, it.currentMinutes) })
         requestSync()
-        return new.count { it.parentPick }
     }
 
     private fun newLog(player: Player, choreId: String, minutes: Int): ChoreLog {
         val c = store.poolById.getValue(choreId)
-        // The parent's picks stay hidden until now: a match is logged at double points.
-        val matched = choreId in parentPicks(player.id)
-        return ChoreLog(UUID.randomUUID().toString(), null, player.id, player.name, c.id, c.name,
-            Engine.pointsFor(c, matched), minutes, Status.PENDING, now(), parentPick = matched)
+        return ChoreLog(UUID.randomUUID().toString(), null, player.id, player.name, c.id, c.name, c.pts, minutes, Status.PENDING, now())
     }
 
-    // ─── Parent picks ───────────────────────────────────────────────────────
+    // ─── Dares ──────────────────────────────────────────────────────────────
 
-    fun parentPicks(playerId: String): List<String> = store.pickEntries.value["$playerId|${today()}"]?.choreIds.orEmpty()
-
-    fun setParentPicks(player: Player, choreIds: List<String>) {
-        store.setPicks(player.id, today().toString(), choreIds, now()); requestSync()
+    /** Every dare known to this phone, decoded from the shared state. */
+    fun dares(state: Map<String, LocalEntry>): List<Dare> = state.flatMap { (key, e) ->
+        val parts = key.split('|')
+        if (parts.size != 3 || parts[0] != "dare") emptyList()
+        else e.items.map { Dare(parts[1], it.substringBefore(':'), it.substringAfter(':'), parts[2]) }
     }
+
+    /** Chore XP plus XP from settled dares. Use this everywhere a level is shown. */
+    fun totalXp(playerId: String, logs: List<ChoreLog>, state: Map<String, LocalEntry>): Int =
+        Engine.xp(playerId, logs, zone) + Engine.dareXp(playerId, dares(state), logs, today(), zone)
+
+    fun submittedToday(playerId: String, logs: List<ChoreLog>): Boolean =
+        logs.any { it.playerId == playerId && Engine.dayOf(it.timestamp, zone) == today() }
+
+    /** Adds or removes one of my dares for today. Returns why not, or null if it changed. */
+    fun toggleDare(target: Player, choreId: String): String? {
+        val me = store.me.value ?: return "set whose phone this is first"
+        val key = "dare|$me|${today()}"
+        val items = store.state.value[key]?.items.orEmpty()
+        val item = "${target.id}:$choreId"
+        val locked = submittedToday(target.id, store.logs.value)
+        if (item in items) {
+            if (locked) return "locked — they already submitted today"
+            store.setState(key, items - item, now())
+        } else {
+            val mine = items.map { Dare(me, it.substringBefore(':'), it.substringAfter(':'), today().toString()) }
+            Engine.dareBlocked(me, target.id, mine, locked)?.let { return it }
+            store.setState(key, items + item, now())
+        }
+        requestSync()
+        return null
+    }
+
+    fun setMe(player: Player) = store.setMe(player.id)
 
     // ─── Sync ───────────────────────────────────────────────────────────────
 
-    /** "syncing", "synced", "offline", or "synced · picks table missing". */
+    /** "syncing", "synced", "offline", or "synced · dares stay on this phone". */
     val syncStatus = MutableStateFlow("idle")
     private val api = Supabase()
     private val syncing = AtomicBoolean(false)
@@ -115,11 +138,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 store.applySyncedLogs(LogSync.run(api, store.logs.value))
                 store.adoptPlayersFromLogs()
                 syncStatus.value = try {
-                    store.applySyncedPicks(PickSync.run(api, store.pickEntries.value, today().toString()))
+                    store.applySyncedState(StateSync.run(api, store.state.value))
                     "synced"
                 } catch (e: HttpStatusException) {
-                    // The parent_picks table is optional until its SQL has been run.
-                    if (e.code == 404) "synced · picks table missing" else throw e
+                    // The family_state table is optional until its SQL has been run: dares and
+                    // player changes then stay on this phone.
+                    if (e.code == 404) "synced · dares stay on this phone" else throw e
                 }
             } catch (e: Exception) {
                 syncStatus.value = "offline"
@@ -134,7 +158,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setStatus(log: ChoreLog, status: String) { store.setStatus(log.id, status); requestSync() }
 
-    private fun level(playerId: String) = Engine.rank(Engine.xp(playerId, store.logs.value, zone)).level
+    private fun level(playerId: String) = Engine.rank(totalXp(playerId, store.logs.value, store.state.value)).level
 
     /** Approves a log. Returns true if that approval took the player up a level. */
     fun approve(log: ChoreLog): Boolean {
@@ -153,6 +177,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         return level > last
     }
 
+    /** True the first time yesterday's dare results are shown on this phone. */
+    fun firstReveal(day: String): Boolean {
+        if (seen.getString("reveal", null) == day) return false
+        seen.edit().putString("reveal", day).apply()
+        return true
+    }
+
     fun checkAdminCode(code: String) = Engine.fnv1a(code) == Engine.ADMIN_CODE_HASH
 
     fun addPlayer(name: String) {
@@ -160,19 +191,19 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val players = store.players.value
         // Numeric string ids like the web app's "1", "2", so rows stay compatible with Supabase.
         val next = (players.mapNotNull { it.id.toIntOrNull() }.maxOrNull() ?: 0) + 1
-        store.savePlayers(players + Player(next.toString(), n))
+        store.savePlayers(players + Player(next.toString(), n), now())
     }
 
     fun renamePlayer(player: Player, name: String) {
         val n = name.trim().ifBlank { return }
-        store.savePlayers(store.players.value.map { if (it.id == player.id) it.copy(name = n) else it })
+        store.savePlayers(store.players.value.map { if (it.id == player.id) it.copy(name = n) else it }, now())
     }
 
     /** Removes the player from the list. Their logs are kept so history and XP survive a re-add. */
     fun removePlayer(player: Player) {
         val players = store.players.value
         if (players.size <= 1) return
-        store.markRemoved(player.id)
-        store.savePlayers(players.filter { it.id != player.id })
+        store.markRemoved(player.id, now())
+        store.savePlayers(players.filter { it.id != player.id }, now())
     }
 }

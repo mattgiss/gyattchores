@@ -1,13 +1,13 @@
 package com.gyattchores.app
 
 import com.gyattchores.app.model.ChoreLog
-import com.gyattchores.app.sync.LocalPick
+import com.gyattchores.app.sync.LocalEntry
 import com.gyattchores.app.sync.LogApi
 import com.gyattchores.app.sync.LogSync
-import com.gyattchores.app.sync.PickSync
-import com.gyattchores.app.sync.PicksApi
+import com.gyattchores.app.sync.StateSync
+import com.gyattchores.app.sync.StateApi
 import com.gyattchores.app.sync.RemoteLog
-import com.gyattchores.app.sync.RemotePick
+import com.gyattchores.app.sync.RemoteEntry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -95,30 +95,31 @@ class SyncTest {
         assertEquals("approved", a.status); assertTrue(a.statusDirty)
     }
 
-    private class FakePicks : PicksApi {
-        val rows = HashMap<String, RemotePick>()
-        override fun upsertPick(pick: RemotePick) { rows["${pick.playerId}|${pick.day}"] = pick }
-        override fun selectPicks(fromDay: String) = rows.values.filter { it.day >= fromDay }
+    private class FakeState : StateApi {
+        val rows = HashMap<String, RemoteEntry>()
+        override fun upsert(entry: RemoteEntry) { rows[entry.key] = entry }
+        override fun selectState() = rows.values.toList()
     }
 
-    @Test fun picksPushThenPullNewerWins() {
-        val api = FakePicks()
-        val day = "2026-11-10"
-        val mine = PickSync.run(api, mapOf("1|$day" to LocalPick(listOf("make-bed"), 100, dirty = true)), day)
-        assertEquals(listOf("make-bed"), api.rows.getValue("1|$day").choreIds)
-        assertFalse(mine.getValue("1|$day").dirty)
-        // Another phone changes it later; and has a pick for a kid we have none for.
-        api.rows["1|$day"] = RemotePick("1", day, listOf("scrub-toilet"), 200)
-        api.rows["2|$day"] = RemotePick("2", day, listOf("dog-poop"), 150)
-        val pulled = PickSync.run(api, mine, day)
-        assertEquals(listOf("scrub-toilet"), pulled.getValue("1|$day").choreIds)
-        assertEquals(listOf("dog-poop"), pulled.getValue("2|$day").choreIds)
+    @Test fun statePushesThenNewerRemoteWins() {
+        val api = FakeState()
+        val key = "dare|1|2026-11-10"
+        val mine = StateSync.run(api, mapOf(key to LocalEntry(listOf("2:make-bed"), 100, dirty = true)))
+        assertEquals(listOf("2:make-bed"), api.rows.getValue(key).items)
+        assertFalse(mine.getValue(key).dirty)
+        // Another phone changes it later, and has an entry we have never seen.
+        api.rows[key] = RemoteEntry(key, listOf("2:scrub-toilet"), 200)
+        api.rows["players"] = RemoteEntry("players", listOf("1:kid", "3:dad"), 150)
+        val pulled = StateSync.run(api, mine)
+        assertEquals(listOf("2:scrub-toilet"), pulled.getValue(key).items)
+        assertEquals(listOf("1:kid", "3:dad"), pulled.getValue("players").items)
     }
 
-    @Test fun clearedPicksSyncAsEmpty() {
-        val api = FakePicks()
-        val day = "2026-11-10"
-        PickSync.run(api, mapOf("1|$day" to LocalPick(emptyList(), 300, dirty = true)), day)
-        assertTrue(api.rows.getValue("1|$day").choreIds.isEmpty())
+    @Test fun olderRemoteDoesNotOverwriteAndClearedListsSync() {
+        val api = FakeState()
+        api.rows["players"] = RemoteEntry("players", listOf("1:old"), 50)
+        val out = StateSync.run(api, mapOf("players" to LocalEntry(listOf("1:new"), 100), "dare|1|d" to LocalEntry(emptyList(), 300, dirty = true)))
+        assertEquals(listOf("1:new"), out.getValue("players").items)
+        assertTrue(api.rows.getValue("dare|1|d").items.isEmpty())
     }
 }

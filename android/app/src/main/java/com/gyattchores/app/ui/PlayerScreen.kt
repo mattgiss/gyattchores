@@ -87,8 +87,6 @@ fun PlayerScreen(
     val pool = remember(logs, player.id, now) { vm.pickable(player.id, logs) }
     var bonusPicking by rememberSaveable(player.id) { mutableStateOf(false) }
     val fb = LocalFeedback.current
-    val picks by vm.store.pickEntries.collectAsState()
-    val myPicks = picks["${player.id}|${vm.today()}"]?.choreIds.orEmpty()
 
     val todays = logs.filter { it.playerId == player.id && Engine.dayOf(it.timestamp, vm.zone) == vm.today() }
     val loggedToday = (card?.choreIds.orEmpty() + todays.map { it.choreId }).toSet()
@@ -102,12 +100,12 @@ fun PlayerScreen(
             bonusPicking -> {
                 TopBar("${player.name} · bonus round", onBack = { bonusPicking = false })
                 Picker(player.id, pool.filter { it.id !in loggedToday }, bonus = true, hinge = hinge) {
-                    fb.submit(vm.logBonus(player, it) > 0); bonusPicking = false
+                    vm.logBonus(player, it); fb.submit(); bonusPicking = false
                 }
             }
             else -> {
                 TopBar(player.name, onBack)
-                CardRun(vm, player, card, logs, todays, hinge, myPicks, bonusLeft = vm.store.pool.count { it.id !in loggedToday }) { bonusPicking = true }
+                CardRun(vm, player, card, logs, todays, hinge, bonusLeft = vm.store.pool.count { it.id !in loggedToday }) { bonusPicking = true }
             }
         }
     }
@@ -202,13 +200,13 @@ private fun CardRun(
     logs: List<ChoreLog>,
     todays: List<ChoreLog>,
     hinge: Hinge?,
-    parentPicks: List<String>,
     bonusLeft: Int,
     onBonus: () -> Unit,
 ) {
     val fb = LocalFeedback.current
     val now = remember(logs) { vm.now() }
-    val rank = Engine.rank(Engine.xp(player.id, logs, vm.zone))
+    val shared by vm.store.state.collectAsState()
+    val rank = Engine.rank(vm.totalXp(player.id, logs, shared))
     val streak = Engine.streak(player.id, logs, now, vm.zone)
     // Celebrate the first time this screen shows a new version (approval may have happened elsewhere).
     LaunchedEffect(player.id, rank.level) { if (vm.isNewLevel(player.id, rank.level)) fb.levelUp() }
@@ -216,7 +214,6 @@ private fun CardRun(
     val statusByChore = HashMap<String, String>()
     for (l in todays) if (statusByChore[l.choreId].let { it == null || it == Status.PENDING }) statusByChore[l.choreId] = l.status
     val bonusLogs = todays.filter { it.choreId !in card.choreIds }.distinctBy { it.choreId }
-    val matched = todays.filter { it.parentPick }.map { it.choreId }.toSet()
     val allChecked = card.checked.all { it }
     val total = card.minutes.sum()
 
@@ -229,7 +226,7 @@ private fun CardRun(
                 itemsIndexed(card.choreIds) { i, id ->
                     val c = vm.store.poolById[id]
                     ChoreRow(
-                        name = (c?.name ?: id) + if (id in matched) " ★2x" else "", minutes = card.minutes[i],
+                        name = c?.name ?: id, minutes = card.minutes[i],
                         escalLevel = card.escal.getOrElse(i) { 0 },
                         checked = card.checked[i],
                         status = if (card.submitted) statusByChore[id] ?: Status.PENDING else null,
@@ -239,7 +236,7 @@ private fun CardRun(
                 if (bonusLogs.isNotEmpty()) {
                     item { SectionLabel("bonus round") }
                     items(bonusLogs, key = { it.id }) { l ->
-                        ChoreRow(l.choreName + if (l.parentPick) " ★2x" else "", Engine.choreMinutes(l, vm.store.poolById), 0, checked = true, status = statusByChore[l.choreId])
+                        ChoreRow(l.choreName, Engine.choreMinutes(l, vm.store.poolById), 0, checked = true, status = statusByChore[l.choreId])
                     }
                 }
             }
@@ -247,18 +244,24 @@ private fun CardRun(
         bottom = {
             Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp)) {
                 if (!card.submitted) {
-                    if (parentPicks.isNotEmpty()) Text("★ a parent secretly picked ${parentPicks.size} chores today — match them for 2x xp",
-                        color = Accent, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(bottom = 8.dp))
                     TermButton(if (allChecked) "SUBMIT FOR APPROVAL" else "CHECK OFF EVERYTHING FIRST", enabled = allChecked) {
-                        fb.submit(vm.submit(player, card) > 0)
+                        vm.submit(player, card); fb.submit()
                     }
                     Text("change my picks", color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.align(Alignment.CenterHorizontally).clickable { fb.tap(); vm.clearCard(player) }.padding(14.dp))
                 } else {
-                    if (parentPicks.isNotEmpty()) Text("★ you matched ${matched.size} of ${parentPicks.size} parent picks — 2x xp on those",
-                        color = Accent, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 6.dp))
-                    Text("card submitted — waiting on a parent", color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 8.dp))
+                    // Say what's actually left: every chore logged today is pending, approved or rejected.
+                    val verdicts = (card.choreIds + bonusLogs.map { it.choreId }).map { statusByChore[it] ?: Status.PENDING }
+                    val waiting = verdicts.count { it == Status.PENDING }
+                    val rejected = verdicts.count { it == Status.REJECTED }
+                    val (line, lineColor) = when {
+                        waiting == verdicts.size -> "card submitted — waiting on a parent" to MaterialTheme.colorScheme.onSurfaceVariant
+                        waiting > 0 -> "$waiting of ${verdicts.size} still waiting on a parent" to MaterialTheme.colorScheme.onSurfaceVariant
+                        rejected == 0 -> "✓ all approved — nice work" to Good
+                        rejected == verdicts.size -> "✗ none approved today" to Bad
+                        else -> "done — ${verdicts.size - rejected} approved, $rejected rejected" to MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                    Text(line, color = lineColor, modifier = Modifier.padding(bottom = 8.dp))
                     if (bonusLeft > 0) OutlinedButton(onClick = { fb.tap(); onBonus() }, modifier = Modifier.fillMaxWidth()) { Text("+ bonus round") }
                 }
             }
