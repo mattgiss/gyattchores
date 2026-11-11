@@ -56,13 +56,33 @@ targets:
         # doesn't need to ask the export-compliance question on every build.
         INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
 
+  GyattChoresUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: GyattChoresUITests
+    dependencies:
+      - target: GyattChores
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.gissentanna.gyattchores.uitests
+        TEST_TARGET_NAME: GyattChores
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: YES
+
 schemes:
   GyattChores:
     build:
       targets:
         GyattChores: all
+        GyattChoresUITests: [test]
     run:
       config: Debug
+    test:
+      config: Debug
+      targets:
+        - GyattChoresUITests
     profile:
       config: Release
     analyze:

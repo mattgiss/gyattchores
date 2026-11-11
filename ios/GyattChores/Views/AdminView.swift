@@ -52,16 +52,19 @@ private struct AdminGateView: View {
                 .background(Color(uiColor: .secondarySystemBackground))
                 .overlay(Rectangle().strokeBorder(wrongAttempts > 0 ? Theme.danger : Theme.hairline, lineWidth: 1))
                 .accessibilityLabel("Admin code")
+                .accessibilityIdentifier("admin-code")
 
             if wrongAttempts > 0 {
                 Text("that's not the code")
                     .font(.mono(.caption))
                     .foregroundStyle(Theme.danger)
+                    .accessibilityIdentifier("admin-wrong-code")
             }
 
             Button("ENTER", action: verify)
                 .buttonStyle(TerminalButtonStyle(kind: .filled))
                 .disabled(code.isEmpty)
+                .accessibilityIdentifier("admin-enter")
         }
         .frame(maxWidth: 320)
         .padding(32)

@@ -105,6 +105,7 @@ struct ChorePickerView: View {
         .accessibilityLabel("\(chore.name), \(chore.currentMinutes) minutes\(ChoreRow.spokenEscalation(chore.escalLevel))")
         .accessibilityValue(isOn ? "picked" : (tooBig ? "doesn't fit in today's \(Engine.dailyMinutes) minutes" : "not picked"))
         .accessibilityAddTraits(isOn ? [.isButton, .isSelected] : .isButton)
+        .accessibilityIdentifier("chore-\(chore.id)")
     }
 
     private func actions(pool: [CardChore], summary: PickerSummary, chosenCount: Int) -> some View {
@@ -114,6 +115,7 @@ struct ChorePickerView: View {
                     fill(pool: pool)
                 }
                 .buttonStyle(TerminalButtonStyle(kind: .outline))
+                .accessibilityIdentifier("fill")
             }
 
             Button(confirmTitle(summary: summary, chosenCount: chosenCount)) {
@@ -121,6 +123,7 @@ struct ChorePickerView: View {
             }
             .buttonStyle(TerminalButtonStyle(kind: .filled))
             .disabled(!summary.isReady)
+            .accessibilityIdentifier("confirm")
         }
         .frame(maxWidth: Theme.contentWidth)
         .padding(.horizontal, 20)

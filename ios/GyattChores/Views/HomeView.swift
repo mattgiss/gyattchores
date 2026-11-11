@@ -19,6 +19,7 @@ struct HomeView: View {
                             PlayerButtonLabel(player: player, stats: store.stats(for: player))
                         }
                         .buttonStyle(.plain)
+                        .accessibilityIdentifier("player-\(player.id)")
                     }
                 }
 
@@ -57,6 +58,7 @@ struct HomeView: View {
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isHeader)
         .accessibilityAction(named: "Open parent controls") { showAdmin = true }
+        .accessibilityIdentifier("title")
     }
 
     private func tapTitle() {

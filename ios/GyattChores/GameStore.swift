@@ -56,6 +56,26 @@ final class GameStore: ObservableObject {
             .appendingPathComponent("game.json"))
     }
 
+    /// The store the app launches with. Debug builds understand two launch
+    /// arguments, used by the UI tests and handy when developing:
+    ///   -resetData   start from an empty save file
+    ///   -demoData    a month of made-up history, kept apart from real data
+    static func forLaunch() -> GameStore {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("-demoData") {
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("gyattchores-demo.json")
+            let archive = GameArchive(url: url)
+            try? archive.save(DemoData.state(now: Date()))
+            return GameStore(archive: archive)
+        }
+        if arguments.contains("-resetData") {
+            try? FileManager.default.removeItem(at: defaultArchive.url)
+        }
+        #endif
+        return GameStore()
+    }
+
     // MARK: - Reading
 
     var engine: Engine { game.engine }

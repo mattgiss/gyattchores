@@ -59,6 +59,7 @@ private struct DailyLogRowView: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(name): \(row.hits) of the last \(row.days.count) days at \(Engine.dailyMinutes) minutes or more")
+        .accessibilityIdentifier("daily-log-\(name)")
     }
 }
 

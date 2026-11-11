@@ -2,7 +2,7 @@ import SwiftUI
 
 @main
 struct GyattChoresApp: App {
-    @StateObject private var store = GameStore()
+    @StateObject private var store = GameStore.forLaunch()
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {

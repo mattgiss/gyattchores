@@ -27,3 +27,6 @@ ios/**/.build/
 ios/**/.swiftpm/
 ios/**/DerivedData/
 ios/**/xcuserdata/
+
+ios/results/
+ios/screenshots/

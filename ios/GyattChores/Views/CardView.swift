@@ -79,6 +79,7 @@ struct CardView: View {
             .accessibilityLabel("\(chore.name), \(chore.currentMinutes) minutes")
             .accessibilityValue(isChecked ? "done" : "not done")
             .accessibilityAddTraits(isChecked ? [.isButton, .isSelected] : .isButton)
+            .accessibilityIdentifier("chore-\(chore.id)")
         }
     }
 
@@ -97,6 +98,7 @@ struct CardView: View {
                 ChoreRow(name: chore.name, isOn: true, strikeWhenOn: true, trailing: .status(status))
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel("\(chore.name), \(ChoreRow.spoken(status))")
+                    .accessibilityIdentifier("bonus-\(chore.id)")
             }
         }
     }
@@ -115,10 +117,12 @@ struct CardView: View {
                     .frame(maxWidth: .infinity)
                     .padding(16)
                     .overlay(Rectangle().strokeBorder(outcome.color, lineWidth: 1))
+                    .accessibilityIdentifier("verdict")
 
                 if today.bonusLeft > 0 {
                     Button("➕ BONUS ROUND — LOG MORE", action: onBonus)
                         .buttonStyle(TerminalButtonStyle(kind: .outline))
+                        .accessibilityIdentifier("bonus")
                 }
             } else {
                 Button(card.allChecked ? "SUBMIT CARD" : "CHECK OFF ALL \(card.chores.count) CHORES") {
@@ -126,6 +130,7 @@ struct CardView: View {
                 }
                 .buttonStyle(TerminalButtonStyle(kind: .filled))
                 .disabled(!card.allChecked)
+                .accessibilityIdentifier("submit")
             }
         }
         .frame(maxWidth: Theme.contentWidth)

@@ -3,7 +3,7 @@ name: iOS
 # Checks the native iOS app (ios/):
 #   fixtures — the golden test vectors still match the web app's engine
 #   core     — the Swift port of the game rules passes against those vectors
-#   app      — the SwiftUI app compiles for iOS (unsigned, simulator)
+#   app      — the SwiftUI app builds and its UI tests pass in an iOS simulator
 # index.html is in the path list because it's the source of truth for the game
 # rules: change a rule there and this says whether the Swift port still agrees.
 
@@ -50,7 +50,7 @@ jobs:
         run: swift test
 
   app:
-    name: Build app (iOS Simulator)
+    name: Build and UI-test app (iOS Simulator)
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
@@ -59,21 +59,59 @@ jobs:
       - name: Generate Xcode project
         working-directory: ios
         run: xcodegen generate
-      - name: Build
+      - name: Pick simulators
+        id: sims
+        run: |
+          xcodebuild -version
+          AVAILABLE=$(xcrun simctl list devices available -j | jq -r '[.devices[][] | .name | select(startswith("iPhone"))] | unique | .[]')
+          echo "Available iPhone simulators:"; echo "$AVAILABLE" | sed 's/^/  /'
+          # The phones this app is aimed at, where this Xcode has them.
+          PICKED=""
+          for want in "iPhone 17 Pro" "iPhone 16e"; do
+            if echo "$AVAILABLE" | grep -qx "$want"; then PICKED="$PICKED$want"$'\n'; fi
+          done
+          if [ -z "$PICKED" ]; then
+            for want in "iPhone 16 Pro" "iPhone 16" "iPhone 15"; do
+              if echo "$AVAILABLE" | grep -qx "$want"; then PICKED="$want"$'\n'; break; fi
+            done
+          fi
+          [ -n "$PICKED" ] || { echo "::error::No iPhone simulator available"; exit 1; }
+          printf '%s' "$PICKED" > "$RUNNER_TEMP/simulators.txt"
+          echo "Testing on:"; sed 's/^/  /' "$RUNNER_TEMP/simulators.txt"
+      - name: Build and run UI tests
         working-directory: ios
         run: |
           set -o pipefail
-          xcodebuild build \
-            -project GyattChores.xcodeproj \
-            -scheme GyattChores \
-            -configuration Debug \
-            -destination 'generic/platform=iOS Simulator' \
-            CODE_SIGNING_ALLOWED=NO \
-            | tee build.log | grep -E "error:|warning: unre|BUILD|\*\*" || true
-          grep -q "BUILD SUCCEEDED" build.log
-      - name: Upload build log
+          status=0
+          while IFS= read -r device; do
+            [ -n "$device" ] || continue
+            slug=$(echo "$device" | tr ' ' '-')
+            echo "::group::UI tests on $device"
+            xcodebuild test \
+              -project GyattChores.xcodeproj \
+              -scheme GyattChores \
+              -destination "platform=iOS Simulator,name=$device,OS=latest" \
+              -resultBundlePath "results/$slug.xcresult" \
+              2>&1 | tee "build-$slug.log" \
+              | grep -E "error:|Test Case|Test Suite|XCTAssert|failed|\*\* " || true
+            echo "::endgroup::"
+            if ! grep -q "TEST SUCCEEDED" "build-$slug.log"; then
+              echo "::error::UI tests failed on $device"
+              status=1
+            fi
+            xcrun xcresulttool export attachments --path "results/$slug.xcresult" --output-path "screenshots/$slug" || true
+          done < "$RUNNER_TEMP/simulators.txt"
+          exit $status
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: ios/screenshots
+          if-no-files-found: warn
+      - name: Upload logs
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: xcodebuild-log
-          path: ios/build.log
+          name: xcodebuild-logs
+          path: ios/build-*.log
