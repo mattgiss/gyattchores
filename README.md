@@ -99,9 +99,9 @@ Bumping `BUILD` on each deploy is what lets the in-app indicator tell a freshly-
 
 ## Native iOS app
 
-The [`GyattChoresApp/`](GyattChoresApp/) directory holds Swift sources for an earlier, **tap-to-log** version of the design (iPhone + Apple Watch), including a Shortcuts/App Intent for logging a chore by voice. It predates the current daily-card / XP model in the web app and isn't kept in sync with it.
+[`ios/`](ios/) holds a native SwiftUI rebuild of the daily-card game for iPhone: the same rules as the web app (a Swift port of the engine, tested against answers generated from `index.html`), saved on the device, with cross-device sync still to come. See [`ios/README.md`](ios/README.md) for building it and shipping to TestFlight.
 
-> Note: the Xcode project file is not committed — the directory contains only the Swift sources (`Models/`, `Views/`, `Services/`, `Intents/`). To build, create a new Xcode app target and add these sources.
+The older [`GyattChoresApp/`](GyattChoresApp/) directory holds Swift sources for an earlier **tap-to-log** design (iPhone + Apple Watch). It predates the daily-card / XP model and isn't used by the new app.
 
 ## Project structure
 
@@ -114,7 +114,9 @@ gyattchores/
 ├── gyattchores-logo*.svg   # Logo variants
 ├── about.html / ebook.html / development-story.html   # Public about, guide, and story pages
 ├── SECURITY.md             # Security model & disclosure
-├── GyattChoresApp/         # Earlier native SwiftUI app (iPhone + Watch)
+├── ios/                    # Native iOS app (SwiftUI) + GyattCore rules package
+├── tools/native/           # Generates engine test fixtures from index.html
+├── GyattChoresApp/         # Earlier tap-to-log Swift sources (iPhone + Watch), unused
 └── docs/governance/        # Lightweight service-management docs
 ```
 

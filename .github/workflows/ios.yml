@@ -1,0 +1,79 @@
+name: iOS
+
+# Checks the native iOS app (ios/):
+#   fixtures — the golden test vectors still match the web app's engine
+#   core     — the Swift port of the game rules passes against those vectors
+#   app      — the SwiftUI app compiles for iOS (unsigned, simulator)
+# index.html is in the path list because it's the source of truth for the game
+# rules: change a rule there and this says whether the Swift port still agrees.
+
+on:
+  push:
+    paths:
+      - 'ios/**'
+      - 'tools/native/**'
+      - 'index.html'
+      - '.github/workflows/ios.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fixtures:
+    name: Engine fixtures match index.html
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Regenerate fixtures from the web engine
+        run: node tools/native/generate-engine-fixtures.mjs
+      - name: Fail if the committed fixtures are stale
+        run: |
+          if ! git diff --quiet -- ios/GyattCore/Tests; then
+            echo "::error::The web engine in index.html changed. Run 'node tools/native/generate-engine-fixtures.mjs', commit the result, and update ios/GyattCore to match if tests fail."
+            git diff --stat -- ios/GyattCore/Tests
+            exit 1
+          fi
+
+  core:
+    name: GyattCore tests
+    runs-on: ubuntu-latest
+    container: swift:6.0-noble
+    steps:
+      - uses: actions/checkout@v4
+      - name: swift test
+        working-directory: ios/GyattCore
+        run: swift test
+
+  app:
+    name: Build app (iOS Simulator)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate Xcode project
+        working-directory: ios
+        run: xcodegen generate
+      - name: Build
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project GyattChores.xcodeproj \
+            -scheme GyattChores \
+            -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            | tee build.log | grep -E "error:|warning: unre|BUILD|\*\*" || true
+          grep -q "BUILD SUCCEEDED" build.log
+      - name: Upload build log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-log
+          path: ios/build.log
