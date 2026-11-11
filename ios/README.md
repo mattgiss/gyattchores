@@ -57,6 +57,50 @@ builds.
 
 `.github/workflows/ios.yml` runs on every push that touches `ios/`, `native/`
 or `index.html`: it regenerates the test data and fails if the committed copy
-is stale, runs `swift test`, then builds the app and runs the UI tests on the
+is stale, runs `swift test`, builds the app and runs the UI tests on the
 iPhone simulators the runner has (iPhone 17 Pro and iPhone 16e where
-available). Screenshots from the run are uploaded as a build artifact.
+available), and archives the app in Release with the newest Xcode to catch
+anything that would stop a TestFlight upload. Screenshots from the UI tests
+are uploaded as a build artifact.
+
+## TestFlight
+
+`.github/workflows/ios-testflight.yml` archives the app on a GitHub Mac runner
+and uploads it to TestFlight, so a release doesn't need a local Mac.
+
+One-time setup:
+
+1. **Register the bundle ID.** [Certificates, IDs & Profiles → Identifiers](https://developer.apple.com/account/resources/identifiers/list)
+   → **+** → App IDs → App → bundle ID `com.gyattchores.app` (explicit).
+2. **Create the app record.** [App Store Connect](https://appstoreconnect.apple.com/apps)
+   → **Apps → + → New App** → iOS, pick that bundle ID, any name and SKU.
+   An upload fails until this exists.
+3. **Create an API key.** App Store Connect → **Users and Access →
+   Integrations → App Store Connect API → Team Keys → +**, with **Admin**
+   access (Xcode's automatic signing needs it to create the distribution
+   certificate). Note the **Key ID** and the **Issuer ID** shown on that page,
+   and download the `.p8` file — it can only be downloaded once.
+4. **Add four repository secrets** on GitHub under **Settings → Secrets and
+   variables → Actions**:
+
+   | Secret | Value |
+   |---|---|
+   | `APP_STORE_CONNECT_KEY_ID` | the Key ID |
+   | `APP_STORE_CONNECT_ISSUER_ID` | the Issuer ID |
+   | `APP_STORE_CONNECT_KEY_P8` | the whole contents of the `.p8` file |
+   | `APPLE_TEAM_ID` | your Team ID, from [Membership details](https://developer.apple.com/account#MembershipDetailsCard) |
+
+To release, push a tag — the part after `ios-v` becomes the app version:
+
+```bash
+git tag ios-v0.1.0 && git push origin ios-v0.1.0
+```
+
+The build number is a timestamp, so it never repeats. When the run finishes,
+the build shows up under **TestFlight** in App Store Connect after Apple
+processes it (usually a few minutes); add yourself under **Internal Testing**
+and install it from the TestFlight app.
+
+Before inviting external testers or submitting to the App Store, fill in
+**App Privacy** in App Store Connect: with sync on, the app sends chore logs
+and player names to the family's Supabase project.

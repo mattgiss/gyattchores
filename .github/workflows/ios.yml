@@ -4,6 +4,7 @@ name: iOS
 #   fixtures — the shared test data still matches the web app's engine
 #   core     — the Swift port of the game rules and sync passes its tests
 #   app      — the SwiftUI app builds and its UI tests pass in an iOS simulator
+#   release  — the app archives in Release with the newest Xcode, as TestFlight needs
 # index.html is in the path list because it's the source of truth for the game
 # rules: change a rule there and this says whether the native ports still agree.
 
@@ -115,3 +116,50 @@ jobs:
         with:
           name: xcodebuild-logs
           path: ios/build-*.log
+
+  release:
+    name: Release archive (unsigned, newest Xcode)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select the newest Xcode
+        run: |
+          # App Store Connect only accepts builds from a current Xcode, so check against that one.
+          NEWEST=$(ls -d /Applications/Xcode_*.app | grep -vi beta | sort -V | tail -1)
+          sudo xcode-select -s "$NEWEST"
+          xcodebuild -version
+      - name: Archive without signing
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild archive \
+            -project GyattChores.xcodeproj \
+            -scheme GyattChores \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/GyattChores.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO \
+            < /dev/null 2>&1 | tee build-release.log | grep -E "error:|\*\* " || true
+          grep -q "ARCHIVE SUCCEEDED" build-release.log
+      - name: Check what's in the app
+        run: |
+          APP="$RUNNER_TEMP/GyattChores.xcarchive/Products/Applications/GyattChores.app"
+          plist() { /usr/libexec/PlistBuddy -c "Print :$1" "$APP/Info.plist"; }
+          echo "bundle id:     $(plist CFBundleIdentifier)"
+          echo "version:       $(plist CFBundleShortVersionString) ($(plist CFBundleVersion))"
+          echo "minimum iOS:   $(plist MinimumOSVersion)"
+          echo "built with:    Xcode $(plist DTXcode), SDK $(plist DTSDKName)"
+          # Things an upload is rejected or flagged for when they're missing.
+          [ "$(plist ITSAppUsesNonExemptEncryption)" = "false" ]
+          [ -n "$(plist NSFaceIDUsageDescription)" ]
+          [ -n "$(plist CFBundleIconName)" ]
+          test -f "$APP/PrivacyInfo.xcprivacy"
+          test -f "$APP/chores.json"
+          test -f "$APP/Assets.car"
+          echo "ok: encryption flag, Face ID text, icon, privacy manifest and chore list are all present"
+      - name: Upload log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-archive-log
+          path: ios/build-release.log
