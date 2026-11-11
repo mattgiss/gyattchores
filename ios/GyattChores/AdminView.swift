@@ -25,7 +25,9 @@ struct AdminView: View {
             if authed { AdminContent() } else {
                 VStack(spacing: 12) {
                     SecureField("admin code", text: $code).textFieldStyle(.roundedBorder).textContentType(.oneTimeCode)
-                        .onSubmit(verify).onChange(of: code) { _, _ in wrong = false }
+                        .onSubmit(verify)
+                        // Clear the message once they start typing again — not when a wrong code empties the field.
+                        .onChange(of: code) { _, now in if !now.isEmpty { wrong = false } }
                     if wrong { Text("that code didn't match").font(.footnote).foregroundStyle(Theme.bad).frame(maxWidth: .infinity, alignment: .leading) }
                     TermButton(label: "UNLOCK", enabled: !code.isEmpty, action: verify)
                     if canBio { OutlineButton(label: "use face id / touch id", action: biometric) }
