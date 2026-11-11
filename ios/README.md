@@ -101,6 +101,56 @@ the build shows up under **TestFlight** in App Store Connect after Apple
 processes it (usually a few minutes); add yourself under **Internal Testing**
 and install it from the TestFlight app.
 
+### Uploading from a Mac instead
+
+No API key needed: this signs and uploads with the Apple ID signed in to
+Xcode. Steps 1 and 2 above still apply. Before you start:
+
+- **Xcode → Settings → Apple Accounts** must list your paid developer team,
+  not only a "Personal Team". Individual memberships use the same Team ID for
+  both, so check the team shows as **Developer Team**.
+- [developer.apple.com/account](https://developer.apple.com/account) must not
+  show a banner asking you to accept an updated license agreement. Until you
+  accept it, signing and uploads fail.
+
+Archive, with a timestamp build number:
+
+```bash
+cd ios
+xcodebuild archive -project GyattChores.xcodeproj -scheme GyattChores \
+  -configuration Release -destination 'generic/platform=iOS' \
+  -archivePath build/GyattChores.xcarchive -allowProvisioningUpdates \
+  DEVELOPMENT_TEAM=<team id> CURRENT_PROJECT_VERSION=$(date -u +%Y%m%d%H%M)
+```
+
+Then upload. `ios/ExportOptions.plist` is gitignored, so create it if you
+don't have it:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>method</key>        <string>app-store-connect</string>
+	<key>destination</key>   <string>upload</string>
+	<key>teamID</key>        <string><team id></string>
+	<key>signingStyle</key>  <string>automatic</string>
+</dict>
+</plist>
+```
+
+```bash
+xcodebuild -exportArchive -archivePath build/GyattChores.xcarchive \
+  -exportPath build/export -exportOptionsPlist ExportOptions.plist \
+  -allowProvisioningUpdates
+```
+
+`** EXPORT SUCCEEDED **` means the upload is done. The build then appears
+under **TestFlight** as *Processing* and switches to *Ready to Submit* when
+Apple finishes processing it. The **Internal** testing group has automatic
+distribution turned on, so its testers get every new build without you doing
+anything.
+
 Before inviting external testers or submitting to the App Store, fill in
 **App Privacy** in App Store Connect: with sync on, the app sends chore logs
 and player names to the family's Supabase project.
