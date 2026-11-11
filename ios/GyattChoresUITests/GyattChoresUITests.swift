@@ -29,9 +29,11 @@ final class GyattChoresUITests: XCTestCase {
         app.buttons.matching(NSPredicate(format: "label CONTAINS %@ AND label CONTAINS '🔥'", name)).firstMatch
     }
 
-    /// The big "> LABEL" button at the bottom of the picker and the card.
+    /// The big "> LABEL" button at the bottom of the picker and the card. The home screen's player
+    /// rows also start with "> " and are still around while the next screen slides in, so rule
+    /// them out by their streak flame.
     private func mainButton(in app: XCUIApplication) -> XCUIElement {
-        app.buttons.matching(NSPredicate(format: "label BEGINSWITH '> '")).firstMatch
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH '> ' AND NOT (label CONTAINS '🔥')")).firstMatch
     }
 
     private func uncheckedChores(in app: XCUIApplication) -> XCUIElementQuery {
@@ -55,6 +57,7 @@ final class GyattChoresUITests: XCTestCase {
         let row = playerRow(name, in: app)
         XCTAssertTrue(row.waitForExistence(timeout: wait), "\(name) should be on the home screen")
         row.tap()
+        XCTAssertTrue(app.buttons["← back"].waitForExistence(timeout: wait), "\(name)'s screen should open")
     }
 
     private func goBack(in app: XCUIApplication) {
