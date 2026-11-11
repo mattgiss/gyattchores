@@ -3,9 +3,11 @@ name: iOS TestFlight
 # Archives the iOS app on a GitHub Mac runner and uploads it to TestFlight —
 # no local Mac or Xcode needed.
 #
-# To run it: push a tag such as `ios-v0.1.0` (the part after `ios-v` becomes the
-# app version), or use "Run workflow" in the Actions tab once this file is on
-# the default branch.
+# To run it, push either of these (the last part becomes the app version):
+#   a tag such as      ios-v0.1.0
+#   a branch such as   testflight/0.1.0
+# or use "Run workflow" in the Actions tab once this file is on the default
+# branch.
 #
 # It needs four repository secrets and an app record in App Store Connect;
 # ios/README.md ("TestFlight") walks through setting those up.
@@ -14,6 +16,8 @@ on:
   push:
     tags:
       - 'ios-v*'
+    branches:
+      - 'testflight/**'
   workflow_dispatch:
 
 concurrency:
@@ -69,8 +73,17 @@ jobs:
         run: |
           # A build number has to be higher than any uploaded before; a timestamp always is.
           echo "BUILD_NUMBER=$(date -u +%Y%m%d%H%M)" >> "$GITHUB_ENV"
-          if [[ "$GITHUB_REF" == refs/tags/ios-v* ]]; then
-            echo "VERSION_OVERRIDE=MARKETING_VERSION=${GITHUB_REF#refs/tags/ios-v}" >> "$GITHUB_ENV"
+          version=""
+          case "$GITHUB_REF" in
+            refs/tags/ios-v*)        version="${GITHUB_REF#refs/tags/ios-v}" ;;
+            refs/heads/testflight/*) version="${GITHUB_REF#refs/heads/testflight/}" ;;
+          esac
+          if [ -n "$version" ]; then
+            if ! [[ "$version" =~ ^[0-9]+(\.[0-9]+){0,2}$ ]]; then
+              echo "::error::'$version' isn't a version like 0.1.0"
+              exit 1
+            fi
+            echo "VERSION_OVERRIDE=MARKETING_VERSION=$version" >> "$GITHUB_ENV"
           fi
 
       - name: Archive

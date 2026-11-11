@@ -90,10 +90,12 @@ One-time setup:
    | `APP_STORE_CONNECT_KEY_P8` | the whole contents of the `.p8` file |
    | `APPLE_TEAM_ID` | your Team ID, from [Membership details](https://developer.apple.com/account#MembershipDetailsCard) |
 
-To release, push a tag — the part after `ios-v` becomes the app version:
+To release, push a tag or a branch — the last part becomes the app version:
 
 ```bash
 git tag ios-v0.1.0 && git push origin ios-v0.1.0
+# or
+git push origin native-android:refs/heads/testflight/0.1.0
 ```
 
 The build number is a timestamp, so it never repeats. When the run finishes,
