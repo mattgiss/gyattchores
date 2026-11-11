@@ -8,3 +8,4 @@ build-device/
 results/
 screenshots/
 build-*.log
+ExportOptions.plist
