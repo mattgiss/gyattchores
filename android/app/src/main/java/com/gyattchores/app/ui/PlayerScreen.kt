@@ -87,8 +87,8 @@ fun PlayerScreen(
     val pool = remember(logs, player.id, now) { vm.pickable(player.id, logs) }
     var bonusPicking by rememberSaveable(player.id) { mutableStateOf(false) }
     val fb = LocalFeedback.current
-    val picks by vm.store.picks.collectAsState()
-    val myPicks = picks["${player.id}|${vm.today()}"].orEmpty()
+    val picks by vm.store.pickEntries.collectAsState()
+    val myPicks = picks["${player.id}|${vm.today()}"]?.choreIds.orEmpty()
 
     val todays = logs.filter { it.playerId == player.id && Engine.dayOf(it.timestamp, vm.zone) == vm.today() }
     val loggedToday = (card?.choreIds.orEmpty() + todays.map { it.choreId }).toSet()

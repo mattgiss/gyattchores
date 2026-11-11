@@ -37,6 +37,7 @@ import com.gyattchores.app.ui.GyattTheme
 import com.gyattchores.app.ui.Hinge
 import com.gyattchores.app.ui.HomeScreen
 import com.gyattchores.app.ui.PlayerScreen
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /** FragmentActivity because the biometric prompt needs one. */
@@ -57,11 +58,17 @@ class MainActivity : FragmentActivity() {
             }
         }
 
+        // Sync on open and every 10 seconds while the app is on screen.
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) { while (true) { vm.requestSync(); delay(10_000) } }
+        }
+
         setContent {
             GyattTheme {
                 val logs by vm.store.logs.collectAsState()
                 val players by vm.store.players.collectAsState()
                 val cards by vm.store.cards.collectAsState()
+                val syncStatus by vm.syncStatus.collectAsState()
                 // Saved state, so fold/unfold and process death land on the same screen.
                 var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
                 var adminOpen by rememberSaveable { mutableStateOf(false) }
@@ -83,7 +90,7 @@ class MainActivity : FragmentActivity() {
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     val now = vm.now()
                     val home = @androidx.compose.runtime.Composable { m: Modifier ->
-                        HomeScreen(players, logs, vm.store.poolById, now, vm.zone, selectedId.takeIf { twoPane && !adminOpen },
+                        HomeScreen(players, logs, vm.store.poolById, now, vm.zone, selectedId.takeIf { twoPane && !adminOpen }, syncStatus,
                             onPick = { adminOpen = false; selectedId = it.id }, onAdmin = { adminOpen = true }, modifier = m)
                     }
                     if (twoPane) {

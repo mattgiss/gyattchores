@@ -41,6 +41,8 @@ data class ChoreLog(
     val timestamp: Long,
     /** Local-only: this chore matched a parent's hidden pick, so [points] is already doubled. */
     val parentPick: Boolean = false,
+    /** Local-only: status was changed here and hasn't reached the server yet. */
+    val statusDirty: Boolean = false,
 )
 
 /** A chore resolved for one player right now: its escalation tier and current minute cost. */

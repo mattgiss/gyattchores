@@ -12,6 +12,15 @@ import com.gyattchores.app.model.Status
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
+import androidx.lifecycle.viewModelScope
+import com.gyattchores.app.sync.HttpStatusException
+import com.gyattchores.app.sync.LogSync
+import com.gyattchores.app.sync.PickSync
+import com.gyattchores.app.sync.Supabase
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 
 /**
  * All app state lives here so it survives folding/unfolding (a configuration change).
@@ -61,6 +70,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val new = card.choreIds.mapIndexed { i, id -> newLog(player, id, card.minutes[i]) }
         store.addLogs(new)
         store.saveCard(player.id, card.copy(submitted = true))
+        requestSync()
         return new.count { it.parentPick }
     }
 
@@ -68,6 +78,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun logBonus(player: Player, chosen: List<EnrichedChore>): Int {
         val new = chosen.map { newLog(player, it.id, it.currentMinutes) }
         store.addLogs(new)
+        requestSync()
         return new.count { it.parentPick }
     }
 
@@ -81,13 +92,47 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     // ─── Parent picks ───────────────────────────────────────────────────────
 
-    fun parentPicks(playerId: String): List<String> = store.picks.value["$playerId|${today()}"].orEmpty()
+    fun parentPicks(playerId: String): List<String> = store.pickEntries.value["$playerId|${today()}"]?.choreIds.orEmpty()
 
-    fun setParentPicks(player: Player, choreIds: List<String>) = store.setPicks(player.id, today().toString(), choreIds)
+    fun setParentPicks(player: Player, choreIds: List<String>) {
+        store.setPicks(player.id, today().toString(), choreIds, now()); requestSync()
+    }
+
+    // ─── Sync ───────────────────────────────────────────────────────────────
+
+    /** "syncing", "synced", "offline", or "synced · picks table missing". */
+    val syncStatus = MutableStateFlow("idle")
+    private val api = Supabase()
+    private val syncing = AtomicBoolean(false)
+    private val syncAgain = AtomicBoolean(false)
+
+    /** One pass at a time; a request that arrives mid-pass runs one follow-up pass instead of overlapping. */
+    fun requestSync() {
+        if (!syncing.compareAndSet(false, true)) { syncAgain.set(true); return }
+        viewModelScope.launch(Dispatchers.IO) {
+            syncStatus.value = "syncing"
+            try {
+                store.applySyncedLogs(LogSync.run(api, store.logs.value))
+                store.adoptPlayersFromLogs()
+                syncStatus.value = try {
+                    store.applySyncedPicks(PickSync.run(api, store.pickEntries.value, today().toString()))
+                    "synced"
+                } catch (e: HttpStatusException) {
+                    // The parent_picks table is optional until its SQL has been run.
+                    if (e.code == 404) "synced · picks table missing" else throw e
+                }
+            } catch (e: Exception) {
+                syncStatus.value = "offline"
+            } finally {
+                syncing.set(false)
+                if (syncAgain.compareAndSet(true, false)) requestSync()
+            }
+        }
+    }
 
     // ─── Admin ──────────────────────────────────────────────────────────────
 
-    fun setStatus(log: ChoreLog, status: String) = store.setStatus(log.id, status)
+    fun setStatus(log: ChoreLog, status: String) { store.setStatus(log.id, status); requestSync() }
 
     private fun level(playerId: String) = Engine.rank(Engine.xp(playerId, store.logs.value, zone)).level
 
@@ -95,6 +140,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun approve(log: ChoreLog): Boolean {
         val before = level(log.playerId)
         store.setStatus(log.id, Status.APPROVED)
+        requestSync()
         return level(log.playerId) > before
     }
 
@@ -126,6 +172,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun removePlayer(player: Player) {
         val players = store.players.value
         if (players.size <= 1) return
+        store.markRemoved(player.id)
         store.savePlayers(players.filter { it.id != player.id })
     }
 }

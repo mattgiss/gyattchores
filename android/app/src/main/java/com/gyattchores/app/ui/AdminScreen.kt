@@ -112,7 +112,7 @@ private fun AdminContent(vm: AppViewModel, logs: List<ChoreLog>, players: List<P
     var editing by remember { mutableStateOf<Player?>(null) }
     var adding by remember { mutableStateOf(false) }
     var pickingFor by remember { mutableStateOf<Player?>(null) }
-    val picks by vm.store.picks.collectAsState()
+    val picks by vm.store.pickEntries.collectAsState()
 
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
         item {
@@ -139,7 +139,7 @@ private fun AdminContent(vm: AppViewModel, logs: List<ChoreLog>, players: List<P
         item { Text("pick chores for each kid. they can't see these; a match earns 2x xp when they submit.",
             style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         items(players, key = { "pick" + it.id }) { p ->
-            val mine = picks["${p.id}|${vm.today()}"].orEmpty()
+            val mine = picks["${p.id}|${vm.today()}"]?.choreIds.orEmpty()
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(p.name)
@@ -160,7 +160,7 @@ private fun AdminContent(vm: AppViewModel, logs: List<ChoreLog>, players: List<P
     }
 
     pickingFor?.let { p ->
-        PicksDialog(p.name, vm.pickable(p.id, logs), picks["${p.id}|${vm.today()}"].orEmpty(), onDismiss = { pickingFor = null }) {
+        PicksDialog(p.name, vm.pickable(p.id, logs), picks["${p.id}|${vm.today()}"]?.choreIds.orEmpty(), onDismiss = { pickingFor = null }) {
             vm.setParentPicks(p, it); pickingFor = null
         }
     }

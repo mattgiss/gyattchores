@@ -48,6 +48,7 @@ fun HomeScreen(
     now: Long,
     zone: ZoneId,
     selectedId: String?,
+    syncStatus: String,
     onPick: (Player) -> Unit,
     onAdmin: () -> Unit,
     modifier: Modifier = Modifier,
@@ -70,7 +71,7 @@ fun HomeScreen(
         )
         Text("${Engine.DAILY_MINUTES} minutes a day. that's it.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(
-            if (soundOn) "♪ sound: on" else "♪ sound: off", style = MaterialTheme.typography.labelMedium,
+            (if (soundOn) "♪ sound: on" else "♪ sound: off") + "   ⇅ $syncStatus", style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.clickable(onClickLabel = "toggle sound") { soundOn = !soundOn; fb.soundOn = soundOn; fb.tick(soundOn) }.padding(vertical = 10.dp),
         )
