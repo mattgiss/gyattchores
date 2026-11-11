@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking   // URLSession lives here on Linux, where CI runs these tests
+#endif
 
 /// The same Supabase project and publishable (anon) key the web app ships in `index.html`.
 /// The key is public by design; access is governed by the tables' row-level-security policies.

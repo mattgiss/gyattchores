@@ -33,3 +33,38 @@ targets:
         INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+  GyattChoresUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: GyattChoresUITests
+    dependencies:
+      - target: GyattChores
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.gyattchores.app.uitests
+        TEST_TARGET_NAME: GyattChores
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: YES
+
+# A shared scheme, so `xcodebuild` (CI) and Xcode use the same build and test setup.
+schemes:
+  GyattChores:
+    build:
+      targets:
+        GyattChores: all
+        GyattChoresUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - GyattChoresUITests
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release

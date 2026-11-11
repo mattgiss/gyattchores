@@ -23,8 +23,22 @@ final class AppStore: ObservableObject {
     private var removedPlayers: Set<String> { didSet { save("removed_players.json", removedPlayers) } }
     private let api = Supabase()
     private var syncing = false, syncAgain = false
+    /// Debug builds only: `-uiTesting` is how the UI tests launch the app. It gives them their own
+    /// data folder and turns sync off, so a test run can never read or write the family's real
+    /// chores. With it, `-resetData` starts from nothing and `-demoData` from a made-up month.
+    #if DEBUG
+    private static let launchArguments = ProcessInfo.processInfo.arguments
+    #else
+    private static let launchArguments: [String] = []
+    #endif
+    private static let uiTesting = launchArguments.contains("-uiTesting")
+
     private static let dir: URL = {
-        let d = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        var d = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        if uiTesting {
+            d = d.appendingPathComponent("ui-testing", isDirectory: true)
+            if launchArguments.contains("-resetData") { try? FileManager.default.removeItem(at: d) }
+        }
         try? FileManager.default.createDirectory(at: d, withIntermediateDirectories: true)
         return d
     }()
@@ -39,6 +53,9 @@ final class AppStore: ObservableObject {
         shared = Self.load("family_state.json") ?? [:]
         me = UserDefaults.standard.string(forKey: "me")
         removedPlayers = Self.load("removed_players.json") ?? []
+        #if DEBUG
+        if Self.uiTesting, Self.launchArguments.contains("-demoData") { logs = Self.demoLogs(pool: pool, players: players) }
+        #endif
     }
 
     // MARK: Time
@@ -210,6 +227,7 @@ final class AppStore: ObservableObject {
 
     /// One pass at a time; a request that arrives mid-pass runs one follow-up pass instead of overlapping.
     func requestSync() {
+        if Self.uiTesting { syncStatus = "off (ui testing)"; return }
         if syncing { syncAgain = true; return }
         syncing = true
         syncStatus = "syncing"
@@ -258,6 +276,38 @@ final class AppStore: ObservableObject {
         }
         if !fresh.isEmpty { players += fresh.sorted { $0.id < $1.id }; setShared(Self.keyPlayers, players.map { "\($0.id):\($0.name)" }) }
     }
+
+    // MARK: Demo data
+
+    #if DEBUG
+    /// A made-up month for `-uiTesting -demoData`: the first player clears the card most days, the
+    /// second is hit and miss and has today's chores still waiting on a parent.
+    private static func demoLogs(pool: [Chore], players: [Player]) -> [ChoreLog] {
+        let now = Date(), cal = Calendar.current
+        var out: [ChoreLog] = []
+        for daysAgo in 0..<Engine.logDays {
+            guard let day = cal.date(byAdding: .day, value: -daysAgo, to: now) else { continue }
+            for (index, player) in players.prefix(2).enumerated() {
+                let steady = index == 0
+                if steady ? daysAgo % 9 == 4 : daysAgo % 3 == 1 { continue } // a day off
+                let goal = steady || daysAgo % 4 != 0 ? Engine.dailyMinutes : 14 // some short days
+                var minutes = 0, slot = daysAgo * 5 + index * 11
+                var used = Set<String>()
+                while minutes < goal, used.count < pool.count {
+                    let c = pool[slot % pool.count]
+                    slot += 1
+                    guard used.insert(c.id).inserted else { continue }
+                    out.append(ChoreLog(playerId: player.id, playerName: player.name, choreId: c.id, choreName: c.name,
+                                        points: c.pts, minutes: c.tiers[0],
+                                        status: daysAgo == 0 && !steady ? Status.pending : Status.approved,
+                                        timestamp: day.addingTimeInterval(Double(-used.count))))
+                    minutes += c.tiers[0]
+                }
+            }
+        }
+        return out
+    }
+    #endif
 
     // MARK: Disk
 

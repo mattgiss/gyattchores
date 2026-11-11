@@ -13,24 +13,37 @@
 		4AEAF7A73B7B929C12295533 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5713C489E0FED8ACE31202AF /* Components.swift */; };
 		5F1F395619FAD4DA41D774A8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 51E25F92C2A2E95EA8800ED0 /* Assets.xcassets */; };
 		6EABCCA04F802A71C720A821 /* DaresView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E766F8AA6D03F5BA65245F40 /* DaresView.swift */; };
-		9AAA5EB7566D8F8664316A80 /* chores.json in Resources */ = {isa = PBXBuildFile; fileRef = 44339DF38F0B41428DED1FA0 /* chores.json */; };
+		916FD9E47347E1253B010B01 /* GyattChoresUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F41F120FFA15EAABE3146658 /* GyattChoresUITests.swift */; };
+		93CFA127208AB4B255C85DBF /* chores.json in Resources */ = {isa = PBXBuildFile; fileRef = 1DDE444A4832988FAF4F5C8C /* chores.json */; };
 		9FDBA5BF4A17A0156A9260C8 /* GyattCore in Frameworks */ = {isa = PBXBuildFile; productRef = 082E13C94D4E9AAC05E89A26 /* GyattCore */; };
 		A010EF76DAC311B90FEA0C3F /* Feedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD615C04B74E794B9204B97B /* Feedback.swift */; };
 		A828A79D9FB56E67813DEF64 /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4971E3BEE78F1A82504A5490 /* AppStore.swift */; };
 		CC2DA1AA093DF7D28E9E86A4 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3272DA0935BA832663FC915B /* HomeView.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		BCDC15C6C68F734AAD81BD98 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D1987C51FC9235D67157863B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7548716DF2012415D0443C9B;
+			remoteInfo = GyattChores;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		14360DD67502C08B0BB5668E /* GyattChores.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = GyattChores.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1DDE444A4832988FAF4F5C8C /* chores.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = chores.json; sourceTree = "<group>"; };
 		3272DA0935BA832663FC915B /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
-		44339DF38F0B41428DED1FA0 /* chores.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = chores.json; sourceTree = "<group>"; };
 		46FDBB957624185A85BA0061 /* GyattChoresApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GyattChoresApp.swift; sourceTree = "<group>"; };
 		4971E3BEE78F1A82504A5490 /* AppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStore.swift; sourceTree = "<group>"; };
 		51E25F92C2A2E95EA8800ED0 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		5713C489E0FED8ACE31202AF /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
+		5D9BE8C4B00AA3D1C1CFCD63 /* GyattChoresUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = GyattChoresUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		88B421E0D81623C58D00E31C /* AdminView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminView.swift; sourceTree = "<group>"; };
 		AD615C04B74E794B9204B97B /* Feedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Feedback.swift; sourceTree = "<group>"; };
 		E766F8AA6D03F5BA65245F40 /* DaresView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaresView.swift; sourceTree = "<group>"; };
+		F41F120FFA15EAABE3146658 /* GyattChoresUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GyattChoresUITests.swift; sourceTree = "<group>"; };
 		FADAACA5C517EC47FDA95485 /* GyattCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = GyattCore; path = GyattCore; sourceTree = SOURCE_ROOT; };
 		FB22028F8301385EF58C79DE /* PlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -47,27 +60,19 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		07AF51CD8985294E6444E019 /* native */ = {
+		297CE583A041583ECB64DEB9 /* native */ = {
 			isa = PBXGroup;
 			children = (
-				44339DF38F0B41428DED1FA0 /* chores.json */,
+				1DDE444A4832988FAF4F5C8C /* chores.json */,
 			);
 			path = native;
-			sourceTree = "<group>";
-		};
-		0D6D417FDFB4B80637094427 /* gyattchores */ = {
-			isa = PBXGroup;
-			children = (
-				07AF51CD8985294E6444E019 /* native */,
-			);
-			name = gyattchores;
-			path = ..;
 			sourceTree = "<group>";
 		};
 		70535BCFA2D37ADC85CC5073 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 				14360DD67502C08B0BB5668E /* GyattChores.app */,
+				5D9BE8C4B00AA3D1C1CFCD63 /* GyattChoresUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -76,10 +81,20 @@
 			isa = PBXGroup;
 			children = (
 				F171BE575C3CC7912AB5A64F /* GyattChores */,
-				0D6D417FDFB4B80637094427 /* gyattchores */,
+				F02CC4544EA8AE0525188C2A /* GyattChoresUITests */,
+				A47E4A1EA07C99AF2FB8D79F /* nci */,
 				D785E7BDBF4977B0F6F50E63 /* Packages */,
 				70535BCFA2D37ADC85CC5073 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		A47E4A1EA07C99AF2FB8D79F /* nci */ = {
+			isa = PBXGroup;
+			children = (
+				297CE583A041583ECB64DEB9 /* native */,
+			);
+			name = nci;
+			path = ..;
 			sourceTree = "<group>";
 		};
 		D785E7BDBF4977B0F6F50E63 /* Packages */ = {
@@ -88,6 +103,14 @@
 				FADAACA5C517EC47FDA95485 /* GyattCore */,
 			);
 			name = Packages;
+			sourceTree = "<group>";
+		};
+		F02CC4544EA8AE0525188C2A /* GyattChoresUITests */ = {
+			isa = PBXGroup;
+			children = (
+				F41F120FFA15EAABE3146658 /* GyattChoresUITests.swift */,
+			);
+			path = GyattChoresUITests;
 			sourceTree = "<group>";
 		};
 		F171BE575C3CC7912AB5A64F /* GyattChores */ = {
@@ -109,6 +132,24 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		4DF6E052392C8E7FF4F9D561 /* GyattChoresUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 90ED24C74648BF1C53EABCF6 /* Build configuration list for PBXNativeTarget "GyattChoresUITests" */;
+			buildPhases = (
+				86C8EDA07AC6AE377699D989 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AB4F0EAD2344D49FB0599741 /* PBXTargetDependency */,
+			);
+			name = GyattChoresUITests;
+			packageProductDependencies = (
+			);
+			productName = GyattChoresUITests;
+			productReference = 5D9BE8C4B00AA3D1C1CFCD63 /* GyattChoresUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		7548716DF2012415D0443C9B /* GyattChores */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 2603955CDBA4184903057F09 /* Build configuration list for PBXNativeTarget "GyattChores" */;
@@ -138,6 +179,10 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
+					4DF6E052392C8E7FF4F9D561 = {
+						ProvisioningStyle = Automatic;
+						TestTargetID = 7548716DF2012415D0443C9B;
+					};
 					7548716DF2012415D0443C9B = {
 						ProvisioningStyle = Automatic;
 					};
@@ -161,6 +206,7 @@
 			projectRoot = "";
 			targets = (
 				7548716DF2012415D0443C9B /* GyattChores */,
+				4DF6E052392C8E7FF4F9D561 /* GyattChoresUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -171,13 +217,21 @@
 			buildActionMask = 2147483647;
 			files = (
 				5F1F395619FAD4DA41D774A8 /* Assets.xcassets in Resources */,
-				9AAA5EB7566D8F8664316A80 /* chores.json in Resources */,
+				93CFA127208AB4B255C85DBF /* chores.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		86C8EDA07AC6AE377699D989 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				916FD9E47347E1253B010B01 /* GyattChoresUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		B9571B287B61182575A55128 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -194,6 +248,14 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		AB4F0EAD2344D49FB0599741 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7548716DF2012415D0443C9B /* GyattChores */;
+			targetProxy = BCDC15C6C68F734AAD81BD98 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		54727BAA9E13AC5564162914 /* Release */ = {
@@ -367,6 +429,44 @@
 			};
 			name = Debug;
 		};
+		D7362F5318893CD7BC7B199E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.gyattchores.app.uitests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = GyattChores;
+			};
+			name = Debug;
+		};
+		FA8A05BE181214A84453B982 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.gyattchores.app.uitests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = GyattChores;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -375,6 +475,15 @@
 			buildConfigurations = (
 				B8737FFB45E2930C7951679C /* Debug */,
 				6C581090B0647FF38ACD734E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		90ED24C74648BF1C53EABCF6 /* Build configuration list for PBXNativeTarget "GyattChoresUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D7362F5318893CD7BC7B199E /* Debug */,
+				FA8A05BE181214A84453B982 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
