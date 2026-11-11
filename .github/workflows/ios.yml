@@ -92,7 +92,7 @@ jobs:
               -scheme GyattChores \
               -destination "platform=iOS Simulator,name=$device,OS=latest" \
               -resultBundlePath "results/$slug.xcresult" \
-              2>&1 | tee "build-$slug.log" \
+              < /dev/null 2>&1 | tee "build-$slug.log" \
               | grep -E "error:|Test Case|Test Suite|XCTAssert|failed|\*\* " || true
             echo "::endgroup::"
             if ! grep -q "TEST SUCCEEDED" "build-$slug.log"; then
