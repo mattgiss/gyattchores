@@ -1,0 +1,35 @@
+# Generates GyattChores.xcodeproj. Run `xcodegen` in this folder after adding or removing files.
+name: GyattChores
+options:
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+packages:
+  GyattCore:
+    path: GyattCore
+targets:
+  GyattChores:
+    type: application
+    platform: iOS
+    sources:
+      - path: GyattChores
+      - path: ../native/chores.json
+        buildPhase: resources
+    dependencies:
+      - package: GyattCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.gyattchores.app
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: GyattChores
+        INFOPLIST_KEY_NSFaceIDUsageDescription: Unlock the parent area to approve chores.
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
