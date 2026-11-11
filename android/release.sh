@@ -10,7 +10,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 VERSION="${1:?usage: ./release.sh <version, e.g. 0.4.0> \"notes\"}"
 NOTES="${2:-Android build $VERSION}"
-TAG="android-v$VERSION"
+TAG="v$VERSION"
 
 # versionCode must go up with every release, or Android refuses the update.
 CODE=$(( $(grep -oE 'versionCode = [0-9]+' app/build.gradle.kts | grep -oE '[0-9]+') + 1 ))
