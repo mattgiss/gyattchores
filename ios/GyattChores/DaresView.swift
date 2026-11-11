@@ -31,7 +31,9 @@ struct DaresView: View {
                     ForEach(mine, id: \.self) { d in
                         Text("· \(names[d.target] ?? d.target): \(store.poolById[d.choreId]?.name ?? d.choreId)").font(.callout).padding(.top, 2)
                     }
-                    if let note { Text(note).font(.footnote).foregroundStyle(Theme.bad).padding(.top, 6) }
+                    // A locked target already has its own standing line below; don't say it twice.
+                    let locked = target.map { store.submittedToday($0.id) } ?? false
+                    if let note, !locked { Text(note).font(.footnote).foregroundStyle(Theme.bad).padding(.top, 6) }
 
                     if let target {
                         SectionLabel("who are you daring?")

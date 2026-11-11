@@ -64,7 +64,9 @@ fun DaresScreen(
                 Text("${mine.size} of ${Engine.MAX_DARES_PER_DAY} used today", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 10.dp))
                 for (d in mine) Text("· ${names[d.target] ?: d.target}: ${vm.store.poolById[d.choreId]?.name ?: d.choreId}",
                     style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 2.dp))
-                note?.let { Text(it, color = Bad, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 6.dp)) }
+                // A locked target already has its own standing line below; don't say it twice.
+                val locked = target != null && vm.submittedToday(target.id, logs)
+                note?.takeIf { !locked }?.let { Text(it, color = Bad, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 6.dp)) }
             }
             if (target == null) {
                 item { Text("add another player to dare them.", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 24.dp)) }
