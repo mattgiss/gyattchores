@@ -150,13 +150,15 @@ jobs:
           echo "minimum iOS:   $(plist MinimumOSVersion)"
           echo "built with:    Xcode $(plist DTXcode), SDK $(plist DTSDKName)"
           # Things an upload is rejected or flagged for when they're missing.
-          [ "$(plist ITSAppUsesNonExemptEncryption)" = "false" ]
-          [ -n "$(plist NSFaceIDUsageDescription)" ]
-          [ -n "$(plist CFBundleIconName)" ]
-          test -f "$APP/PrivacyInfo.xcprivacy"
-          test -f "$APP/chores.json"
-          test -f "$APP/Assets.car"
-          echo "ok: encryption flag, Face ID text, icon, privacy manifest and chore list are all present"
+          failed=0
+          check() { if eval "$2" >/dev/null 2>&1; then echo "ok:      $1"; else echo "::error::Missing from the app: $1"; failed=1; fi; }
+          check "encryption flag set to false"  '[ "$(plist ITSAppUsesNonExemptEncryption)" = "false" ]'
+          check "Face ID usage text"            '[ -n "$(plist NSFaceIDUsageDescription)" ]'
+          check "app icon name"                 '[ -n "$(plist CFBundleIcons:CFBundlePrimaryIcon:CFBundleIconName)" ]'
+          check "compiled asset catalog"        'test -f "$APP/Assets.car"'
+          check "privacy manifest"              'test -f "$APP/PrivacyInfo.xcprivacy"'
+          check "chore list"                    'test -f "$APP/chores.json"'
+          exit $failed
       - name: Upload log
         if: failure()
         uses: actions/upload-artifact@v4
