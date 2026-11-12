@@ -79,7 +79,7 @@ struct HomeView: View {
                     ForEach(Array(board.enumerated()), id: \.element.0.id) { i, row in
                         HStack {
                             Text("\(i + 1). ").foregroundStyle(i == 0 && row.1 > 0 ? Theme.accent : .secondary)
-                            Text(row.0.name).fontWeight(i == 0 && row.1 > 0 ? .bold : .regular)
+                            Text(row.0.name).fontWeight(i == 0 && row.1 > 0 ? .bold : .regular).lineLimit(1).minimumScaleFactor(0.75)
                             Spacer()
                             Text("\(row.1) pts").foregroundStyle(.secondary)
                         }
@@ -92,7 +92,10 @@ struct HomeView: View {
                         Button { fb.tap(); onPick(p) } label: {
                             HStack {
                                 Text("> ").foregroundStyle(Theme.accent)
-                                Text(p.name).font(.headline).frame(maxWidth: .infinity, alignment: .leading)
+                                // One line, shrinking a little before it cuts off: a wrapped, hyphenated
+                                // name looks broken in the narrow left pane of the two-pane layout.
+                                Text(p.name).font(.headline).lineLimit(1).minimumScaleFactor(0.75)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                                 Text("\(store.rank(p.id).version) · 🔥\(store.streak(p.id))").foregroundStyle(.secondary)
                             }
                             .frame(minHeight: 64).contentShape(Rectangle())

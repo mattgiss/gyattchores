@@ -256,7 +256,15 @@ final class GyattChoresUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["✓ all approved — nice work"].waitForExistence(timeout: wait))
         XCTAssertTrue(app.staticTexts["27/30 · 90%"].exists)
         XCTAssertTrue(playerRow("bekindhearted", in: app).isSelected)
-        screenshot("ipad-04-landscape", of: app)
+        let wide = app.windows.firstMatch.frame
+        XCTAssertGreaterThan(wide.width, wide.height, "the app should have turned with the iPad")
+        XCTAssertLessThan(playerRow("bekindhearted", in: app).frame.maxX,
+                          app.staticTexts["✓ all approved — nice work"].frame.minX)
+        // The whole screen, not the app's own snapshot, which comes back cropped when sideways.
+        let sideways = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        sideways.name = "ipad-04-landscape"
+        sideways.lifetime = .keepAlways
+        add(sideways)
         XCUIDevice.shared.orientation = .portrait
     }
 }

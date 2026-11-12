@@ -57,10 +57,10 @@ struct RootView: View {
     private var twoPane: some View {
         GeometryReader { geo in
             HStack(spacing: 0) {
-                // About a third of the width, as on Android, kept between sensible limits so the
-                // list is neither cramped on a small iPad nor sprawling on a big one.
+                // Roughly a third of the width, as on Android, kept between limits so the list is
+                // neither cramped on an upright iPad nor sprawling on a big one turned sideways.
                 home(highlighting: adminOpen || daresOpen ? nil : selectedId)
-                    .frame(width: min(max(geo.size.width * 0.3, 300), 400))
+                    .frame(width: min(max(geo.size.width * 0.36, 320), 420))
                 Divider()
                 detail
                     // Rows stretched across a 13-inch screen are hard to read; keep them column-width.
