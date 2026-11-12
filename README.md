@@ -35,7 +35,8 @@ If the table is missing or the project is paused, the app simply stays in local-
 
 - **Pick-your-own daily card** — choose chores up to a 25-minute budget; the app auto-suggests more (same-area and most-neglected first) to reach 25 minutes, so every day is a full, short session.
 - **Escalation** — the longer a chore goes undone, the more minutes it costs and the higher it's suggested (`!` neglected, `!!` long overdue).
-- **Parent approval workflow** — chores stay pending until approved with the admin code, so XP can't be self-awarded.
+- **Parent approval workflow** — chores stay pending until approved with the admin code, so XP can't be self-awarded. A rejected chore can be done again the same day, and if everything a player logged today was rejected they start over with a fresh card.
+- **One chore, one person, per day** — once a player has a chore in (awaiting approval or approved), it isn't offered to anyone else until tomorrow.
 - **XP, momentum & version-number levels** — approved chores earn XP; a daily streak multiplies it up to 2×; your level is shown as a version of yourself (v1.0 → v1.1 → …), and XP only ever grows.
 - **Streaks** — consecutive days with an approved chore keep your momentum alive.
 - **Cross-device sync** — an optional Supabase backend keeps each kid's phone and the parent's admin view in sync.
