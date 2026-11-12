@@ -57,6 +57,20 @@ final class GyattChoresUITests: XCTestCase {
         from.press(forDuration: 0.05, thenDragTo: to)
     }
 
+    /// Checks off every chore on the card and returns the submit button, now enabled.
+    private func checkOffEverything(in app: XCUIApplication) -> XCUIElement {
+        let submit = app.buttons["> SUBMIT FOR APPROVAL"]
+        var steps = 0
+        while !submit.exists, steps < 40 {
+            steps += 1
+            let next = uncheckedChores(in: app).firstMatch
+            if next.exists, next.isHittable { next.tap() } else { nudgeUp(app) }
+        }
+        XCTAssertTrue(submit.exists, "checking every chore off should enable submit")
+        XCTAssertTrue(submit.isEnabled)
+        return submit
+    }
+
     private func open(_ name: String, in app: XCUIApplication) {
         let row = playerRow(name, in: app)
         XCTAssertTrue(row.waitForExistence(timeout: wait), "\(name) should be on the home screen")
@@ -111,15 +125,7 @@ final class GyattChoresUITests: XCTestCase {
         XCTAssertGreaterThan(uncheckedChores(in: app).count, 0)
         screenshot("04-card-unchecked", of: app)
 
-        let submit = app.buttons["> SUBMIT FOR APPROVAL"]
-        var steps = 0
-        while !submit.exists, steps < 40 {
-            steps += 1
-            let next = uncheckedChores(in: app).firstMatch
-            if next.exists, next.isHittable { next.tap() } else { nudgeUp(app) }
-        }
-        XCTAssertTrue(submit.exists, "checking every chore off should enable submit")
-        XCTAssertTrue(submit.isEnabled)
+        let submit = checkOffEverything(in: app)
         screenshot("05-card-checked", of: app)
 
         submit.tap()
@@ -209,6 +215,37 @@ final class GyattChoresUITests: XCTestCase {
         XCTAssertEqual(title.frame, before, "the title shouldn't scroll away")
         XCTAssertTrue(title.isHittable)
         screenshot("14-home-pushed-up", of: app)
+    }
+
+    /// A bug we shipped: chores were submitted under a player's name, a parent rejected them all, and
+    /// the player was stuck — a card of ✗s, nothing left to pick, "already submitted" for the day.
+    /// A rejected day isn't a finished day: they get the picker back and can submit a new card.
+    func testARejectedDayStartsOver() {
+        let app = launch(["-resetData", "-demoData", "-demoRejectedDay"])
+
+        open("megadinolava", in: app)
+        let main = mainButton(in: app)
+        XCTAssertTrue(main.waitForExistence(timeout: wait))
+        XCTAssertEqual(main.label, "> PICK OR SUGGEST CHORES", "a day of rejections should offer the picker, not a finished card")
+        XCTAssertTrue(app.staticTexts["today's earlier chores were rejected — build a new card"].exists)
+        XCTAssertFalse(app.buttons["+ bonus round"].exists)
+        screenshot("15-rejected-day-picker", of: app)
+
+        app.buttons["✨ suggest a 25-min card"].tap()
+        XCTAssertEqual(main.label, "> LOCK IN CARD")
+        main.tap()
+        checkOffEverything(in: app).tap()
+
+        // The new card is in and waiting; nothing on it reads as rejected.
+        let waiting = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'waiting on a parent'")).firstMatch
+        XCTAssertTrue(waiting.waitForExistence(timeout: wait))
+        XCTAssertEqual(uncheckedChores(in: app).count, 0)
+        screenshot("16-rejected-day-resubmitted", of: app)
+
+        // Someone else's day is untouched.
+        goBack(in: app)
+        open("bekindhearted", in: app)
+        XCTAssertTrue(app.staticTexts["✓ all approved — nice work"].waitForExistence(timeout: wait))
     }
 
     func testIPadShowsTheListAndTheDaySideBySide() throws {

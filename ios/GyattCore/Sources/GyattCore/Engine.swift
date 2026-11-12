@@ -170,6 +170,30 @@ public enum Engine {
         return chores + fromDares
     }
 
+    // MARK: Today
+
+    /// Where each chore a player logged today stands, from that day's logs. Approved wins outright.
+    /// Otherwise the most recent log decides, so a chore that was rejected and then done again reads
+    /// as awaiting a parent. When two rows carry the same time (a sync duplicate), a verdict beats pending.
+    public static func statusToday(_ todays: [ChoreLog]) -> [String: String] {
+        var newest: [String: ChoreLog] = [:]
+        var approved = Set<String>()
+        for log in todays {
+            if log.status == Status.approved { approved.insert(log.choreId) }
+            guard let current = newest[log.choreId] else { newest[log.choreId] = log; continue }
+            if log.timestamp > current.timestamp || (log.timestamp == current.timestamp && current.status == Status.pending) {
+                newest[log.choreId] = log
+            }
+        }
+        return newest.mapValues { approved.contains($0.choreId) ? Status.approved : $0.status }
+    }
+
+    /// Chores that can't be logged again today: the ones awaiting a parent or approved. A rejected
+    /// chore isn't used up — it can go on a card or into the bonus round again.
+    public static func standingToday(_ status: [String: String]) -> Set<String> {
+        Set(status.filter { $0.value != Status.rejected }.keys)
+    }
+
     // MARK: Daily minutes log
 
     /// Minutes a log contributed: its recorded minutes, else the chore's base tier, else its points.

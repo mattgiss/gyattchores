@@ -50,7 +50,8 @@ or **Product → Test** (⌘U) in Xcode.
 The UI tests launch the app with `-uiTesting`, a debug-only switch that gives
 it a separate data folder and turns sync off, so a test run can't read or
 write the family's real chores. `-resetData` empties that folder and
-`-demoData` fills it with a made-up month. None of this exists in release
+`-demoData` fills it with a made-up month (add `-demoRejectedDay` to have the
+second player's chores for today all rejected). None of this exists in release
 builds.
 
 ## CI

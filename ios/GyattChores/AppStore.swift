@@ -59,7 +59,11 @@ final class AppStore: ObservableObject {
         me = UserDefaults.standard.string(forKey: Self.meKey)
         removedPlayers = Self.load("removed_players.json") ?? []
         #if DEBUG
-        if Self.uiTesting, Self.launchArguments.contains("-demoData") { logs = Self.demoLogs(pool: pool, players: players) }
+        if Self.uiTesting, Self.launchArguments.contains("-demoData") {
+            // `-demoRejectedDay`: the second player's chores for today were all rejected, not left waiting.
+            let rejectedDay = Self.launchArguments.contains("-demoRejectedDay")
+            logs = Self.demoLogs(pool: pool, players: players, todayStatus: rejectedDay ? Status.rejected : Status.pending)
+        }
         #endif
     }
 
@@ -92,13 +96,21 @@ final class AppStore: ObservableObject {
             }
         }
     }
-    func submittedToday(_ playerId: String) -> Bool { !todaysLogs(playerId).isEmpty }
+    /// True when the player has something in today that's awaiting a parent or approved. A day where
+    /// everything was rejected doesn't count as submitted.
+    func submittedToday(_ playerId: String) -> Bool { !Engine.standingToday(Engine.statusToday(todaysLogs(playerId))).isEmpty }
+    /// True when the player logged chores today and every one was rejected: they start over.
+    func rejectedToday(_ playerId: String) -> Bool { !todaysLogs(playerId).isEmpty && !submittedToday(playerId) }
     func streak(_ playerId: String) -> Int { Engine.streak(playerId: playerId, logs: logs, now: Date(), calendar: calendar) }
     func todaysLogs(_ playerId: String) -> [ChoreLog] { logs.filter { $0.playerId == playerId && calendar.isDateInToday($0.timestamp) } }
 
-    /// Today's card, or one rebuilt from today's logs when another device built it.
+    /// Today's card, or one rebuilt from today's logs when another device built it. Nil means the
+    /// player picks a card — including when everything they logged today was rejected: a rejected
+    /// day isn't a finished day, so they get a fresh picker instead of a card of ✗s they can't change.
     func card(for playerId: String) -> Card? {
-        if let c = cards["\(playerId)|\(todayKey)"] { return c }
+        let startOver = rejectedToday(playerId)
+        if let c = cards["\(playerId)|\(todayKey)"] { return c.submitted && startOver ? nil : c }
+        if startOver { return nil }
         var seen = Set<String>()
         let todays = todaysLogs(playerId).sorted { $0.timestamp < $1.timestamp }.filter { seen.insert($0.choreId).inserted }
         guard !todays.isEmpty else { return nil }
@@ -287,7 +299,7 @@ final class AppStore: ObservableObject {
     #if DEBUG
     /// A made-up month for `-uiTesting -demoData`: the first player clears the card most days, the
     /// second is hit and miss and has today's chores still waiting on a parent.
-    private static func demoLogs(pool: [Chore], players: [Player]) -> [ChoreLog] {
+    private static func demoLogs(pool: [Chore], players: [Player], todayStatus: String) -> [ChoreLog] {
         let now = Date(), cal = Calendar.current
         var out: [ChoreLog] = []
         for daysAgo in 0..<Engine.logDays {
@@ -304,7 +316,7 @@ final class AppStore: ObservableObject {
                     guard used.insert(c.id).inserted else { continue }
                     out.append(ChoreLog(playerId: player.id, playerName: player.name, choreId: c.id, choreName: c.name,
                                         points: c.pts, minutes: c.tiers[0],
-                                        status: daysAgo == 0 && !steady ? Status.pending : Status.approved,
+                                        status: daysAgo == 0 && !steady ? todayStatus : Status.approved,
                                         timestamp: day.addingTimeInterval(Double(-used.count))))
                     minutes += c.tiers[0]
                 }
