@@ -77,6 +77,12 @@ jobs:
             done
           fi
           [ -n "$PICKED" ] || { echo "::error::No iPhone simulator available"; exit 1; }
+          # Plus one iPad, for the two-pane layout.
+          IPADS=$(xcrun simctl list devices available -j | jq -r '[.devices[][] | .name | select(startswith("iPad"))] | unique | .[]')
+          echo "Available iPad simulators:"; echo "$IPADS" | sed 's/^/  /'
+          IPAD=$(echo "$IPADS" | grep -E '^iPad (Pro 11|Air 11|\(A16\))' | head -1)
+          [ -n "$IPAD" ] || IPAD=$(echo "$IPADS" | head -1)
+          [ -n "$IPAD" ] && PICKED="$PICKED$IPAD"$'\n'
           printf '%s' "$PICKED" > "$RUNNER_TEMP/simulators.txt"
           echo "Testing on:"; sed 's/^/  /' "$RUNNER_TEMP/simulators.txt"
       - name: Build and run UI tests
@@ -86,7 +92,7 @@ jobs:
           status=0
           while IFS= read -r device; do
             [ -n "$device" ] || continue
-            slug=$(echo "$device" | tr ' ' '-')
+            slug=$(echo "$device" | tr -c 'A-Za-z0-9\n' '-' | tr -s '-' | sed 's/-$//')
             echo "::group::UI tests on $device"
             xcodebuild test \
               -project GyattChores.xcodeproj \

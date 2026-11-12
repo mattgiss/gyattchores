@@ -3,10 +3,14 @@ import XCTest
 /// Drives the real app in a simulator: a kid's day from picking chores to submitting, the bonus
 /// round, the save surviving a relaunch, and the parent gate. Screenshots are attached to the results.
 ///
+/// The same tests run on an iPhone (one screen at a time) and an iPad (home list on the left, the
+/// open screen on the right); the helpers below paper over the difference in getting around.
+///
 /// Every launch passes `-uiTesting`, which gives the app a separate data folder and turns sync
 /// off — these tests must never reach the family's real chores. `launch` checks that it took.
 final class GyattChoresUITests: XCTestCase {
     private let wait: TimeInterval = 20
+    private var isPad: Bool { UIDevice.current.userInterfaceIdiom == .pad }
 
     override func setUp() {
         continueAfterFailure = false
@@ -30,10 +34,10 @@ final class GyattChoresUITests: XCTestCase {
     }
 
     /// The big "> LABEL" button at the bottom of the picker and the card. The home screen's player
-    /// rows also start with "> " and are still around while the next screen slides in, so rule
-    /// them out by their streak flame.
+    /// rows and its dares button also start with "> ", and the home screen is still around while
+    /// the next screen slides in (and always, on an iPad), so rule those out.
     private func mainButton(in app: XCUIApplication) -> XCUIElement {
-        app.buttons.matching(NSPredicate(format: "label BEGINSWITH '> ' AND NOT (label CONTAINS '🔥')")).firstMatch
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH '> ' AND NOT (label CONTAINS '🔥') AND NOT (label CONTAINS 'DARES')")).firstMatch
     }
 
     private func uncheckedChores(in app: XCUIApplication) -> XCUIElementQuery {
@@ -57,11 +61,19 @@ final class GyattChoresUITests: XCTestCase {
         let row = playerRow(name, in: app)
         XCTAssertTrue(row.waitForExistence(timeout: wait), "\(name) should be on the home screen")
         row.tap()
-        XCTAssertTrue(app.buttons["← back"].waitForExistence(timeout: wait), "\(name)'s screen should open")
+        if isPad {
+            // The day opens beside the list; there's nothing to go back to.
+            XCTAssertTrue(row.isSelected, "\(name) should be highlighted in the list")
+        } else {
+            XCTAssertTrue(app.buttons["← back"].waitForExistence(timeout: wait), "\(name)'s screen should open")
+        }
     }
 
+    /// Back to the home list. On an iPad it never left, so there's only something to close when
+    /// the parent area, the dares or the bonus picker is open.
     private func goBack(in app: XCUIApplication) {
-        app.buttons["← back"].tap()
+        let back = app.buttons["← back"]
+        if back.exists { back.tap() }
         XCTAssertTrue(app.staticTexts["GYATTCHORES"].waitForExistence(timeout: wait))
     }
 
@@ -182,5 +194,69 @@ final class GyattChoresUITests: XCTestCase {
         open("bekindhearted", in: app)
         XCTAssertTrue(app.staticTexts["✓ all approved — nice work"].waitForExistence(timeout: wait))
         screenshot("12-card-approved", of: app)
+
+        // Say whose phone this is: the home screen swaps the question for the dares button.
+        goBack(in: app)
+        app.buttons["bekindhearted"].tap()
+        XCTAssertTrue(app.buttons["> DARES · 3 LEFT TODAY"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["this phone: bekindhearted"].exists)
+        screenshot("13-home-with-dares", of: app)
+
+        // However far the list is pushed, the title stays where it is.
+        let title = app.staticTexts["GYATTCHORES"]
+        let before = title.frame
+        app.staticTexts["27/30 · 90%"].swipeUp()
+        XCTAssertEqual(title.frame, before, "the title shouldn't scroll away")
+        XCTAssertTrue(title.isHittable)
+        screenshot("14-home-pushed-up", of: app)
+    }
+
+    func testIPadShowsTheListAndTheDaySideBySide() throws {
+        try XCTSkipUnless(isPad, "two panes are the iPad layout")
+        let app = launch(["-resetData", "-demoData"])
+
+        // Nothing picked yet: the list on the left, a prompt on the right.
+        XCTAssertTrue(app.staticTexts["> pick a player"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["27/30 · 90%"].exists)
+        screenshot("ipad-01-nothing-picked", of: app)
+
+        // A player's day opens on the right; the list stays, with that player highlighted.
+        open("megadinolava", in: app)
+        XCTAssertTrue(app.staticTexts["card submitted — waiting on a parent"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["27/30 · 90%"].exists, "the home list stays on screen")
+        XCTAssertFalse(app.staticTexts["> pick a player"].exists)
+        XCTAssertFalse(app.buttons["← back"].exists, "nothing to go back to beside the list")
+        let listRight = playerRow("megadinolava", in: app).frame.maxX
+        let dayLeft = app.staticTexts["card submitted — waiting on a parent"].frame.minX
+        XCTAssertLessThan(listRight, dayLeft, "the day sits to the right of the list, not over it")
+        screenshot("ipad-02-day-beside-list", of: app)
+
+        // Picking someone else swaps the right-hand side.
+        open("bekindhearted", in: app)
+        XCTAssertTrue(app.staticTexts["✓ all approved — nice work"].waitForExistence(timeout: wait))
+        XCTAssertFalse(playerRow("megadinolava", in: app).isSelected)
+
+        // The bonus picker needs its own way back, since there's no screen behind it.
+        app.buttons["+ bonus round"].tap()
+        XCTAssertTrue(app.buttons["> PICK CHORES TO LOG"].waitForExistence(timeout: wait))
+        goBack(in: app)
+        XCTAssertTrue(app.staticTexts["✓ all approved — nice work"].waitForExistence(timeout: wait))
+
+        // The parent area opens on the right too, and closing it returns to the day.
+        app.staticTexts["GYATTCHORES"].tap(withNumberOfTaps: 5, numberOfTouches: 1)
+        XCTAssertTrue(app.secureTextFields.firstMatch.waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["27/30 · 90%"].exists, "the home list stays on screen")
+        XCTAssertFalse(playerRow("bekindhearted", in: app).isSelected, "no player is highlighted while the parent area is open")
+        screenshot("ipad-03-parent-area", of: app)
+        goBack(in: app)
+        XCTAssertTrue(app.staticTexts["✓ all approved — nice work"].waitForExistence(timeout: wait))
+
+        // Turned sideways it's still two panes on the same screen.
+        XCUIDevice.shared.orientation = .landscapeLeft
+        XCTAssertTrue(app.staticTexts["✓ all approved — nice work"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["27/30 · 90%"].exists)
+        XCTAssertTrue(playerRow("bekindhearted", in: app).isSelected)
+        screenshot("ipad-04-landscape", of: app)
+        XCUIDevice.shared.orientation = .portrait
     }
 }

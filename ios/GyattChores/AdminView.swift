@@ -7,6 +7,8 @@ struct AdminView: View {
     @EnvironmentObject var store: AppStore
     @EnvironmentObject var fb: Feedback
     @Environment(\.dismiss) private var dismiss
+    /// Set when this is shown in a pane, not presented over the app: closes the pane.
+    var onBack: (() -> Void)? = nil
     // Not saved: closing the screen locks it again.
     @State private var authed = false
     @State private var code = ""
@@ -16,7 +18,7 @@ struct AdminView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Button("← back") { fb.tap(); dismiss() }
+                Button("← back") { fb.tap(); if let onBack { onBack() } else { dismiss() } }
                 Text("ADMIN").font(.headline).foregroundStyle(Theme.accent).padding(.leading, 8)
                 Spacer()
             }
@@ -108,6 +110,7 @@ private struct AdminContent: View {
             }
             .padding(.horizontal, 20)
         }
+        .scrollBounceBehavior(.basedOnSize)
         .alert("Edit player", isPresented: Binding(get: { editing != nil }, set: { if !$0 { editing = nil } })) {
             TextField("name", text: $name)
             Button("Save") { if let p = editing { store.renamePlayer(p, name) } }

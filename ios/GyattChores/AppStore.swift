@@ -16,7 +16,7 @@ final class AppStore: ObservableObject {
     /// "dare|<fromId>|<yyyy-MM-dd>" as "targetId:choreId" items, and the player list.
     @Published private(set) var shared: [String: LocalEntry] { didSet { save("family_state.json", shared) } }
     /// Whose phone this is. Dares are made as this player.
-    @Published private(set) var me: String? { didSet { UserDefaults.standard.set(me, forKey: "me") } }
+    @Published private(set) var me: String? { didSet { UserDefaults.standard.set(me, forKey: Self.meKey) } }
     /// "syncing", "synced", "offline", or "synced · dares stay on this phone".
     @Published private(set) var syncStatus = "idle"
 
@@ -32,12 +32,17 @@ final class AppStore: ObservableObject {
     private static let launchArguments: [String] = []
     #endif
     private static let uiTesting = launchArguments.contains("-uiTesting")
+    /// "Whose phone is this" is kept apart for UI tests too, so they can't change the real answer.
+    private static let meKey = uiTesting ? "ui-testing.me" : "me"
 
     private static let dir: URL = {
         var d = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         if uiTesting {
             d = d.appendingPathComponent("ui-testing", isDirectory: true)
-            if launchArguments.contains("-resetData") { try? FileManager.default.removeItem(at: d) }
+            if launchArguments.contains("-resetData") {
+                try? FileManager.default.removeItem(at: d)
+                UserDefaults.standard.removeObject(forKey: meKey)
+            }
         }
         try? FileManager.default.createDirectory(at: d, withIntermediateDirectories: true)
         return d
@@ -51,7 +56,7 @@ final class AppStore: ObservableObject {
         players = Self.load("players.json") ?? [Player(id: "1", name: "bekindhearted"), Player(id: "2", name: "megadinolava")]
         cards = Self.load("cards.json") ?? [:]
         shared = Self.load("family_state.json") ?? [:]
-        me = UserDefaults.standard.string(forKey: "me")
+        me = UserDefaults.standard.string(forKey: Self.meKey)
         removedPlayers = Self.load("removed_players.json") ?? []
         #if DEBUG
         if Self.uiTesting, Self.launchArguments.contains("-demoData") { logs = Self.demoLogs(pool: pool, players: players) }

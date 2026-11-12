@@ -2,28 +2,35 @@ import SwiftUI
 import GyattCore
 
 /// Player select + the 30-day "25 minutes a day" log. Tapping the title 5x opens the parent gate.
+/// Where a tap leads (a pushed screen on a phone, the right-hand pane on an iPad) is `RootView`'s call.
 struct HomeView: View {
     @EnvironmentObject var store: AppStore
     @EnvironmentObject var fb: Feedback
-    @State private var path: [Player] = []
-    @State private var adminOpen = false
-    @State private var daresOpen = false
+    /// The player whose day is open beside this list, highlighted in the two-pane layout.
+    var selectedId: String? = nil
+    let onPick: (Player) -> Void
+    let onAdmin: () -> Void
+    let onDares: () -> Void
     @State private var taps = 0
     @State private var lastTap = Date.distantPast
 
     var body: some View {
-        NavigationStack(path: $path) {
+        VStack(alignment: .leading, spacing: 0) {
+            // The title stays put; everything else scrolls beneath it, so nothing slides up
+            // under the status bar or the Dynamic Island.
+            Text("GYATTCHORES").font(.title).bold().kerning(4).foregroundStyle(Theme.accent)
+                .lineLimit(1).minimumScaleFactor(0.6)
+                .padding(.vertical, 8).contentShape(Rectangle())
+                .onTapGesture {
+                    fb.tap()
+                    let now = Date()
+                    taps = now.timeIntervalSince(lastTap) < 2 ? taps + 1 : 1
+                    lastTap = now
+                    if taps >= 5 { taps = 0; onAdmin() }
+                }
+                .padding(.horizontal, 20).padding(.top, 8)
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    Text("GYATTCHORES").font(.title).bold().kerning(4).foregroundStyle(Theme.accent)
-                        .padding(.vertical, 8).contentShape(Rectangle())
-                        .onTapGesture {
-                            fb.tap()
-                            let now = Date()
-                            taps = now.timeIntervalSince(lastTap) < 2 ? taps + 1 : 1
-                            lastTap = now
-                            if taps >= 5 { taps = 0; adminOpen = true }
-                        }
                     Text("\(Engine.dailyMinutes) minutes a day. that's it.").foregroundStyle(.secondary)
                     Text((fb.soundOn ? "♪ sound: on" : "♪ sound: off") + "   ⇅ \(store.syncStatus)")
                         .font(.caption).foregroundStyle(.secondary).padding(.vertical, 10).contentShape(Rectangle())
@@ -35,7 +42,8 @@ struct HomeView: View {
                     let dares = store.dares
                     if let me = store.me, names[me] != nil {
                         let used = dares.filter { $0.from == me && $0.day == store.todayKey }.count
-                        TermButton(label: "DARES · \(Engine.maxDaresPerDay - used) LEFT TODAY") { fb.tap(); daresOpen = true }.padding(.top, 4)
+                        // Optional, so it's an outline: the players below are the main thing here.
+                        OutlineButton(label: "> DARES · \(Engine.maxDaresPerDay - used) LEFT TODAY") { fb.tap(); onDares() }.padding(.top, 4)
                         Text("this phone: \(names[me] ?? "")").font(.caption2).foregroundStyle(.secondary).padding(.top, 4)
                     } else {
                         SectionLabel("whose phone is this?")
@@ -80,15 +88,20 @@ struct HomeView: View {
 
                     SectionLabel("who's playing")
                     ForEach(store.players) { p in
-                        Button { fb.tap(); path.append(p) } label: {
+                        let isSelected = p.id == selectedId
+                        Button { fb.tap(); onPick(p) } label: {
                             HStack {
                                 Text("> ").foregroundStyle(Theme.accent)
                                 Text(p.name).font(.headline).frame(maxWidth: .infinity, alignment: .leading)
                                 Text("\(store.rank(p.id).version) · 🔥\(store.streak(p.id))").foregroundStyle(.secondary)
                             }
                             .frame(minHeight: 64).contentShape(Rectangle())
+                            .padding(.horizontal, 10)
+                            .background(isSelected ? Theme.accent.opacity(0.12) : Color.clear)
+                            .padding(.horizontal, -10)
                         }
                         .buttonStyle(.plain)
+                        .accessibilityAddTraits(isSelected ? .isSelected : [])
                         Divider()
                     }
 
@@ -99,16 +112,10 @@ struct HomeView: View {
                                     byDay: Engine.minutesByDay(playerId: p.id, logs: store.logs, pool: store.poolById, calendar: store.calendar))
                     }
                 }
-                .padding(.horizontal, 20).padding(.vertical, 16)
+                .padding(.horizontal, 20).padding(.bottom, 16)
             }
-            .navigationDestination(for: Player.self) { PlayerView(player: $0) }
-            .toolbar(.hidden, for: .navigationBar)
-        }
-        .fullScreenCover(isPresented: $daresOpen) {
-            DaresView().environmentObject(store).environmentObject(fb).fontDesign(.monospaced).tint(Theme.accent)
-        }
-        .fullScreenCover(isPresented: $adminOpen) {
-            AdminView().environmentObject(store).environmentObject(fb).fontDesign(.monospaced).tint(Theme.accent)
+            // Only scroll (and bounce) when there's more than fits.
+            .scrollBounceBehavior(.basedOnSize)
         }
     }
 }

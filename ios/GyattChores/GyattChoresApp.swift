@@ -8,7 +8,7 @@ struct GyattChoresApp: App {
 
     var body: some Scene {
         WindowGroup {
-            HomeView()
+            RootView()
                 .environmentObject(store)
                 .environmentObject(feedback)
                 .fontDesign(.monospaced)

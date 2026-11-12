@@ -7,6 +7,8 @@ struct PlayerView: View {
     @EnvironmentObject var fb: Feedback
     @Environment(\.dismiss) private var dismiss
     let player: Player
+    /// False when this is the right-hand pane beside the home list: there's nothing to go back to.
+    var showsBack = true
     @State private var bonusPicking = false
 
     var body: some View {
@@ -15,8 +17,12 @@ struct PlayerView: View {
         let loggedToday = Set((card?.choreIds ?? []) + todays.map(\.choreId))
         VStack(spacing: 0) {
             HStack {
-                Button("← back") { fb.tap(); if bonusPicking { bonusPicking = false } else { dismiss() } }
-                Text(bonusPicking ? "\(player.name) · bonus round" : player.name).font(.headline).padding(.leading, 8)
+                // Leaving the bonus picker always needs a way back, even with no screen behind this one.
+                if showsBack || bonusPicking {
+                    Button("← back") { fb.tap(); if bonusPicking { bonusPicking = false } else { dismiss() } }
+                        .padding(.trailing, 8)
+                }
+                Text(bonusPicking ? "\(player.name) · bonus round" : player.name).font(.headline)
                 Spacer()
             }
             .padding(.horizontal, 20).padding(.vertical, 12)
@@ -67,6 +73,7 @@ private struct PickerView: View {
                 }
                 .padding(.horizontal, 20)
             }
+            .scrollBounceBehavior(.basedOnSize)
             VStack(alignment: .leading, spacing: 8) {
                 Text(bonus ? "\(total)m" : "\(total) / \(Engine.dailyMinutes)m").bold()
                 if !bonus {
@@ -129,6 +136,7 @@ private struct CardRunView: View {
                 }
                 .padding(.horizontal, 20)
             }
+            .scrollBounceBehavior(.basedOnSize)
             VStack(alignment: .leading, spacing: 8) {
                 if !card.submitted {
                     TermButton(label: allChecked ? "SUBMIT FOR APPROVAL" : "CHECK OFF EVERYTHING FIRST", enabled: allChecked) {

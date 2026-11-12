@@ -13,58 +13,61 @@ final class Feedback: ObservableObject {
     private var cache: [String: Data] = [:]
     private var playing: [AVAudioPlayer] = []
 
-    init() { try? AVAudioSession.sharedInstance().setCategory(.ambient, options: .mixWithOthers) }
+    init() {
+        try? AVAudioSession.sharedInstance().setCategory(.ambient, options: .mixWithOthers)
+        generators.values.forEach { $0.prepare() }
+    }
 
     // MARK: Moments
 
     /// Navigation and small taps.
-    func tap() { impact(.light, 0.5); play("tap", [N(84, 18, gain: 0.5)]) }
+    func tap() { impact(.rigid, 0.8); play("tap", [N(84, 18, gain: 0.5)]) }
 
     /// Checking or unchecking a chore.
     func tick(_ on: Bool) {
-        impact(on ? .medium : .light, on ? 0.9 : 0.5)
+        impact(on ? .heavy : .rigid, on ? 1 : 0.8)
         if on { play("on", [N(76, 35), N(83, 60)]) } else { play("off", [N(76, 30), N(69, 50, gain: 0.7)]) }
     }
 
     /// "Suggest a card": a quick run up the scale.
     func fill() {
-        pattern([(0, 0.3), (47, 0.45), (94, 0.6), (141, 0.8)])
+        pattern([(0, 0.6), (47, 0.75), (94, 0.9), (141, 1)])
         play("fill", [N(72, 40), N(76, 40), N(79, 40), N(83, 40), N(84, 110)])
     }
 
     /// The card just reached a full day's worth.
-    func ready() { pattern([(0, 0.7), (110, 0.9)]); play("ready", [N(79, 60), N(86, 140)]) }
+    func ready() { pattern([(0, 0.9), (110, 1)]); play("ready", [N(79, 60), N(86, 140)]) }
 
     func lockIn() { impact(.heavy, 1); play("lock", [N(60, 70, wave: 1), N(67, 70, wave: 1), N(72, 160, wave: 1)]) }
 
     func submit() {
-        pattern([(0, 0.4), (70, 0.6), (140, 0.85)])
+        pattern([(0, 0.7), (70, 0.85), (140, 1)])
         play("submit", [N(72, 80), N(76, 80), N(79, 80), N(84, 240)])
     }
 
     /// A dare placed: a sly little two-step.
     func dare() {
-        pattern([(0, 0.5), (80, 0.9)])
+        pattern([(0, 0.8), (80, 1)])
         play("dare", [N(70, 60, wave: 0.6), N(0, 30), N(77, 50, wave: 0.6), N(82, 140, wave: 0.6)])
     }
 
     /// Yesterday's dares landed: sparkle.
     func dareLanded() {
-        pattern([(0, 0.5), (60, 0.75), (120, 1)])
+        pattern([(0, 0.8), (60, 0.9), (120, 1)])
         play("landed", [N(88, 45), N(91, 45), N(95, 45), N(100, 220, gain: 0.8)])
     }
 
     /// Parent approved a chore: a coin-like two-note chime.
-    func approve() { UINotificationFeedbackGenerator().notificationOccurred(.success); play("approve", [N(83, 60), N(88, 220)]) }
+    func approve() { notify(.success); play("approve", [N(83, 60), N(88, 220)]) }
 
     func reject() {
-        UINotificationFeedbackGenerator().notificationOccurred(.warning)
+        notify(.warning)
         play("reject", [N(57, 110, end: 52, wave: 1, gain: 0.8), N(50, 180, end: 45, wave: 1, gain: 0.8)])
     }
 
     /// Something isn't allowed (chore doesn't fit, wrong code).
     func error() {
-        UINotificationFeedbackGenerator().notificationOccurred(.error)
+        notify(.error)
         play("error", [N(48, 90, wave: 1, gain: 0.8), N(0, 30), N(48, 120, wave: 1, gain: 0.8)])
     }
 
@@ -72,22 +75,38 @@ final class Feedback: ObservableObject {
 
     /// A new version shipped: the big one.
     func levelUp() {
-        pattern([(0, 0.4), (80, 0.55), (160, 0.7), (240, 0.85), (360, 1), (420, 1)])
+        pattern([(0, 0.7), (80, 0.8), (160, 0.9), (240, 1), (360, 1), (420, 1)])
         play("level", [N(72, 90, wave: 0.6), N(72, 90, wave: 0.6), N(72, 90, wave: 0.6), N(79, 180, wave: 0.6),
                        N(77, 90, wave: 0.6), N(79, 90, wave: 0.6), N(84, 420, wave: 0.6), N(96, 300, gain: 0.5)])
     }
 
     // MARK: Haptics
 
+    // Firm and strong by design: "rigid" is the crisp, hard-edged tap and "heavy" the full thud,
+    // both played near full strength. The generators are kept and re-armed after every use, because
+    // one made on the spot fires before the Taptic Engine is awake and lands soft and late.
+    private let generators: [UIImpactFeedbackGenerator.FeedbackStyle: UIImpactFeedbackGenerator] = [
+        .rigid: UIImpactFeedbackGenerator(style: .rigid),
+        .heavy: UIImpactFeedbackGenerator(style: .heavy),
+    ]
+    private let notifier = UINotificationFeedbackGenerator()
+
     private func impact(_ style: UIImpactFeedbackGenerator.FeedbackStyle, _ intensity: CGFloat) {
-        UIImpactFeedbackGenerator(style: style).impactOccurred(intensity: intensity)
+        guard let generator = generators[style] else { return }
+        generator.impactOccurred(intensity: intensity)
+        generator.prepare()
+    }
+
+    private func notify(_ type: UINotificationFeedbackGenerator.FeedbackType) {
+        notifier.notificationOccurred(type)
+        notifier.prepare()
     }
 
     /// A run of taps: (delay in ms from the start, strength 0…1).
     private func pattern(_ taps: [(Int, CGFloat)]) {
         for (ms, strength) in taps {
-            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(ms)) {
-                UIImpactFeedbackGenerator(style: .rigid).impactOccurred(intensity: strength)
+            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(ms)) { [weak self] in
+                MainActor.assumeIsolated { self?.impact(.rigid, strength) }
             }
         }
     }

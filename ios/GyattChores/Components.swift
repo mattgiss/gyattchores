@@ -1,24 +1,56 @@
 import SwiftUI
 import GyattCore
 
-/// "> LABEL" terminal-style button.
+/// "> LABEL" — the one main action on a screen. Filled when it can be pressed, a grey outline when it can't.
 struct TermButton: View {
     let label: String
     var enabled = true
     let action: () -> Void
     var body: some View {
-        Button(action: action) {
-            Text("> \(label)").fontWeight(.bold).kerning(1).frame(maxWidth: .infinity, minHeight: 52)
-        }
-        .buttonStyle(.borderedProminent).disabled(!enabled)
+        Button(action: action) { Text("> \(label)") }
+            .buttonStyle(TermButtonStyle(filled: true)).disabled(!enabled)
     }
 }
 
+/// A secondary action: a thin outline and nothing more, so it never competes with the main one.
 struct OutlineButton: View {
     let label: String
     let action: () -> Void
     var body: some View {
-        Button(action: action) { Text(label).frame(maxWidth: .infinity, minHeight: 44) }.buttonStyle(.bordered)
+        Button(action: action) { Text(label) }.buttonStyle(TermButtonStyle(filled: false))
+    }
+}
+
+/// The app's buttons: full width but only as tall as a comfortable tap target, with a squared-off
+/// outline. Sized by hand because the system's bordered styles add their own padding on top.
+struct TermButtonStyle: ButtonStyle {
+    let filled: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        Face(configuration: configuration, filled: filled)
+    }
+
+    private struct Face: View {
+        let configuration: ButtonStyleConfiguration
+        let filled: Bool
+        @Environment(\.isEnabled) private var isEnabled
+
+        var body: some View {
+            let solid = filled && isEnabled
+            let shape = RoundedRectangle(cornerRadius: 8)
+            configuration.label
+                .font(filled ? .subheadline : .footnote)
+                .fontWeight(filled ? .bold : .regular)
+                .kerning(filled ? 1 : 0)
+                .lineLimit(1).minimumScaleFactor(0.7)
+                .foregroundStyle(solid ? Color.white : (isEnabled ? Theme.accent : Color.secondary))
+                .padding(.horizontal, 12)
+                .frame(maxWidth: .infinity, minHeight: filled ? 44 : 40)
+                .background(solid ? Theme.accent : Color.clear, in: shape)
+                .overlay(shape.strokeBorder(isEnabled ? Theme.accent.opacity(filled ? 1 : 0.55) : Color(.separator), lineWidth: 1))
+                .contentShape(Rectangle())
+                .opacity(configuration.isPressed ? 0.6 : 1)
+        }
     }
 }
 

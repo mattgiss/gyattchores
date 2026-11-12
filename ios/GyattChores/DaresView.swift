@@ -7,6 +7,8 @@ struct DaresView: View {
     @EnvironmentObject var store: AppStore
     @EnvironmentObject var fb: Feedback
     @Environment(\.dismiss) private var dismiss
+    /// Set when this is shown in a pane, not presented over the app: closes the pane.
+    var onBack: (() -> Void)? = nil
     @State private var targetId: String?
     @State private var note: String?
 
@@ -18,7 +20,7 @@ struct DaresView: View {
         let names = Dictionary(uniqueKeysWithValues: store.players.map { ($0.id, $0.name) })
         VStack(spacing: 0) {
             HStack {
-                Button("← back") { fb.tap(); dismiss() }
+                Button("← back") { fb.tap(); if let onBack { onBack() } else { dismiss() } }
                 Text("DARES").font(.headline).foregroundStyle(Theme.accent).padding(.leading, 8)
                 Spacer()
             }
