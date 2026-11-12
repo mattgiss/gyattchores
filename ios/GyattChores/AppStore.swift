@@ -167,6 +167,32 @@ final class AppStore: ObservableObject {
 
     func setMe(_ player: Player) { me = player.id }
 
+    // MARK: Display names
+
+    /// A player's display name, if they've set one. It is only ever shown: the username and id are
+    /// what chore logs, sync and scoring use, so a display name can't damage them. Kept per player
+    /// under "display|<id>" in the shared state, so it follows them to the family's other phones.
+    func displayName(_ playerId: String) -> String? {
+        // Cleaned on the way out as well as in, in case another device stored something odd.
+        shared[Self.displayKey(playerId)]?.items.first.flatMap(DisplayName.clean)
+    }
+
+    /// What to show for a player: their display name, or their username if they haven't set one.
+    func shownName(_ player: Player) -> String { displayName(player.id) ?? player.name }
+
+    /// For the parent area, where the real username must stay visible: "display name (username)".
+    func parentLabel(_ player: Player) -> String { displayName(player.id).map { "\($0) (\(player.name))" } ?? player.name }
+
+    /// Sets a player's display name; empty (or nothing visible) clears it, back to the username.
+    func setDisplayName(_ playerId: String, _ raw: String) {
+        let cleaned = DisplayName.clean(raw)
+        guard cleaned != displayName(playerId) else { return }
+        setShared(Self.displayKey(playerId), cleaned.map { [$0] } ?? [])
+        requestSync()
+    }
+
+    private static func displayKey(_ playerId: String) -> String { "display|\(playerId)" }
+
     private func setShared(_ key: String, _ items: [String]) {
         // An emptied list is kept (not removed) so "cleared" also reaches other devices.
         shared[key] = LocalEntry(items: items, updatedAt: Int64(Date().timeIntervalSince1970 * 1000), dirty: true)

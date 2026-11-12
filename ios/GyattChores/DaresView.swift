@@ -17,7 +17,7 @@ struct DaresView: View {
         let others = store.players.filter { $0.id != me }
         let target = others.first { $0.id == targetId } ?? others.first
         let mine = store.dares.filter { $0.from == me && $0.day == store.todayKey }
-        let names = Dictionary(uniqueKeysWithValues: store.players.map { ($0.id, $0.name) })
+        let names = Dictionary(uniqueKeysWithValues: store.players.map { ($0.id, store.shownName($0)) })
         VStack(spacing: 0) {
             HStack {
                 Button("← back") { fb.tap(); if let onBack { onBack() } else { dismiss() } }
@@ -42,13 +42,13 @@ struct DaresView: View {
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 8) {
                                 ForEach(others) { p in
-                                    if p.id == target.id { Button(p.name) {}.buttonStyle(.borderedProminent) }
-                                    else { Button(p.name) { fb.tap(); targetId = p.id; note = nil }.buttonStyle(.bordered) }
+                                    if p.id == target.id { Button(store.shownName(p)) {}.buttonStyle(.borderedProminent) }
+                                    else { Button(store.shownName(p)) { fb.tap(); targetId = p.id; note = nil }.buttonStyle(.bordered) }
                                 }
                             }
                         }
                         if store.submittedToday(target.id) {
-                            Text("locked — \(target.name) already submitted today").font(.footnote).foregroundStyle(Theme.warn).padding(.top, 8)
+                            Text("locked — \(store.shownName(target)) already submitted today").font(.footnote).foregroundStyle(Theme.warn).padding(.top, 8)
                         }
                         // The same list the target sees, most overdue first: the likeliest chores are on top.
                         ForEach(store.pickable(target.id)) { c in

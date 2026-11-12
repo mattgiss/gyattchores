@@ -27,7 +27,7 @@ struct PlayerView: View {
                     Button("← back") { fb.tap(); if bonusPicking { bonusPicking = false } else { dismiss() } }
                         .padding(.trailing, 8)
                 }
-                Text(bonusPicking ? "\(player.name) · bonus round" : player.name).font(.headline)
+                Text(bonusPicking ? "\(store.shownName(player)) · bonus round" : store.shownName(player)).font(.headline).lineLimit(1)
                 Spacer()
             }
             .padding(.horizontal, 20).padding(.vertical, 12)

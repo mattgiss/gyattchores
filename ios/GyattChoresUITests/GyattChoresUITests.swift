@@ -250,6 +250,46 @@ final class GyattChoresUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["✓ all approved — nice work"].waitForExistence(timeout: wait))
     }
 
+    /// A display name is a nickname on top of the username: it shows everywhere the player does,
+    /// survives a relaunch, and can be dropped again, leaving the username as it was.
+    func testADisplayNameSitsOnTopOfTheUsername() {
+        let app = launch(["-resetData"])
+        let nickname = "xX_D1no_K1ng_Xx"
+
+        // Say whose phone this is; they can then give themselves a display name.
+        app.buttons["megadinolava"].tap()
+        XCTAssertTrue(app.staticTexts["this phone: megadinolava"].waitForExistence(timeout: wait))
+        app.buttons["✎ display name"].tap()
+        let field = app.alerts.textFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: wait))
+        field.typeText(nickname)
+        app.alerts.buttons["Save"].tap()
+
+        // It replaces the username wherever the player is shown…
+        XCTAssertTrue(app.staticTexts["this phone: \(nickname)"].waitForExistence(timeout: wait))
+        XCTAssertTrue(playerRow(nickname, in: app).exists)
+        XCTAssertFalse(playerRow("megadinolava", in: app).exists)
+        XCTAssertTrue(playerRow("bekindhearted", in: app).exists, "nobody else's name changes")
+        screenshot("19-display-name", of: app)
+        open(nickname, in: app)
+        XCTAssertTrue(app.staticTexts[nickname].waitForExistence(timeout: wait))
+        XCTAssertTrue(mainButton(in: app).waitForExistence(timeout: wait), "their day still opens as normal")
+        goBack(in: app)
+
+        // …is still there after the app restarts…
+        app.terminate()
+        let relaunched = launch()
+        XCTAssertTrue(playerRow(nickname, in: relaunched).waitForExistence(timeout: wait))
+
+        // …and comes off again, with the username underneath untouched.
+        relaunched.buttons["✎ display name"].tap()
+        XCTAssertTrue(relaunched.alerts.buttons["Use my username"].waitForExistence(timeout: wait))
+        relaunched.alerts.buttons["Use my username"].tap()
+        XCTAssertTrue(relaunched.staticTexts["this phone: megadinolava"].waitForExistence(timeout: wait))
+        XCTAssertTrue(playerRow("megadinolava", in: relaunched).exists)
+        XCTAssertFalse(playerRow(nickname, in: relaunched).exists)
+    }
+
     /// One chore, one person, per day — including when two players go for the same chores at once.
     func testAChoreCanOnlyBeOnePersonsEachDay() {
         let app = launch(["-resetData"])

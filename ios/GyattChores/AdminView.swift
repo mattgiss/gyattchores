@@ -62,6 +62,7 @@ private struct AdminContent: View {
     @State private var editing: Player?
     @State private var adding = false
     @State private var name = ""
+    @State private var displayName = ""
 
     var body: some View {
         let shown = store.logs.filter { filter == "all" || $0.status == filter }.sorted { $0.timestamp > $1.timestamp }
@@ -95,8 +96,8 @@ private struct AdminContent: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         ForEach(store.players) { p in
-                            if p.id == store.me { Button(p.name) {}.buttonStyle(.borderedProminent) }
-                            else { Button(p.name) { fb.tap(); store.setMe(p) }.buttonStyle(.bordered) }
+                            if p.id == store.me { Button(store.parentLabel(p)) {}.buttonStyle(.borderedProminent) }
+                            else { Button(store.parentLabel(p)) { fb.tap(); store.setMe(p) }.buttonStyle(.bordered) }
                         }
                     }
                 }
@@ -104,7 +105,12 @@ private struct AdminContent: View {
 
                 SectionLabel("players")
                 ForEach(store.players) { p in
-                    HStack { Text(p.name); Spacer(); Button("edit") { name = p.name; editing = p } }.frame(minHeight: 44)
+                    HStack {
+                        Text(store.parentLabel(p)).lineLimit(1)
+                        Spacer()
+                        Button("edit") { name = p.name; displayName = store.displayName(p.id) ?? ""; editing = p }
+                    }
+                    .frame(minHeight: 44)
                 }
                 Button("+ add player") { name = ""; adding = true }.buttonStyle(.bordered).padding(.vertical, 12)
             }
@@ -112,11 +118,13 @@ private struct AdminContent: View {
         }
         .scrollBounceBehavior(.basedOnSize)
         .alert("Edit player", isPresented: Binding(get: { editing != nil }, set: { if !$0 { editing = nil } })) {
-            TextField("name", text: $name)
-            Button("Save") { if let p = editing { store.renamePlayer(p, name) } }
+            TextField("username", text: $name)
+            TextField("display name (optional)", text: $displayName)
+                .textInputAutocapitalization(.never).autocorrectionDisabled()
+            Button("Save") { if let p = editing { store.setDisplayName(p.id, displayName); store.renamePlayer(p, name) } }
             if store.players.count > 1 { Button("Remove player", role: .destructive) { if let p = editing { store.removePlayer(p) } } }
             Button("Cancel", role: .cancel) {}
-        } message: { Text("Removing a player keeps their history.") }
+        } message: { Text("The display name is only what's shown; the username is what chores and points are kept under. Removing a player keeps their history.") }
         .alert("Add player", isPresented: $adding) {
             TextField("name", text: $name)
             Button("Save") { store.addPlayer(name) }

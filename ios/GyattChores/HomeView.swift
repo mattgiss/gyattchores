@@ -13,6 +13,8 @@ struct HomeView: View {
     let onDares: () -> Void
     @State private var taps = 0
     @State private var lastTap = Date.distantPast
+    @State private var editingDisplayName = false
+    @State private var displayNameDraft = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -38,17 +40,29 @@ struct HomeView: View {
                         .accessibilityHint("Toggles sound")
 
                     // Whose phone is this? Asked once; changing it later needs the parent unlock.
-                    let names = Dictionary(uniqueKeysWithValues: store.players.map { ($0.id, $0.name) })
+                    let names = Dictionary(uniqueKeysWithValues: store.players.map { ($0.id, store.shownName($0)) })
                     let dares = store.dares
                     if let me = store.me, names[me] != nil {
                         let used = dares.filter { $0.from == me && $0.day == store.todayKey }.count
                         // Optional, so it's an outline: the players below are the main thing here.
                         OutlineButton(label: "> DARES · \(Engine.maxDaresPerDay - used) LEFT TODAY") { fb.tap(); onDares() }.padding(.top, 4)
-                        Text("this phone: \(names[me] ?? "")").font(.caption2).foregroundStyle(.secondary).padding(.top, 4)
+                        HStack {
+                            Text("this phone: \(names[me] ?? "")").lineLimit(1).foregroundStyle(.secondary)
+                            Spacer(minLength: 8)
+                            // Their own nickname, their own call: no parent unlock needed, and it can't
+                            // change the username underneath.
+                            Button("✎ display name") {
+                                fb.tap()
+                                displayNameDraft = store.displayName(me) ?? ""
+                                editingDisplayName = true
+                            }
+                            .frame(minHeight: 36)
+                        }
+                        .font(.caption2).padding(.top, 4)
                     } else {
                         SectionLabel("whose phone is this?")
                         ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 8) { ForEach(store.players) { p in Button(p.name) { fb.tap(); store.setMe(p) }.buttonStyle(.bordered) } }
+                            HStack(spacing: 8) { ForEach(store.players) { p in Button(store.shownName(p)) { fb.tap(); store.setMe(p) }.buttonStyle(.bordered) } }
                         }
                     }
 
@@ -79,7 +93,7 @@ struct HomeView: View {
                     ForEach(Array(board.enumerated()), id: \.element.0.id) { i, row in
                         HStack {
                             Text("\(i + 1). ").foregroundStyle(i == 0 && row.1 > 0 ? Theme.accent : .secondary)
-                            Text(row.0.name).fontWeight(i == 0 && row.1 > 0 ? .bold : .regular).lineLimit(1).minimumScaleFactor(0.75)
+                            Text(store.shownName(row.0)).fontWeight(i == 0 && row.1 > 0 ? .bold : .regular).lineLimit(1).minimumScaleFactor(0.75)
                             Spacer()
                             Text("\(row.1) pts").foregroundStyle(.secondary)
                         }
@@ -94,7 +108,7 @@ struct HomeView: View {
                                 Text("> ").foregroundStyle(Theme.accent)
                                 // One line, shrinking a little before it cuts off: a wrapped, hyphenated
                                 // name looks broken in the narrow left pane of the two-pane layout.
-                                Text(p.name).font(.headline).lineLimit(1).minimumScaleFactor(0.75)
+                                Text(store.shownName(p)).font(.headline).lineLimit(1).minimumScaleFactor(0.75)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                 Text("\(store.rank(p.id).version) · 🔥\(store.streak(p.id))").foregroundStyle(.secondary)
                             }
@@ -111,7 +125,7 @@ struct HomeView: View {
                     SectionLabel("daily log · last \(Engine.logDays) days")
                     let days = Engine.recentDays(now: Date(), calendar: store.calendar)
                     ForEach(store.players) { p in
-                        DailyLogRow(player: p, days: days,
+                        DailyLogRow(name: store.shownName(p), days: days,
                                     byDay: Engine.minutesByDay(playerId: p.id, logs: store.logs, pool: store.poolById, calendar: store.calendar))
                     }
                 }
@@ -120,11 +134,20 @@ struct HomeView: View {
             // Only scroll (and bounce) when there's more than fits.
             .scrollBounceBehavior(.basedOnSize)
         }
+        .alert("Display name", isPresented: $editingDisplayName) {
+            TextField("anything you like", text: $displayNameDraft)
+                .textInputAutocapitalization(.never).autocorrectionDisabled()
+            Button("Save") { if let me = store.me { store.setDisplayName(me, displayNameDraft) } }
+            Button("Use my username", role: .destructive) { if let me = store.me { store.setDisplayName(me, "") } }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Shown in the app in place of your username. Your username, chores and points stay exactly as they are. Up to \(DisplayName.maxLength) characters.")
+        }
     }
 }
 
 private struct DailyLogRow: View {
-    let player: Player
+    let name: String
     let days: [Date]
     let byDay: [Date: Int]
 
@@ -132,7 +155,7 @@ private struct DailyLogRow: View {
         let hits = days.filter { (byDay[$0] ?? 0) >= Engine.dailyMinutes }.count
         VStack(spacing: 6) {
             HStack {
-                Text(player.name).font(.callout)
+                Text(name).font(.callout).lineLimit(1)
                 Spacer()
                 Text("\(hits)/\(days.count) · \(Int((Double(hits) * 100 / Double(days.count)).rounded()))%").font(.footnote).foregroundStyle(.secondary)
             }
