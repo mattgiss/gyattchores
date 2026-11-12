@@ -116,6 +116,19 @@ jobs:
             xcrun xcresulttool export attachments --path "results/$slug.xcresult" --output-path "screenshots/$slug" || true
           done < "$RUNNER_TEMP/simulators.txt"
           exit $status
+      - name: TEMP print screenshots into the log
+        if: always()
+        working-directory: ios
+        run: |
+          for dir in screenshots/*/; do
+            echo "@@MANIFEST $dir"; tr -d '\n' < "$dir/manifest.json"; echo
+            for png in "$dir"*.png; do
+              sips -s format jpeg -s formatOptions 45 -Z 1100 "$png" --out /tmp/shot.jpg >/dev/null 2>&1 || continue
+              echo "@@IMG $png"
+              base64 -b 76 -i /tmp/shot.jpg
+              echo "@@END"
+            done
+          done
       - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v4
