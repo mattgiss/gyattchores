@@ -94,13 +94,20 @@ jobs:
             [ -n "$device" ] || continue
             slug=$(echo "$device" | tr -c 'A-Za-z0-9\n' '-' | tr -s '-' | sed 's/-$//')
             echo "::group::UI tests on $device"
-            xcodebuild test \
-              -project GyattChores.xcodeproj \
-              -scheme GyattChores \
-              -destination "platform=iOS Simulator,name=$device,OS=latest" \
-              -resultBundlePath "results/$slug.xcresult" \
-              < /dev/null 2>&1 | tee "build-$slug.log" \
-              | grep -E "error:|Test Case|Test Suite|XCTAssert|failed|\*\* " || true
+            # A simulator that's still starting up can refuse the test runner ("failed to
+            # initialize for UI testing"), which says nothing about the app. Try once more.
+            for attempt in 1 2; do
+              rm -rf "results/$slug.xcresult"
+              xcodebuild test \
+                -project GyattChores.xcodeproj \
+                -scheme GyattChores \
+                -destination "platform=iOS Simulator,name=$device,OS=latest" \
+                -resultBundlePath "results/$slug.xcresult" \
+                < /dev/null 2>&1 | tee "build-$slug.log" \
+                | grep -E "error:|Test Case|Test Suite|XCTAssert|failed|\*\* " || true
+              grep -q "failed to initialize for UI testing" "build-$slug.log" || break
+              echo "The simulator wasn't ready for the test runner (attempt $attempt)."
+            done
             echo "::endgroup::"
             if ! grep -q "TEST SUCCEEDED" "build-$slug.log"; then
               echo "::error::UI tests failed on $device"
