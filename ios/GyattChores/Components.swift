@@ -65,6 +65,8 @@ struct SectionLabel: View {
 
 /// One chore row. Before submit it's a checkbox ([+]/[ ]); after submit it shows the parent's verdict.
 struct ChoreRow: View {
+    /// Not a parent's verdict: another player got this chore in first today.
+    static let taken = "taken"
     let name: String
     let minutes: Int
     var escalLevel = 0
@@ -77,6 +79,7 @@ struct ChoreRow: View {
         case Status.approved: ("✓ approved", Theme.good)
         case Status.rejected: ("✗ rejected", Theme.bad)
         case Status.pending: ("· awaiting", Theme.warn)
+        case ChoreRow.taken: ("· taken", Color.secondary)
         default: nil
         }
         VStack(spacing: 0) {

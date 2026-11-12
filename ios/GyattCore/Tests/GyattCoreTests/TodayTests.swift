@@ -56,6 +56,31 @@ final class TodayTests: XCTestCase {
         XCTAssertEqual(Engine.statusToday(todays.reversed())["make-bed"], Status.approved)
     }
 
+    // MARK: One chore, one person, per day
+
+    private func log(_ player: String, _ chore: String, _ status: String, minutesAfterNoon: Double = 0) -> ChoreLog {
+        ChoreLog(playerId: player, playerName: "player \(player)", choreId: chore, choreName: chore, points: 10, minutes: 5,
+                 status: status, timestamp: noon.addingTimeInterval(minutesAfterNoon * 60))
+    }
+
+    func testAChoreSomeoneElseHasInIsTaken() {
+        let todays = [log("1", "make-bed", Status.pending), log("1", "dog-poop", Status.approved),
+                      log("1", "scrub-toilet", Status.rejected), log("2", "water-plants", Status.pending)]
+        XCTAssertEqual(Engine.takenByOthersToday(playerId: "2", todays: todays),
+                       ["make-bed": "player 1", "dog-poop": "player 1"],
+                       "awaiting and approved are taken; a rejected chore is free again; your own don't count")
+        XCTAssertEqual(Engine.takenByOthersToday(playerId: "1", todays: todays), ["water-plants": "player 2"])
+        XCTAssertEqual(Engine.takenByOthersToday(playerId: "3", todays: todays).count, 3, "a third player sees both")
+        XCTAssertTrue(Engine.takenByOthersToday(playerId: "1", todays: []).isEmpty)
+    }
+
+    func testAChoreIsFreedWhenItsRejectedAndTakenAgainWhenRedone() {
+        var todays = [log("1", "make-bed", Status.rejected)]
+        XCTAssertTrue(Engine.takenByOthersToday(playerId: "2", todays: todays).isEmpty)
+        todays.append(log("1", "make-bed", Status.pending, minutesAfterNoon: 20))
+        XCTAssertEqual(Engine.takenByOthersToday(playerId: "2", todays: todays), ["make-bed": "player 1"])
+    }
+
     func testAVerdictBeatsItsOwnSyncDuplicate() {
         // The same submission can exist as two rows with the same time; the parent's verdict on one
         // mustn't be hidden by the untouched twin.

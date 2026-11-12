@@ -17,7 +17,9 @@ struct PlayerView: View {
         let statusToday = Engine.statusToday(todays)
         // Used up for today: awaiting a parent, approved, or on the card and not yet submitted.
         // A rejected chore isn't — it can be done again.
-        let taken = Engine.standingToday(statusToday).union((card?.choreIds ?? []).filter { statusToday[$0] == nil })
+        // One chore, one person, per day: what the other players have in today.
+        let others = store.takenByOthers(player.id)
+        let taken = Engine.standingToday(statusToday).union((card?.choreIds ?? []).filter { statusToday[$0] == nil }).union(others.keys)
         VStack(spacing: 0) {
             HStack {
                 // Leaving the bonus picker always needs a way back, even with no screen behind this one.
@@ -36,12 +38,13 @@ struct PlayerView: View {
                         store.logBonus(player, chosen); fb.submit(); bonusPicking = false
                     }
                 } else {
-                    CardRunView(player: player, card: card, todays: todays,
+                    CardRunView(player: player, card: card, todays: todays, others: others,
                                 bonusLeft: store.pool.filter { !taken.contains($0.id) }.count) { bonusPicking = true }
                 }
             } else {
-                PickerView(pool: store.pickable(player.id), bonus: false,
-                           note: store.rejectedToday(player.id) ? "today's earlier chores were rejected — build a new card" : nil) { chosen in
+                PickerView(pool: store.pickable(player.id).filter { others[$0.id] == nil }, bonus: false,
+                           notes: (store.rejectedToday(player.id) ? ["today's earlier chores were rejected — build a new card"] : [])
+                               + (others.isEmpty ? [] : ["\(others.count) chore\(others.count == 1 ? "" : "s") already taken by someone else today"])) { chosen in
                     store.lockIn(player, chosen); fb.lockIn()
                 }
             }
@@ -55,7 +58,7 @@ private struct PickerView: View {
     let pool: [EnrichedChore]
     let bonus: Bool
     /// Shown above the list when there's something the player should know before picking.
-    var note: String? = nil
+    var notes: [String] = []
     let onConfirm: ([EnrichedChore]) -> Void
     @State private var picked: [String] = []
     @State private var suggested: Set<String> = []
@@ -70,7 +73,7 @@ private struct PickerView: View {
                 LazyVStack(spacing: 0) {
                     Text(bonus ? "log extra chores — no cap, all normal points" : "pick what you want — then fill to \(Engine.dailyMinutes) min")
                         .foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 8)
-                    if let note {
+                    ForEach(notes, id: \.self) { note in
                         Text(note).font(.footnote).foregroundStyle(Theme.warn).frame(maxWidth: .infinity, alignment: .leading).padding(.bottom, 8)
                     }
                     ForEach(pool) { c in
@@ -113,6 +116,8 @@ private struct CardRunView: View {
     let player: Player
     let card: Card
     let todays: [ChoreLog]
+    /// Chores another player has in today: chore id → their name.
+    let others: [String: String]
     let bonusLeft: Int
     let onBonus: () -> Void
 
@@ -126,7 +131,11 @@ private struct CardRunView: View {
         let extras = todays.filter { seen.insert($0.choreId).inserted }
         let bonusLogs = extras.filter { statusByChore[$0.choreId] != Status.rejected }
         let rejectedExtras = extras.filter { statusByChore[$0.choreId] == Status.rejected }
-        let allChecked = card.checked.allSatisfy { $0 }
+        // On a card that isn't submitted yet, a chore someone else got in first stays visible, marked
+        // taken, and is left out when the card is submitted.
+        let lost = card.submitted ? [] : card.choreIds.filter { others[$0] != nil }
+        let keep = card.choreIds.indices.filter { !lost.contains(card.choreIds[$0]) }
+        let allChecked = !keep.isEmpty && keep.allSatisfy { card.checked[$0] }
 
         VStack(spacing: 0) {
             ScrollView {
@@ -136,7 +145,7 @@ private struct CardRunView: View {
                     ForEach(Array(card.choreIds.enumerated()), id: \.element) { i, id in
                         ChoreRow(name: store.poolById[id]?.name ?? id, minutes: card.minutes[i],
                                  escalLevel: i < card.escal.count ? card.escal[i] : 0, checked: card.checked[i],
-                                 status: card.submitted ? (statusByChore[id] ?? Status.pending) : nil) {
+                                 status: card.submitted ? (statusByChore[id] ?? Status.pending) : (lost.contains(id) ? ChoreRow.taken : nil)) {
                             fb.tick(!card.checked[i]); store.toggle(player, card, i)
                         }
                     }
@@ -159,7 +168,11 @@ private struct CardRunView: View {
             .scrollBounceBehavior(.basedOnSize)
             VStack(alignment: .leading, spacing: 8) {
                 if !card.submitted {
-                    TermButton(label: allChecked ? "SUBMIT FOR APPROVAL" : "CHECK OFF EVERYTHING FIRST", enabled: allChecked) {
+                    if !lost.isEmpty {
+                        Text("taken = someone else got it first today — it won't be submitted").font(.footnote).foregroundStyle(.secondary)
+                    }
+                    TermButton(label: allChecked ? "SUBMIT FOR APPROVAL" : keep.isEmpty ? "ALL TAKEN TODAY — CHANGE PICKS" : "CHECK OFF EVERYTHING FIRST",
+                               enabled: allChecked) {
                         store.submit(player, card); fb.submit()
                     }
                     Button("change my picks") { fb.tap(); store.clearCard(player) }.foregroundStyle(.secondary).frame(maxWidth: .infinity, minHeight: 44)

@@ -228,6 +228,8 @@ final class GyattChoresUITests: XCTestCase {
         XCTAssertTrue(main.waitForExistence(timeout: wait))
         XCTAssertEqual(main.label, "> PICK OR SUGGEST CHORES", "a day of rejections should offer the picker, not a finished card")
         XCTAssertTrue(app.staticTexts["today's earlier chores were rejected — build a new card"].exists)
+        // The other player's six approved chores are spoken for today.
+        XCTAssertTrue(app.staticTexts["6 chores already taken by someone else today"].exists)
         XCTAssertFalse(app.buttons["+ bonus round"].exists)
         screenshot("15-rejected-day-picker", of: app)
 
@@ -246,6 +248,48 @@ final class GyattChoresUITests: XCTestCase {
         goBack(in: app)
         open("bekindhearted", in: app)
         XCTAssertTrue(app.staticTexts["✓ all approved — nice work"].waitForExistence(timeout: wait))
+    }
+
+    /// One chore, one person, per day — including when two players go for the same chores at once.
+    func testAChoreCanOnlyBeOnePersonsEachDay() {
+        let app = launch(["-resetData"])
+
+        // megadinolava builds a card but doesn't submit it yet.
+        open("megadinolava", in: app)
+        app.buttons["✨ suggest a 25-min card"].tap()
+        app.buttons["> LOCK IN CARD"].tap()
+        XCTAssertTrue(app.buttons["> CHECK OFF EVERYTHING FIRST"].waitForExistence(timeout: wait))
+        let onCard = uncheckedChores(in: app).count
+        XCTAssertGreaterThan(onCard, 0)
+
+        // bekindhearted is offered the same suggestion, takes it, and gets it in first.
+        goBack(in: app)
+        open("bekindhearted", in: app)
+        app.buttons["✨ suggest a 25-min card"].tap()
+        app.buttons["> LOCK IN CARD"].tap()
+        checkOffEverything(in: app).tap()
+        XCTAssertTrue(app.staticTexts["card submitted — waiting on a parent"].waitForExistence(timeout: wait))
+
+        // Back on megadinolava's card every chore now reads as taken, and it can't be submitted.
+        goBack(in: app)
+        open("megadinolava", in: app)
+        let blocked = app.buttons["> ALL TAKEN TODAY — CHANGE PICKS"]
+        XCTAssertTrue(blocked.waitForExistence(timeout: wait))
+        XCTAssertFalse(blocked.isEnabled)
+        XCTAssertEqual(uncheckedChores(in: app).count, 0, "taken chores can't be checked off")
+        XCTAssertTrue(app.staticTexts["taken = someone else got it first today — it won't be submitted"].exists)
+        screenshot("17-card-all-taken", of: app)
+
+        // Picking again offers only what's left, and that card goes in.
+        app.buttons["change my picks"].tap()
+        let taken = app.staticTexts.matching(NSPredicate(format: "label ENDSWITH 'already taken by someone else today'")).firstMatch
+        XCTAssertTrue(taken.waitForExistence(timeout: wait))
+        XCTAssertTrue(taken.label.hasPrefix("\(onCard) chore"), taken.label)
+        screenshot("18-picker-with-taken", of: app)
+        app.buttons["✨ suggest a 25-min card"].tap()
+        app.buttons["> LOCK IN CARD"].tap()
+        checkOffEverything(in: app).tap()
+        XCTAssertTrue(app.staticTexts["card submitted — waiting on a parent"].waitForExistence(timeout: wait))
     }
 
     func testIPadShowsTheListAndTheDaySideBySide() throws {

@@ -99,6 +99,10 @@ final class AppStore: ObservableObject {
     /// True when the player has something in today that's awaiting a parent or approved. A day where
     /// everything was rejected doesn't count as submitted.
     func submittedToday(_ playerId: String) -> Bool { !Engine.standingToday(Engine.statusToday(todaysLogs(playerId))).isEmpty }
+    /// Chores someone else has in today, as chore id → their name. One chore, one person, per day.
+    func takenByOthers(_ playerId: String) -> [String: String] {
+        Engine.takenByOthersToday(playerId: playerId, todays: logs.filter { calendar.isDateInToday($0.timestamp) })
+    }
     /// True when the player logged chores today and every one was rejected: they start over.
     func rejectedToday(_ playerId: String) -> Bool { !todaysLogs(playerId).isEmpty && !submittedToday(playerId) }
     func streak(_ playerId: String) -> Int { Engine.streak(playerId: playerId, logs: logs, now: Date(), calendar: calendar) }
@@ -133,11 +137,16 @@ final class AppStore: ObservableObject {
 
     func clearCard(_ player: Player) { cards["\(player.id)|\(todayKey)"] = nil }
 
-    /// Writes one pending log per chore.
+    /// Writes one pending log per chore. A chore someone else got in while this card was still being
+    /// checked off is left out, and dropped from the card, so it's never logged twice in a day.
     func submit(_ player: Player, _ card: Card) {
-        guard !card.submitted, card.checked.allSatisfy({ $0 }) else { return }
-        logs += zip(card.choreIds, card.minutes).map { newLog(player, $0, $1) }
-        var c = card; c.submitted = true
+        guard !card.submitted else { return }
+        let lost = takenByOthers(player.id)
+        let keep = card.choreIds.indices.filter { lost[card.choreIds[$0]] == nil }
+        guard !keep.isEmpty, keep.allSatisfy({ card.checked[$0] }) else { return }
+        logs += keep.map { newLog(player, card.choreIds[$0], card.minutes[$0]) }
+        let c = Card(date: card.date, choreIds: keep.map { card.choreIds[$0] }, minutes: keep.map { card.minutes[$0] },
+                     checked: keep.map { _ in true }, escal: keep.map { $0 < card.escal.count ? card.escal[$0] : 0 }, submitted: true)
         cards["\(player.id)|\(c.date)"] = c
         requestSync()
     }
