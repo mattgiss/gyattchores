@@ -254,10 +254,12 @@ struct PuzzleView: View {
                 let now = clock
                 rings += (0..<3).map { Ring(x: hit.x, y: hit.y, born: now + Double($0) * 0.09, speed: Double(cell) * (6 + Double($0) * 2)) }
                 shake(Double(cell) * 0.28)
-                withAnimation(.easeOut(duration: 0.2)) { celebrating = true }
                 flash = calm ? 0.35 : 0.92
                 try? await Task.sleep(for: .milliseconds(16))
                 withAnimation(.easeOut(duration: 0.52)) { flash = 0 }
+                // Let the explosion read on the board before the card covers it.
+                try? await Task.sleep(for: .milliseconds(334))
+                withAnimation(.easeOut(duration: 0.2)) { celebrating = true }
             } else {
                 fb.puzzleMatch()
                 board = next
@@ -379,6 +381,8 @@ private struct LevelUpCard: View {
         TimelineView(.animation(paused: settled)) { tl in
             let age = tl.date.timeIntervalSince(born)
             let jitter: CGFloat = calm || age > 0.65 ? 0 : CGFloat((Self.noise(Int(age * 25)) - 0.5) * 18 * (1 - age / 0.65))
+            // The colour split closes up as the glitch settles, leaving a clean title.
+            let split: CGFloat = calm ? 0 : CGFloat(3 * (1 - min(1, age / 0.65)))
             ZStack {
                 Color(.systemBackground).opacity(0.82).ignoresSafeArea()
                 Canvas { ctx, size in
@@ -395,8 +399,8 @@ private struct LevelUpCard: View {
                 VStack(spacing: 12) {
                     // The glitch: three copies of the title, split apart and jittering at first.
                     ZStack {
-                        title.foregroundStyle(Color.primary.opacity(0.7)).offset(x: -3 + jitter)
-                        title.foregroundStyle(Theme.accent.opacity(0.85)).offset(x: 3 - jitter, y: jitter / 3)
+                        title.foregroundStyle(Color.primary.opacity(0.7)).offset(x: -split + jitter)
+                        title.foregroundStyle(Theme.accent.opacity(0.85)).offset(x: split - jitter, y: jitter / 3)
                         title.foregroundStyle(Color.primary)
                     }
                     .accessibilityElement(children: .ignore)

@@ -196,6 +196,8 @@ fun PuzzleScreen(vm: AppViewModel, player: Player, onBack: () -> Unit) {
                 repeat(3) { rings += Ring(hit.x, hit.y, now, it * 90f, cellPx * (6f + it * 2f)) }
                 launch { flash.snapTo(if (calm) 0.35f else 0.92f); flash.animateTo(0f, tween(520)) }
                 shake(cellPx * 0.28f)
+                // Let the explosion read on the board before the card covers it.
+                delay(350)
                 celebrating = true
             } else {
                 fb.puzzleMatch()
@@ -234,7 +236,8 @@ fun PuzzleScreen(vm: AppViewModel, player: Player, onBack: () -> Unit) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = { fb.tap(); onBack() }) { Text("← back") }
                 Text("CLEAR THE GRID", style = MaterialTheme.typography.labelMedium, letterSpacing = 3.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f).padding(horizontal = 4.dp))
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, softWrap = false,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(horizontal = 4.dp))
                 Text("LVL $level", color = Accent, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                 TextButton(onClick = ::restart, enabled = !busy && !celebrating) { Text("restart") }
             }
@@ -381,6 +384,8 @@ private fun LevelUp(newLevel: Int, cleared: Int, now: Long, calm: Boolean, onNex
     val age = now - born
     // The glitch: three copies of the title, split apart and jittering for the first moments.
     val jitter = if (calm || age > 650) 0f else (Random(now / 40).nextFloat() - 0.5f) * 18f * (1 - age / 650f)
+    // The colour split closes up as the glitch settles, leaving a clean title.
+    val split = if (calm) 0f else 3f * (1 - (age / 650f).coerceIn(0f, 1f))
     val ink = MaterialTheme.colorScheme.onSurface
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background.copy(alpha = 0.82f)), contentAlignment = Alignment.Center) {
         // Scanlines over the whole card, fading out.
@@ -397,9 +402,9 @@ private fun LevelUp(newLevel: Int, cleared: Int, now: Long, calm: Boolean, onNex
                 val title = "LEVEL UP"
                 val style = MaterialTheme.typography.displaySmall
                 Text(title, style = style, fontWeight = FontWeight.Black, color = ink.copy(alpha = 0.7f),
-                    modifier = Modifier.offset((-3).dp + jitter.dp, 0.dp))
+                    modifier = Modifier.offset((-split + jitter).dp, 0.dp))
                 Text(title, style = style, fontWeight = FontWeight.Black, color = Accent.copy(alpha = 0.85f),
-                    modifier = Modifier.offset(3.dp - jitter.dp, (jitter / 3).dp))
+                    modifier = Modifier.offset((split - jitter).dp, (jitter / 3).dp))
                 Text(title, style = style, fontWeight = FontWeight.Black, color = ink)
             }
             Spacer(Modifier.height(12.dp))
