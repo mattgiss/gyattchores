@@ -1,0 +1,11 @@
+.build/
+.swiftpm/
+*.xcuserstate
+xcuserdata/
+DerivedData/
+build/
+build-device/
+results/
+screenshots/
+build-*.log
+ExportOptions.plist

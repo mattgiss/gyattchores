@@ -1,0 +1,180 @@
+name: iOS
+
+# Checks the native iOS app (ios/):
+#   fixtures — the shared test data still matches the web app's engine
+#   core     — the Swift port of the game rules and sync passes its tests
+#   app      — the SwiftUI app builds and its UI tests pass in an iOS simulator
+#   release  — the app archives in Release with the newest Xcode, as TestFlight needs
+# index.html is in the path list because it's the source of truth for the game
+# rules: change a rule there and this says whether the native ports still agree.
+
+on:
+  push:
+    paths:
+      - 'ios/**'
+      - 'native/**'
+      - 'index.html'
+      - 'android/app/src/test/resources/golden.json'
+      - '.github/workflows/ios.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fixtures:
+    name: Test data matches index.html
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Regenerate from the web engine
+        run: |
+          TZ=UTC node native/tools/golden.js index.html android/app/src/test/resources/golden.json
+          node native/tools/scenarios.mjs
+      - name: Fail if the committed test data is stale
+        run: |
+          if ! git diff --quiet -- android/app/src/test/resources/golden.json native/fixtures; then
+            echo "::error::The web engine in index.html changed. Re-run native/tools/golden.js and native/tools/scenarios.mjs, commit the results, and update the native engines if their tests then fail."
+            git diff --stat -- android/app/src/test/resources/golden.json native/fixtures
+            exit 1
+          fi
+
+  core:
+    name: GyattCore tests
+    runs-on: ubuntu-latest
+    container: swift:6.0-noble
+    steps:
+      - uses: actions/checkout@v4
+      - name: swift test
+        working-directory: ios/GyattCore
+        run: swift test
+
+  app:
+    name: Build and UI-test app (iOS Simulator)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      # Builds the committed GyattChores.xcodeproj — the one people open — so a
+      # file added without re-running `xcodegen` shows up here as a failure.
+      - name: Pick simulators
+        id: sims
+        run: |
+          xcodebuild -version
+          AVAILABLE=$(xcrun simctl list devices available -j | jq -r '[.devices[][] | .name | select(startswith("iPhone"))] | unique | .[]')
+          echo "Available iPhone simulators:"; echo "$AVAILABLE" | sed 's/^/  /'
+          # The phones this app is aimed at, where this Xcode has them.
+          PICKED=""
+          for want in "iPhone 17 Pro" "iPhone 16e"; do
+            if echo "$AVAILABLE" | grep -qx "$want"; then PICKED="$PICKED$want"$'\n'; fi
+          done
+          if [ -z "$PICKED" ]; then
+            for want in "iPhone 16 Pro" "iPhone 16" "iPhone 15"; do
+              if echo "$AVAILABLE" | grep -qx "$want"; then PICKED="$want"$'\n'; break; fi
+            done
+          fi
+          [ -n "$PICKED" ] || { echo "::error::No iPhone simulator available"; exit 1; }
+          # Plus one iPad, for the two-pane layout.
+          IPADS=$(xcrun simctl list devices available -j | jq -r '[.devices[][] | .name | select(startswith("iPad"))] | unique | .[]')
+          echo "Available iPad simulators:"; echo "$IPADS" | sed 's/^/  /'
+          IPAD=$(echo "$IPADS" | grep -E '^iPad (Pro 11|Air 11|\(A16\))' | head -1)
+          [ -n "$IPAD" ] || IPAD=$(echo "$IPADS" | head -1)
+          [ -n "$IPAD" ] && PICKED="$PICKED$IPAD"$'\n'
+          printf '%s' "$PICKED" > "$RUNNER_TEMP/simulators.txt"
+          echo "Testing on:"; sed 's/^/  /' "$RUNNER_TEMP/simulators.txt"
+      - name: Build and run UI tests
+        working-directory: ios
+        run: |
+          set -o pipefail
+          status=0
+          while IFS= read -r device; do
+            [ -n "$device" ] || continue
+            slug=$(echo "$device" | tr -c 'A-Za-z0-9\n' '-' | tr -s '-' | sed 's/-$//')
+            echo "::group::UI tests on $device"
+            # A simulator that's still starting up can refuse the test runner ("failed to
+            # initialize for UI testing"), which says nothing about the app. Try once more.
+            for attempt in 1 2; do
+              rm -rf "results/$slug.xcresult"
+              xcodebuild test \
+                -project GyattChores.xcodeproj \
+                -scheme GyattChores \
+                -destination "platform=iOS Simulator,name=$device,OS=latest" \
+                -resultBundlePath "results/$slug.xcresult" \
+                < /dev/null 2>&1 | tee "build-$slug.log" \
+                | grep -E "error:|Test Case|Test Suite|XCTAssert|failed|\*\* " || true
+              grep -q "failed to initialize for UI testing" "build-$slug.log" || break
+              echo "The simulator wasn't ready for the test runner (attempt $attempt)."
+            done
+            echo "::endgroup::"
+            if ! grep -q "TEST SUCCEEDED" "build-$slug.log"; then
+              echo "::error::UI tests failed on $device"
+              status=1
+            fi
+            xcrun xcresulttool export attachments --path "results/$slug.xcresult" --output-path "screenshots/$slug" || true
+          done < "$RUNNER_TEMP/simulators.txt"
+          exit $status
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: ios/screenshots
+          if-no-files-found: warn
+      - name: Upload logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-logs
+          path: ios/build-*.log
+
+  release:
+    name: Release archive (unsigned, newest Xcode)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select the newest Xcode
+        run: |
+          # App Store Connect only accepts builds from a current Xcode, so check against that one.
+          NEWEST=$(ls -d /Applications/Xcode_*.app | grep -vi beta | sort -V | tail -1)
+          sudo xcode-select -s "$NEWEST"
+          xcodebuild -version
+      - name: Archive without signing
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild archive \
+            -project GyattChores.xcodeproj \
+            -scheme GyattChores \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/GyattChores.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO \
+            < /dev/null 2>&1 | tee build-release.log | grep -E "error:|\*\* " || true
+          grep -q "ARCHIVE SUCCEEDED" build-release.log
+      - name: Check what's in the app
+        run: |
+          APP="$RUNNER_TEMP/GyattChores.xcarchive/Products/Applications/GyattChores.app"
+          plist() { /usr/libexec/PlistBuddy -c "Print :$1" "$APP/Info.plist"; }
+          echo "bundle id:     $(plist CFBundleIdentifier)"
+          echo "version:       $(plist CFBundleShortVersionString) ($(plist CFBundleVersion))"
+          echo "minimum iOS:   $(plist MinimumOSVersion)"
+          echo "built with:    Xcode $(plist DTXcode), SDK $(plist DTSDKName)"
+          # Things an upload is rejected or flagged for when they're missing.
+          failed=0
+          check() { if eval "$2" >/dev/null 2>&1; then echo "ok:      $1"; else echo "::error::Missing from the app: $1"; failed=1; fi; }
+          check "encryption flag set to false"  '[ "$(plist ITSAppUsesNonExemptEncryption)" = "false" ]'
+          check "Face ID usage text"            '[ -n "$(plist NSFaceIDUsageDescription)" ]'
+          check "app icon name"                 '[ -n "$(plist CFBundleIcons:CFBundlePrimaryIcon:CFBundleIconName)" ]'
+          check "compiled asset catalog"        'test -f "$APP/Assets.car"'
+          check "privacy manifest"              'test -f "$APP/PrivacyInfo.xcprivacy"'
+          check "chore list"                    'test -f "$APP/chores.json"'
+          exit $failed
+      - name: Upload log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-archive-log
+          path: ios/build-release.log

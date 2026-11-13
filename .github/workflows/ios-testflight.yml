@@ -1,0 +1,128 @@
+name: iOS TestFlight
+
+# Archives the iOS app on a GitHub Mac runner and uploads it to TestFlight —
+# no local Mac or Xcode needed.
+#
+# To run it: push a tag such as `ios-v0.1.0` (the part after `ios-v` becomes the
+# app version), or use "Run workflow" in the Actions tab once this file is on
+# the default branch.
+#
+# It needs four repository secrets and an app record in App Store Connect;
+# ios/README.md ("TestFlight") walks through setting those up.
+
+on:
+  push:
+    tags:
+      - 'ios-v*'
+  workflow_dispatch:
+
+concurrency:
+  group: ios-testflight
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  testflight:
+    name: Archive and upload
+    runs-on: macos-15
+    timeout-minutes: 45
+    env:
+      KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+      ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+      KEY_P8: ${{ secrets.APP_STORE_CONNECT_KEY_P8 }}
+      TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the secrets are set
+        run: |
+          missing=""
+          [ -n "$KEY_ID" ]    || missing="$missing APP_STORE_CONNECT_KEY_ID"
+          [ -n "$ISSUER_ID" ] || missing="$missing APP_STORE_CONNECT_ISSUER_ID"
+          [ -n "$KEY_P8" ]    || missing="$missing APP_STORE_CONNECT_KEY_P8"
+          [ -n "$TEAM_ID" ]   || missing="$missing APPLE_TEAM_ID"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing repository secrets:$missing. See the TestFlight section of ios/README.md."
+            exit 1
+          fi
+
+      - name: Select the newest Xcode
+        run: |
+          NEWEST=$(ls -d /Applications/Xcode_*.app | grep -vi beta | sort -V | tail -1)
+          sudo xcode-select -s "$NEWEST"
+          xcodebuild -version
+
+      - name: Write the App Store Connect key
+        run: |
+          mkdir -p "$RUNNER_TEMP/keys"
+          KEY_PATH="$RUNNER_TEMP/keys/AuthKey_$KEY_ID.p8"
+          printf '%s\n' "$KEY_P8" > "$KEY_PATH"
+          if ! grep -q "BEGIN PRIVATE KEY" "$KEY_PATH"; then
+            echo "::error::APP_STORE_CONNECT_KEY_P8 should be the whole contents of the .p8 file, including the BEGIN/END lines."
+            exit 1
+          fi
+          echo "KEY_PATH=$KEY_PATH" >> "$GITHUB_ENV"
+
+      - name: Work out version and build number
+        run: |
+          # A build number has to be higher than any uploaded before; a timestamp always is.
+          echo "BUILD_NUMBER=$(date -u +%Y%m%d%H%M)" >> "$GITHUB_ENV"
+          if [[ "$GITHUB_REF" == refs/tags/ios-v* ]]; then
+            echo "VERSION_OVERRIDE=MARKETING_VERSION=${GITHUB_REF#refs/tags/ios-v}" >> "$GITHUB_ENV"
+          fi
+
+      - name: Archive
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild archive \
+            -project GyattChores.xcodeproj \
+            -scheme GyattChores \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/GyattChores.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$KEY_PATH" \
+            -authenticationKeyID "$KEY_ID" \
+            -authenticationKeyIssuerID "$ISSUER_ID" \
+            DEVELOPMENT_TEAM="$TEAM_ID" \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            $VERSION_OVERRIDE \
+            < /dev/null 2>&1 | tee archive.log | grep -E "error:|\*\* " || true
+          grep -q "ARCHIVE SUCCEEDED" archive.log || { echo "--- last lines of the archive log ---"; tail -60 archive.log; exit 1; }
+
+      - name: Upload to TestFlight
+        working-directory: ios
+        run: |
+          set -o pipefail
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$TEAM_ID</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+            <key>uploadSymbols</key><true/>
+          </dict>
+          </plist>
+          PLIST
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/GyattChores.xcarchive" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$KEY_PATH" \
+            -authenticationKeyID "$KEY_ID" \
+            -authenticationKeyIssuerID "$ISSUER_ID" \
+            < /dev/null 2>&1 | tee export.log | grep -E "error:|\*\* |Upload|upload" || true
+          grep -q "EXPORT SUCCEEDED" export.log || { echo "--- last lines of the export log ---"; tail -60 export.log; exit 1; }
+          echo "Uploaded build $BUILD_NUMBER. It appears under TestFlight in App Store Connect once Apple finishes processing it."
+
+      - name: Remove the key
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/keys"

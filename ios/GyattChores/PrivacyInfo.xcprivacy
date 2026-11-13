@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Privacy manifest. App Store Connect expects one for any app that uses a
+  "required reason" API; this app uses UserDefaults (whose phone this is, the
+  sound setting, which level-ups have been shown), reason CA92.1: reading and
+  writing values only this app uses.
+
+  The app does no tracking. What it collects — chore logs and player names sent
+  to the family's own Supabase project when sync is on — is declared in the
+  App Privacy section of App Store Connect, which needs filling in before the
+  app goes beyond internal TestFlight testing.
+-->
+<plist version="1.0">
+<dict>
+    <key>NSPrivacyTracking</key>
+    <false/>
+    <key>NSPrivacyTrackingDomains</key>
+    <array/>
+    <key>NSPrivacyAccessedAPITypes</key>
+    <array>
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <string>CA92.1</string>
+            </array>
+        </dict>
+    </array>
+</dict>
+</plist>
