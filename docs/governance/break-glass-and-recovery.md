@@ -167,10 +167,20 @@ independent copy of that device's history.
 The PIN is a convenience lock, not a security boundary
 ([`SECURITY.md`](../../SECURITY.md)). To change it:
 
-1. Compute the FNV-1a hash of the new PIN (the `hashCode` function in
-   `index.html` is the reference implementation).
-2. Update `ADMIN_CODE_HASH` in `index.html` via PR; record the new PIN in the
+1. Choose a new PIN longer than 4 digits. Letters are allowed.
+2. Compute its FNV-1a hash on your own machine (the `hashCode` function in
+   `index.html` is the reference implementation). This asks for the PIN
+   without showing it and prints the hash:
+
+   ```bash
+   read -rs -p "New parent code: " C && echo && C="$C" node -e 'const s=process.env.C;let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0}console.log(h)'; unset C
+   ```
+3. Update `ADMIN_CODE_HASH` in `index.html` via PR; record the new PIN in the
    vault (§4).
+
+Never write the PIN itself in the repository, a commit message or a pull
+request: only the hash. A PIN that has been committed in plain text stays in
+the git history, so replace it rather than only deleting the text.
 
 ---
 

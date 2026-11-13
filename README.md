@@ -35,7 +35,8 @@ If the table is missing or the project is paused, the app simply stays in local-
 
 - **Pick-your-own daily card** — choose chores up to a 25-minute budget; the app auto-suggests more (same-area and most-neglected first) to reach 25 minutes, so every day is a full, short session.
 - **Escalation** — the longer a chore goes undone, the more minutes it costs and the higher it's suggested (`!` neglected, `!!` long overdue).
-- **Parent approval workflow** — chores stay pending until approved with the admin code, so XP can't be self-awarded.
+- **Parent approval workflow** — chores stay pending until approved with the admin code, so XP can't be self-awarded. A rejected chore can be done again the same day, and if everything a player logged today was rejected they start over with a fresh card.
+- **One chore, one person, per day** — once a player has a chore in (awaiting approval or approved), it isn't offered to anyone else until tomorrow.
 - **XP, momentum & version-number levels** — approved chores earn XP; a daily streak multiplies it up to 2×; your level is shown as a version of yourself (v1.0 → v1.1 → …), and XP only ever grows.
 - **Streaks** — consecutive days with an approved chore keep your momentum alive.
 - **Cross-device sync** — an optional Supabase backend keeps each kid's phone and the parent's admin view in sync.
@@ -97,11 +98,9 @@ git push origin main
 
 Bumping `BUILD` on each deploy is what lets the in-app indicator tell a freshly-loaded copy from a stale cached one.
 
-## Native iOS app
+## Native apps
 
-The [`GyattChoresApp/`](GyattChoresApp/) directory holds Swift sources for an earlier, **tap-to-log** version of the design (iPhone + Apple Watch), including a Shortcuts/App Intent for logging a chore by voice. It predates the current daily-card / XP model in the web app and isn't kept in sync with it.
-
-> Note: the Xcode project file is not committed — the directory contains only the Swift sources (`Models/`, `Views/`, `Services/`, `Intents/`). To build, create a new Xcode app target and add these sources.
+Native iOS and Android apps are in development on the `native-android` branch ([#65](https://github.com/mattgiss/gyattchores/pull/65)) and are not on `main` yet. The Swift sources for an earlier tap-to-log design (iPhone + Apple Watch, `GyattChoresApp/`) and its App Store notes (`app-store-metadata/`) were removed in November 2026; they described a different app and are still in the git history.
 
 ## Project structure
 
@@ -114,7 +113,6 @@ gyattchores/
 ├── gyattchores-logo*.svg   # Logo variants
 ├── about.html / ebook.html / development-story.html   # Public about, guide, and story pages
 ├── SECURITY.md             # Security model & disclosure
-├── GyattChoresApp/         # Earlier native SwiftUI app (iPhone + Watch)
 └── docs/governance/        # Lightweight service-management docs
 ```
 

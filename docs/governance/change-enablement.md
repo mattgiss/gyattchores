@@ -31,7 +31,8 @@ Applies to all modifications of:
 - `index.html` (the entire web application)
 - Deployment-affecting files: `CNAME`, PWA manifest/icons, workflows in
   `.github/`
-- The native app sources under `GyattChoresApp/`
+- The native app sources under `ios/`, `android/` and `native/` (on the
+  `native-android` branch until they are merged)
 - Governance and documentation under `docs/` and repository-root policy files
 
 ---

@@ -51,10 +51,10 @@ const { useState, useEffect, useCallback, useRef } = React;
 // sitting in the page source. (Obfuscation, not real security — it's a
 // client-side app — but it keeps the code out of casual view.)
 const hashCode = s => { let h=2166136261>>>0; for (let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619)>>>0; } return h; };
-const ADMIN_CODE_HASH   = 1305456521;
+const ADMIN_CODE_HASH   = 3856382990;
 const STORAGE_KEY       = 'gyattchores_logs';
 const ACCENT            = '#F23861';
-const BUILD             = '2026.08.31.3'; // bump on every deploy — drives the build-freshness indicator
+const BUILD             = '2026.11.13.1'; // bump on every deploy — drives the build-freshness indicator
 const SUPABASE_URL      = 'https://ukshxdoqgwoxobjdclpx.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrc2h4ZG9xZ3dveG9iamRjbHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3MjI2NDEsImV4cCI6MjA4MDI5ODY0MX0.UGNrsfG6goEA0PPWG4x7gxBueA7D5Oe9uWI-iCXIar0';
 const supabase = window.supabase?.createClient
@@ -172,6 +172,42 @@ const clearCard = playerId => localStorage.removeItem(cardKey(playerId));
 
 const saveCard = (playerId, card) => localStorage.setItem(cardKey(playerId), JSON.stringify(card));
 
+// ─── TODAY ───────────────────────────────────────────────────────────────────
+const isToday = ts => new Date(ts).toDateString() === new Date().toDateString();
+
+// Where each chore a player logged today stands. Approved wins outright.
+// Otherwise the most recent log decides, so a chore that was rejected and then
+// done again reads as pending. Two rows with the same time are a sync duplicate:
+// there, a verdict beats pending.
+const statusToday = (playerId, logs) => {
+  const newest = {}, approved = new Set();
+  logs.forEach(l => {
+    if (l.playerId !== playerId || !isToday(l.timestamp)) return;
+    if (l.status === 'approved') approved.add(l.choreId);
+    const t = +new Date(l.timestamp), cur = newest[l.choreId];
+    if (!cur || t > cur.t || (t === cur.t && cur.status === 'pending')) newest[l.choreId] = { t, status:l.status };
+  });
+  const out = {};
+  Object.keys(newest).forEach(id => { out[id] = approved.has(id) ? 'approved' : newest[id].status; });
+  return out;
+};
+
+// Chores that are used up for today: awaiting a parent, or approved. A rejected
+// chore isn't — it can go on a card or into the bonus round again.
+const standingToday = status => new Set(Object.keys(status).filter(id => status[id] !== 'rejected'));
+
+// One chore, one person, per day. The chores every *other* player has standing
+// today, as choreId → that player's name.
+const takenByOthers = (playerId, logs) => {
+  const names = {};
+  logs.forEach(l => { if (l.playerId !== playerId && isToday(l.timestamp)) names[l.playerId] = l.playerName; });
+  const out = {};
+  Object.keys(names).forEach(pid => {
+    standingToday(statusToday(pid, logs)).forEach(id => { if (!out[id]) out[id] = names[pid]; });
+  });
+  return out;
+};
+
 // Reconstruct today's already-submitted card from the synced logs. The card
 // object itself only lives in the picking device's localStorage — only the
 // resulting chore logs sync between devices — so without this a parent (or any
@@ -186,6 +222,8 @@ const cardFromLogs = (playerId, logs) => {
     new Date(l.timestamp).toDateString() === today
   );
   if (!todays.length) return null;
+  // A day where everything was rejected isn't a submitted day: the player picks again.
+  if (!standingToday(statusToday(playerId, logs)).size) return null;
   // De-dupe by chore — a chore is only on the card once.
   const seen = new Set();
   const chores = [];
@@ -308,11 +346,12 @@ function ChoreRow({ chore, checked, onToggle, status }) {
     approved: { txt:'✓ approved', col:'#16A34A' },
     rejected: { txt:'✗ rejected', col:'#EF4444' },
     pending:  { txt:'· awaiting', col:'#F5A623' },
+    taken:    { txt:'· taken',    col:'#999' },      // another player got it first today
   }[status];
   // Before submission the row is a toggle (done/not done); once a verdict is in
   // it's read-only. Expose the right semantics + keyboard support either way.
   const a11y = status
-    ? { 'aria-label': `${chore.name}, ${ {approved:'approved', rejected:'rejected', pending:'awaiting approval'}[status] }` }
+    ? { 'aria-label': `${chore.name}, ${ {approved:'approved', rejected:'rejected', pending:'awaiting approval', taken:'taken by someone else today'}[status] }` }
     : { role:'checkbox', 'aria-checked':checked, tabIndex:0, 'aria-label':chore.name,
         onKeyDown:e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); onToggle(); } } };
   return (
@@ -379,7 +418,7 @@ function SyncIndicator({ syncStatus, buildStatus }) {
 // In `bonus` mode (the bonus round, after the day's card is in) there's no
 // minute cap and no fill-to-25 — pick anything not already logged today and
 // every chore counts at normal points.
-function ChorePicker({ player, logs, syncStatus, buildStatus, onBack, onConfirm, bonus=false, excludeIds }) {
+function ChorePicker({ player, logs, syncStatus, buildStatus, onBack, onConfirm, bonus=false, excludeIds, notes=[] }) {
   const pool = pickableChores(player.id, logs).filter(c => !(excludeIds && excludeIds.has(c.id)));
   const [picked, setPicked]       = useState([]);  // all selected ids
   const [suggested, setSuggested] = useState([]);  // subset of picked we auto-added
@@ -431,6 +470,11 @@ function ChorePicker({ player, logs, syncStatus, buildStatus, onBack, onConfirm,
         <div style={{fontSize:'0.82rem', color:'#111', fontFamily:'monospace', marginBottom:'2px'}}>
           {bonus ? 'log extra chores — no cap, all normal points' : `pick what you want — then fill to ${DAILY_MINUTES} min`}
         </div>
+        {notes.map(n => (
+          <div key={n} style={{fontSize:'0.68rem', color:'#F5A623', fontFamily:'monospace', letterSpacing:'0.5px', marginTop:'8px'}}>
+            {n}
+          </div>
+        ))}
 
         <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginTop:'18px', marginBottom:'5px'}}>
           <span style={{fontSize:'0.65rem', color:'#888', fontFamily:'monospace', letterSpacing:'2px'}}>
@@ -537,7 +581,18 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus, buildS
   // localStorage. If there's none here, fall back to reconstructing today's
   // already-submitted card from the synced logs, so every device shows what
   // the kid picked instead of re-offering the picker.
-  const view = card || cardFromLogs(player.id, logs);
+  // Where today stands. Only chores awaiting a parent or approved are used up; a
+  // rejected chore can be done again. And if everything logged today was
+  // rejected, the day starts over — the picker comes back instead of a card of
+  // ✗s that can't be changed.
+  const statusByChore = statusToday(player.id, logs);
+  const standing      = standingToday(statusByChore);
+  const startOver     = Object.keys(statusByChore).length>0 && standing.size===0;
+  // One chore, one person, per day: what the other players have in today.
+  const othersTaken   = takenByOthers(player.id, logs);
+  const othersIds     = new Set(Object.keys(othersTaken));
+  const mine = card && !(card.submitted && startOver) ? card : null;
+  const view = mine || cardFromLogs(player.id, logs);
 
   // No card here and nothing submitted yet — let the player pick their chores.
   if (!view) {
@@ -545,30 +600,31 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus, buildS
       <ChorePicker
         player={player} logs={logs} syncStatus={syncStatus} buildStatus={buildStatus}
         onBack={onBack}
+        excludeIds={othersIds}
+        notes={[
+          ...(startOver ? ["today's earlier chores were rejected — build a new card"] : []),
+          ...(othersIds.size ? [`${othersIds.size} chore${othersIds.size>1?'s':''} already taken by someone else today`] : []),
+        ]}
         onConfirm={chores => setCard(buildCard(player.id, chores))}
       />
     );
   }
 
   const totalMin   = view.chores.reduce((s,c)=>s+c.currentMinutes,0);
-  const allChecked = view.checked.every(Boolean);
+  // Chores on a card that isn't submitted yet which someone else got in first:
+  // they stay visible, marked taken, and drop off when the card is submitted.
+  const isLost     = c => !view.submitted && !!othersTaken[c.id];
+  const keepCount  = view.chores.filter(c=>!isLost(c)).length;
+  const allChecked = keepCount>0 && view.chores.every((c,i)=>isLost(c) || view.checked[i]);
   const doneCount  = view.checked.filter(Boolean).length;
   const pending    = logs.filter(l=>l.playerId===player.id&&l.status==='pending').length;
 
-  // Per-chore approval state for today, read from the synced logs so a parent's
-  // approve/reject actually shows up on the card (the card object itself only
-  // tracks checked/submitted, not approval). Approved/rejected win over pending
-  // if more than one log exists for a chore.
+  // What each row shows. Once the card is in, the parent's verdict from the
+  // synced logs (a chore with no log yet is awaiting approval). Before that,
+  // nothing — an earlier rejection of the same chore doesn't follow it onto a new
+  // card — unless someone else has taken it.
   const today = new Date().toDateString();
-  const statusByChore = {};
-  const rankStatus = { approved:3, rejected:2, pending:1 };
-  logs.forEach(l => {
-    if (l.playerId!==player.id || new Date(l.timestamp).toDateString()!==today) return;
-    const cur = statusByChore[l.choreId];
-    if (!cur || (rankStatus[l.status]||0) > (rankStatus[cur]||0)) statusByChore[l.choreId] = l.status;
-  });
-  // On a submitted card a chore with no log yet is awaiting approval.
-  const choreStatus = c => statusByChore[c.id] || (view.submitted ? 'pending' : null);
+  const choreStatus = c => view.submitted ? (statusByChore[c.id] || 'pending') : (isLost(c) ? 'taken' : null);
   const nApproved = view.chores.filter(c=>choreStatus(c)==='approved').length;
   const nRejected = view.chores.filter(c=>choreStatus(c)==='rejected').length;
   const nTotal    = view.chores.length;
@@ -591,10 +647,14 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus, buildS
       ? enrichChore(base, neglectDays(l.choreId, player.id, logs))
       : { id:l.choreId, name:l.choreName, cat:'', pts:l.points, currentMinutes:0, escalLevel:0, neglectDays:0 });
   });
-  const bonusMin    = bonusRows.reduce((s,c)=>s+c.currentMinutes,0);
-  // A chore can be logged once per day, card or bonus — after that its
-  // "cooldown" restarts on approval and it comes back tomorrow at base minutes.
-  const loggedToday = new Set([...cardIds, ...bonusRows.map(c=>c.id)]);
+  // Of those, the ones a parent rejected get their own section; the rest are the bonus round.
+  const rejectedRows = bonusRows.filter(c=>statusByChore[c.id]==='rejected');
+  const bonusStanding = bonusRows.filter(c=>statusByChore[c.id]!=='rejected');
+  const bonusMin    = bonusStanding.reduce((s,c)=>s+c.currentMinutes,0);
+  // Used up for today: awaiting or approved, on this card and not yet logged, or
+  // taken by another player. A rejected chore is free again; an approved one
+  // restarts its "cooldown" and comes back tomorrow at base minutes.
+  const loggedToday = new Set([...standing, ...view.chores.filter(c=>!statusByChore[c.id]).map(c=>c.id), ...othersIds]);
   const bonusLeft   = CHORE_POOL.filter(c=>!loggedToday.has(c.id)).length;
 
   if (bonusPicking) {
@@ -609,17 +669,19 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus, buildS
   }
 
   const toggle = i => {
-    if (!card || view.submitted) return;
-    const next = { ...card, checked: card.checked.map((v,idx)=>idx===i?!v:v) };
+    if (!mine || view.submitted || isLost(mine.chores[i])) return;
+    const next = { ...mine, checked: mine.checked.map((v,idx)=>idx===i?!v:v) };
     setCard(next); saveCard(player.id, next);
   };
 
   const submit = async () => {
-    if (!allChecked || submitting || !card || card.submitted) return;
+    if (!allChecked || submitting || !mine || mine.submitted) return;
     setSubmit(true);
     try {
-      await onSubmitCard(card.chores);
-      const next = { ...card, submitted:true };
+      // Only what's still this player's to submit; taken chores fall off the card.
+      const kept = mine.chores.filter(c=>!isLost(c));
+      await onSubmitCard(kept);
+      const next = { ...mine, chores:kept, checked:kept.map(()=>true), submitted:true };
       setCard(next); saveCard(player.id, next);
     } finally { setSubmit(false); }
   };
@@ -731,21 +793,39 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus, buildS
           ))}
         </div>
 
-        {bonusRows.length>0 && (
+        {view.chores.some(isLost) && (
+          <div style={{fontSize:'0.62rem', color:'#777', fontFamily:'monospace', letterSpacing:'1px', marginBottom:'16px'}}>
+            taken = someone else got it first today — it won't be submitted
+          </div>
+        )}
+
+        {bonusStanding.length>0 && (
           <div style={{marginBottom:'16px'}}>
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:'4px'}}>
               <span style={{fontSize:'0.65rem', color:'#888', fontFamily:'monospace', letterSpacing:'3px'}}>
                 bonus round
               </span>
               <span style={{fontSize:'0.65rem', color:'#888', fontFamily:'monospace'}}>
-                {bonusRows.length} · {bonusMin}m
+                {bonusStanding.length} · {bonusMin}m
               </span>
             </div>
-            {bonusRows.map(chore => (
+            {bonusStanding.map(chore => (
               <ChoreRow key={chore.id} chore={chore}
                 checked={true}
                 status={statusByChore[chore.id] || 'pending'}
                 onToggle={()=>{}}/>
+            ))}
+          </div>
+        )}
+
+        {/* Kept off a card that's still being checked off, where it would only be in the way. */}
+        {view.submitted && rejectedRows.length>0 && (
+          <div style={{marginBottom:'16px'}}>
+            <div style={{fontSize:'0.65rem', color:'#888', fontFamily:'monospace', letterSpacing:'3px', marginBottom:'4px'}}>
+              rejected today
+            </div>
+            {rejectedRows.map(chore => (
+              <ChoreRow key={chore.id} chore={chore} checked={true} status="rejected" onToggle={()=>{}}/>
             ))}
           </div>
         )}
@@ -789,6 +869,11 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus, buildS
                 }}>
                   {label}
                 </div>
+                {(nRejected>0 || rejectedRows.length>0) && bonusLeft>0 && (
+                  <div style={{fontSize:'0.62rem', color:'#777', fontFamily:'monospace', letterSpacing:'1px', marginTop:'10px', textAlign:'center'}}>
+                    rejected chores can be done again from the bonus round
+                  </div>
+                )}
                 {bonusLeft>0 && (
                   <button onClick={()=>setBonusPicking(true)} style={{
                     width:'100%', padding:'15px', marginTop:'10px', cursor:'pointer',
@@ -809,7 +894,7 @@ function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus, buildS
               fontSize:'0.75rem', fontWeight:800, letterSpacing:'3px',
               fontFamily:'monospace', transition:'all 0.15s',
             }}>
-              {submitting ? 'SUBMITTING...' : allChecked ? 'SUBMIT CARD' : `CHECK OFF ALL ${card.chores.length} CHORES`}
+              {submitting ? 'SUBMITTING...' : allChecked ? 'SUBMIT CARD' : keepCount===0 ? 'ALL TAKEN TODAY — RE-PICK' : `CHECK OFF ALL ${keepCount} CHORES`}
             </button>
           )}
         </div>
