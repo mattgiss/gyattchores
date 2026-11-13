@@ -13,7 +13,6 @@
 		4AEAF7A73B7B929C12295533 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5713C489E0FED8ACE31202AF /* Components.swift */; };
 		5D0DBCEA64EBEAD0FE8720B6 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 147CAD24C71D72F3E322CABA /* PrivacyInfo.xcprivacy */; };
 		5F1F395619FAD4DA41D774A8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 51E25F92C2A2E95EA8800ED0 /* Assets.xcassets */; };
-		6EABCCA04F802A71C720A821 /* DaresView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E766F8AA6D03F5BA65245F40 /* DaresView.swift */; };
 		860B2F5DA0F42A045C292891 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E05411D9D6D89454354D6504 /* RootView.swift */; };
 		916FD9E47347E1253B010B01 /* GyattChoresUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F41F120FFA15EAABE3146658 /* GyattChoresUITests.swift */; };
 		93CFA127208AB4B255C85DBF /* chores.json in Resources */ = {isa = PBXBuildFile; fileRef = 1DDE444A4832988FAF4F5C8C /* chores.json */; };
@@ -22,7 +21,9 @@
 		9FDBA5BF4A17A0156A9260C8 /* GyattCore in Frameworks */ = {isa = PBXBuildFile; productRef = 082E13C94D4E9AAC05E89A26 /* GyattCore */; };
 		A010EF76DAC311B90FEA0C3F /* Feedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD615C04B74E794B9204B97B /* Feedback.swift */; };
 		A828A79D9FB56E67813DEF64 /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4971E3BEE78F1A82504A5490 /* AppStore.swift */; };
+		C3C8E844E8AAF2DEBC58A92B /* SetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7EE3EB6E2624053E7D467FC /* SetupView.swift */; };
 		CC2DA1AA093DF7D28E9E86A4 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3272DA0935BA832663FC915B /* HomeView.swift */; };
+		D9D61CC5B28C43AB8C5F970C /* ChoreIntakeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE96A0A80C56CD579D06D53D /* ChoreIntakeView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -50,10 +51,11 @@
 		88B421E0D81623C58D00E31C /* AdminView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminView.swift; sourceTree = "<group>"; };
 		AD615C04B74E794B9204B97B /* Feedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Feedback.swift; sourceTree = "<group>"; };
 		E05411D9D6D89454354D6504 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
-		E766F8AA6D03F5BA65245F40 /* DaresView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaresView.swift; sourceTree = "<group>"; };
+		E7EE3EB6E2624053E7D467FC /* SetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupView.swift; sourceTree = "<group>"; };
 		F41F120FFA15EAABE3146658 /* GyattChoresUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GyattChoresUITests.swift; sourceTree = "<group>"; };
 		FADAACA5C517EC47FDA95485 /* GyattCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = GyattCore; path = GyattCore; sourceTree = SOURCE_ROOT; };
 		FB22028F8301385EF58C79DE /* PlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerView.swift; sourceTree = "<group>"; };
+		FE96A0A80C56CD579D06D53D /* ChoreIntakeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChoreIntakeView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -128,8 +130,8 @@
 				88B421E0D81623C58D00E31C /* AdminView.swift */,
 				4971E3BEE78F1A82504A5490 /* AppStore.swift */,
 				51E25F92C2A2E95EA8800ED0 /* Assets.xcassets */,
+				FE96A0A80C56CD579D06D53D /* ChoreIntakeView.swift */,
 				5713C489E0FED8ACE31202AF /* Components.swift */,
-				E766F8AA6D03F5BA65245F40 /* DaresView.swift */,
 				AD615C04B74E794B9204B97B /* Feedback.swift */,
 				46FDBB957624185A85BA0061 /* GyattChoresApp.swift */,
 				3272DA0935BA832663FC915B /* HomeView.swift */,
@@ -137,6 +139,7 @@
 				147CAD24C71D72F3E322CABA /* PrivacyInfo.xcprivacy */,
 				67BA2998CF55F99A8EC09B5A /* PuzzleView.swift */,
 				E05411D9D6D89454354D6504 /* RootView.swift */,
+				E7EE3EB6E2624053E7D467FC /* SetupView.swift */,
 			);
 			path = GyattChores;
 			sourceTree = "<group>";
@@ -252,14 +255,15 @@
 			files = (
 				49AB36F0DC1C70923F894ECA /* AdminView.swift in Sources */,
 				A828A79D9FB56E67813DEF64 /* AppStore.swift in Sources */,
+				D9D61CC5B28C43AB8C5F970C /* ChoreIntakeView.swift in Sources */,
 				4AEAF7A73B7B929C12295533 /* Components.swift in Sources */,
-				6EABCCA04F802A71C720A821 /* DaresView.swift in Sources */,
 				A010EF76DAC311B90FEA0C3F /* Feedback.swift in Sources */,
 				2E032658D2557E5FB845C1DC /* GyattChoresApp.swift in Sources */,
 				CC2DA1AA093DF7D28E9E86A4 /* HomeView.swift in Sources */,
 				119A3672AD8787ADC74C613B /* PlayerView.swift in Sources */,
 				EC5F25A632469FFAACF40059 /* PuzzleView.swift in Sources */,
 				860B2F5DA0F42A045C292891 /* RootView.swift in Sources */,
+				C3C8E844E8AAF2DEBC58A92B /* SetupView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -404,7 +408,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = GyattChores;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
-				INFOPLIST_KEY_NSFaceIDUsageDescription = "Unlock the parent area to approve chores.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Open the admin area to approve chores.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
@@ -412,7 +416,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.gyattchores.app;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.0;
@@ -431,7 +435,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = GyattChores;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
-				INFOPLIST_KEY_NSFaceIDUsageDescription = "Unlock the parent area to approve chores.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Open the admin area to approve chores.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
@@ -439,7 +443,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.gyattchores.app;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.0;

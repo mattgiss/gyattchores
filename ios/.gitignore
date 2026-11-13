@@ -9,3 +9,5 @@ results/
 screenshots/
 build-*.log
 ExportOptions.plist
+app-store-screenshots/
+exported/

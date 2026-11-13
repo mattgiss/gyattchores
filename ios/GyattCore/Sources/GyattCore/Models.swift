@@ -1,12 +1,36 @@
 import Foundation
 
+/// Someone in the family. `name` is the username chores and points are kept under.
 public struct Player: Codable, Identifiable, Hashable {
     public var id: String
     public var name: String
-    public init(id: String, name: String) { self.id = id; self.name = name }
+    /// A nickname shown in place of the username. Only ever shown, never used to keep score.
+    public var displayName: String?
+    /// Admins approve chores and change players and chores. Each has their own code.
+    public var isAdmin: Bool
+    /// False for someone who only runs the scoreboard (say, a parent who doesn't do chores).
+    public var plays: Bool
+
+    public init(id: String, name: String, displayName: String? = nil, isAdmin: Bool = false, plays: Bool = true) {
+        self.id = id; self.name = name; self.displayName = displayName; self.isAdmin = isAdmin; self.plays = plays
+    }
+
+    // Older saves hold only an id and a name.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        name = try c.decode(String.self, forKey: .name)
+        displayName = try c.decodeIfPresent(String.self, forKey: .displayName)
+        isAdmin = try c.decodeIfPresent(Bool.self, forKey: .isAdmin) ?? false
+        plays = try c.decodeIfPresent(Bool.self, forKey: .plays) ?? true
+    }
+
+    /// What to show for this person: the display name if it holds anything visible, else the username.
+    public var shownName: String { displayName.flatMap(DisplayName.clean) ?? name }
 }
 
-/// One chore in the pool (`native/chores.json`). `tiers` are minute costs that kick in at `tierDays` of neglect.
+/// One chore on the family's list. `tiers` are minute costs that kick in at `tierDays` of neglect.
+/// The starter list is `native/chores.json`; a family's own chores are made by `ChoreIntake`.
 public struct Chore: Codable, Identifiable, Hashable {
     public let id: String
     public let name: String
@@ -14,6 +38,9 @@ public struct Chore: Codable, Identifiable, Hashable {
     public let pts: Int
     public let tiers: [Int]
     public let tierDays: [Int]
+    public init(id: String, name: String, cat: String, pts: Int, tiers: [Int], tierDays: [Int]) {
+        self.id = id; self.name = name; self.cat = cat; self.pts = pts; self.tiers = tiers; self.tierDays = tierDays
+    }
 }
 
 public enum Status {
@@ -22,30 +49,27 @@ public enum Status {
     public static let rejected = "rejected"
 }
 
-/// A chore log. Mirrors the web app's log and the Supabase `simple_logs` row.
+/// One chore done by one player: the only record the app keeps. It never leaves the device.
 public struct ChoreLog: Codable, Identifiable, Hashable {
     public var id: String
-    public var remoteId: String?
     public var playerId: String
     public var playerName: String
     public var choreId: String
     public var choreName: String
     public var points: Int
-    /// Local-only: nil on rows pulled from sync.
+    /// Nil on logs saved by early versions, which didn't record it.
     public var minutes: Int?
     public var status: String
     public var timestamp: Date
-    /// Local-only: this chore matched a parent's hidden pick, so `points` is already doubled.
+    /// This chore matched a parent's hidden pick, so `points` is already doubled.
     public var parentPick: Bool
-    /// Local-only: status was changed here and hasn't reached the server yet.
-    public var statusDirty: Bool
 
-    public init(id: String = UUID().uuidString, remoteId: String? = nil, playerId: String, playerName: String,
+    public init(id: String = UUID().uuidString, playerId: String, playerName: String,
                 choreId: String, choreName: String, points: Int, minutes: Int?, status: String, timestamp: Date,
-                parentPick: Bool = false, statusDirty: Bool = false) {
-        self.id = id; self.remoteId = remoteId; self.playerId = playerId; self.playerName = playerName
+                parentPick: Bool = false) {
+        self.id = id; self.playerId = playerId; self.playerName = playerName
         self.choreId = choreId; self.choreName = choreName; self.points = points; self.minutes = minutes
-        self.status = status; self.timestamp = timestamp; self.parentPick = parentPick; self.statusDirty = statusDirty
+        self.status = status; self.timestamp = timestamp; self.parentPick = parentPick
     }
 }
 
@@ -62,7 +86,7 @@ public struct EnrichedChore: Identifiable, Hashable {
     public var pts: Int { chore.pts }
 }
 
-/// Today's card for one player. Lives only on the device that built it, like the web app.
+/// Today's card for one player.
 public struct Card: Codable, Hashable {
     /// Local date, ISO yyyy-MM-dd.
     public var date: String
