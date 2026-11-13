@@ -391,8 +391,8 @@ Anyone with DevTools could:
 **2. Client-Side Authentication**
 
 ```javascript
-const LOGIN_PASSWORD = "0413";  // Visible in browser source
-const APPROVAL_CODE = "7874";   // Visible in browser source
+const LOGIN_PASSWORD = "····";  // Visible in browser source (value removed)
+const APPROVAL_CODE = "····";   // Visible in browser source (value removed)
 ```
 
 These "passwords" provided zero security. View source, see password. Simple as that.
