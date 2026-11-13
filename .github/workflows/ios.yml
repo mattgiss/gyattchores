@@ -15,6 +15,7 @@ on:
       - 'native/**'
       - 'index.html'
       - 'android/app/src/test/resources/golden.json'
+      - 'android/app/src/main/assets/puzzles.json'
       - '.github/workflows/ios.yml'
   workflow_dispatch:
 
@@ -35,11 +36,12 @@ jobs:
         run: |
           TZ=UTC node native/tools/golden.js index.html android/app/src/test/resources/golden.json
           node native/tools/scenarios.mjs
+          node native/tools/puzzles.mjs
       - name: Fail if the committed test data is stale
         run: |
-          if ! git diff --quiet -- android/app/src/test/resources/golden.json native/fixtures; then
-            echo "::error::The web engine in index.html changed. Re-run native/tools/golden.js and native/tools/scenarios.mjs, commit the results, and update the native engines if their tests then fail."
-            git diff --stat -- android/app/src/test/resources/golden.json native/fixtures
+          if ! git diff --quiet -- android/app/src/test/resources/golden.json native/fixtures native/puzzles.json android/app/src/main/assets/puzzles.json; then
+            echo "::error::Committed test data is out of date. Re-run native/tools/golden.js, native/tools/scenarios.mjs and native/tools/puzzles.mjs, commit the results, and update the native engines if their tests then fail."
+            git diff --stat -- android/app/src/test/resources/golden.json native/fixtures native/puzzles.json android/app/src/main/assets/puzzles.json
             exit 1
           fi
 

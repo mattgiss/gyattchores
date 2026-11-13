@@ -38,6 +38,7 @@ import com.gyattchores.app.ui.GyattTheme
 import com.gyattchores.app.ui.Hinge
 import com.gyattchores.app.ui.HomeScreen
 import com.gyattchores.app.ui.PlayerScreen
+import com.gyattchores.app.ui.PuzzleScreen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -76,7 +77,10 @@ class MainActivity : FragmentActivity() {
                 var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
                 var adminOpen by rememberSaveable { mutableStateOf(false) }
                 var daresOpen by rememberSaveable { mutableStateOf(false) }
+                // The puzzle takes the whole window, even beside the list on a foldable, so its flash fills the screen.
+                var puzzleId by rememberSaveable { mutableStateOf<String?>(null) }
                 val selected = players.firstOrNull { it.id == selectedId }
+                val puzzlePlayer = players.firstOrNull { it.id == puzzleId }
 
                 // The Z Fold 7's inner screen is ~750dp wide, which is "Medium", so two panes start there.
                 val twoPane = calculateWindowSizeClass(this).widthSizeClass != WindowWidthSizeClass.Compact
@@ -89,8 +93,9 @@ class MainActivity : FragmentActivity() {
 
                 val myId = me
                 val showDares = daresOpen && myId != null
-                BackHandler(enabled = adminOpen || showDares || selected != null) {
-                    if (adminOpen) adminOpen = false else if (showDares) daresOpen = false else selectedId = null
+                BackHandler(enabled = puzzlePlayer != null || adminOpen || showDares || selected != null) {
+                    if (puzzlePlayer != null) puzzleId = null
+                    else if (adminOpen) adminOpen = false else if (showDares) daresOpen = false else selectedId = null
                 }
 
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -99,7 +104,9 @@ class MainActivity : FragmentActivity() {
                             onPick = { adminOpen = false; daresOpen = false; selectedId = it.id }, onAdmin = { daresOpen = false; adminOpen = true },
                             onDares = { adminOpen = false; daresOpen = true }, modifier = m)
                     }
-                    if (twoPane) {
+                    if (puzzlePlayer != null) {
+                        Box(Modifier.fillMaxSize().safeDrawingPadding()) { PuzzleScreen(vm, puzzlePlayer, onBack = { puzzleId = null }) }
+                    } else if (twoPane) {
                         Row(Modifier.fillMaxSize().safeDrawingPadding()) {
                             val listMod = if (hingeX != null) Modifier.width(with(androidx.compose.ui.platform.LocalDensity.current) { hingeX.toDp() }) else Modifier.weight(0.42f)
                             Box(listMod.fillMaxHeight()) { home(Modifier) }
@@ -108,7 +115,7 @@ class MainActivity : FragmentActivity() {
                                 when {
                                     adminOpen -> AdminScreen(vm, logs, players, onBack = { adminOpen = false })
                                     showDares -> DaresScreen(vm, players, logs, shared, myId!!, onBack = { daresOpen = false })
-                                    selected != null -> PlayerScreen(vm, selected, logs, cards, hinge, onBack = null)
+                                    selected != null -> PlayerScreen(vm, selected, logs, cards, hinge, onBack = null, onPuzzle = { puzzleId = selected.id })
                                     else -> Text("> pick a player", color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.align(Alignment.Center).width(200.dp))
                                 }
@@ -119,7 +126,8 @@ class MainActivity : FragmentActivity() {
                             when {
                                 adminOpen -> AdminScreen(vm, logs, players, onBack = { adminOpen = false })
                                 showDares -> DaresScreen(vm, players, logs, shared, myId!!, onBack = { daresOpen = false })
-                                selected != null -> PlayerScreen(vm, selected, logs, cards, hinge, onBack = { selectedId = null })
+                                selected != null -> PlayerScreen(vm, selected, logs, cards, hinge, onBack = { selectedId = null },
+                                    onPuzzle = { puzzleId = selected.id })
                                 else -> home(Modifier)
                             }
                         }

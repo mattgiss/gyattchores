@@ -21,6 +21,8 @@ class PuzzleBoard private constructor(val width: Int, val height: Int, private v
     }
 
     val size get() = cells.size
+    /** The cells as a string, the same form a level is stored in. */
+    val cellString get() = String(cells)
     operator fun get(i: Int): Char = cells[i]
     fun isBlock(i: Int) = cells[i] == PINK || cells[i] == INK
     fun row(i: Int) = i / width

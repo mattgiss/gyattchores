@@ -15,6 +15,8 @@ targets:
       - path: GyattChores
       - path: ../native/chores.json
         buildPhase: resources
+      - path: ../native/puzzles.json
+        buildPhase: resources
     dependencies:
       - package: GyattCore
     settings:

@@ -42,6 +42,9 @@ final class AppStore: ObservableObject {
             if launchArguments.contains("-resetData") {
                 try? FileManager.default.removeItem(at: d)
                 UserDefaults.standard.removeObject(forKey: meKey)
+                for key in UserDefaults.standard.dictionaryRepresentation().keys where key.hasPrefix(puzzleKey) {
+                    UserDefaults.standard.removeObject(forKey: key)
+                }
             }
         }
         try? FileManager.default.createDirectory(at: d, withIntermediateDirectories: true)
@@ -266,6 +269,26 @@ final class AppStore: ObservableObject {
 
     private static let keyPlayers = "players", keyRemoved = "removed_players"
     private func pushPlayers() { setShared(Self.keyPlayers, players.map { "\($0.id):\($0.name)" }); requestSync() }
+
+    // MARK: Puzzle
+
+    /// The levels for the puzzle unlocked by a submitted card (`native/puzzles.json`).
+    let puzzlePack: PuzzlePack = {
+        let url = Bundle.main.url(forResource: "puzzles", withExtension: "json")!
+        return try! PuzzlePack(json: Data(contentsOf: url))
+    }()
+    /// Puzzle progress is kept apart for UI tests too.
+    private static let puzzleKey = uiTesting ? "ui-testing.puzzle_level_" : "puzzle_level_"
+
+    /// The puzzle level a player plays next (1 until they clear one). Kept on this phone.
+    func puzzleLevel(_ playerId: String) -> Int { max(1, UserDefaults.standard.integer(forKey: Self.puzzleKey + playerId)) }
+
+    /// A player cleared `level`: the next one is unlocked. Replaying an old level changes nothing.
+    func puzzleCleared(_ playerId: String, _ level: Int) {
+        guard level >= puzzleLevel(playerId) else { return }
+        objectWillChange.send()
+        UserDefaults.standard.set(level + 1, forKey: Self.puzzleKey + playerId)
+    }
 
     /// True the first time a player's screen shows a level higher than the last one it showed.
     func isNewLevel(_ playerId: String, _ level: Int) -> Bool {

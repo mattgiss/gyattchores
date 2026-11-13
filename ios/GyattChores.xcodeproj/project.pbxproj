@@ -17,6 +17,8 @@
 		860B2F5DA0F42A045C292891 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E05411D9D6D89454354D6504 /* RootView.swift */; };
 		916FD9E47347E1253B010B01 /* GyattChoresUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F41F120FFA15EAABE3146658 /* GyattChoresUITests.swift */; };
 		93CFA127208AB4B255C85DBF /* chores.json in Resources */ = {isa = PBXBuildFile; fileRef = 1DDE444A4832988FAF4F5C8C /* chores.json */; };
+		1AA401F187837E3F36FC9E32 /* puzzles.json in Resources */ = {isa = PBXBuildFile; fileRef = F64F0F52728D819650490A72 /* puzzles.json */; };
+		EC5F25A632469FFAACF40059 /* PuzzleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67BA2998CF55F99A8EC09B5A /* PuzzleView.swift */; };
 		9FDBA5BF4A17A0156A9260C8 /* GyattCore in Frameworks */ = {isa = PBXBuildFile; productRef = 082E13C94D4E9AAC05E89A26 /* GyattCore */; };
 		A010EF76DAC311B90FEA0C3F /* Feedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD615C04B74E794B9204B97B /* Feedback.swift */; };
 		A828A79D9FB56E67813DEF64 /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4971E3BEE78F1A82504A5490 /* AppStore.swift */; };
@@ -37,6 +39,8 @@
 		14360DD67502C08B0BB5668E /* GyattChores.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = GyattChores.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		147CAD24C71D72F3E322CABA /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		1DDE444A4832988FAF4F5C8C /* chores.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = chores.json; sourceTree = "<group>"; };
+		F64F0F52728D819650490A72 /* puzzles.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = puzzles.json; sourceTree = "<group>"; };
+		67BA2998CF55F99A8EC09B5A /* PuzzleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PuzzleView.swift; sourceTree = "<group>"; };
 		3272DA0935BA832663FC915B /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		46FDBB957624185A85BA0061 /* GyattChoresApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GyattChoresApp.swift; sourceTree = "<group>"; };
 		4971E3BEE78F1A82504A5490 /* AppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStore.swift; sourceTree = "<group>"; };
@@ -68,6 +72,7 @@
 			isa = PBXGroup;
 			children = (
 				1DDE444A4832988FAF4F5C8C /* chores.json */,
+				F64F0F52728D819650490A72 /* puzzles.json */,
 			);
 			path = native;
 			sourceTree = "<group>";
@@ -130,6 +135,7 @@
 				3272DA0935BA832663FC915B /* HomeView.swift */,
 				FB22028F8301385EF58C79DE /* PlayerView.swift */,
 				147CAD24C71D72F3E322CABA /* PrivacyInfo.xcprivacy */,
+				67BA2998CF55F99A8EC09B5A /* PuzzleView.swift */,
 				E05411D9D6D89454354D6504 /* RootView.swift */,
 			);
 			path = GyattChores;
@@ -225,6 +231,7 @@
 				5F1F395619FAD4DA41D774A8 /* Assets.xcassets in Resources */,
 				5D0DBCEA64EBEAD0FE8720B6 /* PrivacyInfo.xcprivacy in Resources */,
 				93CFA127208AB4B255C85DBF /* chores.json in Resources */,
+				1AA401F187837E3F36FC9E32 /* puzzles.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -251,6 +258,7 @@
 				2E032658D2557E5FB845C1DC /* GyattChoresApp.swift in Sources */,
 				CC2DA1AA093DF7D28E9E86A4 /* HomeView.swift in Sources */,
 				119A3672AD8787ADC74C613B /* PlayerView.swift in Sources */,
+				EC5F25A632469FFAACF40059 /* PuzzleView.swift in Sources */,
 				860B2F5DA0F42A045C292891 /* RootView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

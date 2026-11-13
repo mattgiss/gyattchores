@@ -250,6 +250,70 @@ final class GyattChoresUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["✓ all approved — nice work"].waitForExistence(timeout: wait))
     }
 
+    /// Submitting today's card unlocks the puzzle. A move that isn't allowed changes nothing;
+    /// clearing the board levels up, and the next level is remembered on the card.
+    func testSubmittingUnlocksThePuzzleAndClearingLevelsUp() {
+        let app = launch(["-resetData"])
+        open("bekindhearted", in: app)
+        app.buttons["✨ suggest a 25-min card"].tap()
+        mainButton(in: app).tap()
+
+        // Locked until the card is in.
+        XCTAssertTrue(app.staticTexts["🔒 the puzzle unlocks when this card is submitted"].waitForExistence(timeout: wait))
+        XCTAssertFalse(app.buttons["> PLAY · CLEAR THE GRID · LVL 1"].exists)
+        checkOffEverything(in: app).tap()
+
+        let play = app.buttons["> PLAY · CLEAR THE GRID · LVL 1"]
+        XCTAssertTrue(play.waitForExistence(timeout: wait), "a submitted card unlocks the puzzle")
+        screenshot("17-puzzle-unlocked", of: app)
+        play.tap()
+
+        // Level 1 (native/puzzles.json), four wide:
+        //   P K . .      cells 0 and 1
+        //   . . . K      cell 7
+        //   . . . .
+        //   . . . .
+        //   . . . P      cell 19
+        func cell(_ i: Int) -> XCUIElement { app.descendants(matching: .any)["cell-\(i)"] }
+        XCTAssertTrue(cell(0).waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["LVL 1"].exists)
+        XCTAssertTrue(app.staticTexts["4 blocks left"].exists)
+        screenshot("18-puzzle-level-1", of: app)
+
+        // Pink 0 and black 7 aren't in line: nothing happens.
+        cell(0).tap()
+        XCTAssertTrue(app.staticTexts["now tap a black block in line with it"].waitForExistence(timeout: wait))
+        cell(7).tap()
+        XCTAssertTrue(app.staticTexts["4 blocks left"].exists, "a move that isn't allowed removes nothing")
+
+        // Black 7 straight down to pink 19.
+        cell(7).tap()
+        cell(19).tap()
+        XCTAssertTrue(app.staticTexts["2 blocks left"].waitForExistence(timeout: wait))
+        XCTAssertFalse(cell(7).exists)
+        XCTAssertFalse(cell(19).exists)
+
+        // The last pair clears the board: level up.
+        cell(0).tap()
+        cell(1).tap()
+        let levelUp = app.descendants(matching: .any)["LEVEL UP"]
+        XCTAssertTrue(levelUp.waitForExistence(timeout: wait), "clearing the board levels up")
+        XCTAssertTrue(app.staticTexts["LVL 2"].exists)
+        XCTAssertTrue(app.staticTexts["4 blocks cleared"].exists)
+        let next = app.buttons["> NEXT LEVEL"]
+        XCTAssertTrue(next.waitForExistence(timeout: wait))
+        screenshot("19-puzzle-level-up", of: app)
+        next.tap()
+
+        // Level 2 is up, and the card remembers it.
+        XCTAssertTrue(app.staticTexts["LVL 2"].waitForExistence(timeout: wait))
+        XCTAssertFalse(levelUp.exists)
+        XCTAssertTrue(app.staticTexts["4 blocks left"].exists)
+        screenshot("20-puzzle-level-2", of: app)
+        app.buttons["puzzle-back"].tap()
+        XCTAssertTrue(app.buttons["> PLAY · CLEAR THE GRID · LVL 2"].waitForExistence(timeout: wait))
+    }
+
     /// A display name is a nickname on top of the username: it shows everywhere the player does,
     /// survives a relaunch, and can be dropped again, leaving the username as it was.
     func testADisplayNameSitsOnTopOfTheUsername() {
