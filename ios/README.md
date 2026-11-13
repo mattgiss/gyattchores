@@ -1,8 +1,38 @@
 # GyattChores for iOS
 
-The native SwiftUI app. `GyattCore/` is the UI-free package (game rules, data
-model, sync); `GyattChores/` is the app; `GyattChoresUITests/` drives the app
-in a simulator.
+The native SwiftUI app: a chore scoreboard for one family on one iPhone or
+iPad. `GyattCore/` is the UI-free package (game rules, data model, the chore
+sorter); `GyattChores/` is the app; `GyattChoresUITests/` drives the app in a
+simulator.
+
+## How it keeps a family's data
+
+On the device, and nowhere else.
+
+- **No accounts and no server.** The app has no network code. Players, chores,
+  points and admin codes are JSON files in the app's own storage
+  (`Application Support`). Deleting the app deletes them; so does **admin →
+  device → erase everything**.
+- **Set up on first run.** Nothing is built in: the first launch asks who's in
+  charge (a name and an admin code), who's playing, and what needs doing.
+- **Admins.** An admin approves chores and changes players and chores. Any
+  player can be made one, each with their own code. Only a salted hash of a
+  code is stored, and a forgotten code can't be recovered: the way back in is
+  to delete the app. Face ID / Touch ID for the admin area is off unless an
+  admin turns it on.
+- **Their own chores.** A family can start from the 27 starter chores
+  (`native/chores.json`) or write or dictate their own. `ChoreIntake` sorts
+  free text ("do the dishes and take out the trash, feed the dog 5 minutes")
+  into a list to review. It is plain word-sorting on the device; dictation is
+  the keyboard's own microphone key, so the app asks for no microphone or
+  speech permission.
+- **One device for now.** Everyone uses the same iPhone or iPad. Sharing a
+  scoreboard between a family's devices through their own iCloud is the
+  planned next step.
+
+A device that ran an earlier, synced build keeps its players and history: on
+first launch of this version it asks for an admin name and code and carries
+on from there, on its own.
 
 ## Build
 
@@ -17,7 +47,7 @@ Pick your team under **Signing & Capabilities**, choose a device, and run.
 
 ## Tests
 
-**Rules and sync** — no Xcode needed, runs on macOS or Linux:
+**Rules** — no Xcode needed, runs on macOS or Linux:
 
 ```bash
 cd ios/GyattCore && swift test
@@ -35,9 +65,13 @@ engine, lifted out of `index.html`:
 When a game rule changes in `index.html`, regenerate both and commit them; a
 failing test then names the rule a native port still has wrong.
 
-**The app itself** — UI tests play a day in a simulator: suggest a card, lock
-it in, check everything off, submit, log a bonus chore, relaunch, and try a
-wrong parent code.
+The rest cover what only the native app has: sorting typed or spoken text
+into chores, admin codes, and loading saves from earlier versions.
+
+**The app itself** — UI tests set a family up from a fresh install with
+chores typed as a sentence, play a day (suggest a card, lock it in, check
+everything off, submit, log a bonus chore, relaunch), approve chores as an
+admin, add a player and make them an admin, add a chore, and erase everything.
 
 ```bash
 cd ios && xcodegen
@@ -48,10 +82,11 @@ xcodebuild test -project GyattChores.xcodeproj -scheme GyattChores \
 or **Product → Test** (⌘U) in Xcode.
 
 The UI tests launch the app with `-uiTesting`, a debug-only switch that gives
-it a separate data folder and turns sync off, so a test run can't read or
-write the family's real chores. `-resetData` empties that folder and
-`-demoData` fills it with a made-up month (add `-demoRejectedDay` to have the
-second player's chores for today all rejected). None of this exists in release
+it a separate data folder, so a test run can't touch a real scoreboard.
+`-resetData` empties that folder (a fresh install), `-demoFamily` sets up a
+made-up family (pat is the admin, code 2468; riley and sam play), and
+`-demoData` adds a made-up month on top (with `-demoRejectedDay`, the second
+player's chores for today are all rejected). None of this exists in release
 builds.
 
 ## CI
@@ -152,6 +187,5 @@ Apple finishes processing it. The **Internal** testing group has automatic
 distribution turned on, so its testers get every new build without you doing
 anything.
 
-Before inviting external testers or submitting to the App Store, fill in
-**App Privacy** in App Store Connect: with sync on, the app sends chore logs
-and player names to the family's Supabase project.
+For **App Privacy** in App Store Connect the answer is "Data Not Collected":
+the app has no network code and nothing a family enters leaves the device.

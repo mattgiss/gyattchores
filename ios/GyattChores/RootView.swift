@@ -4,9 +4,9 @@ import GyattCore
 /// Decides how the app is laid out.
 ///
 /// - Narrow (an iPhone, or an iPad app squeezed into a slim window): one screen at a time. Picking
-///   a player pushes their day; dares and the parent area cover the screen.
+///   a player pushes their day; the admin area covers the screen.
 /// - Wide (an iPad): two panes, like the Android app on a foldable's inner screen. The home list
-///   stays on the left and the player's day, the dares or the parent area opens on the right.
+///   stays on the left and the player's day or the admin area opens on the right.
 struct RootView: View {
     @EnvironmentObject var store: AppStore
     @EnvironmentObject var fb: Feedback
@@ -16,36 +16,39 @@ struct RootView: View {
     // lands on the same screen.
     @State private var selectedId: String?
     @State private var adminOpen = false
-    @State private var daresOpen = false
 
     private var selected: Player? { store.players.first { $0.id == selectedId } }
 
     var body: some View {
-        if sizeClass == .regular { twoPane } else { onePane }
+        if !store.isSetUp { SetupView().onAppear(perform: reset) }
+        else if sizeClass == .regular { twoPane } else { onePane }
     }
+
+    /// The scoreboard was erased and set up again: don't reopen whatever was open before.
+    private func reset() { adminOpen = false; selectedId = nil }
 
     private func home(highlighting id: String?) -> HomeView {
         HomeView(
             selectedId: id,
-            onPick: { adminOpen = false; daresOpen = false; selectedId = $0.id },
-            onAdmin: { daresOpen = false; adminOpen = true },
-            onDares: { adminOpen = false; daresOpen = true }
+            onPick: { adminOpen = false; selectedId = $0.id },
+            onAdmin: { adminOpen = true }
         )
     }
 
     // MARK: One screen at a time
 
     private var onePane: some View {
+        // The path holds the player's id, not the player: a new display name then redraws the
+        // screen that's open instead of counting as somewhere new to go.
         NavigationStack(path: Binding(
-            get: { selected.map { [$0] } ?? [] },
-            set: { selectedId = $0.last?.id }
+            get: { selected.map { [$0.id] } ?? [] },
+            set: { selectedId = $0.last }
         )) {
             home(highlighting: nil)
-                .navigationDestination(for: Player.self) { PlayerView(player: $0) }
+                .navigationDestination(for: String.self) { id in
+                    if let player = store.players.first(where: { $0.id == id }) { PlayerView(player: player) }
+                }
                 .toolbar(.hidden, for: .navigationBar)
-        }
-        .fullScreenCover(isPresented: $daresOpen) {
-            DaresView().environmentObject(store).environmentObject(fb).fontDesign(.monospaced).tint(Theme.accent)
         }
         .fullScreenCover(isPresented: $adminOpen) {
             AdminView().environmentObject(store).environmentObject(fb).fontDesign(.monospaced).tint(Theme.accent)
@@ -59,7 +62,7 @@ struct RootView: View {
             HStack(spacing: 0) {
                 // Roughly a third of the width, as on Android, kept between limits so the list is
                 // neither cramped on an upright iPad nor sprawling on a big one turned sideways.
-                home(highlighting: adminOpen || daresOpen ? nil : selectedId)
+                home(highlighting: adminOpen ? nil : selectedId)
                     .frame(width: min(max(geo.size.width * 0.36, 320), 420))
                 Divider()
                 detail
@@ -73,13 +76,11 @@ struct RootView: View {
     @ViewBuilder private var detail: some View {
         if adminOpen {
             AdminView(onBack: { adminOpen = false })
-        } else if daresOpen {
-            DaresView(onBack: { daresOpen = false })
         } else if let selected {
             // A fresh screen per player, so one kid's half-picked card doesn't carry over to the next.
             PlayerView(player: selected, showsBack: false).id(selected.id)
         } else {
-            Text("> pick a player").foregroundStyle(.secondary)
+            Text(store.players.isEmpty ? "> add players in the admin area" : "> pick a player").foregroundStyle(.secondary)
         }
     }
 }

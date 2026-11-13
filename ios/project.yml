@@ -27,7 +27,7 @@ targets:
         CODE_SIGN_STYLE: Automatic
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: GyattChores
-        INFOPLIST_KEY_NSFaceIDUsageDescription: Unlock the parent area to approve chores.
+        INFOPLIST_KEY_NSFaceIDUsageDescription: Open the admin area to approve chores.
         INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         # Portrait on a phone; any way up on an iPad (which also lets it share the screen with other apps).

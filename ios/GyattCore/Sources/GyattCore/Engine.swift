@@ -33,8 +33,20 @@ public enum Engine {
     }
 
     /// The picker list: most neglected first, then shortest first (ties keep pool order).
-    public static func pickableChores(pool: [Chore], playerId: String, logs: [ChoreLog], now: Date) -> [EnrichedChore] {
-        stableSorted(pool.map { enrich($0, days: neglectDays(choreId: $0.id, playerId: playerId, logs: logs, now: now)) }) { a, b in
+    ///
+    /// `knownSince` is when this player first had each chore — when it was added to the list, or
+    /// when they joined, whichever is later. A chore can't be neglected for longer than that, so a
+    /// new family (or a new chore, or a new player) doesn't start with everything long overdue.
+    /// Chores without an entry are treated as they always were.
+    public static func pickableChores(pool: [Chore], playerId: String, logs: [ChoreLog], now: Date,
+                                      knownSince: [String: Date] = [:]) -> [EnrichedChore] {
+        stableSorted(pool.map { chore -> EnrichedChore in
+            var days = neglectDays(choreId: chore.id, playerId: playerId, logs: logs, now: now)
+            if let since = knownSince[chore.id] {
+                days = min(days, max(0, Int((now.timeIntervalSince(since) * 1000 / dayMs).rounded(.down))))
+            }
+            return enrich(chore, days: days)
+        }) { a, b in
             if a.neglectDays != b.neglectDays { return a.neglectDays > b.neglectDays ? .orderedAscending : .orderedDescending }
             if a.currentMinutes != b.currentMinutes { return a.currentMinutes < b.currentMinutes ? .orderedAscending : .orderedDescending }
             return .orderedSame

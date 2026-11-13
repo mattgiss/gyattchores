@@ -2,7 +2,7 @@ name: iOS
 
 # Checks the native iOS app (ios/):
 #   fixtures — the shared test data still matches the web app's engine
-#   core     — the Swift port of the game rules and sync passes its tests
+#   core     — the Swift port of the game rules passes its tests
 #   app      — the SwiftUI app builds and its UI tests pass in an iOS simulator
 #   release  — the app archives in Release with the newest Xcode, as TestFlight needs
 # index.html is in the path list because it's the source of truth for the game

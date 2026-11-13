@@ -1,48 +1,67 @@
 import Foundation
 import GyattCore
 
-/// All app state and actions. Local-first: every change is written to disk at once and never waits
-/// on the network. Mirrors Android's `Store` + `AppViewModel`.
+/// All app state and actions. Everything lives in this app's own storage on this device and is
+/// written to disk the moment it changes. There is no account, no server and no network code:
+/// nothing a family enters ever leaves the phone or tablet it was entered on.
 @MainActor
 final class AppStore: ObservableObject {
-    let pool: [Chore]
-    let poolById: [String: Chore]
+    /// What's kept beside the players, chores and logs.
+    struct Settings: Codable {
+        /// False until the first-run setup has been finished.
+        var setUp = false
+        /// Each admin's code, by player id. Only a salted hash of a code is kept.
+        var adminCodes: [String: AdminCode] = [:]
+        /// Off unless an admin turns it on: Face ID belongs to whoever owns the device, which on a
+        /// player's own tablet is the player.
+        var biometricUnlock = false
+        /// Ids are never reused, so a new player can't inherit a removed one's history.
+        var nextPlayerId = 1        /// When each chore went on the list and when each person joined, on this device. A chore
+        /// can't be overdue for longer than the player has had it. Empty for a family carried over
+        /// from an earlier version, where chores keep counting from their history.
+        var choreAdded: [String: Date] = [:]
+        var memberJoined: [String: Date] = [:]
+    }
 
+    /// The starter chores that ship with the app.
+    let starterChores: [Chore]
+
+    @Published private(set) var settings: Settings { didSet { save("settings.json", settings) } }
+    /// Everyone in the family, admins who don't do chores included.
+    @Published private(set) var members: [Player] { didSet { save("players.json", members) } }
+    /// The family's own chore list.
+    @Published private(set) var pool: [Chore] { didSet { save("chores.json", pool); poolById = Self.index(pool) } }
+    private(set) var poolById: [String: Chore]
     @Published private(set) var logs: [ChoreLog] { didSet { save("logs.json", logs) } }
-    @Published private(set) var players: [Player] { didSet { save("players.json", players) } }
     /// Keyed "playerId|yyyy-MM-dd".
     @Published private(set) var cards: [String: Card] { didSet { save("cards.json", cards) } }
-    /// Lists shared between the family's phones (`family_state`): each person's dares for a day under
-    /// "dare|<fromId>|<yyyy-MM-dd>" as "targetId:choreId" items, and the player list.
-    @Published private(set) var shared: [String: LocalEntry] { didSet { save("family_state.json", shared) } }
-    /// Whose phone this is. Dares are made as this player.
-    @Published private(set) var me: String? { didSet { UserDefaults.standard.set(me, forKey: Self.meKey) } }
-    /// "syncing", "synced", "offline", or "synced · dares stay on this phone".
-    @Published private(set) var syncStatus = "idle"
+    /// Dares made in an earlier version of the app. Nothing adds to them now; they're read so the
+    /// points they earned aren't lost.
+    private var dares: [Dare]
 
-    private var removedPlayers: Set<String> { didSet { save("removed_players.json", removedPlayers) } }
-    private let api = Supabase()
-    private var syncing = false, syncAgain = false
+    /// The people on the scoreboard.
+    var players: [Player] { members.filter(\.plays) }
+    var admins: [Player] { members.filter(\.isAdmin) }
+    var isSetUp: Bool { settings.setUp }
+
     /// Debug builds only: `-uiTesting` is how the UI tests launch the app. It gives them their own
-    /// data folder and turns sync off, so a test run can never read or write the family's real
-    /// chores. With it, `-resetData` starts from nothing and `-demoData` from a made-up month.
+    /// data folder, so a test run can never touch a real scoreboard. With it, `-resetData` starts
+    /// from a fresh install, `-demoFamily` from a family that's already set up, and `-demoData`
+    /// from that family with a made-up month of chores.
     #if DEBUG
     private static let launchArguments = ProcessInfo.processInfo.arguments
     #else
     private static let launchArguments: [String] = []
     #endif
     private static let uiTesting = launchArguments.contains("-uiTesting")
-    /// "Whose phone is this" is kept apart for UI tests too, so they can't change the real answer.
-    private static let meKey = uiTesting ? "ui-testing.me" : "me"
+    /// The admin code of the made-up family the UI tests use.
+    static let demoAdminCode = "2468"
 
     private static let dir: URL = {
         var d = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         if uiTesting {
             d = d.appendingPathComponent("ui-testing", isDirectory: true)
-            if launchArguments.contains("-resetData") {
-                try? FileManager.default.removeItem(at: d)
-                UserDefaults.standard.removeObject(forKey: meKey)
-            }
+            if launchArguments.contains("-resetData") { try? FileManager.default.removeItem(at: d) }
         }
         try? FileManager.default.createDirectory(at: d, withIntermediateDirectories: true)
         return d
@@ -50,21 +69,105 @@ final class AppStore: ObservableObject {
 
     init() {
         let url = Bundle.main.url(forResource: "chores", withExtension: "json")!
-        pool = try! JSONDecoder().decode([Chore].self, from: Data(contentsOf: url))
-        poolById = Dictionary(uniqueKeysWithValues: pool.map { ($0.id, $0) })
-        logs = Self.load("logs.json") ?? []
-        players = Self.load("players.json") ?? [Player(id: "1", name: "bekindhearted"), Player(id: "2", name: "megadinolava")]
-        cards = Self.load("cards.json") ?? [:]
-        shared = Self.load("family_state.json") ?? [:]
-        me = UserDefaults.standard.string(forKey: Self.meKey)
-        removedPlayers = Self.load("removed_players.json") ?? []
+        starterChores = try! JSONDecoder().decode([Chore].self, from: Data(contentsOf: url))
+
+        var members: [Player] = Self.load("players.json") ?? []
+        let logs: [ChoreLog] = Self.load("logs.json") ?? []
+        var settings: Settings = Self.load("settings.json") ?? Settings()
+        // Saved by a version that shared its lists between phones: display names and dares were in there.
+        let legacy: [String: LegacyEntry] = Self.load("family_state.json") ?? [:]
+        if !settings.setUp {
+            for i in members.indices where members[i].displayName == nil {
+                members[i].displayName = legacy["display|\(members[i].id)"]?.items.first.flatMap(DisplayName.clean)
+            }
+            let removed: [String] = Self.load("removed_players.json") ?? []
+            let used = (members.map(\.id) + logs.map(\.playerId) + removed).compactMap(Int.init)
+            settings.nextPlayerId = max(settings.nextPlayerId, (used.max() ?? 0) + 1)
+        }
+        dares = legacy.flatMap { key, entry -> [Dare] in
+            let parts = key.split(separator: "|").map(String.init)
+            guard parts.count == 3, parts[0] == "dare" else { return [] }
+            return entry.items.compactMap { item in
+                let t = item.split(separator: ":", maxSplits: 1).map(String.init)
+                return t.count == 2 ? Dare(from: parts[1], target: t[0], choreId: t[1], day: parts[2]) : nil
+            }
+        }
+        let pool: [Chore] = Self.load("chores.json") ?? starterChores
+        self.settings = settings
+        self.members = members
+        self.pool = pool
+        self.poolById = Self.index(pool)
+        self.logs = logs
+        self.cards = Self.load("cards.json") ?? [:]
         #if DEBUG
-        if Self.uiTesting, Self.launchArguments.contains("-demoData") {
-            // `-demoRejectedDay`: the second player's chores for today were all rejected, not left waiting.
-            let rejectedDay = Self.launchArguments.contains("-demoRejectedDay")
-            logs = Self.demoLogs(pool: pool, players: players, todayStatus: rejectedDay ? Status.rejected : Status.pending)
+        if Self.uiTesting, !settings.setUp, Self.launchArguments.contains("-demoFamily") || Self.launchArguments.contains("-demoData") {
+            finishSetup(adminName: "pat", adminPlays: false, code: Self.demoAdminCode, biometricUnlock: false,
+                        playerNames: ["riley", "sam"], chores: starterChores)
+            if Self.launchArguments.contains("-demoData") {
+                // `-demoRejectedDay`: the second player's chores for today were all rejected, not left waiting.
+                let rejectedDay = Self.launchArguments.contains("-demoRejectedDay")
+                self.logs = Self.demoLogs(pool: pool, players: players, todayStatus: rejectedDay ? Status.rejected : Status.pending)
+                save("logs.json", self.logs)
+            }
         }
         #endif
+    }
+
+    private struct LegacyEntry: Decodable { let items: [String] }
+    private static func index(_ chores: [Chore]) -> [String: Chore] {
+        Dictionary(chores.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+    }
+
+    // MARK: Setup
+
+    /// Names already in the family when setup starts: a save from an earlier version of the app.
+    var existingPlayerNames: [String] { members.map(\.name) }
+
+    /// Finishes the first-run setup: who's in charge, who's playing and what needs doing.
+    func finishSetup(adminName: String, adminPlays: Bool, code: String, biometricUnlock: Bool, playerNames: [String], chores: [Chore]) {
+        guard !settings.setUp, let adminCode = AdminCode(code), let admin = Self.tidy(adminName) else { return }
+        var next = settings
+        var list = members
+        let now = Date()
+        func find(_ name: String) -> Int? { list.firstIndex { $0.name.lowercased() == name.lowercased() } }
+        for name in playerNames.compactMap(Self.tidy) where find(name) == nil {
+            next.memberJoined[String(next.nextPlayerId)] = now
+            list.append(Player(id: String(next.nextPlayerId), name: name)); next.nextPlayerId += 1
+        }
+        // Someone who was already playing keeps playing when they turn out to be the admin too.
+        if let i = find(admin) {
+            list[i].isAdmin = true
+            next.adminCodes[list[i].id] = adminCode
+        } else {
+            let id = String(next.nextPlayerId); next.nextPlayerId += 1
+            list.insert(Player(id: id, name: admin, isAdmin: true, plays: adminPlays), at: 0)
+            next.adminCodes[id] = adminCode
+            next.memberJoined[id] = now
+        }
+        next.biometricUnlock = biometricUnlock
+        next.setUp = true
+        let list2 = chores.isEmpty ? starterChores : chores
+        // A family with history keeps counting from it; a new one starts with nothing overdue.
+        if logs.isEmpty { for chore in list2 { next.choreAdded[chore.id] = now } }
+        members = list
+        pool = list2
+        settings = next
+    }
+
+    private static func tidy(_ name: String) -> String? {
+        let n = name.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        return n.isEmpty ? nil : String(n.prefix(DisplayName.maxLength))
+    }
+
+    /// Wipes the scoreboard: players, chores, history and codes. The app goes back to its first-run setup.
+    func eraseEverything() {
+        for name in ["players.json", "logs.json", "cards.json", "chores.json", "settings.json", "family_state.json", "removed_players.json"] {
+            try? FileManager.default.removeItem(at: Self.dir.appendingPathComponent(name))
+        }
+        let defaults = UserDefaults.standard
+        for key in defaults.dictionaryRepresentation().keys where key.hasPrefix("seen_level_") { defaults.removeObject(forKey: key) }
+        cards = [:]; logs = []; members = []; pool = starterChores; dares = []
+        settings = Settings()
     }
 
     // MARK: Time
@@ -78,25 +181,27 @@ final class AppStore: ObservableObject {
 
     // MARK: Derived
 
-    func pickable(_ playerId: String) -> [EnrichedChore] { Engine.pickableChores(pool: pool, playerId: playerId, logs: logs, now: Date()) }
+    func pickable(_ playerId: String) -> [EnrichedChore] {
+        let joined = settings.memberJoined[playerId]
+        var since: [String: Date] = [:]
+        for chore in pool { since[chore.id] = [settings.choreAdded[chore.id], joined].compactMap { $0 }.max() }
+        return Engine.pickableChores(pool: pool, playerId: playerId, logs: logs, now: Date(), knownSince: since)
+    }
     /// Chore XP plus XP from settled dares.
     func totalXp(_ playerId: String) -> Int {
         Engine.xp(playerId: playerId, logs: logs, calendar: calendar) + Engine.dareXp(playerId: playerId, dares: dares, logs: logs, today: todayKey, calendar: calendar)
     }
     func rank(_ playerId: String) -> Rank { Engine.rank(xp: totalXp(playerId)) }
 
-    /// Every dare known to this phone, decoded from the shared state.
-    var dares: [Dare] {
-        shared.flatMap { key, e -> [Dare] in
-            let parts = key.split(separator: "|").map(String.init)
-            guard parts.count == 3, parts[0] == "dare" else { return [] }
-            return e.items.compactMap { item in
-                let t = item.split(separator: ":", maxSplits: 1).map(String.init)
-                return t.count == 2 ? Dare(from: parts[1], target: t[0], choreId: t[1], day: parts[2]) : nil
-            }
-        }
+    /// Points this week, for the leaderboard.
+    func weekPoints(_ playerId: String) -> Int {
+        Engine.weekPoints(playerId: playerId, logs: logs, dares: dares, now: Date(), calendar: calendar)
     }
-    /// True when the player has something in today that's awaiting a parent or approved. A day where
+    /// A chore's name, even after it's been taken off the list: recent logs remember it.
+    func choreName(_ choreId: String) -> String {
+        poolById[choreId]?.name ?? logs.last { $0.choreId == choreId }?.choreName ?? choreId
+    }
+    /// True when the player has something in today that's awaiting an admin or approved. A day where
     /// everything was rejected doesn't count as submitted.
     func submittedToday(_ playerId: String) -> Bool { !Engine.standingToday(Engine.statusToday(todaysLogs(playerId))).isEmpty }
     /// Chores someone else has in today, as chore id → their name. One chore, one person, per day.
@@ -108,7 +213,7 @@ final class AppStore: ObservableObject {
     func streak(_ playerId: String) -> Int { Engine.streak(playerId: playerId, logs: logs, now: Date(), calendar: calendar) }
     func todaysLogs(_ playerId: String) -> [ChoreLog] { logs.filter { $0.playerId == playerId && calendar.isDateInToday($0.timestamp) } }
 
-    /// Today's card, or one rebuilt from today's logs when another device built it. Nil means the
+    /// Today's card, or one rebuilt from today's logs if the card itself is gone. Nil means the
     /// player picks a card — including when everything they logged today was rejected: a rejected
     /// day isn't a finished day, so they get a fresh picker instead of a card of ✗s they can't change.
     func card(for playerId: String) -> Card? {
@@ -144,94 +249,37 @@ final class AppStore: ObservableObject {
         let lost = takenByOthers(player.id)
         let keep = card.choreIds.indices.filter { lost[card.choreIds[$0]] == nil }
         guard !keep.isEmpty, keep.allSatisfy({ card.checked[$0] }) else { return }
-        logs += keep.map { newLog(player, card.choreIds[$0], card.minutes[$0]) }
+        logs += keep.compactMap { newLog(player, card.choreIds[$0], card.minutes[$0]) }
         let c = Card(date: card.date, choreIds: keep.map { card.choreIds[$0] }, minutes: keep.map { card.minutes[$0] },
                      checked: keep.map { _ in true }, escal: keep.map { $0 < card.escal.count ? card.escal[$0] : 0 }, submitted: true)
         cards["\(player.id)|\(c.date)"] = c
-        requestSync()
     }
 
     /// Bonus round: extra chores logged straight away, no minute cap.
     func logBonus(_ player: Player, _ chosen: [EnrichedChore]) {
-        logs += chosen.map { newLog(player, $0.id, $0.currentMinutes) }
-        requestSync()
+        logs += chosen.compactMap { newLog(player, $0.id, $0.currentMinutes) }
     }
 
-    private func newLog(_ player: Player, _ choreId: String, _ minutes: Int) -> ChoreLog {
-        let c = poolById[choreId]!
+    private func newLog(_ player: Player, _ choreId: String, _ minutes: Int) -> ChoreLog? {
+        guard let c = poolById[choreId] else { return nil }
         return ChoreLog(playerId: player.id, playerName: player.name, choreId: c.id, choreName: c.name,
                         points: c.pts, minutes: minutes, status: Status.pending, timestamp: Date())
     }
 
-    // MARK: Dares
+    // MARK: Admin: unlocking
 
-    func setMe(_ player: Player) { me = player.id }
-
-    // MARK: Display names
-
-    /// A player's display name, if they've set one. It is only ever shown: the username and id are
-    /// what chore logs, sync and scoring use, so a display name can't damage them. Kept per player
-    /// under "display|<id>" in the shared state, so it follows them to the family's other phones.
-    func displayName(_ playerId: String) -> String? {
-        // Cleaned on the way out as well as in, in case another device stored something odd.
-        shared[Self.displayKey(playerId)]?.items.first.flatMap(DisplayName.clean)
+    /// True if `code` is any admin's code.
+    func checkAdminCode(_ code: String) -> Bool {
+        admins.contains { settings.adminCodes[$0.id]?.matches(code) == true }
     }
 
-    /// What to show for a player: their display name, or their username if they haven't set one.
-    func shownName(_ player: Player) -> String { displayName(player.id) ?? player.name }
+    func setBiometricUnlock(_ on: Bool) { settings.biometricUnlock = on }
 
-    /// For the parent area, where the real username must stay visible: "display name (username)".
-    func parentLabel(_ player: Player) -> String { displayName(player.id).map { "\($0) (\(player.name))" } ?? player.name }
-
-    /// Sets a player's display name; empty (or nothing visible) clears it, back to the username.
-    func setDisplayName(_ playerId: String, _ raw: String) {
-        let cleaned = DisplayName.clean(raw)
-        guard cleaned != displayName(playerId) else { return }
-        setShared(Self.displayKey(playerId), cleaned.map { [$0] } ?? [])
-        requestSync()
-    }
-
-    private static func displayKey(_ playerId: String) -> String { "display|\(playerId)" }
-
-    private func setShared(_ key: String, _ items: [String]) {
-        // An emptied list is kept (not removed) so "cleared" also reaches other devices.
-        shared[key] = LocalEntry(items: items, updatedAt: Int64(Date().timeIntervalSince1970 * 1000), dirty: true)
-    }
-
-    /// Adds or removes one of my dares for today. Returns why not, or nil if it changed.
-    func toggleDare(_ target: Player, _ choreId: String) -> String? {
-        guard let me else { return "set whose phone this is first" }
-        let key = "dare|\(me)|\(todayKey)", item = "\(target.id):\(choreId)"
-        var items = shared[key]?.items ?? []
-        let locked = submittedToday(target.id)
-        if let i = items.firstIndex(of: item) {
-            if locked { return "locked — they already submitted today" }
-            items.remove(at: i)
-        } else {
-            let mine = dares.filter { $0.from == me && $0.day == todayKey }
-            if let why = Engine.dareBlocked(from: me, target: target.id, mineToday: mine, targetSubmitted: locked) { return why }
-            items.append(item)
-        }
-        setShared(key, items)
-        requestSync()
-        return nil
-    }
-
-    /// True the first time a day's dare results are shown on this phone.
-    func firstReveal(_ day: String) -> Bool {
-        if UserDefaults.standard.string(forKey: "reveal") == day { return false }
-        UserDefaults.standard.set(day, forKey: "reveal")
-        return true
-    }
-
-    // MARK: Parent actions
-
-    func checkAdminCode(_ code: String) -> Bool { Engine.fnv1a(code) == Engine.adminCodeHash }
+    // MARK: Admin: approvals
 
     func setStatus(_ log: ChoreLog, _ status: String) {
         guard let i = logs.firstIndex(where: { $0.id == log.id }) else { return }
-        logs[i].status = status; logs[i].statusDirty = true
-        requestSync()
+        logs[i].status = status
     }
 
     /// Approves a log. Returns true if that took the player up a level.
@@ -241,31 +289,123 @@ final class AppStore: ObservableObject {
         return rank(log.playerId).level > before
     }
 
-    func addPlayer(_ name: String) {
-        let n = name.trimmingCharacters(in: .whitespaces); guard !n.isEmpty else { return }
-        // Numeric string ids like the web app's "1", "2", so rows stay compatible.
-        let next = (players.compactMap { Int($0.id) }.max() ?? 0) + 1
-        players.append(Player(id: String(next), name: n))
-        pushPlayers()
+    // MARK: Admin: players
+
+    /// What an admin can change about a person. `newCode` is only read when `isAdmin` is on:
+    /// empty keeps the code they have.
+    struct MemberDraft {
+        var name = ""
+        var displayName = ""
+        var plays = true
+        var isAdmin = false
+        var newCode = ""
     }
 
-    func renamePlayer(_ player: Player, _ name: String) {
-        let n = name.trimmingCharacters(in: .whitespaces); guard !n.isEmpty, let i = players.firstIndex(of: player) else { return }
-        players[i].name = n
-        pushPlayers()
+    func draft(for member: Player) -> MemberDraft {
+        MemberDraft(name: member.name, displayName: member.displayName ?? "", plays: member.plays, isAdmin: member.isAdmin)
     }
 
-    /// Removes the player from the list. Their logs are kept so history survives a re-add.
-    func removePlayer(_ player: Player) {
-        guard players.count > 1 else { return }
-        removedPlayers.insert(player.id)
-        players.removeAll { $0.id == player.id }
-        setShared(Self.keyRemoved, removedPlayers.sorted())
-        pushPlayers()
+    /// Why this change can't be saved, or nil if it can. `id` is nil for someone new.
+    func problem(with draft: MemberDraft, for id: String?) -> String? {
+        guard let name = Self.tidy(draft.name) else { return "they need a name" }
+        if members.contains(where: { $0.id != id && $0.name.lowercased() == name.lowercased() }) { return "someone already has that name" }
+        if draft.isAdmin {
+            let hasCode = id.map { settings.adminCodes[$0] != nil } ?? false
+            if draft.newCode.isEmpty ? !hasCode : !AdminCode.isLongEnough(draft.newCode) {
+                return "an admin needs a code of \(AdminCode.minLength) or more characters"
+            }
+        } else if let id, admins.map(\.id) == [id] {
+            return "someone has to stay an admin"
+        }
+        if !draft.plays, !draft.isAdmin { return "they need to do chores, be an admin, or both" }
+        return nil
     }
 
-    private static let keyPlayers = "players", keyRemoved = "removed_players"
-    private func pushPlayers() { setShared(Self.keyPlayers, players.map { "\($0.id):\($0.name)" }); requestSync() }
+    /// Adds someone (`id` nil) or changes them. Returns false, changing nothing, if `problem` has an objection.
+    @discardableResult
+    func saveMember(_ draft: MemberDraft, id: String?) -> Bool {
+        guard problem(with: draft, for: id) == nil, let name = Self.tidy(draft.name) else { return false }
+        var next = settings
+        var member: Player
+        if let id, let current = members.first(where: { $0.id == id }) { member = current } else {
+            member = Player(id: String(next.nextPlayerId), name: name); next.nextPlayerId += 1
+            next.memberJoined[member.id] = Date()
+        }
+        member.name = name
+        member.displayName = DisplayName.clean(draft.displayName)
+        member.plays = draft.plays
+        member.isAdmin = draft.isAdmin
+        if !draft.isAdmin { next.adminCodes[member.id] = nil }
+        else if let code = AdminCode(draft.newCode) { next.adminCodes[member.id] = code }
+        if let i = members.firstIndex(where: { $0.id == member.id }) { members[i] = member } else { members.append(member) }
+        settings = next
+        return true
+    }
+
+    func canRemove(_ member: Player) -> Bool { !(member.isAdmin && admins.count == 1) }
+
+    /// Removes someone and everything kept about them: their chores, points and code.
+    func removeMember(_ member: Player) {
+        guard canRemove(member) else { return }
+        members.removeAll { $0.id == member.id }
+        logs.removeAll { $0.playerId == member.id }
+        cards = cards.filter { !$0.key.hasPrefix("\(member.id)|") }
+        settings.adminCodes[member.id] = nil
+        settings.memberJoined[member.id] = nil
+        UserDefaults.standard.removeObject(forKey: "seen_level_\(member.id)")
+    }
+
+    // MARK: Display names
+
+    /// A player's nickname is their own call: no admin needed, and it can't change the username
+    /// their points are kept under. Empty (or nothing visible) clears it.
+    func setDisplayName(_ playerId: String, _ raw: String) {
+        guard let i = members.firstIndex(where: { $0.id == playerId }) else { return }
+        members[i].displayName = DisplayName.clean(raw)
+    }
+
+    /// What to show for a player: their display name, or their username if they haven't set one.
+    func shownName(_ player: Player) -> String { player.shownName }
+
+    /// For the admin area, where the real username must stay visible: "display name (username)".
+    func adminLabel(_ player: Player) -> String {
+        player.shownName == player.name ? player.name : "\(player.shownName) (\(player.name))"
+    }
+
+    // MARK: Admin: chores
+
+    /// Adds chores to the list, skipping any whose name is already on it. Returns how many went in.
+    @discardableResult
+    func addChores(_ chores: [Chore]) -> Int {
+        var names = Set(pool.map { $0.name.lowercased() }), ids = Set(pool.map(\.id))
+        var fresh: [Chore] = []
+        for chore in chores where names.insert(chore.name.lowercased()).inserted {
+            let c = ids.contains(chore.id) ? ChoreIntake.make(name: chore.name, minutes: chore.tiers.first ?? 5, takenIds: ids) : chore
+            ids.insert(c.id)
+            fresh.append(c)
+        }
+        if !fresh.isEmpty {
+            let now = Date()
+            for chore in fresh { settings.choreAdded[chore.id] = now }
+            pool += fresh
+        }
+        return fresh.count
+    }
+
+    /// Renames or re-times a chore. Its id, and so its history, stays the same.
+    func updateChore(_ chore: Chore, name: String, minutes: Int) {
+        guard let i = pool.firstIndex(where: { $0.id == chore.id }), let clean = ChoreIntake.tidyName(name) else { return }
+        pool[i] = ChoreIntake.make(name: clean, minutes: minutes, id: chore.id)
+    }
+
+    /// Takes a chore off the list. Chores already logged keep their points; a card someone is
+    /// still checking off loses it and they pick again.
+    func removeChore(_ chore: Chore) {
+        guard pool.count > 1 else { return }
+        pool.removeAll { $0.id == chore.id }
+        settings.choreAdded[chore.id] = nil
+        cards = cards.filter { $0.value.submitted || !$0.value.choreIds.contains(chore.id) }
+    }
 
     /// True the first time a player's screen shows a level higher than the last one it showed.
     func isNewLevel(_ playerId: String, _ level: Int) -> Bool {
@@ -275,65 +415,11 @@ final class AppStore: ObservableObject {
         return level > last
     }
 
-    // MARK: Sync
-
-    /// One pass at a time; a request that arrives mid-pass runs one follow-up pass instead of overlapping.
-    func requestSync() {
-        if Self.uiTesting { syncStatus = "off (ui testing)"; return }
-        if syncing { syncAgain = true; return }
-        syncing = true
-        syncStatus = "syncing"
-        let logSnapshot = logs, stateSnapshot = shared
-        Task {
-            do {
-                let synced = try await LogSync.run(api: api, local: logSnapshot)
-                logs = LogSync.reconcile(synced: synced, latest: logs)
-                adoptPlayersFromLogs()
-                do {
-                    let st = try await StateSync.run(api: api, local: stateSnapshot)
-                    shared = StateSync.reconcile(synced: st, latest: shared)
-                    adoptSharedPlayers()
-                    syncStatus = "synced"
-                } catch SupabaseError.http(let code) where code == 404 {
-                    // The family_state table is optional until its SQL has been run:
-                    // dares and player changes then stay on this phone.
-                    syncStatus = "synced · dares stay on this phone"
-                }
-            } catch {
-                syncStatus = "offline"
-            }
-            syncing = false
-            if syncAgain { syncAgain = false; requestSync() }
-        }
-    }
-
-    /// The player list and removals travel in the shared state; adopt them when another phone changed them.
-    private func adoptSharedPlayers() {
-        if let e = shared[Self.keyPlayers], !e.dirty, !e.items.isEmpty {
-            let list = e.items.compactMap { item -> Player? in
-                let t = item.split(separator: ":", maxSplits: 1).map(String.init)
-                return t.count == 2 ? Player(id: t[0], name: t[1]) : nil
-            }
-            if list != players { players = list }
-        }
-        if let e = shared[Self.keyRemoved], !e.dirty, Set(e.items) != removedPlayers { removedPlayers = Set(e.items) }
-    }
-
-    /// Adds players that appear in synced logs but aren't known here (e.g. added on another phone).
-    private func adoptPlayersFromLogs() {
-        var known = Set(players.map(\.id)).union(removedPlayers)
-        var fresh: [Player] = []
-        for l in logs.sorted(by: { $0.timestamp > $1.timestamp }) where known.insert(l.playerId).inserted {
-            fresh.append(Player(id: l.playerId, name: l.playerName))
-        }
-        if !fresh.isEmpty { players += fresh.sorted { $0.id < $1.id }; setShared(Self.keyPlayers, players.map { "\($0.id):\($0.name)" }) }
-    }
-
     // MARK: Demo data
 
     #if DEBUG
     /// A made-up month for `-uiTesting -demoData`: the first player clears the card most days, the
-    /// second is hit and miss and has today's chores still waiting on a parent.
+    /// second is hit and miss and has today's chores still waiting on an admin.
     private static func demoLogs(pool: [Chore], players: [Player], todayStatus: String) -> [ChoreLog] {
         let now = Date(), cal = Calendar.current
         var out: [ChoreLog] = []

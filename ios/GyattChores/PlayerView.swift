@@ -10,12 +10,14 @@ struct PlayerView: View {
     /// False when this is the right-hand pane beside the home list: there's nothing to go back to.
     var showsBack = true
     @State private var bonusPicking = false
+    @State private var editingDisplayName = false
+    @State private var displayNameDraft = ""
 
     var body: some View {
         let card = store.card(for: player.id)
         let todays = store.todaysLogs(player.id)
         let statusToday = Engine.statusToday(todays)
-        // Used up for today: awaiting a parent, approved, or on the card and not yet submitted.
+        // Used up for today: awaiting an admin, approved, or on the card and not yet submitted.
         // A rejected chore isn't — it can be done again.
         // One chore, one person, per day: what the other players have in today.
         let others = store.takenByOthers(player.id)
@@ -28,7 +30,17 @@ struct PlayerView: View {
                         .padding(.trailing, 8)
                 }
                 Text(bonusPicking ? "\(store.shownName(player)) · bonus round" : store.shownName(player)).font(.headline).lineLimit(1)
-                Spacer()
+                Spacer(minLength: 8)
+                // Their own nickname, their own call: no admin needed, and it can't change the
+                // username their points are kept under.
+                if !bonusPicking {
+                    Button("✎ name") {
+                        fb.tap()
+                        displayNameDraft = player.displayName ?? ""
+                        editingDisplayName = true
+                    }
+                    .font(.footnote).frame(minHeight: 36)
+                }
             }
             .padding(.horizontal, 20).padding(.vertical, 12)
 
@@ -50,6 +62,15 @@ struct PlayerView: View {
             }
         }
         .toolbar(.hidden, for: .navigationBar)
+        .alert("Display name", isPresented: $editingDisplayName) {
+            TextField("anything you like", text: $displayNameDraft)
+                .textInputAutocapitalization(.never).autocorrectionDisabled()
+            Button("Save") { store.setDisplayName(player.id, displayNameDraft) }
+            Button("Use my username", role: .destructive) { store.setDisplayName(player.id, "") }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Shown in place of your username, \(player.name). Your chores and points stay exactly as they are. Up to \(DisplayName.maxLength) characters.")
+        }
     }
 }
 
@@ -143,7 +164,7 @@ private struct CardRunView: View {
                     StatsHeader(rank: rank, streak: store.streak(player.id))
                     SectionLabel("today's card · \(card.minutes.reduce(0, +))m")
                     ForEach(Array(card.choreIds.enumerated()), id: \.element) { i, id in
-                        ChoreRow(name: store.poolById[id]?.name ?? id, minutes: card.minutes[i],
+                        ChoreRow(name: store.choreName(id), minutes: card.minutes[i],
                                  escalLevel: i < card.escal.count ? card.escal[i] : 0, checked: card.checked[i],
                                  status: card.submitted ? (statusByChore[id] ?? Status.pending) : (lost.contains(id) ? ChoreRow.taken : nil)) {
                             fb.tick(!card.checked[i]); store.toggle(player, card, i)
@@ -181,8 +202,8 @@ private struct CardRunView: View {
                     let verdicts = (card.choreIds + extras.map(\.choreId)).map { statusByChore[$0] ?? Status.pending }
                     let waiting = verdicts.filter { $0 == Status.pending }.count
                     let rejected = verdicts.filter { $0 == Status.rejected }.count
-                    if waiting == verdicts.count { Text("card submitted — waiting on a parent").foregroundStyle(.secondary) }
-                    else if waiting > 0 { Text("\(waiting) of \(verdicts.count) still waiting on a parent").foregroundStyle(.secondary) }
+                    if waiting == verdicts.count { Text("card submitted — waiting on an admin").foregroundStyle(.secondary) }
+                    else if waiting > 0 { Text("\(waiting) of \(verdicts.count) still waiting on an admin").foregroundStyle(.secondary) }
                     else if rejected == 0 { Text("✓ all approved — nice work").foregroundStyle(Theme.good) }
                     else if rejected == verdicts.count { Text("✗ none approved today").foregroundStyle(Theme.bad) }
                     else { Text("done — \(verdicts.count - rejected) approved, \(rejected) rejected").foregroundStyle(.secondary) }

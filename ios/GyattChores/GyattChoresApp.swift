@@ -4,7 +4,6 @@ import SwiftUI
 struct GyattChoresApp: App {
     @StateObject private var store = AppStore()
     @StateObject private var feedback = Feedback()
-    @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
@@ -13,14 +12,6 @@ struct GyattChoresApp: App {
                 .environmentObject(feedback)
                 .fontDesign(.monospaced)
                 .tint(Theme.accent)
-                // Sync on open and every 10 seconds while the app is on screen.
-                .task(id: scenePhase) {
-                    guard scenePhase == .active else { return }
-                    while !Task.isCancelled {
-                        store.requestSync()
-                        try? await Task.sleep(for: .seconds(10))
-                    }
-                }
         }
     }
 }
