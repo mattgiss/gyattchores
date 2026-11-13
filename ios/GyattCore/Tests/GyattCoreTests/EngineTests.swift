@@ -33,6 +33,8 @@ final class EngineTests: XCTestCase {
         XCTAssertEqual(Engine.fnv1a(""), 2166136261)
         XCTAssertEqual(Engine.fnv1a("a"), 0xE40C292C) // published FNV-1a 32-bit test vector
         XCTAssertNotEqual(Engine.fnv1a("wrong"), Engine.adminCodeHash)
+        // The hash of the code retired in November 2026, which was published in plain text.
+        XCTAssertNotEqual(Engine.adminCodeHash, 1305456521 as UInt32)
     }
 
     func log(_ chore: String, _ day: String, hour: Int = 12, status: String = Status.approved, player: String = "1") -> ChoreLog {

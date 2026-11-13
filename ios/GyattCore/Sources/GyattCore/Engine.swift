@@ -13,7 +13,7 @@ public enum Engine {
     public static let dareGuesserPoints = 10
     /// What the doer earns per person who dared the chore they did.
     public static let dareDoerPoints = 5
-    public static let adminCodeHash: UInt32 = 1305456521
+    public static let adminCodeHash: UInt32 = 3856382990
     private static let dayMs = 86_400_000.0
 
     // MARK: Card engine
