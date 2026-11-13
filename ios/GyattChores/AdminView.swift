@@ -314,6 +314,7 @@ private struct Device: View {
         SectionLabel("your data")
         Text("everything this app knows — names, chores and points — is kept on this device and nowhere else. there's no account and nothing is sent to anyone, including us. deleting the app deletes it all.")
             .font(.callout).foregroundStyle(.secondary)
+        Link("privacy policy", destination: Links.privacy).font(.callout).frame(minHeight: 44)
         Button("erase everything…", role: .destructive) { confirmingErase = true }
             .buttonStyle(.bordered).padding(.vertical, 12)
             .confirmationDialog("Erase this scoreboard?", isPresented: $confirmingErase, titleVisibility: .visible) {

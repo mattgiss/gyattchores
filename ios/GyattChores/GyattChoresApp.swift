@@ -16,6 +16,12 @@ struct GyattChoresApp: App {
     }
 }
 
+/// The one place the app points outside itself: the privacy policy on the website, opened in the
+/// browser. The app itself never goes online.
+enum Links {
+    static let privacy = URL(string: "https://gyattchores.com/app-privacy.html")!
+}
+
 enum Theme {
     static let accent = Color(red: 0xF2 / 255, green: 0x38 / 255, blue: 0x61 / 255)
     static let warn = Color(red: 0xF5 / 255, green: 0xA6 / 255, blue: 0x23 / 255)

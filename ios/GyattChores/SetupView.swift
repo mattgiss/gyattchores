@@ -81,6 +81,7 @@ struct SetupView: View {
                 .font(.footnote).foregroundStyle(Theme.warn).padding(.top, 4)
         }
         TermButton(label: "SET UP THIS DEVICE") { fb.tap(); step = .admin }.padding(.top, 12)
+        Link("privacy policy", destination: Links.privacy).font(.footnote).frame(maxWidth: .infinity, minHeight: 44)
     }
 
     // MARK: Admin

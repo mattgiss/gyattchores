@@ -86,8 +86,9 @@ it a separate data folder, so a test run can't touch a real scoreboard.
 `-resetData` empties that folder (a fresh install), `-demoFamily` sets up a
 made-up family (pat is the admin, code 2468; riley and sam play), and
 `-demoData` adds a made-up month on top (with `-demoRejectedDay`, the second
-player's chores for today are all rejected). None of this exists in release
-builds.
+player's chores for today are all rejected). `-screenshots` is for the App
+Store pictures: the made-up family gets three players with names fit for a
+store page. None of this exists in release builds.
 
 ## CI
 
@@ -98,6 +99,18 @@ iPhone simulators the runner has (iPhone 17 Pro and iPhone 16e where
 available), and archives the app in Release with the newest Xcode to catch
 anything that would stop a TestFlight upload. Screenshots from the UI tests
 are uploaded as a build artifact.
+
+A separate job takes the App Store listing's screenshots
+(`testAppStoreScreenshots`) on an iPhone 17 Pro Max, an iPhone 17 Pro and a
+13-inch iPad Pro, checks each file is exactly a size App Store Connect
+accepts, and uploads them as the `app-store-screenshots` artifact.
+
+## App Store
+
+[`AppStore/SUBMISSION.md`](AppStore/SUBMISSION.md) lists every field App Store
+Connect asks for, with text ready to paste, and
+[`AppStore/REVIEW-RISKS.md`](AppStore/REVIEW-RISKS.md) lists what is left that
+App Review might object to.
 
 ## TestFlight
 
@@ -129,7 +142,7 @@ One-time setup:
 To release, push a tag — the part after `ios-v` becomes the app version:
 
 ```bash
-git tag ios-v0.1.0 && git push origin ios-v0.1.0
+git tag ios-v1.0 && git push origin ios-v1.0
 ```
 
 The build number is a timestamp, so it never repeats. When the run finishes,

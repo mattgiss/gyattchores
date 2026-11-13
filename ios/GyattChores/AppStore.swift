@@ -54,6 +54,9 @@ final class AppStore: ObservableObject {
     private static let launchArguments: [String] = []
     #endif
     private static let uiTesting = launchArguments.contains("-uiTesting")
+    /// On top of `-uiTesting`: the made-up family in the App Store pictures (`testAppStoreScreenshots`)
+    /// has three players with names fit for a store page, and logs its chores before 9:41.
+    private static let screenshots = uiTesting && launchArguments.contains("-screenshots")
     /// The admin code of the made-up family the UI tests use.
     static let demoAdminCode = "2468"
 
@@ -102,7 +105,7 @@ final class AppStore: ObservableObject {
         #if DEBUG
         if Self.uiTesting, !settings.setUp, Self.launchArguments.contains("-demoFamily") || Self.launchArguments.contains("-demoData") {
             finishSetup(adminName: "pat", adminPlays: false, code: Self.demoAdminCode, biometricUnlock: false,
-                        playerNames: ["riley", "sam"], chores: starterChores)
+                        playerNames: Self.screenshots ? ["sockninja", "dishwizard", "broomrider"] : ["riley", "sam"], chores: starterChores)
             if Self.launchArguments.contains("-demoData") {
                 // `-demoRejectedDay`: the second player's chores for today were all rejected, not left waiting.
                 let rejectedDay = Self.launchArguments.contains("-demoRejectedDay")
@@ -419,16 +422,20 @@ final class AppStore: ObservableObject {
 
     #if DEBUG
     /// A made-up month for `-uiTesting -demoData`: the first player clears the card most days, the
-    /// second is hit and miss and has today's chores still waiting on an admin.
+    /// second is hit and miss and has today's chores still waiting on an admin. With `-screenshots`
+    /// there's a third, with a good month behind them and today's chores not picked yet.
     private static func demoLogs(pool: [Chore], players: [Player], todayStatus: String) -> [ChoreLog] {
         let now = Date(), cal = Calendar.current
         var out: [ChoreLog] = []
         for daysAgo in 0..<Engine.logDays {
-            guard let day = cal.date(byAdding: .day, value: -daysAgo, to: now) else { continue }
-            for (index, player) in players.prefix(2).enumerated() {
+            guard var day = cal.date(byAdding: .day, value: -daysAgo, to: now) else { continue }
+            // In the pictures the clock reads 9:41 am whenever they're taken, so chores are logged before that.
+            if screenshots, let morning = cal.date(bySettingHour: 7, minute: 48, second: 0, of: day) { day = morning }
+            for (index, player) in players.prefix(screenshots ? 3 : 2).enumerated() {
                 let steady = index == 0
-                if steady ? daysAgo % 9 == 4 : daysAgo % 3 == 1 { continue } // a day off
-                let goal = steady || daysAgo % 4 != 0 ? Engine.dailyMinutes : 14 // some short days
+                let dayOff = index == 2 ? daysAgo == 0 || daysAgo % 7 == 5 : steady ? daysAgo % 9 == 4 : daysAgo % 3 == 1
+                if dayOff { continue }
+                let goal = steady || index == 2 || daysAgo % 4 != 0 ? Engine.dailyMinutes : 14 // some short days
                 var minutes = 0, slot = daysAgo * 5 + index * 11
                 var used = Set<String>()
                 while minutes < goal, used.count < pool.count {

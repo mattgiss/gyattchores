@@ -60,6 +60,16 @@ final class GyattChoresUITests: XCTestCase {
         XCTAssertNotEqual(toggle.value as? String, before, "the switch should have flipped")
     }
 
+    /// A full-screen picture for the App Store listing, named "store-…" so CI can tell these from
+    /// the other screenshots.
+    private func storeScreenshot(_ name: String, of app: XCUIApplication) {
+        Thread.sleep(forTimeInterval: 1.5)   // let screens finish sliding in and progress bars finish filling
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        attachment.name = "store-\(name)"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+
     /// The row on the home screen that opens a player's day (it's the one showing their streak).
     private func playerRow(_ name: String, in app: XCUIApplication) -> XCUIElement {
         app.buttons.matching(NSPredicate(format: "label CONTAINS %@ AND label CONTAINS '🔥'", name)).firstMatch
@@ -270,7 +280,7 @@ final class GyattChoresUITests: XCTestCase {
         for name in ["do the dishes", "take out the trash", "feed the dog", "water plants"] {
             XCTAssertTrue(app.textFields.matching(NSPredicate(format: "value == %@", name)).firstMatch.exists, "\(name) should be on the list")
         }
-        XCTAssertTrue(app.staticTexts["5m"].exists, "the time that was mentioned is kept")
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label == '5m'")).firstMatch.exists, "the time that was mentioned is kept")
         screenshot("24-setup-chores-sorted", of: app)
         app.buttons["leave out water plants"].tap()
         let add = app.buttons["> ADD 3 CHORES"]
@@ -520,6 +530,59 @@ final class GyattChoresUITests: XCTestCase {
         app.buttons["> LOCK IN CARD"].tap()
         checkOffEverything(in: app).tap()
         XCTAssertTrue(app.staticTexts["card submitted — waiting on an admin"].waitForExistence(timeout: wait))
+    }
+
+    /// Takes the six pictures for the App Store listing, with `-screenshots`' made-up family. CI
+    /// runs this on the simulators whose screens match the sizes App Store Connect asks for and
+    /// uploads the results (see ios/AppStore/SUBMISSION.md).
+    func testAppStoreScreenshots() {
+        // 2. A fresh install: what the app is and what it doesn't do with your data.
+        let fresh = launch(["-resetData", "-screenshots"])
+        XCTAssertTrue(fresh.buttons["> SET UP THIS DEVICE"].waitForExistence(timeout: wait))
+        storeScreenshot("02-private-by-design", of: fresh)
+        fresh.terminate()
+
+        // 1. The scoreboard: this week's board, who's playing, and the 30-day log.
+        let app = launch(["-resetData", "-demoData", "-screenshots"])
+        XCTAssertTrue(playerRow("sockninja", in: app).waitForExistence(timeout: wait))
+        if isPad {
+            // Half an iPad's screen would be empty with nobody picked: show a day waiting on an admin.
+            open("dishwizard", in: app)
+            XCTAssertTrue(app.staticTexts["card submitted — waiting on an admin"].waitForExistence(timeout: wait))
+        }
+        storeScreenshot("01-scoreboard", of: app)
+
+        // 3. Picking today's chores, with a suggested card.
+        open("broomrider", in: app)
+        let main = mainButton(in: app)
+        XCTAssertTrue(main.waitForExistence(timeout: wait))
+        app.buttons["✨ suggest a 25-min card"].tap()
+        XCTAssertEqual(main.label, "> LOCK IN CARD")
+        storeScreenshot("03-pick-chores", of: app)
+
+        // 4. The card, partly checked off.
+        main.tap()
+        XCTAssertTrue(app.buttons["> CHECK OFF EVERYTHING FIRST"].waitForExistence(timeout: wait))
+        for _ in 0..<2 {
+            let next = uncheckedChores(in: app).firstMatch
+            XCTAssertTrue(next.waitForExistence(timeout: wait))
+            next.tap()
+        }
+        storeScreenshot("04-todays-card", of: app)
+
+        // 6. The admin area, with today's chores waiting for a yes or no.
+        goBack(in: app)
+        unlockAdmin(in: app)
+        XCTAssertTrue(app.buttons["✓ approve"].firstMatch.waitForExistence(timeout: wait))
+        storeScreenshot("06-approvals", of: app)
+
+        // 5. A household's own chores, said in a sentence and sorted into a list.
+        adminSection("chores", in: app)
+        app.buttons["+ add chores"].tap()
+        type("Wash the car, walk the dog for 15 minutes, feed the fish and tidy the playroom. Clean out the fridge", into: app.textViews["chore-text"])
+        app.buttons["> SORT INTO CHORES"].tap()
+        XCTAssertTrue(app.buttons["> ADD 5 CHORES"].waitForExistence(timeout: wait))
+        storeScreenshot("05-your-own-chores", of: app)
     }
 
     func testIPadShowsTheListAndTheDaySideBySide() throws {
