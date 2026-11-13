@@ -126,6 +126,8 @@ class EngineTest {
         assertEquals(2166136261L, Engine.fnv1a(""))
         assertEquals(0xE40C292CL, Engine.fnv1a("a")) // published FNV-1a 32-bit test vector
         assertFalse(Engine.fnv1a("wrong") == Engine.ADMIN_CODE_HASH)
+        // The hash of the code retired in November 2026, which was published in plain text.
+        assertFalse(Engine.ADMIN_CODE_HASH == 1305456521L)
     }
 
     @Test fun cellAlpha() {

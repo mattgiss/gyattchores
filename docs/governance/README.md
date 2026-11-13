@@ -104,7 +104,7 @@ is the map used during incidents and changes.
 | Web application | Software | `index.html` | Entire SPA; no build step. |
 | Hosting | Platform | GitHub Pages (from `main`) | Production deploy target. |
 | Custom domain | DNS | `CNAME` → gyattchores.com | DNS managed at the registrar (record in CA-02). |
-| Native app | Software | `GyattChoresApp/` | SwiftUI (iPhone + Watch); Xcode project not committed. |
+| Native apps | Software | `ios/`, `android/`, `native/` on the `native-android` branch | SwiftUI and Jetpack Compose; not on `main` yet. The earlier `GyattChoresApp/` sources were removed in November 2026. |
 | Optional sync backend | Service | Supabase (`simple_logs` table) | Best-effort; **anon** key in client. See KE-001. |
 | Monitoring | Automation | `.github/workflows/discord-notify.yml` | Event notifications. |
 | Notification destination | External | Discord **Forum** channel | Needs `thread_name` per post (KE-002). |

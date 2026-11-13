@@ -54,7 +54,7 @@ App quality
 
 iOS integration
 - [ ] Home screen widget (This Week points per player)
-- [ ] Siri Shortcuts ✅ (App Intent for LogChoreIntent already exists)
+- [ ] Siri Shortcuts (App Intent for logging a chore by voice)
 - [ ] App Icon badge for pending approvals
 ```
 
@@ -117,7 +117,7 @@ Replace or supplement Supabase with **CloudKit (iCloud)** for native Apple-ecosy
 - Micro-animations: chore completion particle burst, approval confetti, streak flames.
 - Sound design: subtle, satisfying tap sounds (respect system silence switch).
 
-### 2.2 Apple Watch app (already exists — polish it)
+### 2.2 Apple Watch app
 
 - Complication showing today's points.
 - Quick-log from Watch face.

@@ -167,10 +167,29 @@ independent copy of that device's history.
 The PIN is a convenience lock, not a security boundary
 ([`SECURITY.md`](../../SECURITY.md)). To change it:
 
-1. Compute the FNV-1a hash of the new PIN (the `hashCode` function in
-   `index.html` is the reference implementation).
-2. Update `ADMIN_CODE_HASH` in `index.html` via PR; record the new PIN in the
-   vault (§4).
+1. Choose a new PIN longer than 4 digits. Letters are allowed.
+2. Compute its FNV-1a hash on your own machine (the `hashCode` function in
+   `index.html` is the reference implementation). This asks for the PIN
+   without showing it and prints the hash:
+
+   ```bash
+   read -rs -p "New parent code: " C && echo && C="$C" node -e 'const s=process.env.C;let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0}console.log(h)'; unset C
+   ```
+3. Update the hash everywhere it is compiled in, via PR, and record the new
+   PIN in the vault (§4):
+   - `ADMIN_CODE_HASH` in `index.html`
+   - `Engine.adminCodeHash` in `ios/GyattCore/Sources/GyattCore/Engine.swift`
+   - `Engine.ADMIN_CODE_HASH` in
+     `android/app/src/main/java/com/gyattchores/app/engine/Engine.kt`
+4. Regenerate the shared test data, which includes the hash, and commit it:
+   `node native/tools/scenarios.mjs`. The engine tests fail if a native app
+   and `index.html` disagree.
+5. Release the web app and new builds of both native apps together. Until a
+   phone is updated it keeps accepting the previous PIN.
+
+Never write the PIN itself in the repository, a commit message or a pull
+request: only the hash. A PIN that has been committed in plain text stays in
+the git history, so replace it rather than only deleting the text.
 
 ---
 

@@ -213,7 +213,7 @@ object Engine {
 
     // ─── Admin gate ─────────────────────────────────────────────────────────
 
-    const val ADMIN_CODE_HASH = 1305456521L
+    const val ADMIN_CODE_HASH = 3856382990L
 
     /** 32-bit FNV-1a over UTF-16 code units, matching the web app's `hashCode`. */
     fun fnv1a(s: String): Long {
