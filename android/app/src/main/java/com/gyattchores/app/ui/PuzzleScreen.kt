@@ -189,7 +189,7 @@ fun PuzzleScreen(vm: AppViewModel, player: Player, onBack: () -> Unit) {
                 frozen = false
                 cells = next.cellString
                 flying = null
-                cleared = board.blocksLeft
+                cleared = pack.board(level).blocksLeft   // every block the level started with
                 vm.puzzleCleared(player.id, level)
                 launch { zoom.animateTo(1f, spring(dampingRatio = 0.4f, stiffness = Spring.StiffnessMedium)) }
                 burst(hit, listOf(Accent, ink, Accent, Color.White), 90, 7f)

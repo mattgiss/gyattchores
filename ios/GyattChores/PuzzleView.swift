@@ -244,7 +244,8 @@ struct PuzzleView: View {
                 frozen = true
                 zoom = 1.06
                 try? await Task.sleep(for: .milliseconds(Int(freezeSeconds * 1000)))
-                clearedCount = board.blocksLeft
+                // Every block the level started with.
+                clearedCount = store.puzzlePack.board(level).blocksLeft
                 frozen = false
                 board = next
                 flyFrom = nil; flyTo = nil
