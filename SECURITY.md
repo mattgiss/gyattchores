@@ -17,12 +17,13 @@ GyattChores is a **local-first client-side app** with an **optional** cloud sync
 
 ## The admin PIN is not a security boundary
 
-The "admin" PIN (the `ADMIN_CODE` constant in `index.html`) gates the approve/reject screen. It is a **convenience lock to keep kids from approving their own chores**, not real security:
+The parent ("admin") code gates the approve/reject screen. The app does not store the code itself, only a hash of it (the `ADMIN_CODE_HASH` constant in `index.html`). It is a **convenience lock to keep kids from approving their own chores**, not real security:
 
-- It is present in the client source and visible to anyone who views source.
+- The hash is in the client source, visible to anyone who views source. It is a 32-bit FNV-1a hash, so a short code can be recovered from it by trying every possibility, in well under a second. Hashing keeps the code out of casual view and nothing more.
 - It protects only the local approval UI; it guards no sensitive data and authorizes no server action.
+- Never write the code itself in this repository: not in source, docs, review notes, commit messages or pull requests. Codes used before November 2026 appeared in plain text in older files and remain in the git history, so treat any earlier code as public.
 
-Treat it accordingly. If you fork this app, change the PIN, but don't rely on it to protect anything that actually matters.
+Treat it accordingly. If you fork this app, change the code ([how](docs/governance/break-glass-and-recovery.md#56-reset-the-admin-pin)), but don't rely on it to protect anything that actually matters.
 
 ## Data & privacy
 

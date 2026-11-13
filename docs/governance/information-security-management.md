@@ -58,7 +58,7 @@ key-person dependency.
 |---|---|---|
 | `DISCORD_WEBHOOK` | GitHub Actions secret | Never echo in logs; rotate if exposed (KE-003, CA-06). Treated as a credential. |
 | Supabase **anon** key | Embedded in `index.html` **by design** | Public-safe key; access bounded by row-level security. **Never** commit the `service_role` key. Documented in `SECURITY.md`. |
-| Admin PIN | `ADMIN_CODE` in `index.html` | **Not a security boundary** (client-visible). A child-lock only. |
+| Admin PIN | Hash only: `ADMIN_CODE_HASH` in `index.html`. The PIN itself is kept in the vault, never in the repo. | **Not a security boundary** (the hash is client-visible and reversible for a short PIN). A child-lock only. |
 
 ### 4.1 Rules
 
@@ -81,7 +81,7 @@ Supabase) — there is no build step or lockfile.
 |---|---|
 | A CDN dependency changes behaviour or is compromised. | Pin to explicit major versions; record the dependency inventory in the [configuration doc](README.md#5-service-configuration-cmdb-lite); review on the quarterly cadence (CA-07). |
 | A GitHub Action is compromised. | Prefer first-party `actions/*`; pin third-party actions to a commit SHA, not a moving tag. (The current workflow uses only `curl`/`jq` on the runner — minimal action surface.) |
-| Native app dependencies | Track in the `GyattChoresApp` target when the Xcode project is committed. |
+| Native app dependencies | Track in `ios/project.yml` and the Gradle files under `android/` once the native apps are merged. |
 
 ---
 

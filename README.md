@@ -97,11 +97,9 @@ git push origin main
 
 Bumping `BUILD` on each deploy is what lets the in-app indicator tell a freshly-loaded copy from a stale cached one.
 
-## Native iOS app
+## Native apps
 
-The [`GyattChoresApp/`](GyattChoresApp/) directory holds Swift sources for an earlier, **tap-to-log** version of the design (iPhone + Apple Watch), including a Shortcuts/App Intent for logging a chore by voice. It predates the current daily-card / XP model in the web app and isn't kept in sync with it.
-
-> Note: the Xcode project file is not committed — the directory contains only the Swift sources (`Models/`, `Views/`, `Services/`, `Intents/`). To build, create a new Xcode app target and add these sources.
+Native iOS and Android apps are in development on the `native-android` branch ([#65](https://github.com/mattgiss/gyattchores/pull/65)) and are not on `main` yet. The Swift sources for an earlier tap-to-log design (iPhone + Apple Watch, `GyattChoresApp/`) and its App Store notes (`app-store-metadata/`) were removed in November 2026; they described a different app and are still in the git history.
 
 ## Project structure
 
@@ -114,7 +112,6 @@ gyattchores/
 ├── gyattchores-logo*.svg   # Logo variants
 ├── about.html / ebook.html / development-story.html   # Public about, guide, and story pages
 ├── SECURITY.md             # Security model & disclosure
-├── GyattChoresApp/         # Earlier native SwiftUI app (iPhone + Watch)
 └── docs/governance/        # Lightweight service-management docs
 ```
 
