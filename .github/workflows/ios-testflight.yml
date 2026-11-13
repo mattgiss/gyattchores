@@ -3,7 +3,7 @@ name: iOS TestFlight
 # Archives the iOS app on a GitHub Mac runner and uploads it to TestFlight —
 # no local Mac or Xcode needed.
 #
-# To run it: push a tag such as `ios-v0.1.0` (the part after `ios-v` becomes the
+# To run it: push a tag such as `ios-v1.0` (the part after `ios-v` becomes the
 # app version), or use "Run workflow" in the Actions tab once this file is on
 # the default branch.
 #

@@ -51,8 +51,11 @@ The UI tests launch the app with `-uiTesting`, a debug-only switch that gives
 it a separate data folder and turns sync off, so a test run can't read or
 write the family's real chores. `-resetData` empties that folder and
 `-demoData` fills it with a made-up month (add `-demoRejectedDay` to have the
-second player's chores for today all rejected). None of this exists in release
-builds.
+second player's chores for today all rejected). Adding `-screenshots` is how
+the App Store pictures are taken: made-up player names in place of the
+family's, "synced" where a test run says "off (ui testing)" (sync is still
+off), and the parent area open without the code. None of this exists in
+release builds.
 
 ## CI
 
@@ -63,6 +66,19 @@ iPhone simulators the runner has (iPhone 17 Pro and iPhone 16e where
 available), and archives the app in Release with the newest Xcode to catch
 anything that would stop a TestFlight upload. Screenshots from the UI tests
 are uploaded as a build artifact.
+
+A separate job takes the App Store listing's screenshots
+(`testAppStoreScreenshots`) on an iPhone 17 Pro Max, an iPhone 17 Pro and a
+13-inch iPad Pro, checks each file is exactly a size App Store Connect
+accepts, and uploads them as the `app-store-screenshots` artifact.
+
+## App Store
+
+[`AppStore/SUBMISSION.md`](AppStore/SUBMISSION.md) lists every field App Store
+Connect asks for, with text ready to paste, and
+[`AppStore/REVIEW-RISKS.md`](AppStore/REVIEW-RISKS.md) lists what App Review
+is likely to object to. Read the first item there before listing the app
+publicly: every copy of the app shares one database.
 
 ## TestFlight
 
@@ -94,7 +110,7 @@ One-time setup:
 To release, push a tag — the part after `ios-v` becomes the app version:
 
 ```bash
-git tag ios-v0.1.0 && git push origin ios-v0.1.0
+git tag ios-v1.0 && git push origin ios-v1.0
 ```
 
 The build number is a timestamp, so it never repeats. When the run finishes,
