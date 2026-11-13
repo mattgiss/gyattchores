@@ -82,11 +82,12 @@ Report count and list names. Corrective action: CA-10.
 
 ## Check 7 — iOS app build readiness
 
-Check `GyattChoresApp/` sources for:
-- All Swift files compile cleanly (no obvious syntax errors — `grep -r "TODO\|FIXME\|HACK\|fatalError" GyattChoresApp/`)
-- `Info.plist` or App Store metadata files present
+The iOS app lives in `ios/`, which is on the `native-android` branch and not yet on `main`. If `ios/` is absent on the branch being checked, report "native app not on this branch" and skip this check. Otherwise check `ios/` for:
+- No leftover markers (`grep -r "TODO\|FIXME\|HACK\|fatalError" ios/`)
+- `Info.plist` settings present (in `ios/project.yml` or a committed plist)
 - Privacy manifest (`PrivacyInfo.xcprivacy`) present (required since iOS 17.4 for App Store)
 - App icon set complete (`Assets.xcassets/AppIcon.appiconset/`)
+- The parent code appears nowhere in plain text: only its hash (`Engine.adminCodeHash`)
 
 ---
 
