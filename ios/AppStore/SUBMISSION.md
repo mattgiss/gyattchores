@@ -13,8 +13,6 @@ points on that device and nowhere else, so a stranger who installs it sees an em
 sets up their own family. That removes the reason the earlier version of this page advised
 against a public listing. [REVIEW-RISKS.md](REVIEW-RISKS.md) lists what is left.
 
-**Don't paste from the `app-store-metadata/` folder.** It describes an older, different app.
-
 ## Before you open App Store Connect
 
 1. **Upload a build that says 1.0.** The project said 0.1.0 until now, so the builds already
@@ -25,9 +23,8 @@ against a public listing. [REVIEW-RISKS.md](REVIEW-RISKS.md) lists what is left.
    processing.
 2. **Download the screenshots** from GitHub ([Screenshots](#1-screenshots) below says
    where). The download unzips to three folders.
-3. **Publish the app's privacy and support pages** on gyattchores.com
-   ([REVIEW-RISKS.md](REVIEW-RISKS.md), item 1). The app links to the privacy page, and Apple
-   opens both.
+3. **Open the app's privacy and support pages** on gyattchores.com (`app-privacy.html` and
+   `app.html`) and check they load. The app links to the privacy page, and Apple opens both.
 
 ## A. The version page ("1.0 Prepare for Submission" in the sidebar)
 
@@ -115,8 +112,7 @@ chores,chore chart,family,housework,cleaning,tasks,streak,routine,household,pare
 https://gyattchores.com/app.html
 ```
 
-Apple requires this page to show a way to reach you. The page is drafted with the app's
-privacy page (see section D); it has to be on the website before you submit. Don't use
+Apple requires this page to show a way to reach you; it has your email. Don't use
 `about.html`: it describes the older website version as "a private family app" and names
 your children's players.
 
@@ -254,8 +250,7 @@ https://gyattchores.com/app-privacy.html
 ```
 
 Apple requires a policy even for an app that collects nothing, and requires the app to link
-to it. The app does (on the welcome screen and under admin → device). The page has to be on
-the website before you submit.
+to it. The app does (on the welcome screen and under admin → device).
 
 **"Do you or your third-party partners collect data from this app?"** — **No.**
 

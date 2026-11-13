@@ -30,9 +30,9 @@ Apple opens the Support URL and the Privacy Policy URL, and the app itself links
 privacy page (guideline 5.1.1(i) requires both a policy in App Store Connect and a link in
 the app).
 
-- **The two pages don't exist on the site yet.** `app-privacy.html` and `app.html` are
-  drafted on the branch `claude/app-pages`, waiting for your go-ahead to be published. Until
-  they are, the link in the app leads to a missing page, which is a likely rejection.
+- **The two pages are published:** `app-privacy.html` and `app.html` were added to the
+  website on 13 November 2026. Open both on gyattchores.com once before submitting; a link
+  that leads to a missing page is a likely rejection.
 - **Don't point Apple at the existing pages.** `privacy.html` and `privacy/index.html`
   describe the older website version (optional cloud sync) and disagree with each other;
   `about.html` calls it "a private family app" and names your children's players. They are
@@ -86,14 +86,11 @@ or leave their phones on the current build until sharing arrives.
 
 ## 6. Smaller things
 
-- **Old parent code in the repository.** A 4-digit code is still written in plain text in
-  older files (`app-store-metadata/listing.md`, `app-store-metadata/developer-account-checklist.md`,
-  `development-narrative.md`, `GyattChoresApp/GyattChores/Views/AdminView.swift`). It no
-  longer has anything to do with the iOS app, but it is still the website's admin code.
-- **Real player names in public material:** `about.html`, `privacy.html` and the stale
-  `app-store-metadata/` folder. None of it is in the app or the new store pages.
-- **Do not paste anything from `app-store-metadata/`.** It describes an older app (Siri,
-  Apple Watch, a different bundle ID), none of which is true of this one.
+- **The old parent code** that used to be written out in this repository has been replaced
+  and the files that held it removed. It never had anything to do with this version of the
+  iOS app, where each family sets its own.
+- **Real player names in public material:** check `about.html` and `privacy.html` on the
+  website. None are in the app or on the new store pages.
 - **The name.** "Gyatt" is slang. Store text has to suit all ages (guideline 2.3.8). I think
   a rejection over the name is unlikely, but have a one-line answer ready.
 - **Sorting spoken chores is simple word-sorting,** not AI, and it will sometimes split or
