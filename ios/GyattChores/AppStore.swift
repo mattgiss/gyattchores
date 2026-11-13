@@ -1,6 +1,20 @@
 import Foundation
 import GyattCore
 
+/// Debug builds only, and only on top of `-uiTesting`: `-screenshots` is how the App Store pictures
+/// are taken (`testAppStoreScreenshots`). The app then shows made-up player names in place of the
+/// family's, reads "synced" where a test run reads "off (ui testing)" (sync is still off), keeps
+/// its data in a folder of its own, and opens the parent area without the code. Always false in
+/// release builds.
+enum ScreenshotMode {
+    #if DEBUG
+    static let on = ProcessInfo.processInfo.arguments.contains("-uiTesting") && ProcessInfo.processInfo.arguments.contains("-screenshots")
+    static let players = [Player(id: "1", name: "sockninja"), Player(id: "2", name: "dishwizard"), Player(id: "3", name: "broomrider")]
+    #else
+    static let on = false
+    #endif
+}
+
 /// All app state and actions. Local-first: every change is written to disk at once and never waits
 /// on the network. Mirrors Android's `Store` + `AppViewModel`.
 @MainActor
@@ -33,12 +47,12 @@ final class AppStore: ObservableObject {
     #endif
     private static let uiTesting = launchArguments.contains("-uiTesting")
     /// "Whose phone is this" is kept apart for UI tests too, so they can't change the real answer.
-    private static let meKey = uiTesting ? "ui-testing.me" : "me"
+    private static let meKey = ScreenshotMode.on ? "screenshots.me" : uiTesting ? "ui-testing.me" : "me"
 
     private static let dir: URL = {
         var d = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         if uiTesting {
-            d = d.appendingPathComponent("ui-testing", isDirectory: true)
+            d = d.appendingPathComponent(ScreenshotMode.on ? "screenshots" : "ui-testing", isDirectory: true)
             if launchArguments.contains("-resetData") {
                 try? FileManager.default.removeItem(at: d)
                 UserDefaults.standard.removeObject(forKey: meKey)
@@ -59,6 +73,8 @@ final class AppStore: ObservableObject {
         me = UserDefaults.standard.string(forKey: Self.meKey)
         removedPlayers = Self.load("removed_players.json") ?? []
         #if DEBUG
+        // Never the names in a players.json an earlier run left behind.
+        if ScreenshotMode.on { players = ScreenshotMode.players }
         if Self.uiTesting, Self.launchArguments.contains("-demoData") {
             // `-demoRejectedDay`: the second player's chores for today were all rejected, not left waiting.
             let rejectedDay = Self.launchArguments.contains("-demoRejectedDay")
@@ -279,7 +295,7 @@ final class AppStore: ObservableObject {
 
     /// One pass at a time; a request that arrives mid-pass runs one follow-up pass instead of overlapping.
     func requestSync() {
-        if Self.uiTesting { syncStatus = "off (ui testing)"; return }
+        if Self.uiTesting { syncStatus = ScreenshotMode.on ? "synced" : "off (ui testing)"; return }
         if syncing { syncAgain = true; return }
         syncing = true
         syncStatus = "syncing"
@@ -333,16 +349,20 @@ final class AppStore: ObservableObject {
 
     #if DEBUG
     /// A made-up month for `-uiTesting -demoData`: the first player clears the card most days, the
-    /// second is hit and miss and has today's chores still waiting on a parent.
+    /// second is hit and miss and has today's chores still waiting on a parent. With `-screenshots`
+    /// there's a third, with a good month behind them and today's chores not picked yet.
     private static func demoLogs(pool: [Chore], players: [Player], todayStatus: String) -> [ChoreLog] {
         let now = Date(), cal = Calendar.current
         var out: [ChoreLog] = []
         for daysAgo in 0..<Engine.logDays {
-            guard let day = cal.date(byAdding: .day, value: -daysAgo, to: now) else { continue }
-            for (index, player) in players.prefix(2).enumerated() {
+            guard var day = cal.date(byAdding: .day, value: -daysAgo, to: now) else { continue }
+            // In the pictures the clock reads 9:41 am whenever they're taken, so chores are logged before that.
+            if ScreenshotMode.on, let morning = cal.date(bySettingHour: 7, minute: 48, second: 0, of: day) { day = morning }
+            for (index, player) in players.prefix(ScreenshotMode.on ? 3 : 2).enumerated() {
                 let steady = index == 0
-                if steady ? daysAgo % 9 == 4 : daysAgo % 3 == 1 { continue } // a day off
-                let goal = steady || daysAgo % 4 != 0 ? Engine.dailyMinutes : 14 // some short days
+                let dayOff = index == 2 ? daysAgo == 0 || daysAgo % 7 == 5 : steady ? daysAgo % 9 == 4 : daysAgo % 3 == 1
+                if dayOff { continue }
+                let goal = steady || index == 2 || daysAgo % 4 != 0 ? Engine.dailyMinutes : 14 // some short days
                 var minutes = 0, slot = daysAgo * 5 + index * 11
                 var used = Set<String>()
                 while minutes < goal, used.count < pool.count {

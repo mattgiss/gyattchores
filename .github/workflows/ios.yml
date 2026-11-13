@@ -5,6 +5,7 @@ name: iOS
 #   core     — the Swift port of the game rules and sync passes its tests
 #   app      — the SwiftUI app builds and its UI tests pass in an iOS simulator
 #   release  — the app archives in Release with the newest Xcode, as TestFlight needs
+#   store-screenshots — takes the App Store listing's screenshots at the sizes Apple asks for
 # index.html is in the path list because it's the source of truth for the game
 # rules: change a rule there and this says whether the native ports still agree.
 
@@ -102,6 +103,7 @@ jobs:
                 -project GyattChores.xcodeproj \
                 -scheme GyattChores \
                 -destination "platform=iOS Simulator,name=$device,OS=latest" \
+                -skip-testing:GyattChoresUITests/GyattChoresUITests/testAppStoreScreenshots \
                 -resultBundlePath "results/$slug.xcresult" \
                 < /dev/null 2>&1 | tee "build-$slug.log" \
                 | grep -E "error:|Test Case|Test Suite|XCTAssert|failed|\*\* " || true
@@ -128,6 +130,122 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: xcodebuild-logs
+          path: ios/build-*.log
+
+  # The pictures for the App Store listing. One UI test (testAppStoreScreenshots) walks through
+  # the app in its debug-only screenshot mode — made-up player names, nothing that says "test" —
+  # on the simulators whose screens are the sizes App Store Connect asks for. The PNGs end up in
+  # the "app-store-screenshots" artifact on the run's page, one folder per upload slot.
+  # ios/AppStore/SUBMISSION.md says which folder goes where.
+  store-screenshots:
+    name: App Store screenshots
+    runs-on: macos-15
+    timeout-minutes: 75   # about half an hour when all is well: three simulators boot from cold
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select the newest Xcode
+        run: |
+          # The App Store build comes from a current Xcode, so the pictures should too.
+          NEWEST=$(ls -d /Applications/Xcode_*.app | grep -vi beta | sort -V | tail -1)
+          sudo xcode-select -s "$NEWEST"
+          xcodebuild -version
+      - name: Take the screenshots
+        working-directory: ios
+        run: |
+          set -o pipefail
+          status=0
+          # folder (ends in the pixel size that slot takes) | simulators to use, first one found
+          while IFS='|' read -r folder names; do
+            udid=""
+            IFS=',' read -ra candidates <<< "$names"
+            for name in "${candidates[@]}"; do
+              # Newest iOS that has this device.
+              udid=$(xcrun simctl list devices available -j < /dev/null | jq -r --arg n "$name" '
+                [.devices | to_entries[] | select(.key | contains("SimRuntime.iOS-")) | .key as $rt | .value[]
+                 | select(.name == $n) | {v: ($rt | split("iOS-")[1] | split("-") | map(tonumber)), udid}]
+                | sort_by(.v) | last | .udid // empty')
+              if [ -n "$udid" ]; then device="$name"; break; fi
+            done
+            if [ -z "$udid" ]; then echo "::error::No simulator for $folder (wanted: $names)"; status=1; continue; fi
+            echo "::group::$folder on $device"
+            xcrun simctl boot "$udid" < /dev/null || true
+            xcrun simctl bootstatus "$udid" -b < /dev/null > /dev/null
+            # A tidy status bar: full signal, full battery, 9:41. Cosmetic, so not fatal.
+            xcrun simctl status_bar "$udid" override --time "9:41" --dataNetwork wifi --wifiMode active --wifiBars 3 \
+              --cellularMode active --cellularBars 4 --batteryState discharging --batteryLevel 100 < /dev/null \
+              || echo "couldn't set the status bar on $device"
+            for attempt in 1 2; do
+              rm -rf "results/$folder.xcresult"
+              xcodebuild test \
+                -project GyattChores.xcodeproj \
+                -scheme GyattChores \
+                -destination "platform=iOS Simulator,id=$udid" \
+                -only-testing:GyattChoresUITests/GyattChoresUITests/testAppStoreScreenshots \
+                -resultBundlePath "results/$folder.xcresult" \
+                < /dev/null 2>&1 | tee "build-$folder.log" \
+                | grep -E "error:|Test Case|Test Suite|XCTAssert|failed|\*\* " || true
+              grep -q "failed to initialize for UI testing" "build-$folder.log" || break
+              echo "The simulator wasn't ready for the test runner (attempt $attempt)."
+            done
+            echo "::endgroup::"
+            xcrun simctl shutdown "$udid" < /dev/null || true
+            if ! grep -q "TEST SUCCEEDED" "build-$folder.log"; then
+              echo "::error::Screenshots failed on $device"
+              status=1
+              continue
+            fi
+            # Attachments come out under random names; the manifest says which is which.
+            xcrun xcresulttool export attachments --path "results/$folder.xcresult" --output-path "exported/$folder" < /dev/null
+            mkdir -p "app-store-screenshots/$folder"
+            jq -r '.[].attachments[] | select(.suggestedHumanReadableName | startswith("store-"))
+                   | [.exportedFileName, (.suggestedHumanReadableName | sub("^store-"; "") | sub("_[0-9]+_[0-9A-Fa-f-]+\\.png$"; ".png"))] | @tsv' \
+              "exported/$folder/manifest.json" \
+              | while IFS=$'\t' read -r from to; do cp "exported/$folder/$from" "app-store-screenshots/$folder/$to"; done
+          done <<'SLOTS'
+          iphone-large-1320x2868|iPhone 17 Pro Max
+          iphone-medium-1206x2622|iPhone 17 Pro
+          ipad-13-inch-2064x2752|iPad Pro 13-inch (M5),iPad Pro 13-inch (M4)
+          SLOTS
+          exit $status
+      - name: Check they are the sizes App Store Connect accepts
+        working-directory: ios
+        run: |
+          # App Store Connect turns away a screenshot that isn't exactly one of its listed sizes,
+          # or that has a transparency (alpha) channel, which simulator screenshots can carry.
+          swift AppStore/remove-alpha.swift app-store-screenshots/*/*.png
+          failed=0
+          folders=0
+          for dir in app-store-screenshots/*/; do
+            folders=$((folders + 1))
+            want="${dir%/}"; want="${want##*-}"
+            count=0
+            for png in "$dir"*.png; do
+              count=$((count + 1))
+              size="$(sips -g pixelWidth "$png" | awk '/pixelWidth/ {print $2}')x$(sips -g pixelHeight "$png" | awk '/pixelHeight/ {print $2}')"
+              alpha=$(sips -g hasAlpha "$png" | awk '/hasAlpha/ {print $2}')
+              if [ "$size" = "$want" ] && [ "$alpha" = "no" ]; then
+                echo "ok:   $png  ${size} pixels, alpha: $alpha"
+              else
+                echo "::error::$png is ${size} pixels (alpha: $alpha); this slot needs $want with no alpha"
+                failed=1
+              fi
+            done
+            if [ "$count" -ne 6 ]; then echo "::error::$dir has $count screenshots, expected 6"; failed=1; fi
+          done
+          if [ "$folders" -ne 3 ]; then echo "::error::expected 3 folders of screenshots, found $folders"; failed=1; fi
+          exit $failed
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-store-screenshots
+          path: ios/app-store-screenshots
+          if-no-files-found: warn
+      - name: Upload logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: store-screenshot-logs
           path: ios/build-*.log
 
   release:

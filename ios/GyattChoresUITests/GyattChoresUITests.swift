@@ -23,9 +23,28 @@ final class GyattChoresUITests: XCTestCase {
         app.launchArguments = ["-uiTesting"] + extra
         app.launch()
         XCTAssertTrue(app.staticTexts["GYATTCHORES"].waitForExistence(timeout: wait))
-        let syncOff = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'off (ui testing)'")).firstMatch
-        XCTAssertTrue(syncOff.waitForExistence(timeout: wait), "the app must be in test mode (no sync) before a test touches anything")
+        if extra.contains("-screenshots") {
+            // Screenshot mode hides the "off (ui testing)" label, so look for its made-up players:
+            // they only exist when the debug switches took, and then sync is off as well.
+            XCTAssertTrue(playerRow("sockninja", in: app).waitForExistence(timeout: wait), "the app must be in screenshot mode (made-up players, no sync) before a test touches anything")
+        } else {
+            let syncOff = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'off (ui testing)'")).firstMatch
+            XCTAssertTrue(syncOff.waitForExistence(timeout: wait), "the app must be in test mode (no sync) before a test touches anything")
+        }
         return app
+    }
+
+    /// A full-screen picture for the App Store listing, named "store-…" so CI can tell these from
+    /// the other screenshots. Fails if anything on screen gives away a test run or the family's
+    /// real player names, neither of which belongs on a public store page.
+    private func storeScreenshot(_ name: String, of app: XCUIApplication) {
+        let giveaway = NSPredicate(format: "label CONTAINS[c] 'ui testing' OR label CONTAINS[c] 'bekindhearted' OR label CONTAINS[c] 'megadinolava'")
+        XCTAssertEqual(app.descendants(matching: .any).matching(giveaway).count, 0, "\(name) shows test-mode text or a real player name")
+        Thread.sleep(forTimeInterval: 1.5)   // let screens finish sliding in and progress bars finish filling
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        attachment.name = "store-\(name)"
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 
     /// The row on the home screen that opens a player's day (it's the one showing their streak).
@@ -330,6 +349,69 @@ final class GyattChoresUITests: XCTestCase {
         app.buttons["> LOCK IN CARD"].tap()
         checkOffEverything(in: app).tap()
         XCTAssertTrue(app.staticTexts["card submitted — waiting on a parent"].waitForExistence(timeout: wait))
+    }
+
+    /// Takes the six pictures for the App Store listing. `-screenshots` swaps in made-up player
+    /// names, shows the sync status a family would see, and opens the parent area without the
+    /// code. CI runs this on the simulators whose screens match the sizes App Store Connect asks
+    /// for and uploads the results (see ios/AppStore/SUBMISSION.md).
+    func testAppStoreScreenshots() {
+        let app = launch(["-resetData", "-demoData", "-screenshots"])
+
+        // 1. Home: this week's board, who's playing, and the 30-day log.
+        app.buttons["sockninja"].tap()   // whose phone this is
+        XCTAssertTrue(app.buttons["> DARES · 3 LEFT TODAY"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label ENDSWITH '⇅ synced'")).firstMatch.waitForExistence(timeout: wait))
+        if isPad {
+            // Half an iPad's screen would be empty with nobody picked: show a day waiting on a parent.
+            open("dishwizard", in: app)
+            XCTAssertTrue(app.staticTexts["card submitted — waiting on a parent"].waitForExistence(timeout: wait))
+        }
+        storeScreenshot("01-home", of: app)
+
+        // 2. Picking today's chores, with a suggested card.
+        open("broomrider", in: app)
+        let main = mainButton(in: app)
+        XCTAssertTrue(main.waitForExistence(timeout: wait))
+        app.buttons["✨ suggest a 25-min card"].tap()
+        XCTAssertEqual(main.label, "> LOCK IN CARD")
+        storeScreenshot("02-pick-chores", of: app)
+
+        // 3. The card, partly checked off.
+        main.tap()
+        XCTAssertTrue(app.buttons["> CHECK OFF EVERYTHING FIRST"].waitForExistence(timeout: wait))
+        for _ in 0..<2 {
+            let next = uncheckedChores(in: app).firstMatch
+            XCTAssertTrue(next.waitForExistence(timeout: wait))
+            next.tap()
+        }
+        storeScreenshot("03-todays-card", of: app)
+
+        // 4. A day a parent has approved.
+        goBack(in: app)
+        open("sockninja", in: app)
+        XCTAssertTrue(app.staticTexts["✓ all approved — nice work"].waitForExistence(timeout: wait))
+        storeScreenshot("04-approved", of: app)
+
+        // 5. Dares. The second player has already submitted today, so dare the third.
+        goBack(in: app)
+        app.buttons["> DARES · 3 LEFT TODAY"].tap()
+        XCTAssertTrue(app.staticTexts["DARES"].waitForExistence(timeout: wait))
+        app.buttons["broomrider"].tap()
+        for _ in 0..<2 {
+            let next = uncheckedChores(in: app).firstMatch
+            XCTAssertTrue(next.waitForExistence(timeout: wait))
+            next.tap()
+        }
+        XCTAssertTrue(app.staticTexts["2 of 3 used today"].waitForExistence(timeout: wait))
+        storeScreenshot("05-dares", of: app)
+
+        // 6. The parent area, with today's chores waiting for a yes or no.
+        goBack(in: app)
+        Thread.sleep(forTimeInterval: 1)   // the dares screen has to be out of the way before the taps count
+        app.staticTexts["GYATTCHORES"].tap(withNumberOfTaps: 5, numberOfTouches: 1)
+        XCTAssertTrue(app.buttons["✓ approve"].firstMatch.waitForExistence(timeout: wait))
+        storeScreenshot("06-parent-approvals", of: app)
     }
 
     func testIPadShowsTheListAndTheDaySideBySide() throws {

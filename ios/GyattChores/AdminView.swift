@@ -9,8 +9,9 @@ struct AdminView: View {
     @Environment(\.dismiss) private var dismiss
     /// Set when this is shown in a pane, not presented over the app: closes the pane.
     var onBack: (() -> Void)? = nil
-    // Not saved: closing the screen locks it again.
-    @State private var authed = false
+    // Not saved: closing the screen locks it again. It starts open only for App Store screenshots,
+    // a debug-build launch switch that can't be on in a release build (see `ScreenshotMode`).
+    @State private var authed = ScreenshotMode.on
     @State private var code = ""
     @State private var wrong = false
     private var canBio: Bool { LAContext().canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil) }
