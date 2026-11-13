@@ -32,6 +32,8 @@ struct SetupView: View {
                 if step != .welcome { Text("step \(step.rawValue) of 3").font(.footnote).foregroundStyle(.secondary) }
             }
             .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 4)
+            // The same column as the steps below, so the title sits above them on an iPad too.
+            .frame(maxWidth: 560).frame(maxWidth: .infinity)
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     switch step {
