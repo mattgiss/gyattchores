@@ -175,8 +175,17 @@ The PIN is a convenience lock, not a security boundary
    ```bash
    read -rs -p "New parent code: " C && echo && C="$C" node -e 'const s=process.env.C;let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0}console.log(h)'; unset C
    ```
-3. Update `ADMIN_CODE_HASH` in `index.html` via PR; record the new PIN in the
-   vault (§4).
+3. Update the hash everywhere it is compiled in, via PR, and record the new
+   PIN in the vault (§4):
+   - `ADMIN_CODE_HASH` in `index.html`
+   - `Engine.adminCodeHash` in `ios/GyattCore/Sources/GyattCore/Engine.swift`
+   - `Engine.ADMIN_CODE_HASH` in
+     `android/app/src/main/java/com/gyattchores/app/engine/Engine.kt`
+4. Regenerate the shared test data, which includes the hash, and commit it:
+   `node native/tools/scenarios.mjs`. The engine tests fail if a native app
+   and `index.html` disagree.
+5. Release the web app and new builds of both native apps together. Until a
+   phone is updated it keeps accepting the previous PIN.
 
 Never write the PIN itself in the repository, a commit message or a pull
 request: only the hash. A PIN that has been committed in plain text stays in
