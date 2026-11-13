@@ -51,10 +51,10 @@ const { useState, useEffect, useCallback, useRef } = React;
 // sitting in the page source. (Obfuscation, not real security — it's a
 // client-side app — but it keeps the code out of casual view.)
 const hashCode = s => { let h=2166136261>>>0; for (let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619)>>>0; } return h; };
-const ADMIN_CODE_HASH   = 1305456521;
+const ADMIN_CODE_HASH   = 3856382990;
 const STORAGE_KEY       = 'gyattchores_logs';
 const ACCENT            = '#F23861';
-const BUILD             = '2026.08.31.3'; // bump on every deploy — drives the build-freshness indicator
+const BUILD             = '2026.11.13.1'; // bump on every deploy — drives the build-freshness indicator
 const SUPABASE_URL      = 'https://ukshxdoqgwoxobjdclpx.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrc2h4ZG9xZ3dveG9iamRjbHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3MjI2NDEsImV4cCI6MjA4MDI5ODY0MX0.UGNrsfG6goEA0PPWG4x7gxBueA7D5Oe9uWI-iCXIar0';
 const supabase = window.supabase?.createClient
