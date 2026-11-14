@@ -105,8 +105,20 @@ fun HomeScreen(
                 modifier = Modifier.padding(top = 4.dp))
         }
 
-        // The players come first: opening your day is what this screen is for, and on a short, wide
-        // screen (a foldable on its side) anything below the dares and the leaderboard is off the bottom.
+        SectionLabel("this week")
+        val board = players.map { it to Engine.weekPoints(it.id, logs, dares, today, zone) }.sortedByDescending { it.second }
+        board.forEachIndexed { i, (p, pts) ->
+            Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                Text("${i + 1}. ", color = if (i == 0 && pts > 0) Accent else MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(p.shownName, modifier = Modifier.weight(1f), fontWeight = if (i == 0 && pts > 0) FontWeight.Bold else FontWeight.Normal,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text("$pts pts", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+
+        // The leaderboard comes first, as on iOS. It's only a few rows, and the whole column scrolls
+        // (in the list pane too, on a foldable), so the players stay a short scroll away on a short,
+        // wide screen such as a Fold on its side.
         SectionLabel("who's playing")
         if (players.isEmpty()) Text("nobody's playing yet. an admin can add players in the admin area.",
             color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 8.dp))
@@ -138,17 +150,6 @@ fun HomeScreen(
                 Text("★ you earned +$myPoints from dares", color = Accent, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 6.dp))
             }
             for (d in revealed) DareLine(d, names, vm.choreName(d.choreId), Engine.dareLanded(d, logs, zone))
-        }
-
-        SectionLabel("this week")
-        val board = players.map { it to Engine.weekPoints(it.id, logs, dares, today, zone) }.sortedByDescending { it.second }
-        board.forEachIndexed { i, (p, pts) ->
-            Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                Text("${i + 1}. ", color = if (i == 0 && pts > 0) Accent else MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(p.shownName, modifier = Modifier.weight(1f), fontWeight = if (i == 0 && pts > 0) FontWeight.Bold else FontWeight.Normal,
-                    maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text("$pts pts", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
         }
 
         SectionLabel("daily log · last ${Engine.LOG_DAYS} days")
