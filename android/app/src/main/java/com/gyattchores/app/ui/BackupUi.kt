@@ -62,6 +62,7 @@ fun rememberBackup(vm: AppViewModel, onRestored: () -> Unit = {}): Pair<() -> Un
             title = { Text(if (joining) "Add this backup to the family?" else "Restore this backup?") },
             text = {
                 Text(when {
+                    !joining && !setUp -> "It holds $what. It becomes this phone's scoreboard."
                     !joining -> "It holds $what. Everything on this phone is replaced by it. This can't be undone."
                     setUp -> "It holds $what. Players are matched by username and their history is added; chores already logged that day aren't added twice. The family's admins and codes stay as they are."
                     else -> "It holds $what. Players are matched by username and their history is added. The backup's admins and their codes come in too, so the family has someone in charge."

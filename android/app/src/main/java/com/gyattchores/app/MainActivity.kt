@@ -26,6 +26,7 @@ class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        takeTestSyncUrl(intent)
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -41,5 +42,16 @@ class MainActivity : FragmentActivity() {
         }
 
         setContent { GyattTheme { AppRoot(vm, fold) } }
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        takeTestSyncUrl(intent)
+        vm.requestSync()
+    }
+
+    /** Debug builds: `adb shell am start ... --es syncURL http://<host>:8789` picks a test server. Ignored in release. */
+    private fun takeTestSyncUrl(intent: android.content.Intent?) {
+        intent?.getStringExtra("syncURL")?.let { vm.setTestSyncUrl(it) }
     }
 }

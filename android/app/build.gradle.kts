@@ -33,7 +33,13 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Debug builds never reach the family's real Supabase: they sync only with a test
+            // server given at launch (see AppViewModel.syncApi), or not at all.
+            buildConfigField("boolean", "REAL_SYNC", "false")
+        }
         release {
+            buildConfigField("boolean", "REAL_SYNC", "true")
             isMinifyEnabled = false
             // Debug key for now so the APK can be sideloaded; swap for a real keystore before Play.
             signingConfig = signingConfigs.getByName("debug")
@@ -45,6 +51,14 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true; buildConfig = true }
+}
+
+// The family edition's debug build installs beside the real family app (com.gyattchores.app.debug,
+// labelled "GyattChores (test)"), so testing it on a family phone never touches the real app's data.
+androidComponents {
+    onVariants(selector().withBuildType("debug").withFlavor("edition" to "family")) { v ->
+        v.applicationId.set("com.gyattchores.app.debug")
+    }
 }
 
 dependencies {

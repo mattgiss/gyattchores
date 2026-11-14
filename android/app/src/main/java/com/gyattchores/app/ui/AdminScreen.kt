@@ -35,6 +35,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -87,6 +89,9 @@ fun AdminScreen(vm: AppViewModel, logs: List<ChoreLog>, onBack: (() -> Unit)?) {
             LaunchedEffect(canBio) { if (canBio) promptBiometric(activity) { authed = true } }
             var code by remember { mutableStateOf("") }
             var wrong by remember { mutableStateOf(false) }
+            // The keyboard comes up straight away, unless a fingerprint prompt is about to.
+            val focus = remember { FocusRequester() }
+            LaunchedEffect(Unit) { if (!canBio) runCatching { focus.requestFocus() } }
             val verify = { if (vm.checkAdminCode(code)) authed = true else { wrong = true; code = ""; fb.error() } }
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
@@ -94,7 +99,7 @@ fun AdminScreen(vm: AppViewModel, logs: List<ChoreLog>, onBack: (() -> Unit)?) {
                     singleLine = true, isError = wrong, visualTransformation = PasswordVisualTransformation(),
                     supportingText = { if (wrong) Text("that code didn't match") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = { verify() }), modifier = Modifier.fillMaxWidth(),
+                    keyboardActions = KeyboardActions(onDone = { verify() }), modifier = Modifier.fillMaxWidth().focusRequester(focus),
                 )
                 TermButton("UNLOCK", enabled = code.isNotEmpty()) { verify() }
                 if (canBio) OutlinedButton(onClick = { promptBiometric(activity) { authed = true } }, modifier = Modifier.fillMaxWidth()) {
@@ -146,6 +151,15 @@ private fun AdminContent(vm: AppViewModel, logs: List<ChoreLog>) {
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 for (f in listOf(Status.PENDING, Status.APPROVED, Status.REJECTED, "all")) {
                     FilterChip(selected = filter == f, onClick = { filter = f }, label = { Text(f) })
+                }
+            }
+        }
+        if (filter == Status.PENDING) {
+            val byPlayer = shown.groupBy { it.playerId }.filterValues { it.size > 1 }
+            items(byPlayer.keys.toList(), key = { "all$it" }) { id ->
+                val mine = byPlayer.getValue(id)
+                OutlinedButton(onClick = { if (vm.approveAll(mine)) fb.levelUp() else fb.approve() }, modifier = Modifier.padding(top = 6.dp)) {
+                    Text("✓ approve all ${mine.size} from ${names[id] ?: mine.first().playerName}", color = Good)
                 }
             }
         }

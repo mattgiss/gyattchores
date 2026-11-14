@@ -173,7 +173,25 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     /** "syncing", "synced", "offline", or "synced · dares stay on this phone". */
     val syncStatus = MutableStateFlow("idle")
-    private val api = Supabase()
+    /**
+     * Who to sync with. Release builds: the family's Supabase. Debug builds: only a test server
+     * given at launch (`--es syncURL http://<host>:8789`, kept until another is given; an empty
+     * value clears it), and with none they stay offline — a test build can never reach real data.
+     */
+    private fun syncApi(): Supabase? =
+        if (BuildConfig.REAL_SYNC) realApi
+        else prefs.getString(KEY_SYNC_URL, null)?.takeIf { it.isNotBlank() }?.let { url ->
+            if (testApi?.first != url) testApi = url to Supabase(baseUrl = url.trimEnd('/'))
+            testApi!!.second
+        }
+    private val realApi by lazy { Supabase() }
+    private var testApi: Pair<String, Supabase>? = null
+
+    /** Debug builds only: the test server to sync with (see [syncApi]). */
+    fun setTestSyncUrl(url: String) {
+        if (BuildConfig.REAL_SYNC) return
+        prefs.edit().putString(KEY_SYNC_URL, url.trim()).apply()
+    }
     private val syncing = AtomicBoolean(false)
     private val syncAgain = AtomicBoolean(false)
 
@@ -181,6 +199,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun requestSync() {
         if (!familySync) return
         if (!syncing.compareAndSet(false, true)) { syncAgain.set(true); return }
+        val api = syncApi()
+        if (api == null) { syncStatus.value = "offline"; syncing.set(false); return }
         viewModelScope.launch(Dispatchers.IO) {
             syncStatus.value = "syncing"
             try {
@@ -217,6 +237,14 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         store.setStatus(log.id, Status.APPROVED)
         requestSync()
         return level(log.playerId) > before
+    }
+
+    /** Approves several logs at once. Returns true if any of it took someone up a level. */
+    fun approveAll(logs: List<ChoreLog>): Boolean {
+        val before = logs.map { it.playerId }.distinct().associateWith { level(it) }
+        for (l in logs) store.setStatus(l.id, Status.APPROVED)
+        requestSync()
+        return before.any { (id, lvl) -> level(id) > lvl }
     }
 
     private val seen = app.getSharedPreferences("seen_levels", android.content.Context.MODE_PRIVATE)
@@ -478,6 +506,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private companion object {
         const val KEY_SYNCED = "synced_once"
         const val KEY_BIOMETRIC = "biometric_unlock"
+        const val KEY_SYNC_URL = "test_sync_url"
         /** Shared: ids of backups already merged into the family, so a repeat does nothing. */
         const val KEY_RESTORED = "restored_backups"
     }
