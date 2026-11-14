@@ -1,5 +1,11 @@
 package com.gyattchores.app.ui
 
+import android.os.SystemClock
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.text.style.TextAlign
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import android.provider.Settings
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutLinearInEasing
@@ -133,6 +139,23 @@ fun PuzzleScreen(vm: AppViewModel, player: Player, onBack: () -> Unit) {
             // Forget effects that have finished.
             if (shards.isNotEmpty()) shards.removeAll { now - it.born > it.lifeMs }
             if (rings.isNotEmpty()) rings.removeAll { now - it.born - it.delayMs > 600 }
+        }
+    }
+
+    // An hour a day: counted only while this screen is in front, so locking the phone or switching
+    // apps pauses it. When it runs out the board is covered and only "back" is left.
+    var msLeft by remember(player.id) { mutableLongStateOf(vm.puzzleMsLeft(player.id)) }
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    LaunchedEffect(player.id) {
+        lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            var last = SystemClock.elapsedRealtime()
+            while (msLeft > 0) {
+                delay(1_000)
+                val t = SystemClock.elapsedRealtime()
+                vm.addPuzzleTime(player.id, t - last)
+                last = t
+                msLeft = vm.puzzleMsLeft(player.id)
+            }
         }
     }
 
@@ -281,6 +304,19 @@ fun PuzzleScreen(vm: AppViewModel, player: Player, onBack: () -> Unit) {
         // The flash, in the app's pink.
         if (flash.value > 0f) Box(Modifier.fillMaxSize().background(Accent.copy(alpha = flash.value)))
         if (celebrating) LevelUp(level + 1, cleared, now, calm, onNext = ::nextLevel, onBack = { fb.tap(); onBack() })
+        // Out of puzzle time for today. A level-up already on screen finishes first.
+        if (msLeft <= 0L && !celebrating) {
+            Column(
+                Modifier.fillMaxSize().background(bg.copy(alpha = 0.96f)).pointerInput(Unit) { detectTapGestures { } }.padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text("TIME'S UP", color = Accent, fontWeight = FontWeight.Black, style = MaterialTheme.typography.headlineMedium, letterSpacing = 3.sp)
+                Text("that's an hour of puzzles today. back tomorrow.", color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center)
+                TextButton(onClick = { fb.tap(); onBack() }) { Text("← back") }
+            }
+        }
     }
 }
 

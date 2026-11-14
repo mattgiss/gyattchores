@@ -110,3 +110,18 @@ data class PuzzlePack(val version: Int, val levels: List<Level>) {
         fun parse(text: String): PuzzlePack = json.decodeFromString(serializer(), text)
     }
 }
+
+/**
+ * How long a player can spend on the puzzle each day. Counted only while the puzzle is on screen
+ * and the app is in front; resets at local midnight. Kept on the phone per player, like puzzle
+ * levels. Same rule as iOS.
+ */
+object PuzzleTime {
+    const val PUZZLE_MINUTES_PER_DAY = 60
+    const val LIMIT_MS = PUZZLE_MINUTES_PER_DAY * 60_000L
+
+    fun msLeft(usedMs: Long): Long = (LIMIT_MS - usedMs).coerceAtLeast(0)
+
+    /** Whole minutes left, rounded up, so "1 min left" shows until it's really gone. */
+    fun minutesLeft(usedMs: Long): Int = ((msLeft(usedMs) + 59_999) / 60_000).toInt()
+}

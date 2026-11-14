@@ -335,8 +335,14 @@ private fun CardRun(
                     if (rejected > 0) Text("rejected chores can be done again from the bonus round",
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 8.dp))
-                    TermButton("PLAY · CLEAR THE GRID · LVL ${vm.puzzleLevel(player.id)}", modifier = Modifier.padding(bottom = 8.dp)) {
-                        fb.unlock(); onPuzzle()
+                    val minutesLeft = com.gyattchores.app.engine.PuzzleTime.minutesLeft(vm.puzzleUsedMs(player.id))
+                    if (minutesLeft > 0) {
+                        TermButton("PLAY · CLEAR THE GRID · LVL ${vm.puzzleLevel(player.id)} · $minutesLeft MIN LEFT", modifier = Modifier.padding(bottom = 8.dp)) {
+                            fb.unlock(); onPuzzle()
+                        }
+                    } else {
+                        Text("puzzle time's up for today · back tomorrow", color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(bottom = 8.dp))
                     }
                     if (bonusLeft > 0) OutlinedButton(onClick = { fb.tap(); onBonus() }, modifier = Modifier.fillMaxWidth()) { Text("+ bonus round") }
                 }

@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import com.gyattchores.app.data.Store
 import com.gyattchores.app.engine.Engine
 import com.gyattchores.app.engine.PuzzlePack
+import com.gyattchores.app.engine.PuzzleTime
 import com.gyattchores.app.engine.AdminCode
 import com.gyattchores.app.engine.Backup
 import com.gyattchores.app.engine.BackupFile
@@ -269,6 +270,23 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         if (level >= puzzleLevel(playerId)) puzzleProgress.edit().putInt(playerId, level + 1).apply()
     }
 
+    private val puzzleTime = app.getSharedPreferences("puzzle_time", android.content.Context.MODE_PRIVATE)
+    private fun timeKey(playerId: String) = "$playerId|${today()}"
+
+    /** Puzzle time this player has used today, on this phone. */
+    fun puzzleUsedMs(playerId: String): Long = puzzleTime.getLong(timeKey(playerId), 0L)
+
+    fun puzzleMsLeft(playerId: String): Long = PuzzleTime.msLeft(puzzleUsedMs(playerId))
+
+    /** Adds time spent on the puzzle. Days before today are dropped as it goes. */
+    fun addPuzzleTime(playerId: String, ms: Long) {
+        if (ms <= 0) return
+        val key = timeKey(playerId)
+        val e = puzzleTime.edit()
+        for (k in puzzleTime.all.keys) if (!k.endsWith("|${today()}")) e.remove(k)
+        e.putLong(key, puzzleTime.getLong(key, 0L) + ms).apply()
+    }
+
     /** True the first time yesterday's dare results are shown on this phone. */
     fun firstReveal(day: String): Boolean {
         if (seen.getString("reveal", null) == day) return false
@@ -328,6 +346,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         store.eraseAll()
         seen.edit().clear().apply()
         puzzleProgress.edit().clear().apply()
+        puzzleTime.edit().clear().apply()
         prefs.edit().clear().apply()
         biometricUnlock.value = false
         syncedOnce.value = !familySync
@@ -392,6 +411,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             memberJoined = f.memberJoined - m.id, removed = f.removed + m.id), now())
         seen.edit().remove(m.id).apply()
         puzzleProgress.edit().remove(m.id).apply()
+        puzzleTime.edit().apply { puzzleTime.all.keys.filter { it.startsWith("${m.id}|") }.forEach { remove(it) } }.apply()
         requestSync()
     }
 

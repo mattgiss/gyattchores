@@ -125,4 +125,14 @@ class PuzzleTest {
         val four = PuzzlePack(1, List(4) { PuzzlePack.Level(1, 2, "PK") })
         assertEquals(listOf(2, 3, 2, 3), (5..8).map { four.index(it) })
     }
+
+    @Test fun anHourOfPuzzleADay() {
+        val t = com.gyattchores.app.engine.PuzzleTime
+        assertEquals(60, t.PUZZLE_MINUTES_PER_DAY)
+        assertEquals(60, t.minutesLeft(0))
+        assertEquals(60, t.minutesLeft(30_000))          // half a minute in still shows 60
+        assertEquals(1, t.minutesLeft(59 * 60_000L + 1))  // "1 min left" until it's really gone
+        assertEquals(0, t.minutesLeft(60 * 60_000L))
+        assertEquals(0L, t.msLeft(90 * 60_000L))          // never below zero
+    }
 }
