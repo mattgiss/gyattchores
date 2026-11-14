@@ -21,6 +21,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -47,8 +48,8 @@ import com.gyattchores.app.sync.LocalEntry
 import java.time.LocalDate
 
 /**
- * Home: players, dares, this week's leaderboard, and the 30-day log.
- * Tapping the title 5x opens the parent gate.
+ * Home: players, dares (family edition), this week's leaderboard, and the 30-day log.
+ * The admin button opens the admin area, behind an admin's code.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -65,8 +66,6 @@ fun HomeScreen(
     onDares: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var taps by remember { mutableIntStateOf(0) }
-    var lastTap by remember { mutableLongStateOf(0L) }
     val fb = LocalFeedback.current
     val ctx = LocalContext.current
     var soundOn by remember { mutableStateOf(fb.soundOn) }
@@ -74,32 +73,30 @@ fun HomeScreen(
     val zone = vm.zone
     val today = vm.today()
     val dares = vm.dares(shared)
-    val names = players.associate { it.id to it.name }
+    val names = players.associate { it.id to it.shownName }
 
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp)) {
-        FitText(
-            "GYATTCHORES", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold,
-            letterSpacing = 4.sp, color = Accent,
-            modifier = Modifier.fillMaxWidth().clickable(onClickLabel = "title") {
-                fb.tap()
-                val t = System.currentTimeMillis()
-                taps = if (t - lastTap < 2000) taps + 1 else 1
-                lastTap = t
-                if (taps >= 5) { taps = 0; onAdmin() }
-            }.padding(vertical = 8.dp),
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            FitText(
+                "GYATTCHORES", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold,
+                letterSpacing = 4.sp, color = Accent, modifier = Modifier.weight(1f).padding(vertical = 8.dp),
+            )
+            // Approving chores and changing players or chores: behind an admin's code.
+            TextButton(onClick = { fb.tap(); onAdmin() }) { Text("admin") }
+        }
         Text("${Engine.DAILY_MINUTES} minutes a day. that's it.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(
-            (if (soundOn) "♪ sound: on" else "♪ sound: off") + "   ⇅ $syncStatus", style = MaterialTheme.typography.labelMedium,
+            (if (soundOn) "♪ sound: on" else "♪ sound: off") + if (vm.familySync) "   ⇅ $syncStatus" else "", style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.clickable(onClickLabel = "toggle sound") { soundOn = !soundOn; fb.soundOn = soundOn; fb.tick(soundOn) }.padding(vertical = 10.dp),
         )
 
-        // Whose phone is this? Asked once; changing it later needs the parent unlock.
-        if (me == null || me !in names) {
+        // Whose phone is this? Asked once; changing it later needs the admin unlock. Only the
+        // family edition has dares, since a secret guess needs each person on their own phone.
+        if (vm.familySync && players.isNotEmpty()) if (me == null || me !in names) {
             SectionLabel("whose phone is this?", Accent)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                for (p in players) OutlinedButton(onClick = { fb.tap(); vm.setMe(p) }) { Text(p.name) }
+                for (p in players) OutlinedButton(onClick = { fb.tap(); vm.setMe(p) }) { Text(p.shownName) }
             }
         } else {
             val mineToday = dares.filter { it.from == me && it.day == today.toString() }
@@ -111,6 +108,8 @@ fun HomeScreen(
         // The players come first: opening your day is what this screen is for, and on a short, wide
         // screen (a foldable on its side) anything below the dares and the leaderboard is off the bottom.
         SectionLabel("who's playing")
+        if (players.isEmpty()) Text("nobody's playing yet. an admin can add players in the admin area.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 8.dp))
         for (p in players) {
             val rank = Engine.rank(vm.totalXp(p.id, logs, shared))
             val streak = Engine.streak(p.id, logs, now, zone)
@@ -118,11 +117,11 @@ fun HomeScreen(
             Row(
                 Modifier.fillMaxWidth().heightIn(min = 64.dp)
                     .then(if (selected) Modifier.background(MaterialTheme.colorScheme.secondaryContainer) else Modifier)
-                    .clickable(onClickLabel = "open ${p.name}") { fb.tap(); onPick(p) }.padding(horizontal = 8.dp, vertical = 12.dp),
+                    .clickable(onClickLabel = "open ${p.shownName}") { fb.tap(); onPick(p) }.padding(horizontal = 8.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text("> ", color = Accent)
-                Text(p.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(p.shownName, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text("${rank.version} · 🔥$streak", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             HorizontalDivider()
@@ -138,7 +137,7 @@ fun HomeScreen(
                 LaunchedEffect(yesterday) { if (vm.firstReveal(yesterday)) fb.dareLanded() }
                 Text("★ you earned +$myPoints from dares", color = Accent, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 6.dp))
             }
-            for (d in revealed) DareLine(d, names, vm.store.poolById[d.choreId]?.name ?: d.choreId, Engine.dareLanded(d, logs, zone))
+            for (d in revealed) DareLine(d, names, vm.choreName(d.choreId), Engine.dareLanded(d, logs, zone))
         }
 
         SectionLabel("this week")
@@ -146,7 +145,7 @@ fun HomeScreen(
         board.forEachIndexed { i, (p, pts) ->
             Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                 Text("${i + 1}. ", color = if (i == 0 && pts > 0) Accent else MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(p.name, modifier = Modifier.weight(1f), fontWeight = if (i == 0 && pts > 0) FontWeight.Bold else FontWeight.Normal,
+                Text(p.shownName, modifier = Modifier.weight(1f), fontWeight = if (i == 0 && pts > 0) FontWeight.Bold else FontWeight.Normal,
                     maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text("$pts pts", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -186,7 +185,7 @@ private fun DailyLogRow(player: Player, byDay: Map<LocalDate, Int>, days: List<L
     val pct = Math.round(hits * 100.0 / days.size)
     Column(Modifier.padding(bottom = 14.dp)) {
         Row {
-            Text(player.name, style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
+            Text(player.shownName, style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text("$hits/${days.size} · $pct%", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {

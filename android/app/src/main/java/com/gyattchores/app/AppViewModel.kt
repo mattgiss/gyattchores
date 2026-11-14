@@ -5,7 +5,11 @@ import androidx.lifecycle.AndroidViewModel
 import com.gyattchores.app.data.Store
 import com.gyattchores.app.engine.Engine
 import com.gyattchores.app.engine.PuzzlePack
+import com.gyattchores.app.engine.AdminCode
+import com.gyattchores.app.engine.ChoreIntake
+import com.gyattchores.app.engine.DisplayName
 import com.gyattchores.app.model.Card
+import com.gyattchores.app.model.Chore
 import com.gyattchores.app.model.ChoreLog
 import com.gyattchores.app.model.EnrichedChore
 import com.gyattchores.app.model.Player
@@ -30,15 +34,21 @@ import kotlinx.coroutines.launch
  * Screens read the store's flows and call these actions.
  */
 class AppViewModel(app: Application) : AndroidViewModel(app) {
-    val store = Store(app)
+    /** Family edition: shares the family and logs with the family's other phones. Public: nothing leaves the phone. */
+    val familySync = BuildConfig.FAMILY_SYNC
+    val store = Store(app, familySync)
     val zone: ZoneId get() = ZoneId.systemDefault()
     fun now() = System.currentTimeMillis()
     fun today(): LocalDate = Engine.dayOf(now(), zone)
 
     // ─── Card ───────────────────────────────────────────────────────────────
 
-    fun pickable(playerId: String, logs: List<ChoreLog>): List<EnrichedChore> =
-        Engine.pickableChores(store.pool, playerId, logs, now())
+    fun pickable(playerId: String, logs: List<ChoreLog>): List<EnrichedChore> {
+        val f = store.family.value
+        val joined = f.memberJoined[playerId]
+        val since = store.pool.mapNotNull { c -> listOfNotNull(f.choreAdded[c.id], joined).maxOrNull()?.let { c.id to it } }.toMap()
+        return Engine.pickableChores(store.pool, playerId, logs, now(), since)
+    }
 
     fun todaysLogs(playerId: String, logs: List<ChoreLog>): List<ChoreLog> =
         logs.filter { it.playerId == playerId && Engine.dayOf(it.timestamp, zone) == today() }
@@ -95,7 +105,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val lost = takenByOthers(player.id, store.logs.value)
         val keep = card.choreIds.indices.filter { card.choreIds[it] !in lost }
         if (keep.isEmpty() || !keep.all { card.checked[it] }) return
-        store.addLogs(keep.map { newLog(player, card.choreIds[it], card.minutes[it]) })
+        store.addLogs(keep.mapNotNull { newLog(player, card.choreIds[it], card.minutes[it]) })
         store.saveCard(player.id, card.copy(choreIds = keep.map { card.choreIds[it] }, minutes = keep.map { card.minutes[it] },
             checked = keep.map { true }, escal = keep.map { card.escal.getOrElse(it) { 0 } }, submitted = true))
         requestSync()
@@ -103,12 +113,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Bonus round: extra chores logged straight away, no minute cap, normal points. */
     fun logBonus(player: Player, chosen: List<EnrichedChore>) {
-        store.addLogs(chosen.map { newLog(player, it.id, it.currentMinutes) })
+        store.addLogs(chosen.mapNotNull { newLog(player, it.id, it.currentMinutes) })
         requestSync()
     }
 
-    private fun newLog(player: Player, choreId: String, minutes: Int): ChoreLog {
-        val c = store.poolById.getValue(choreId)
+    private fun newLog(player: Player, choreId: String, minutes: Int): ChoreLog? {
+        val c = store.poolById[choreId] ?: return null
         return ChoreLog(UUID.randomUUID().toString(), null, player.id, player.name, c.id, c.name, c.pts, minutes, Status.PENDING, now())
     }
 
@@ -163,20 +173,23 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     /** One pass at a time; a request that arrives mid-pass runs one follow-up pass instead of overlapping. */
     fun requestSync() {
+        if (!familySync) return
         if (!syncing.compareAndSet(false, true)) { syncAgain.set(true); return }
         viewModelScope.launch(Dispatchers.IO) {
             syncStatus.value = "syncing"
             try {
                 store.applySyncedLogs(LogSync.run(api, store.logs.value))
-                store.adoptPlayersFromLogs()
                 syncStatus.value = try {
                     store.applySyncedState(StateSync.run(api, store.state.value))
                     "synced"
                 } catch (e: HttpStatusException) {
                     // The family_state table is optional until its SQL has been run: dares and
-                    // player changes then stay on this phone.
+                    // family changes then stay on this phone.
                     if (e.code == 404) "synced · dares stay on this phone" else throw e
                 }
+                // After the family rows, so someone removed on another phone isn't added back from old logs.
+                store.adoptPlayersFromLogs(now())
+                if (!prefs.getBoolean(KEY_SYNCED, false)) { prefs.edit().putBoolean(KEY_SYNCED, true).apply(); syncedOnce.value = true }
             } catch (e: Exception) {
                 syncStatus.value = "offline"
             } finally {
@@ -229,26 +242,184 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         return true
     }
 
-    fun checkAdminCode(code: String) = Engine.fnv1a(code) == Engine.ADMIN_CODE_HASH
+    // ─── Setup ──────────────────────────────────────────────────────────────
 
-    fun addPlayer(name: String) {
-        val n = name.trim().ifBlank { return }
-        val players = store.players.value
-        // Numeric string ids like the web app's "1", "2", so rows stay compatible with Supabase.
-        val next = (players.mapNotNull { it.id.toIntOrNull() }.maxOrNull() ?: 0) + 1
-        store.savePlayers(players + Player(next.toString(), n), now())
+    private val prefs = app.getSharedPreferences("device", android.content.Context.MODE_PRIVATE)
+
+    /**
+     * Family edition: true once this phone has finished one sync. Until then it can't tell a new
+     * family from one it hasn't fetched yet, so it waits rather than offering setup and starting
+     * a second family.
+     */
+    val syncedOnce = MutableStateFlow(!familySync || prefs.getBoolean(KEY_SYNCED, false))
+
+    /** Off unless an admin turns it on: a fingerprint belongs to whoever owns the phone, which on a player's own phone is the player. */
+    val biometricUnlock = MutableStateFlow(prefs.getBoolean(KEY_BIOMETRIC, false))
+
+    fun setBiometricUnlock(on: Boolean) { prefs.edit().putBoolean(KEY_BIOMETRIC, on).apply(); biometricUnlock.value = on }
+
+    /** Finishes the first-run setup: who's in charge, who's playing and what needs doing. */
+    fun finishSetup(adminName: String, adminPlays: Boolean, code: String, bio: Boolean, playerNames: List<String>, chores: List<Chore>) {
+        val f = store.family.value
+        if (f.isSetUp) return
+        val adminCode = AdminCode.make(code) ?: return
+        val admin = tidy(adminName) ?: return
+        val t = now()
+        val list = f.members.toMutableList()
+        var next = f.nextPlayerId
+        val joined = f.memberJoined.toMutableMap()
+        fun find(n: String) = list.indexOfFirst { it.name.equals(n, ignoreCase = true) }
+        for (n in playerNames.mapNotNull(::tidy)) if (find(n) < 0) {
+            joined[next.toString()] = t; list += Player(next.toString(), n); next++
+        }
+        val codes = f.adminCodes.toMutableMap()
+        // Someone who was already playing keeps playing when they turn out to be the admin too.
+        val i = find(admin)
+        if (i >= 0) { list[i] = list[i].copy(isAdmin = true); codes[list[i].id] = adminCode }
+        else {
+            val id = next.toString(); next++
+            list.add(0, Player(id, admin, isAdmin = true, plays = adminPlays)); codes[id] = adminCode; joined[id] = t
+        }
+        val pool = chores.ifEmpty { store.starterChores }
+        // A family with history keeps counting from it; a new one starts with nothing overdue.
+        val added = if (store.logs.value.isEmpty()) pool.associate { it.id to t } else f.choreAdded
+        setBiometricUnlock(bio)
+        store.setFamily(f.copy(members = list, adminCodes = codes, chores = pool.takeIf { it != store.starterChores } ?: f.chores,
+            choreAdded = added, memberJoined = joined, nextPlayerId = next), t)
+        requestSync()
     }
 
-    fun renamePlayer(player: Player, name: String) {
-        val n = name.trim().ifBlank { return }
-        store.savePlayers(store.players.value.map { if (it.id == player.id) it.copy(name = n) else it }, now())
+    /** Wipes this phone. Public: back to first-run setup. Family: the family is fetched again. */
+    fun eraseEverything() {
+        store.eraseAll()
+        seen.edit().clear().apply()
+        puzzleProgress.edit().clear().apply()
+        prefs.edit().clear().apply()
+        biometricUnlock.value = false
+        syncedOnce.value = !familySync
+        requestSync()
     }
 
-    /** Removes the player from the list. Their logs are kept so history and XP survive a re-add. */
-    fun removePlayer(player: Player) {
-        val players = store.players.value
-        if (players.size <= 1) return
-        store.markRemoved(player.id, now())
-        store.savePlayers(players.filter { it.id != player.id }, now())
+    // ─── Admin: unlocking ───────────────────────────────────────────────────
+
+    /** True if [code] is any admin's code. */
+    fun checkAdminCode(code: String): Boolean {
+        val f = store.family.value
+        return f.admins.any { f.adminCodes[it.id]?.matches(code) == true }
+    }
+
+    // ─── Admin: people ──────────────────────────────────────────────────────
+
+    /** What an admin can change about a person. [newCode] is only read when [isAdmin]: empty keeps the code they have. */
+    data class MemberDraft(val name: String = "", val displayName: String = "", val plays: Boolean = true,
+                           val isAdmin: Boolean = false, val newCode: String = "")
+
+    fun draft(m: Player) = MemberDraft(m.name, m.displayName ?: "", m.plays, m.isAdmin)
+
+    /** Why this change can't be saved, or null if it can. [id] is null for someone new. */
+    fun problem(d: MemberDraft, id: String?): String? {
+        val f = store.family.value
+        val name = tidy(d.name) ?: return "they need a name"
+        if (f.members.any { it.id != id && it.name.equals(name, ignoreCase = true) }) return "someone already has that name"
+        if (d.isAdmin) {
+            val hasCode = id?.let { f.adminCodes[it] != null } ?: false
+            if (if (d.newCode.isEmpty()) !hasCode else !AdminCode.isLongEnough(d.newCode))
+                return "an admin needs a code of ${AdminCode.MIN_LENGTH} or more characters"
+        } else if (id != null && f.admins.map { it.id } == listOf(id)) return "someone has to stay an admin"
+        if (!d.plays && !d.isAdmin) return "they need to do chores, be an admin, or both"
+        return null
+    }
+
+    /** Adds someone ([id] null) or changes them. Returns false, changing nothing, if [problem] objects. */
+    fun saveMember(d: MemberDraft, id: String?): Boolean {
+        if (problem(d, id) != null) return false
+        val name = tidy(d.name) ?: return false
+        val f = store.family.value
+        var next = f.nextPlayerId
+        val joined = f.memberJoined.toMutableMap()
+        val current = id?.let { i -> f.members.firstOrNull { it.id == i } }
+        val base = current ?: Player(next.toString(), name).also { joined[it.id] = now(); next++ }
+        val m = base.copy(name = name, displayName = DisplayName.clean(d.displayName), plays = d.plays, isAdmin = d.isAdmin)
+        val codes = f.adminCodes.toMutableMap()
+        if (!d.isAdmin) codes.remove(m.id) else AdminCode.make(d.newCode)?.let { codes[m.id] = it }
+        val members = if (current != null) f.members.map { if (it.id == m.id) m else it } else f.members + m
+        store.setFamily(f.copy(members = members, adminCodes = codes, memberJoined = joined, nextPlayerId = next), now())
+        requestSync()
+        return true
+    }
+
+    fun canRemove(m: Player): Boolean = !(m.isAdmin && store.family.value.admins.size == 1)
+
+    /** Removes someone and everything kept about them: their chores, points and code. */
+    fun removeMember(m: Player) {
+        if (!canRemove(m)) return
+        val f = store.family.value
+        store.setFamily(f.copy(members = f.members.filter { it.id != m.id }, adminCodes = f.adminCodes - m.id,
+            memberJoined = f.memberJoined - m.id, removed = f.removed + m.id), now())
+        seen.edit().remove(m.id).apply()
+        puzzleProgress.edit().remove(m.id).apply()
+        requestSync()
+    }
+
+    /**
+     * A player's nickname is their own call: no admin needed, and it can't change the username
+     * their points are kept under. Empty (or nothing visible) clears it.
+     */
+    fun setDisplayName(playerId: String, raw: String) {
+        val f = store.family.value
+        store.setFamily(f.copy(members = f.members.map { if (it.id == playerId) it.copy(displayName = DisplayName.clean(raw)) else it }), now())
+        requestSync()
+    }
+
+    // ─── Admin: chores ──────────────────────────────────────────────────────
+
+    /** Adds chores to the list, skipping any whose name is already on it. Returns how many went in. */
+    fun addChores(chores: List<Chore>): Int {
+        val f = store.family.value
+        val pool = store.pool
+        val names = pool.map { it.name.lowercase() }.toMutableSet()
+        val ids = pool.map { it.id }.toMutableSet()
+        val fresh = ArrayList<Chore>()
+        for (c in chores) {
+            if (!names.add(c.name.lowercase())) continue
+            val chore = if (c.id in ids) ChoreIntake.make(c.name, c.tiers.firstOrNull() ?: 5, ids) else c
+            ids += chore.id; fresh += chore
+        }
+        if (fresh.isNotEmpty()) {
+            val t = now()
+            store.setFamily(f.copy(chores = pool + fresh, choreAdded = f.choreAdded + fresh.associate { it.id to t }), t)
+            requestSync()
+        }
+        return fresh.size
+    }
+
+    /** Renames or re-times a chore. Its id, and so its history, stays the same. */
+    fun updateChore(chore: Chore, name: String, minutes: Int) {
+        val clean = ChoreIntake.tidyName(name) ?: return
+        val f = store.family.value
+        store.setFamily(f.copy(chores = store.pool.map { if (it.id == chore.id) ChoreIntake.make(clean, minutes, id = chore.id) else it }), now())
+        requestSync()
+    }
+
+    /** Takes a chore off the list. Points already earned are kept; a card still being checked off loses it. */
+    fun removeChore(chore: Chore) {
+        val pool = store.pool
+        if (pool.size <= 1) return
+        val f = store.family.value
+        store.setFamily(f.copy(chores = pool.filter { it.id != chore.id }, choreAdded = f.choreAdded - chore.id), now())
+        store.dropCardsWith(chore.id)
+        requestSync()
+    }
+
+    /** A chore's name, even after it's been taken off the list: recent logs remember it. */
+    fun choreName(choreId: String): String =
+        store.poolById[choreId]?.name ?: store.logs.value.lastOrNull { it.choreId == choreId }?.choreName ?: choreId
+
+    private fun tidy(name: String): String? =
+        name.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }.joinToString(" ").takeIf { it.isNotEmpty() }?.take(DisplayName.MAX_LENGTH)
+
+    private companion object {
+        const val KEY_SYNCED = "synced_once"
+        const val KEY_BIOMETRIC = "biometric_unlock"
     }
 }

@@ -17,9 +17,11 @@ CODE=$(( $(grep -oE 'versionCode = [0-9]+' app/build.gradle.kts | grep -oE '[0-9
 sed -i '' -E "s/versionCode = [0-9]+/versionCode = $CODE/; s/versionName = \"[^\"]+\"/versionName = \"$VERSION\"/" app/build.gradle.kts
 
 export JAVA_HOME="${JAVA_HOME:-/opt/homebrew/opt/openjdk@17}"
-./gradlew -q testDebugUnitTest assembleRelease
+# The family edition (syncs with the family's phones) is what Obtainium installs. Both editions'
+# tests run, so the public, on-device edition can't quietly break.
+./gradlew -q testFamilyDebugUnitTest testPublicDebugUnitTest assembleFamilyRelease
 APK="build/GyattChores-$VERSION.apk"
-mkdir -p build && cp app/build/outputs/apk/release/app-release.apk "$APK"
+mkdir -p build && cp app/build/outputs/apk/family/release/app-family-release.apk "$APK"
 
 git add app/build.gradle.kts
 git commit -q -m "Android $VERSION (versionCode $CODE)"

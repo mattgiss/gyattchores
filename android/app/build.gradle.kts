@@ -17,6 +17,21 @@ android {
         versionName = "0.3.4"
     }
 
+    // family: syncs with the family's shared Supabase tables; keeps the id the installed phones have.
+    // public: everything stays on the device; no INTERNET permission and no sync is ever started.
+    flavorDimensions += "edition"
+    productFlavors {
+        create("family") {
+            dimension = "edition"
+            buildConfigField("boolean", "FAMILY_SYNC", "true")
+        }
+        create("public") {
+            dimension = "edition"
+            applicationIdSuffix = ".public"
+            buildConfigField("boolean", "FAMILY_SYNC", "false")
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -29,7 +44,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
-    buildFeatures { compose = true }
+    buildFeatures { compose = true; buildConfig = true }
 }
 
 dependencies {

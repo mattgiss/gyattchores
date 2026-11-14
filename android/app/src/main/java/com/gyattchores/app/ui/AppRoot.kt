@@ -53,7 +53,9 @@ fun listPaneWidth(window: Dp, hingeLeft: Dp?): Dp =
 @Composable
 fun AppRoot(vm: AppViewModel, fold: FoldingFeature?) {
     val logs by vm.store.logs.collectAsState()
-    val players by vm.store.players.collectAsState()
+    val family by vm.store.family.collectAsState()
+    val syncedOnce by vm.syncedOnce.collectAsState()
+    val players = family.players
     val cards by vm.store.cards.collectAsState()
     val syncStatus by vm.syncStatus.collectAsState()
     val shared by vm.store.state.collectAsState()
@@ -81,6 +83,12 @@ fun AppRoot(vm: AppViewModel, fold: FoldingFeature?) {
     }
 
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        if (!family.isSetUp) {
+            Box(Modifier.fillMaxSize().safeDrawingPadding()) {
+                if (syncedOnce) SetupScreen(vm) else WaitingForFamily(vm, syncStatus)
+            }
+            return@Surface
+        }
         BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding()) {
             // Two panes whenever both fit. The Z Fold 7's inner screen is about 750dp by 830dp, so
             // it gets two panes whichever way up it's held; its cover screen and other phones don't.
@@ -101,10 +109,10 @@ fun AppRoot(vm: AppViewModel, fold: FoldingFeature?) {
                     Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
                         Box(Modifier.widthIn(max = MaxDetailPane).fillMaxSize()) {
                             when {
-                                adminOpen -> AdminScreen(vm, logs, players, onBack = { adminOpen = false })
+                                adminOpen -> AdminScreen(vm, logs, onBack = { adminOpen = false })
                                 showDares -> DaresScreen(vm, players, logs, shared, myId!!, onBack = { daresOpen = false })
                                 selected != null -> PlayerScreen(vm, selected, logs, cards, hinge, onBack = null, onPuzzle = { puzzleId = selected.id })
-                                else -> Text("> pick a player", color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                else -> Text(if (players.isEmpty()) "> add players in the admin area" else "> pick a player", color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.align(Alignment.Center))
                             }
                         }
@@ -112,7 +120,7 @@ fun AppRoot(vm: AppViewModel, fold: FoldingFeature?) {
                 }
             } else {
                 when {
-                    adminOpen -> AdminScreen(vm, logs, players, onBack = { adminOpen = false })
+                    adminOpen -> AdminScreen(vm, logs, onBack = { adminOpen = false })
                     showDares -> DaresScreen(vm, players, logs, shared, myId!!, onBack = { daresOpen = false })
                     selected != null -> PlayerScreen(vm, selected, logs, cards, hinge, onBack = { selectedId = null },
                         onPuzzle = { puzzleId = selected.id })

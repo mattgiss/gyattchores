@@ -49,7 +49,7 @@ fun DaresScreen(
     var targetId by rememberSaveable { mutableStateOf(others.firstOrNull()?.id) }
     val target = others.firstOrNull { it.id == targetId } ?: others.firstOrNull()
     var note by rememberSaveable { mutableStateOf<String?>(null) }
-    val names = players.associate { it.id to it.name }
+    val names = players.associate { it.id to it.shownName }
 
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -62,7 +62,7 @@ fun DaresScreen(
                     "and they get +${Engine.DARE_DOER_POINTS}. nobody sees dares until tomorrow.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
                 Text("${mine.size} of ${Engine.MAX_DARES_PER_DAY} used today", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 10.dp))
-                for (d in mine) Text("· ${names[d.target] ?: d.target}: ${vm.store.poolById[d.choreId]?.name ?: d.choreId}",
+                for (d in mine) Text("· ${names[d.target] ?: d.target}: ${vm.choreName(d.choreId)}",
                     style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 2.dp))
                 // A locked target already has its own standing line below; don't say it twice.
                 val locked = target != null && vm.submittedToday(target.id, logs)
@@ -74,9 +74,9 @@ fun DaresScreen(
                 item {
                     SectionLabel("who are you daring?")
                     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        for (p in others) FilterChip(selected = p.id == target.id, onClick = { fb.tap(); targetId = p.id; note = null }, label = { Text(p.name) })
+                        for (p in others) FilterChip(selected = p.id == target.id, onClick = { fb.tap(); targetId = p.id; note = null }, label = { Text(p.shownName) })
                     }
-                    if (vm.submittedToday(target.id, logs)) Text("locked — ${target.name} already submitted today",
+                    if (vm.submittedToday(target.id, logs)) Text("locked — ${target.shownName} already submitted today",
                         color = Warn, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 8.dp))
                 }
                 // The same list the target sees, most overdue first: the likeliest chores are on top.

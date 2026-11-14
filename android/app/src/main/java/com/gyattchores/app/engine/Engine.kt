@@ -40,9 +40,21 @@ object Engine {
         return EnrichedChore(chore, days, chore.tiers[tier], tier)
     }
 
-    /** The picker list: most neglected first, then shortest first. */
-    fun pickableChores(pool: List<Chore>, playerId: String, logs: List<ChoreLog>, now: Long): List<EnrichedChore> =
-        pool.map { enrich(it, neglectDays(it.id, playerId, logs, now)) }
+    /**
+     * The picker list: most neglected first, then shortest first.
+     *
+     * [knownSince] is when this player first had each chore (epoch millis) — when it was added to
+     * the list or when they joined, whichever is later. A chore can't be neglected for longer than
+     * that, so a new family, chore or player doesn't start with everything long overdue. Chores
+     * without an entry are treated as they always were. Same rule as iOS.
+     */
+    fun pickableChores(pool: List<Chore>, playerId: String, logs: List<ChoreLog>, now: Long,
+                       knownSince: Map<String, Long> = emptyMap()): List<EnrichedChore> =
+        pool.map { c ->
+            var days = neglectDays(c.id, playerId, logs, now)
+            knownSince[c.id]?.let { since -> days = minOf(days, maxOf(0, floor((now - since).toDouble() / DAY_MS).toInt())) }
+            enrich(c, days)
+        }
             .sortedWith(compareByDescending<EnrichedChore> { it.neglectDays }.thenBy { it.currentMinutes })
 
     /**

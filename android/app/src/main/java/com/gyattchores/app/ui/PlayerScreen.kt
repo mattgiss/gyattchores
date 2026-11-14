@@ -12,7 +12,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -31,8 +33,10 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.gyattchores.app.AppViewModel
+import com.gyattchores.app.engine.DisplayName
 import com.gyattchores.app.engine.Engine
 import com.gyattchores.app.model.Card
 import com.gyattchores.app.model.ChoreLog
@@ -65,11 +69,31 @@ fun TwoZone(hinge: Hinge?, top: @Composable () -> Unit, bottom: @Composable () -
 }
 
 @Composable
-private fun TopBar(title: String, onBack: (() -> Unit)?) {
+private fun TopBar(title: String, onBack: (() -> Unit)?, onName: (() -> Unit)? = null) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
         if (onBack != null) TextButton(onClick = onBack) { Text("← back") }
-        Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 8.dp, vertical = 12.dp))
+        Text(title, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f).padding(horizontal = 8.dp, vertical = 12.dp))
+        if (onName != null) TextButton(onClick = onName) { Text("✎ name") }
     }
+}
+
+/** A player's own nickname: no admin needed, and their username (what points are kept under) never changes. */
+@Composable
+private fun DisplayNameDialog(player: Player, onDismiss: () -> Unit, onSave: (String) -> Unit) {
+    var draft by remember { mutableStateOf(player.displayName ?: "") }
+    AlertDialog(
+        onDismissRequest = onDismiss, title = { Text("Display name") },
+        text = {
+            Column {
+                OutlinedTextField(draft, { draft = it }, singleLine = true, label = { Text("anything you like") })
+                Text("Shown in place of your username, ${player.name}. Your chores and points stay exactly as they are. Up to ${DisplayName.MAX_LENGTH} characters.",
+                    style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
+            }
+        },
+        confirmButton = { TextButton(onClick = { onSave(draft) }) { Text("save") } },
+        dismissButton = { TextButton(onClick = { onSave("") }) { Text("use my username") } },
+    )
 }
 
 /** One player's day: pick a card, check it off, submit, then (optionally) a bonus round. */
@@ -86,8 +110,11 @@ fun PlayerScreen(
 ) {
     val now = remember(logs, cards) { vm.now() }
     val card = vm.cardFor(player.id, cards, logs)
-    val pool = remember(logs, player.id, now) { vm.pickable(player.id, logs) }
+    val family by vm.store.family.collectAsState()
+    val pool = remember(logs, player.id, now, family) { vm.pickable(player.id, logs) }
     var bonusPicking by rememberSaveable(player.id) { mutableStateOf(false) }
+    var naming by remember { mutableStateOf(false) }
+    if (naming) DisplayNameDialog(player, onDismiss = { naming = false }) { vm.setDisplayName(player.id, it); naming = false }
     val fb = LocalFeedback.current
 
     val todays = vm.todaysLogs(player.id, logs)
@@ -101,7 +128,7 @@ fun PlayerScreen(
     Column(Modifier.fillMaxSize()) {
         when {
             card == null -> {
-                TopBar(player.name, onBack)
+                TopBar(player.shownName, onBack) { naming = true }
                 val notes = listOfNotNull(
                     "today's earlier chores were rejected — build a new card".takeIf { vm.rejectedToday(player.id, logs) },
                     "${others.size} chore${if (others.size == 1) "" else "s"} already taken by someone else today".takeIf { others.isNotEmpty() },
@@ -109,13 +136,13 @@ fun PlayerScreen(
                 Picker(player.id, pool.filter { it.id !in others }, bonus = false, hinge = hinge, notes = notes) { vm.lockIn(player, it); fb.lockIn() }
             }
             bonusPicking -> {
-                TopBar("${player.name} · bonus round", onBack = { bonusPicking = false })
+                TopBar("${player.shownName} · bonus round", onBack = { bonusPicking = false })
                 Picker(player.id, pool.filter { it.id !in taken }, bonus = true, hinge = hinge) {
                     vm.logBonus(player, it); fb.submit(); bonusPicking = false
                 }
             }
             else -> {
-                TopBar(player.name, onBack)
+                TopBar(player.shownName, onBack) { naming = true }
                 CardRun(vm, player, card, logs, todays, others, hinge, bonusLeft = vm.store.pool.count { it.id !in taken },
                     onPuzzle = onPuzzle) { bonusPicking = true }
             }

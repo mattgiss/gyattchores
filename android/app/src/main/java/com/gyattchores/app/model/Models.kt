@@ -2,8 +2,25 @@ package com.gyattchores.app.model
 
 import kotlinx.serialization.Serializable
 
+/**
+ * Someone in the family. [name] is the username chores and points are kept under; [displayName]
+ * is only ever shown. Admins approve chores and change players and chores; [plays] is false for
+ * someone who only runs the scoreboard (say, a parent who doesn't do chores).
+ */
 @Serializable
-data class Player(val id: String, val name: String)
+data class Player(
+    val id: String,
+    val name: String,
+    val displayName: String? = null,
+    val isAdmin: Boolean = false,
+    val plays: Boolean = true,
+) {
+    /** What to show for this person: the display name if it holds anything visible, else the username. */
+    val shownName: String get() = displayName?.let { com.gyattchores.app.engine.DisplayName.clean(it) } ?: name
+
+    /** For the admin area, where the real username must stay visible: "display name (username)". */
+    val adminLabel: String get() = if (shownName == name) name else "$shownName ($name)"
+}
 
 /** One chore in the pool (`native/chores.json`). `tiers` are minute costs that kick in at `tierDays` of neglect. */
 @Serializable
