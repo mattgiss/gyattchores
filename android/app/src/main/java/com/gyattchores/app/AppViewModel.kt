@@ -40,8 +40,27 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun pickable(playerId: String, logs: List<ChoreLog>): List<EnrichedChore> =
         Engine.pickableChores(store.pool, playerId, logs, now())
 
-    fun cardFor(playerId: String, cards: Map<String, Card>, logs: List<ChoreLog>): Card? =
-        cards["$playerId|${today()}"] ?: cardFromLogs(playerId, logs)
+    fun todaysLogs(playerId: String, logs: List<ChoreLog>): List<ChoreLog> =
+        logs.filter { it.playerId == playerId && Engine.dayOf(it.timestamp, zone) == today() }
+
+    /** Chores someone else has in today, as chore id → their name. One chore, one person, per day. */
+    fun takenByOthers(playerId: String, logs: List<ChoreLog>): Map<String, String> =
+        Engine.takenByOthersToday(playerId, logs.filter { Engine.dayOf(it.timestamp, zone) == today() })
+
+    /** True when the player logged chores today and every one was rejected: they start over. */
+    fun rejectedToday(playerId: String, logs: List<ChoreLog>): Boolean =
+        todaysLogs(playerId, logs).isNotEmpty() && !submittedToday(playerId, logs)
+
+    /**
+     * Today's card, or null when the player picks one — including when everything they logged
+     * today was rejected: a rejected day isn't a finished day, so they get the picker back
+     * instead of a card of ✗s they can't change.
+     */
+    fun cardFor(playerId: String, cards: Map<String, Card>, logs: List<ChoreLog>): Card? {
+        val startOver = rejectedToday(playerId, logs)
+        cards["$playerId|${today()}"]?.let { return if (it.submitted && startOver) null else it }
+        return if (startOver) null else cardFromLogs(playerId, logs)
+    }
 
     /**
      * Rebuild today's submitted card from logs, for a device that didn't build it (like the web
@@ -66,11 +85,19 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun clearCard(player: Player) = store.clearCard(player.id, today().toString())
 
-    /** One pending log per chore, with the minutes the card budgeted. */
+    /**
+     * One pending log per chore, with the minutes the card budgeted. A chore someone else got in
+     * while this card was being checked off is left out, and dropped from the card, so it's never
+     * logged twice in a day.
+     */
     fun submit(player: Player, card: Card) {
-        if (card.submitted || !card.checked.all { it }) return
-        store.addLogs(card.choreIds.mapIndexed { i, id -> newLog(player, id, card.minutes[i]) })
-        store.saveCard(player.id, card.copy(submitted = true))
+        if (card.submitted) return
+        val lost = takenByOthers(player.id, store.logs.value)
+        val keep = card.choreIds.indices.filter { card.choreIds[it] !in lost }
+        if (keep.isEmpty() || !keep.all { card.checked[it] }) return
+        store.addLogs(keep.map { newLog(player, card.choreIds[it], card.minutes[it]) })
+        store.saveCard(player.id, card.copy(choreIds = keep.map { card.choreIds[it] }, minutes = keep.map { card.minutes[it] },
+            checked = keep.map { true }, escal = keep.map { card.escal.getOrElse(it) { 0 } }, submitted = true))
         requestSync()
     }
 
@@ -98,8 +125,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun totalXp(playerId: String, logs: List<ChoreLog>, state: Map<String, LocalEntry>): Int =
         Engine.xp(playerId, logs, zone) + Engine.dareXp(playerId, dares(state), logs, today(), zone)
 
+    /**
+     * True when the player has something in today that's awaiting a parent or approved. A day
+     * where everything was rejected doesn't count as submitted.
+     */
     fun submittedToday(playerId: String, logs: List<ChoreLog>): Boolean =
-        logs.any { it.playerId == playerId && Engine.dayOf(it.timestamp, zone) == today() }
+        Engine.standingToday(Engine.statusToday(todaysLogs(playerId, logs))).isNotEmpty()
 
     /** Adds or removes one of my dares for today. Returns why not, or null if it changed. */
     fun toggleDare(target: Player, choreId: String): String? {

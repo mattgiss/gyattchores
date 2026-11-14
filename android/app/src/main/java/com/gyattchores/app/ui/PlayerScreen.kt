@@ -90,24 +90,33 @@ fun PlayerScreen(
     var bonusPicking by rememberSaveable(player.id) { mutableStateOf(false) }
     val fb = LocalFeedback.current
 
-    val todays = logs.filter { it.playerId == player.id && Engine.dayOf(it.timestamp, vm.zone) == vm.today() }
-    val loggedToday = (card?.choreIds.orEmpty() + todays.map { it.choreId }).toSet()
+    val todays = vm.todaysLogs(player.id, logs)
+    val statusToday = Engine.statusToday(todays)
+    // One chore, one person, per day: what the other players have in today.
+    val others = vm.takenByOthers(player.id, logs)
+    // Used up for today: awaiting a parent, approved, or on the card and not yet submitted.
+    // A rejected chore isn't — it can be done again.
+    val taken = Engine.standingToday(statusToday) + card?.choreIds.orEmpty().filter { it !in statusToday } + others.keys
 
     Column(Modifier.fillMaxSize()) {
         when {
             card == null -> {
                 TopBar(player.name, onBack)
-                Picker(player.id, pool, bonus = false, hinge = hinge) { vm.lockIn(player, it); fb.lockIn() }
+                val notes = listOfNotNull(
+                    "today's earlier chores were rejected — build a new card".takeIf { vm.rejectedToday(player.id, logs) },
+                    "${others.size} chore${if (others.size == 1) "" else "s"} already taken by someone else today".takeIf { others.isNotEmpty() },
+                )
+                Picker(player.id, pool.filter { it.id !in others }, bonus = false, hinge = hinge, notes = notes) { vm.lockIn(player, it); fb.lockIn() }
             }
             bonusPicking -> {
                 TopBar("${player.name} · bonus round", onBack = { bonusPicking = false })
-                Picker(player.id, pool.filter { it.id !in loggedToday }, bonus = true, hinge = hinge) {
+                Picker(player.id, pool.filter { it.id !in taken }, bonus = true, hinge = hinge) {
                     vm.logBonus(player, it); fb.submit(); bonusPicking = false
                 }
             }
             else -> {
                 TopBar(player.name, onBack)
-                CardRun(vm, player, card, logs, todays, hinge, bonusLeft = vm.store.pool.count { it.id !in loggedToday },
+                CardRun(vm, player, card, logs, todays, others, hinge, bonusLeft = vm.store.pool.count { it.id !in taken },
                     onPuzzle = onPuzzle) { bonusPicking = true }
             }
         }
@@ -120,6 +129,8 @@ private fun Picker(
     pool: List<EnrichedChore>,
     bonus: Boolean,
     hinge: Hinge?,
+    /** Shown above the list when there's something the player should know before picking. */
+    notes: List<String> = emptyList(),
     onConfirm: (List<EnrichedChore>) -> Unit,
 ) {
     // Saved across fold/unfold and process death, so unfolding mid-pick keeps the selection.
@@ -144,6 +155,9 @@ private fun Picker(
                         else "pick what you want — then fill to ${Engine.DAILY_MINUTES} min",
                         color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 8.dp),
                     )
+                }
+                items(notes) { note ->
+                    Text(note, color = Warn, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 8.dp))
                 }
                 items(pool, key = { it.id }) { c ->
                     val isPicked = c.id in picked
@@ -202,6 +216,8 @@ private fun CardRun(
     card: Card,
     logs: List<ChoreLog>,
     todays: List<ChoreLog>,
+    /** Chores another player has in today: chore id → their name. */
+    others: Map<String, String>,
     hinge: Hinge?,
     bonusLeft: Int,
     onPuzzle: () -> Unit,
@@ -214,11 +230,18 @@ private fun CardRun(
     val streak = Engine.streak(player.id, logs, now, vm.zone)
     // Celebrate the first time this screen shows a new version (approval may have happened elsewhere).
     LaunchedEffect(player.id, rank.level) { if (vm.isNewLevel(player.id, rank.level)) fb.levelUp() }
-    // A parent's verdict wins over "pending" if a chore has more than one row today.
-    val statusByChore = HashMap<String, String>()
-    for (l in todays) if (statusByChore[l.choreId].let { it == null || it == Status.PENDING }) statusByChore[l.choreId] = l.status
-    val bonusLogs = todays.filter { it.choreId !in card.choreIds }.distinctBy { it.choreId }
-    val allChecked = card.checked.all { it }
+    // Approved wins; otherwise the latest log for a chore decides, so one redone after a rejection is awaiting again.
+    val statusByChore = Engine.statusToday(todays)
+    // Chores logged today that aren't on the card: bonus-round ones still standing, and ones a
+    // parent rejected (from the bonus round, or from an earlier card that was rejected outright).
+    val extras = todays.filter { it.choreId !in card.choreIds }.distinctBy { it.choreId }
+    val bonusLogs = extras.filter { statusByChore[it.choreId] != Status.REJECTED }
+    val rejectedExtras = extras.filter { statusByChore[it.choreId] == Status.REJECTED }
+    // On a card that isn't submitted yet, a chore someone else got in first stays visible, marked
+    // taken, and is left out when the card is submitted.
+    val lost = if (card.submitted) emptyList() else card.choreIds.filter { it in others }
+    val keep = card.choreIds.indices.filter { card.choreIds[it] !in lost }
+    val allChecked = keep.isNotEmpty() && keep.all { card.checked[it] }
     val total = card.minutes.sum()
 
     TwoZone(
@@ -233,7 +256,7 @@ private fun CardRun(
                         name = c?.name ?: id, minutes = card.minutes[i],
                         escalLevel = card.escal.getOrElse(i) { 0 },
                         checked = card.checked[i],
-                        status = if (card.submitted) statusByChore[id] ?: Status.PENDING else null,
+                        status = if (card.submitted) statusByChore[id] ?: Status.PENDING else if (id in lost) TAKEN else null,
                         onToggle = { fb.tick(!card.checked[i]); vm.toggle(player, card, i) },
                     )
                 }
@@ -243,21 +266,36 @@ private fun CardRun(
                         ChoreRow(l.choreName, Engine.choreMinutes(l, vm.store.poolById), 0, checked = true, status = statusByChore[l.choreId])
                     }
                 }
+                // Kept off a card that's still being checked off, where it would only be in the way.
+                if (card.submitted && rejectedExtras.isNotEmpty()) {
+                    item { SectionLabel("rejected today") }
+                    items(rejectedExtras, key = { it.id }) { l ->
+                        ChoreRow(l.choreName, Engine.choreMinutes(l, vm.store.poolById), 0, checked = true, status = Status.REJECTED)
+                    }
+                }
             }
         },
         bottom = {
             Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp)) {
                 if (!card.submitted) {
-                    TermButton(if (allChecked) "SUBMIT FOR APPROVAL" else "CHECK OFF EVERYTHING FIRST", enabled = allChecked) {
-                        vm.submit(player, card); fb.submit()
-                    }
+                    if (lost.isNotEmpty()) Text("taken = someone else got it first today — it won't be submitted",
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 8.dp))
+                    TermButton(
+                        when {
+                            allChecked -> "SUBMIT FOR APPROVAL"
+                            keep.isEmpty() -> "ALL TAKEN TODAY — CHANGE PICKS"
+                            else -> "CHECK OFF EVERYTHING FIRST"
+                        },
+                        enabled = allChecked,
+                    ) { vm.submit(player, card); fb.submit() }
                     Text("🔒 the puzzle unlocks when this card is submitted", style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
                     Text("change my picks", color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.align(Alignment.CenterHorizontally).clickable { fb.tap(); vm.clearCard(player) }.padding(14.dp))
                 } else {
                     // Say what's actually left: every chore logged today is pending, approved or rejected.
-                    val verdicts = (card.choreIds + bonusLogs.map { it.choreId }).map { statusByChore[it] ?: Status.PENDING }
+                    val verdicts = (card.choreIds + extras.map { it.choreId }).map { statusByChore[it] ?: Status.PENDING }
                     val waiting = verdicts.count { it == Status.PENDING }
                     val rejected = verdicts.count { it == Status.REJECTED }
                     val (line, lineColor) = when {
@@ -268,6 +306,9 @@ private fun CardRun(
                         else -> "done — ${verdicts.size - rejected} approved, $rejected rejected" to MaterialTheme.colorScheme.onSurfaceVariant
                     }
                     Text(line, color = lineColor, modifier = Modifier.padding(bottom = 8.dp))
+                    if (rejected > 0) Text("rejected chores can be done again from the bonus round",
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 8.dp))
                     TermButton("PLAY · CLEAR THE GRID · LVL ${vm.puzzleLevel(player.id)}", modifier = Modifier.padding(bottom = 8.dp)) {
                         fb.unlock(); onPuzzle()
                     }

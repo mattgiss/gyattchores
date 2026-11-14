@@ -227,4 +227,39 @@ object Engine {
 
     /** JavaScript's Math.round: halves round up (towards +infinity). */
     private fun Double.roundHalfUp(): Int = floor(this + 0.5).toInt()
+
+    // ─── Today ──────────────────────────────────────────────────────────────
+
+    /**
+     * Where each chore stands in one player's logs from today. An approval always wins. Otherwise
+     * the newest log decides, so a chore redone after a rejection is awaiting again; when two rows
+     * carry the same time (a sync duplicate), a verdict beats "pending".
+     */
+    fun statusToday(todays: List<ChoreLog>): Map<String, String> {
+        val newest = HashMap<String, ChoreLog>()
+        val approved = HashSet<String>()
+        for (l in todays) {
+            if (l.status == Status.APPROVED) approved += l.choreId
+            val current = newest[l.choreId]
+            if (current == null || l.timestamp > current.timestamp ||
+                (l.timestamp == current.timestamp && current.status == Status.PENDING)) newest[l.choreId] = l
+        }
+        return newest.mapValues { (id, l) -> if (id in approved) Status.APPROVED else l.status }
+    }
+
+    /** Chores that are used up for today: awaiting a parent or approved. A rejected chore can be done again. */
+    fun standingToday(status: Map<String, String>): Set<String> = status.filterValues { it != Status.REJECTED }.keys
+
+    /**
+     * Chores someone else has in today, as chore id → their name. One chore, one person, per day.
+     * [todays] is everyone's logs from today.
+     */
+    fun takenByOthersToday(playerId: String, todays: List<ChoreLog>): Map<String, String> {
+        val taken = LinkedHashMap<String, String>()
+        for ((_, logs) in todays.filter { it.playerId != playerId }.groupBy { it.playerId }.toSortedMap()) {
+            val name = logs.first().playerName
+            for (chore in standingToday(statusToday(logs))) taken.putIfAbsent(chore, name)
+        }
+        return taken
+    }
 }

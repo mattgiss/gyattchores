@@ -92,6 +92,9 @@ fun SectionLabel(text: String, color: Color = MaterialTheme.colorScheme.onSurfac
         modifier = Modifier.padding(top = 20.dp, bottom = 8.dp))
 }
 
+/** Not a parent's verdict: another player got this chore in first today. */
+const val TAKEN = "taken"
+
 /**
  * One chore row. Before submit it's a checkbox ([+]/[ ]); after submit it shows the parent's verdict.
  * In the picker it shows minutes and the escalation badge instead.
@@ -111,6 +114,7 @@ fun ChoreRow(
         "approved" -> "✓ approved" to Good
         "rejected" -> "✗ rejected" to Bad
         "pending" -> "· awaiting" to Warn
+        TAKEN -> "· taken" to Color.Gray
         else -> null
     }
     val rowMod = if (onToggle != null && status == null) {
