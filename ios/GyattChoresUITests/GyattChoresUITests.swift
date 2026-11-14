@@ -605,10 +605,10 @@ final class GyattChoresUITests: XCTestCase {
 
         // Locked until the card is in.
         XCTAssertTrue(app.staticTexts["🔒 the puzzle unlocks when this card is submitted"].waitForExistence(timeout: wait))
-        XCTAssertFalse(app.buttons["> PLAY · CLEAR THE GRID · LVL 1"].exists)
+        XCTAssertFalse(app.buttons["> PLAY · CLEAR THE GRID · LVL 1 · 60 MIN LEFT"].exists)
         checkOffEverything(in: app).tap()
 
-        let play = app.buttons["> PLAY · CLEAR THE GRID · LVL 1"]
+        let play = app.buttons["> PLAY · CLEAR THE GRID · LVL 1 · 60 MIN LEFT"]
         XCTAssertTrue(play.waitForExistence(timeout: wait), "a submitted card unlocks the puzzle")
         screenshot("puzzle-1-unlocked", of: app)
         play.tap()
@@ -656,7 +656,34 @@ final class GyattChoresUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["4 blocks left"].exists)
         screenshot("puzzle-4-level-2", of: app)
         app.buttons["puzzle-back"].tap()
-        XCTAssertTrue(app.buttons["> PLAY · CLEAR THE GRID · LVL 2"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.buttons["> PLAY · CLEAR THE GRID · LVL 2 · 60 MIN LEFT"].waitForExistence(timeout: wait))
+    }
+
+    /// The puzzle gets an hour a day per player. The play button counts down; when the hour runs
+    /// out mid-level the board is covered and only "back" works, and the day screen says so.
+    func testThePuzzleStopsAfterAnHourADay() {
+        let app = launch(["-resetData", "-demoFamily", "-puzzleSecondsLeft", "125"])
+        open("riley", in: app)
+        app.buttons["✨ suggest a 25-min card"].tap()
+        mainButton(in: app).tap()
+        checkOffEverything(in: app).tap()
+        let play = app.buttons["> PLAY · CLEAR THE GRID · LVL 1 · 3 MIN LEFT"]
+        XCTAssertTrue(play.waitForExistence(timeout: wait), "125 seconds left shows as 3 minutes")
+        app.terminate()
+
+        // Down to the last few seconds: they run out while the board is up.
+        let again = launch(["-puzzleSecondsLeft", "3"])
+        open("riley", in: again)
+        let last = again.buttons["> PLAY · CLEAR THE GRID · LVL 1 · 1 MIN LEFT"]
+        XCTAssertTrue(last.waitForExistence(timeout: wait))
+        last.tap()
+        XCTAssertTrue(again.descendants(matching: .any)["cell-0"].waitForExistence(timeout: wait))
+        let covered = again.staticTexts["that's an hour of puzzles today. back tomorrow."]
+        XCTAssertTrue(covered.waitForExistence(timeout: 10), "the board is covered when time runs out")
+        screenshot("puzzle-time-up", of: again)
+        again.buttons["puzzle-timeup-back"].tap()
+        XCTAssertTrue(again.staticTexts["puzzle time's up for today · back tomorrow"].waitForExistence(timeout: wait))
+        XCTAssertFalse(again.buttons.matching(NSPredicate(format: "label BEGINSWITH '> PLAY'")).firstMatch.exists)
     }
 
     /// A display name is a nickname on top of the username: it shows everywhere the player does,

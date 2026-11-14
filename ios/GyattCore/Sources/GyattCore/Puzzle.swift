@@ -112,3 +112,46 @@ public struct PuzzlePack: Decodable, Sendable {
         return PuzzleBoard(width: l.w, height: l.h, cells: l.cells)
     }
 }
+
+/// How much CLEAR THE GRID a player gets per local day. Time counts only while the puzzle is on
+/// screen with the app in front, and starts over at local midnight. Kept per player on the
+/// device, like levels; it doesn't sync. Stored as "yyyy-MM-dd|seconds".
+public struct PuzzleTime: Equatable, Sendable {
+    public static let minutesPerDay = 60
+    public static let secondsPerDay = Double(minutesPerDay * 60)
+
+    public var day: String
+    public var seconds: Double
+
+    public init(day: String, seconds: Double) { self.day = day; self.seconds = seconds }
+
+    /// Reads a stored value; anything unreadable counts as nothing played.
+    public init?(stored: String?) {
+        guard let parts = stored?.split(separator: "|"), parts.count == 2, let s = Double(parts[1]) else { return nil }
+        self.init(day: String(parts[0]), seconds: max(0, s))
+    }
+
+    public var stored: String { "\(day)|\(seconds)" }
+
+    /// Seconds played on `now`'s day: a record from another day counts for nothing.
+    public static func used(_ record: PuzzleTime?, now: Date, calendar: Calendar = .current) -> Double {
+        guard let record, record.day == Engine.dayKey(now, calendar: calendar) else { return 0 }
+        return record.seconds
+    }
+
+    /// Seconds left today, never below zero.
+    public static func secondsLeft(_ record: PuzzleTime?, now: Date, calendar: Calendar = .current) -> Double {
+        max(0, secondsPerDay - used(record, now: now, calendar: calendar))
+    }
+
+    /// Whole minutes left, rounded up, so "1 MIN LEFT" shows until the very last second.
+    public static func minutesLeft(_ record: PuzzleTime?, now: Date, calendar: Calendar = .current) -> Int {
+        Int((secondsLeft(record, now: now, calendar: calendar) / 60).rounded(.up))
+    }
+
+    /// `record` after playing `seconds` more, ending at `now`. Play from an earlier day is dropped.
+    public static func adding(_ seconds: Double, to record: PuzzleTime?, now: Date, calendar: Calendar = .current) -> PuzzleTime {
+        PuzzleTime(day: Engine.dayKey(now, calendar: calendar),
+                   seconds: min(secondsPerDay, used(record, now: now, calendar: calendar) + max(0, seconds)))
+    }
+}

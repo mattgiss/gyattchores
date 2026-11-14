@@ -212,7 +212,12 @@ private struct CardRunView: View {
                     if rejected > 0 {
                         Text("rejected chores can be done again from the bonus round").font(.footnote).foregroundStyle(.secondary)
                     }
-                    TermButton(label: "PLAY · CLEAR THE GRID · LVL \(store.puzzleLevel(player.id))") { fb.unlock(); puzzleOpen = true }
+                    let minutesLeft = store.puzzleMinutesLeft(player.id)
+                    if minutesLeft > 0 {
+                        TermButton(label: "PLAY · CLEAR THE GRID · LVL \(store.puzzleLevel(player.id)) · \(minutesLeft) MIN LEFT") { fb.unlock(); puzzleOpen = true }
+                    } else {
+                        Text("puzzle time's up for today · back tomorrow").foregroundStyle(.secondary)
+                    }
                     if bonusLeft > 0 { OutlineButton(label: "+ bonus round") { fb.tap(); onBonus() } }
                 }
             }
@@ -221,7 +226,7 @@ private struct CardRunView: View {
         }
         // Celebrate the first time this screen shows a new version (approval may have happened elsewhere).
         .task(id: rank.level) { if store.isNewLevel(player.id, rank.level) { fb.levelUp() } }
-        .fullScreenCover(isPresented: $puzzleOpen) {
+        .fullScreenCover(isPresented: $puzzleOpen, onDismiss: { store.puzzleTimeShown() }) {
             PuzzleView(player: player).environmentObject(store).environmentObject(fb).fontDesign(.monospaced).tint(Theme.accent)
         }
     }

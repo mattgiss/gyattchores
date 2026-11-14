@@ -164,6 +164,11 @@ final class AppStore: ObservableObject {
                 save("logs.json", self.logs)
             }
         }
+        // `-puzzleSecondsLeft N`: every player starts with only N seconds of today's puzzle time.
+        if Self.uiTesting, let i = Self.launchArguments.firstIndex(of: "-puzzleSecondsLeft"),
+           i + 1 < Self.launchArguments.count, let left = Double(Self.launchArguments[i + 1]) {
+            for m in self.members { UserDefaults.standard.removeObject(forKey: Self.puzzleTimeKey + m.id); playedPuzzle(m.id, seconds: PuzzleTime.secondsPerDay - left) }
+        }
         #endif
     }
 
@@ -224,7 +229,7 @@ final class AppStore: ObservableObject {
         }
         let defaults = UserDefaults.standard
         // Puzzle levels too: player ids start again from 1, so a new player would inherit an old one's level.
-        for key in defaults.dictionaryRepresentation().keys where key.hasPrefix("seen_level_") || key.hasPrefix(Self.puzzleKey) {
+        for key in defaults.dictionaryRepresentation().keys where key.hasPrefix("seen_level_") || key.hasPrefix(Self.puzzleKey) || key.hasPrefix(Self.puzzleTimeKey) {
             defaults.removeObject(forKey: key)
         }
         cards = [:]; logs = []; members = []; pool = starterChores
@@ -434,6 +439,7 @@ final class AppStore: ObservableObject {
         settings.memberJoined[member.id] = nil
         UserDefaults.standard.removeObject(forKey: "seen_level_\(member.id)")
         UserDefaults.standard.removeObject(forKey: Self.puzzleKey + member.id)
+        UserDefaults.standard.removeObject(forKey: Self.puzzleTimeKey + member.id)
         familyChanged()
     }
 
@@ -512,6 +518,25 @@ final class AppStore: ObservableObject {
         objectWillChange.send()
         UserDefaults.standard.set(level + 1, forKey: Self.puzzleKey + playerId)
     }
+
+    /// Puzzle time played today, per player (`PuzzleTime`). Kept on this phone; never synced.
+    private static let puzzleTimeKey = uiTesting ? "ui-testing.puzzle_time_" : "puzzle_time_"
+
+    private func puzzleTime(_ playerId: String) -> PuzzleTime? {
+        PuzzleTime(stored: UserDefaults.standard.string(forKey: Self.puzzleTimeKey + playerId))
+    }
+
+    func puzzleSecondsLeft(_ playerId: String, now: Date = Date()) -> Double { PuzzleTime.secondsLeft(puzzleTime(playerId), now: now) }
+    func puzzleMinutesLeft(_ playerId: String, now: Date = Date()) -> Int { PuzzleTime.minutesLeft(puzzleTime(playerId), now: now) }
+
+    /// Counts `seconds` of play. Quiet on purpose: the puzzle ticks every second, and redrawing
+    /// every screen that often is wasted work. Call `puzzleTimeShown()` when it's worth a redraw.
+    func playedPuzzle(_ playerId: String, seconds: Double, now: Date = Date()) {
+        let r = PuzzleTime.adding(seconds, to: puzzleTime(playerId), now: now)
+        UserDefaults.standard.set(r.stored, forKey: Self.puzzleTimeKey + playerId)
+    }
+
+    func puzzleTimeShown() { objectWillChange.send() }
 
     /// True the first time a player's screen shows a level higher than the last one it showed.
     func isNewLevel(_ playerId: String, _ level: Int) -> Bool {

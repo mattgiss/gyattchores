@@ -49,6 +49,9 @@ struct PuzzleView: View {
     @State private var shakeTrigger = 0
     @State private var shakeStrength = 0.0
     @State private var cell: CGFloat = 40
+    /// Today's hour of puzzles is used up: the board is covered and only "back" works.
+    @State private var timeUp = false
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         ZStack {
@@ -95,6 +98,21 @@ struct PuzzleView: View {
                 LevelUpCard(level: level + 1, cleared: clearedCount, calm: calm,
                             onNext: nextLevel, onBack: { fb.tap(); dismiss() })
                     .transition(.opacity)
+            }
+            if timeUp { TimeUpCard(onBack: { fb.tap(); dismiss() }).transition(.opacity) }
+        }
+        // The clock runs only while this screen is up and the app is in front: backgrounding or
+        // locking the phone ends this task, and leaving the screen cancels it.
+        .task(id: scenePhase) {
+            guard scenePhase == .active else { return }
+            var last = Date()
+            while !Task.isCancelled {
+                if store.puzzleSecondsLeft(player.id) <= 0 { withAnimation { timeUp = true }; return }
+                try? await Task.sleep(for: .seconds(1))
+                let now = Date()
+                // A gap longer than a few seconds means the app was suspended, not played.
+                store.playedPuzzle(player.id, seconds: min(now.timeIntervalSince(last), 2), now: now)
+                last = now
             }
         }
         .onAppear {
@@ -457,5 +475,26 @@ private struct LevelUpCard: View {
     /// Repeatable pseudo-random 0…1 for frame `n`, so the jitter is jagged rather than smooth.
     private static func noise(_ n: Int) -> Double {
         Double((UInt32(truncatingIfNeeded: n) &* 2_654_435_761) >> 16 & 0xFFFF) / 65535
+    }
+}
+
+/// Covers the board once today's hour of puzzles is gone. The level in progress isn't kept, the
+/// same as leaving it: it starts over tomorrow.
+private struct TimeUpCard: View {
+    let onBack: () -> Void
+    var body: some View {
+        ZStack {
+            Color(.systemBackground).opacity(0.96).ignoresSafeArea()
+            VStack(spacing: 20) {
+                Text("⏳").font(.system(size: 56))
+                Text("that's an hour of puzzles today. back tomorrow.")
+                    .font(.headline).multilineTextAlignment(.center)
+                Button("← back", action: onBack).font(.headline).foregroundStyle(Theme.accent)
+                    .frame(minHeight: 44).accessibilityIdentifier("puzzle-timeup-back")
+            }
+            .padding(32)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("puzzle-timeup")
     }
 }
