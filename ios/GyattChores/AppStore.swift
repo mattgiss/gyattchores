@@ -173,7 +173,10 @@ final class AppStore: ObservableObject {
             try? FileManager.default.removeItem(at: Self.dir.appendingPathComponent(name))
         }
         let defaults = UserDefaults.standard
-        for key in defaults.dictionaryRepresentation().keys where key.hasPrefix("seen_level_") { defaults.removeObject(forKey: key) }
+        // Puzzle levels too: player ids start again from 1, so a new player would inherit an old one's level.
+        for key in defaults.dictionaryRepresentation().keys where key.hasPrefix("seen_level_") || key.hasPrefix(Self.puzzleKey) {
+            defaults.removeObject(forKey: key)
+        }
         cards = [:]; logs = []; members = []; pool = starterChores; dares = []
         settings = Settings()
     }
