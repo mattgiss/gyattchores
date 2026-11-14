@@ -55,6 +55,11 @@ fun AppRoot(vm: AppViewModel, fold: FoldingFeature?) {
     val logs by vm.store.logs.collectAsState()
     val family by vm.store.family.collectAsState()
     val syncedOnce by vm.syncedOnce.collectAsState()
+    val notice by vm.notice.collectAsState()
+    notice?.let { m ->
+        androidx.compose.material3.AlertDialog(onDismissRequest = { vm.notice.value = null }, text = { Text(m) },
+            confirmButton = { androidx.compose.material3.TextButton(onClick = { vm.notice.value = null }) { Text("ok") } })
+    }
     val players = family.players
     val cards by vm.store.cards.collectAsState()
     val syncStatus by vm.syncStatus.collectAsState()

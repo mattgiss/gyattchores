@@ -52,7 +52,10 @@ class Supabase(private val baseUrl: String = SyncConfig.URL, private val key: St
     )
 
     override fun insert(log: ChoreLog): RemoteLog {
-        val body = json.encodeToString(LogRow(null, log.playerId, log.playerName, log.choreId, log.choreName, "", log.points, log.status))
+        // created_at is always sent so a log keeps its own date: one logged offline, or restored from
+        // a backup, would otherwise be stamped with the moment it reached the server. Same as iOS.
+        val body = json.encodeToString(LogRow(null, log.playerId, log.playerName, log.choreId, log.choreName, "", log.points, log.status,
+            Instant.ofEpochMilli(log.timestamp).toString()))
         return json.decodeFromString<List<LogRow>>(call("POST", "simple_logs", body)).first().toRemote()
     }
 

@@ -108,6 +108,10 @@ class Store(context: Context, private val shared: Boolean) {
             _family.value = next
             write("family.json", next)
             if (removedChanged) dropRemoved()
+            // A chore taken off the list on another phone leaves any card here still being checked off.
+            val ids = pool.map { it.id }.toSet()
+            val stale = _cards.value.filterValues { c -> !c.submitted && c.choreIds.any { it !in ids } }
+            if (stale.isNotEmpty()) { _cards.value = _cards.value - stale.keys; write("cards.json", _cards.value) }
         }
     }
 

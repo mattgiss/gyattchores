@@ -6,6 +6,9 @@ import com.gyattchores.app.data.Store
 import com.gyattchores.app.engine.Engine
 import com.gyattchores.app.engine.PuzzlePack
 import com.gyattchores.app.engine.AdminCode
+import com.gyattchores.app.engine.Backup
+import com.gyattchores.app.engine.BackupFile
+import com.gyattchores.app.engine.RestoreCounts
 import com.gyattchores.app.engine.ChoreIntake
 import com.gyattchores.app.engine.DisplayName
 import com.gyattchores.app.model.Card
@@ -54,8 +57,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         logs.filter { it.playerId == playerId && Engine.dayOf(it.timestamp, zone) == today() }
 
     /** Chores someone else has in today, as chore id → their name. One chore, one person, per day. */
-    fun takenByOthers(playerId: String, logs: List<ChoreLog>): Map<String, String> =
-        Engine.takenByOthersToday(playerId, logs.filter { Engine.dayOf(it.timestamp, zone) == today() })
+    fun takenByOthers(playerId: String, logs: List<ChoreLog>): Map<String, String> {
+        val shown = store.family.value.members.associate { it.name to it.shownName }
+        return Engine.takenByOthersToday(playerId, logs.filter { Engine.dayOf(it.timestamp, zone) == today() })
+            .mapValues { (_, name) -> shown[name] ?: name }
+    }
 
     /** True when the player logged chores today and every one was rejected: they start over. */
     fun rejectedToday(playerId: String, logs: List<ChoreLog>): Boolean =
@@ -411,6 +417,57 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         requestSync()
     }
 
+    // ─── Backup ─────────────────────────────────────────────────────────────
+
+    private val appVersion: String by lazy {
+        runCatching { getApplication<Application>().packageManager.getPackageInfo(getApplication<Application>().packageName, 0).versionName }
+            .getOrNull() ?: "?"
+    }
+
+    /** Everything this phone knows about the game, as the text of a backup file. */
+    fun exportBackup(): String {
+        val f = store.family.value
+        val levels = f.members.associate { it.id to puzzleLevel(it.id) }.filterValues { it > 1 }
+        return Backup.encode(Backup.make(f, store.pool, store.logs.value, dares(store.state.value), levels,
+            if (familySync) "android-family" else "android-public", appVersion, now()))
+    }
+
+    fun backupFileName() = Backup.fileName(today())
+
+    /** A one-off message for whichever screen is showing (say, what a restore brought in). */
+    val notice = MutableStateFlow<String?>(null)
+
+    /** True when this exact backup has already been merged into the family. */
+    fun alreadyRestored(b: BackupFile) = familySync && b.id in store.state.value[KEY_RESTORED]?.items.orEmpty()
+
+    /**
+     * Restores a backup. Public: it replaces everything on this phone. Family: it's merged into
+     * the family (see [Backup.merge]) and goes out to the other phones on the next sync.
+     */
+    fun restore(b: BackupFile): RestoreCounts {
+        val t = now()
+        if (!familySync) {
+            val r = Backup.replace(b)
+            store.eraseAll()
+            seen.edit().clear().apply()
+            puzzleProgress.edit().clear().apply { r.puzzleLevels.forEach { (id, l) -> putInt(id, l) } }.apply()
+            store.setFamily(r.family, t)
+            store.addLogs(r.logs)
+            // Kept where dares always live ("dare|<from>|<day>"), so their points count as on iOS.
+            for ((key, ds) in r.dares.groupBy { "dare|${it.from}|${it.day}" }) store.setState(key, ds.map { "${it.target}:${it.choreId}" }, t)
+            return r.counts
+        }
+        if (alreadyRestored(b)) return RestoreCounts(0, 0, 0)
+        val m = Backup.merge(store.family.value, store.pool, store.logs.value,
+            store.family.value.members.associate { it.id to puzzleLevel(it.id) }, b, zone, t)
+        store.setFamily(m.family, t)
+        store.addLogs(m.newLogs)
+        m.puzzleLevels.forEach { (id, l) -> if (l > puzzleLevel(id)) puzzleProgress.edit().putInt(id, l).apply() }
+        store.setState(KEY_RESTORED, store.state.value[KEY_RESTORED]?.items.orEmpty() + b.id, t)
+        requestSync()
+        return m.counts
+    }
+
     /** A chore's name, even after it's been taken off the list: recent logs remember it. */
     fun choreName(choreId: String): String =
         store.poolById[choreId]?.name ?: store.logs.value.lastOrNull { it.choreId == choreId }?.choreName ?: choreId
@@ -421,5 +478,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private companion object {
         const val KEY_SYNCED = "synced_once"
         const val KEY_BIOMETRIC = "biometric_unlock"
+        /** Shared: ids of backups already merged into the family, so a repeat does nothing. */
+        const val KEY_RESTORED = "restored_backups"
     }
 }

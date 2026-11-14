@@ -76,6 +76,7 @@ fun SetupScreen(vm: AppViewModel) {
         fb.lockIn()
         vm.finishSetup(adminName, adminPlays, code, bio, playerNames.toList(), chores)
     }
+    val (_, restoreBackup) = rememberBackup(vm)
     fun back() { if (step == 3 && writingChores) writingChores = false else step = maxOf(0, step - 1) }
 
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
@@ -100,6 +101,7 @@ fun SetupScreen(vm: AppViewModel) {
                     if (alreadyHere.isNotEmpty()) Text("your players and their points are still here. they just need someone in charge.",
                         style = MaterialTheme.typography.labelMedium, color = Warn)
                     TermButton("SET UP THIS ${if (vm.familySync) "FAMILY" else "PHONE"}") { fb.tap(); step = 1 }
+                    OutlinedButton(onClick = { fb.tap(); restoreBackup() }, modifier = Modifier.fillMaxWidth()) { Text("restore from a backup") }
                 }
                 1 -> {
                     val problem = when {

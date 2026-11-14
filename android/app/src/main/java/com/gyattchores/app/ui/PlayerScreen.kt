@@ -278,9 +278,8 @@ private fun CardRun(
                 item { StatsHeader(rank, streak) }
                 item { SectionLabel("today's card · ${total}m") }
                 itemsIndexed(card.choreIds) { i, id ->
-                    val c = vm.store.poolById[id]
                     ChoreRow(
-                        name = c?.name ?: id, minutes = card.minutes[i],
+                        name = vm.choreName(id), minutes = card.minutes[i],
                         escalLevel = card.escal.getOrElse(i) { 0 },
                         checked = card.checked[i],
                         status = if (card.submitted) statusByChore[id] ?: Status.PENDING else if (id in lost) TAKEN else null,

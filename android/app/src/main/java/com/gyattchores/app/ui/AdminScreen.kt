@@ -128,6 +128,7 @@ private fun AdminContent(vm: AppViewModel, logs: List<ChoreLog>) {
     val activity = LocalContext.current as FragmentActivity
     val canBio = remember { biometricAvailable(activity) }
     val pool = family.chores ?: vm.store.starterChores
+    val (saveBackup, restoreBackup) = rememberBackup(vm)
 
     if (addingChores) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
@@ -208,6 +209,13 @@ private fun AdminContent(vm: AppViewModel, logs: List<ChoreLog>) {
             Text(if (vm.familySync) "this edition keeps the family's players, chores and points in step across your family's phones. resetting this phone clears what it keeps and fetches the family again; nothing is deleted for anyone else."
                 else "everything this app knows — names, chores and points — is kept on this phone and nowhere else. there's no account and nothing is sent to anyone, including us. uninstalling the app deletes it all.",
                 style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
+                OutlinedButton(onClick = { fb.tap(); saveBackup() }) { Text("save a backup…") }
+                OutlinedButton(onClick = { fb.tap(); restoreBackup() }) { Text("restore…") }
+            }
+            Text(if (vm.familySync) "a backup holds the family's players, chores, history and admin codes (scrambled). restoring adds a backup to the family; it never removes anyone."
+                else "a backup holds everything here, admin codes included (scrambled). restoring one replaces what's on this phone.",
+                style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
             TextButton(onClick = { confirmingErase = true }, modifier = Modifier.padding(vertical = 8.dp)) {
                 Text(if (vm.familySync) "reset this phone…" else "erase everything…", color = Bad)
             }
