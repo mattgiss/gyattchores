@@ -92,6 +92,8 @@ struct SetupView: View {
                 .font(.footnote).foregroundStyle(Theme.warn).padding(.top, 4)
         }
         TermButton(label: "SET UP THIS DEVICE") { fb.tap(); step = .admin }.padding(.top, 12)
+        // A new phone for a family that already has a scoreboard saved as a file.
+        BackupControls(canSave: false).padding(.top, 4)
         Link("privacy policy", destination: Links.privacy).font(.footnote).frame(maxWidth: .infinity, minHeight: 44)
     }
 

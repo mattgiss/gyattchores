@@ -21,6 +21,20 @@
                ReferencedContainer = "container:GyattChores.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "4DF6E052392C8E7FF4F9D561"
+               BuildableName = "GyattChoresUITests.xctest"
+               BlueprintName = "GyattChoresUITests"
+               ReferencedContainer = "container:GyattChores.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -39,6 +53,17 @@
          </BuildableReference>
       </MacroExpansion>
       <Testables>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "4DF6E052392C8E7FF4F9D561"
+               BuildableName = "GyattChoresUITests.xctest"
+               BlueprintName = "GyattChoresUITests"
+               ReferencedContainer = "container:GyattChores.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
       <CommandLineArguments>
       </CommandLineArguments>

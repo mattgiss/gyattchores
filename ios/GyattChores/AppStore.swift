@@ -61,8 +61,13 @@ final class AppStore: ObservableObject {
     #else
     /// Dares made in an earlier version of the app. Nothing adds to them now; they're read so the
     /// points they earned aren't lost.
-    private var dares: [Dare]
+    private(set) var dares: [Dare]
+    /// A restored backup brings its dares' points with it.
+    func restoreLegacyDares(_ list: [Dare]) { dares = list }
     #endif
+
+    /// A one-off message for the app to show, such as what a restored backup brought in.
+    @Published var notice: String?
 
     /// The people on the scoreboard.
     var players: [Player] { members.filter(\.plays) }
@@ -127,7 +132,7 @@ final class AppStore: ObservableObject {
         let shared: [String: LocalEntry] = Self.load("family_state.json") ?? [:]
         self.shared = shared
         me = UserDefaults.standard.string(forKey: Self.meKey)
-        hasSynced = Self.uiTesting || UserDefaults.standard.bool(forKey: Self.syncedKey)
+        hasSynced = (Self.uiTesting && SyncConfig.testURL == nil) || UserDefaults.standard.bool(forKey: Self.syncedKey)
         #else
         dares = legacy.flatMap { key, entry -> [Dare] in
             let parts = key.split(separator: "|").map(String.init)
@@ -265,7 +270,9 @@ final class AppStore: ObservableObject {
     func submittedToday(_ playerId: String) -> Bool { !Engine.standingToday(Engine.statusToday(todaysLogs(playerId))).isEmpty }
     /// Chores someone else has in today, as chore id → their name. One chore, one person, per day.
     func takenByOthers(_ playerId: String) -> [String: String] {
-        Engine.takenByOthersToday(playerId: playerId, todays: logs.filter { calendar.isDateInToday($0.timestamp) })
+        // Who has it, by the name everyone sees rather than the username underneath.
+        let shown = Dictionary(members.map { ($0.id, $0.shownName) }, uniquingKeysWith: { a, _ in a })
+        return Engine.takenByOthersToday(playerId: playerId, todays: logs.filter { calendar.isDateInToday($0.timestamp) }) { shown[$0] }
     }
     /// True when the player logged chores today and every one was rejected: they start over.
     func rejectedToday(_ playerId: String) -> Bool { !todaysLogs(playerId).isEmpty && !submittedToday(playerId) }

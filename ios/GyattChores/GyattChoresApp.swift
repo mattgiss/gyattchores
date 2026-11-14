@@ -8,6 +8,9 @@ struct GyattChoresApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
+                .alert("GyattChores", isPresented: Binding(get: { store.notice != nil }, set: { if !$0 { store.notice = nil } })) {
+                    Button("OK", role: .cancel) { store.notice = nil }
+                } message: { Text(store.notice ?? "") }
                 .environmentObject(store)
                 .environmentObject(feedback)
                 .fontDesign(.monospaced)

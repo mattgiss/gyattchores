@@ -209,12 +209,13 @@ public enum Engine {
     /// One chore, one person, per day. The chores every player other than `playerId` has standing
     /// today (awaiting a parent or approved), as chore id → that player's name. `todays` is today's
     /// logs for everyone. A chore someone else had rejected is free again.
-    public static func takenByOthersToday(playerId: String, todays: [ChoreLog]) -> [String: String] {
+    /// `name` says what to call someone (their display name); by default, the username on their logs.
+    public static func takenByOthersToday(playerId: String, todays: [ChoreLog], name shownName: ((String) -> String?)? = nil) -> [String: String] {
         var taken: [String: String] = [:]
         let others = Dictionary(grouping: todays.filter { $0.playerId != playerId }, by: \.playerId)
         // Sorted so the answer doesn't depend on dictionary order if two others somehow share a chore.
         for id in others.keys.sorted() {
-            guard let logs = others[id], let name = logs.first?.playerName else { continue }
+            guard let logs = others[id], let name = shownName?(id) ?? logs.first?.playerName else { continue }
             for chore in standingToday(statusToday(logs)) where taken[chore] == nil { taken[chore] = name }
         }
         return taken

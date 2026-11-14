@@ -6,6 +6,18 @@ import GyattCore
 /// The same Supabase project and publishable (anon) key the web app ships in `index.html`.
 /// The key is by design; access is governed by the tables' row-level-security policies.
 enum SyncConfig {
+    /// Debug builds under `-uiTesting` only: `-syncURL http://127.0.0.1:8789` points sync at a test
+    /// server instead of the family's, so sync can be tested end to end without touching real data.
+    static var testURL: String? {
+        #if DEBUG
+        let args = ProcessInfo.processInfo.arguments
+        guard args.contains("-uiTesting"), let i = args.firstIndex(of: "-syncURL"), i + 1 < args.count else { return nil }
+        return args[i + 1]
+        #else
+        return nil
+        #endif
+    }
+
     static let url = "https://ukshxdoqgwoxobjdclpx.supabase.co"
     static let anonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrc2h4ZG9xZ3dveG9iamRjbHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3MjI2NDEsImV4cCI6MjA4MDI5ODY0MX0.UGNrsfG6goEA0PPWG4x7gxBueA7D5Oe9uWI-iCXIar0"
 }
@@ -15,7 +27,7 @@ enum SupabaseError: Error { case http(Int) }
 /// Minimal PostgREST client over URLSession.
 struct Supabase: LogAPI, StateAPI {
     let baseURL: String, key: String
-    init(baseURL: String = SyncConfig.url, key: String = SyncConfig.anonKey) { self.baseURL = baseURL; self.key = key }
+    init(baseURL: String = SyncConfig.testURL ?? SyncConfig.url, key: String = SyncConfig.anonKey) { self.baseURL = baseURL; self.key = key }
 
     private struct LogRow: Codable {
         var id: String?
@@ -32,7 +44,11 @@ struct Supabase: LogAPI, StateAPI {
     private struct StateRow: Codable { var key: String, items: [String], updated_at: String }
 
     func insert(_ log: ChoreLog) async throws -> RemoteLog {
-        let row = LogRow(id: nil, player_id: log.playerId, player_name: log.playerName, chore_id: log.choreId, chore_name: log.choreName, points: log.points, status: log.status, created_at: nil)
+        // Every log keeps the date it was made on this device: one made offline, or brought in from
+        // a backup, mustn't land on the day it happened to reach the server. Android does the same.
+        let iso = ISO8601DateFormatter(); iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let createdAt: String? = iso.string(from: log.timestamp)
+        let row = LogRow(id: nil, player_id: log.playerId, player_name: log.playerName, chore_id: log.choreId, chore_name: log.choreName, points: log.points, status: log.status, created_at: createdAt)
         let out: [LogRow] = try await call("POST", "simple_logs", body: row)
         guard let first = out.first else { throw SupabaseError.http(0) }
         return first.remote

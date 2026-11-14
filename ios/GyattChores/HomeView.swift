@@ -10,6 +10,8 @@ struct HomeView: View {
     var selectedId: String? = nil
     let onPick: (Player) -> Void
     let onAdmin: () -> Void
+    /// At the largest text sizes a row's name and numbers don't fit side by side: stack them.
+    @Environment(\.dynamicTypeSize) private var typeSize
     #if FAMILY_SYNC
     var onDares: () -> Void = {}
     #endif
@@ -20,7 +22,7 @@ struct HomeView: View {
             // under the status bar or the Dynamic Island.
             HStack(alignment: .firstTextBaseline) {
                 Text("GYATTCHORES").font(.title).bold().kerning(4).foregroundStyle(Theme.accent)
-                    .lineLimit(1).minimumScaleFactor(0.6)
+                    .lineLimit(1).minimumScaleFactor(0.3)
                 Spacer(minLength: 8)
                 // Approving chores and changing players or chores: behind an admin's code.
                 Button { fb.tap(); onAdmin() } label: {
@@ -49,26 +51,33 @@ struct HomeView: View {
                     let board = store.players.map { ($0, store.weekPoints($0.id)) }
                         .sorted { $0.1 > $1.1 }
                     ForEach(Array(board.enumerated()), id: \.element.0.id) { i, row in
-                        HStack {
-                            Text("\(i + 1). ").foregroundStyle(i == 0 && row.1 > 0 ? Theme.accent : .secondary)
-                            Text(store.shownName(row.0)).fontWeight(i == 0 && row.1 > 0 ? .bold : .regular).lineLimit(1).minimumScaleFactor(0.75)
-                            Spacer()
-                            Text("\(row.1) pts").foregroundStyle(.secondary)
+                        let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 2)) : AnyLayout(HStackLayout())
+                        layout {
+                            HStack(spacing: 0) {
+                                Text("\(i + 1). ").foregroundStyle(i == 0 && row.1 > 0 ? Theme.accent : .secondary)
+                                Text(store.shownName(row.0)).fontWeight(i == 0 && row.1 > 0 ? .bold : .regular).lineLimit(1).minimumScaleFactor(0.75)
+                            }
+                            if !typeSize.isAccessibilitySize { Spacer() }
+                            Text("\(row.1) pts").foregroundStyle(.secondary).lineLimit(1)
                         }
                         .padding(.vertical, 4)
+                        .accessibilityElement(children: .combine)
                     }
 
                     SectionLabel("who's playing")
                     ForEach(store.players) { p in
                         let isSelected = p.id == selectedId
                         Button { fb.tap(); onPick(p) } label: {
-                            HStack {
-                                Text("> ").foregroundStyle(Theme.accent)
-                                // One line, shrinking a little before it cuts off: a wrapped, hyphenated
-                                // name looks broken in the narrow left pane of the two-pane layout.
-                                Text(store.shownName(p)).font(.headline).lineLimit(1).minimumScaleFactor(0.75)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                Text("\(store.rank(p.id).version) · 🔥\(store.streak(p.id))").foregroundStyle(.secondary)
+                            let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 2)) : AnyLayout(HStackLayout())
+                            layout {
+                                HStack(spacing: 0) {
+                                    Text("> ").foregroundStyle(Theme.accent)
+                                    // One line, shrinking a little before it cuts off: a wrapped, hyphenated
+                                    // name looks broken in the narrow left pane of the two-pane layout.
+                                    Text(store.shownName(p)).font(.headline).lineLimit(1).minimumScaleFactor(0.75)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                Text("\(store.rank(p.id).version) · 🔥\(store.streak(p.id))").foregroundStyle(.secondary).lineLimit(1)
                             }
                             .frame(minHeight: 64).contentShape(Rectangle())
                             .padding(.horizontal, 10)

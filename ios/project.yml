@@ -68,6 +68,12 @@ targets:
         TARGETED_DEVICE_FAMILY: "1,2"   # iPhone and iPad
         CODE_SIGN_STYLE: Automatic
         GENERATE_INFOPLIST_FILE: YES
+      configs:
+        # The UI tests check the family build's own behaviour when they run against it.
+        Debug-Family:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) FAMILY_SYNC"
+        Release-Family:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) FAMILY_SYNC"
 
 # A shared scheme, so `xcodebuild` (CI) and Xcode use the same build and test setup.
 schemes:
@@ -92,10 +98,13 @@ schemes:
     build:
       targets:
         GyattChores: all
+        GyattChoresUITests: [test]
     run:
       config: Debug-Family
     test:
       config: Debug-Family
+      targets:
+        - GyattChoresUITests
     profile:
       config: Release-Family
     analyze:

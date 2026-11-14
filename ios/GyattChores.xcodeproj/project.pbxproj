@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		044BFEB97E4071B9EC36B7B8 /* BackupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3586296EE565482DC2C3729D /* BackupView.swift */; };
 		119A3672AD8787ADC74C613B /* PlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB22028F8301385EF58C79DE /* PlayerView.swift */; };
 		119A6151A3B3BEE96F14F13C /* DaresView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D096B95D3190ED58C9D5CEA7 /* DaresView.swift */; };
 		2E032658D2557E5FB845C1DC /* GyattChoresApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46FDBB957624185A85BA0061 /* GyattChoresApp.swift */; };
@@ -23,6 +24,7 @@
 		9FDBA5BF4A17A0156A9260C8 /* GyattCore in Frameworks */ = {isa = PBXBuildFile; productRef = 082E13C94D4E9AAC05E89A26 /* GyattCore */; };
 		A010EF76DAC311B90FEA0C3F /* Feedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD615C04B74E794B9204B97B /* Feedback.swift */; };
 		A828A79D9FB56E67813DEF64 /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4971E3BEE78F1A82504A5490 /* AppStore.swift */; };
+		BB97D5802E276F750ED728C3 /* Backup+Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A816062A9FD976D43C9FD9A /* Backup+Store.swift */; };
 		BC80B33017B00D80B125B844 /* puzzles.json in Resources */ = {isa = PBXBuildFile; fileRef = D1F1B7B95ABEFD6DC4A59705 /* puzzles.json */; };
 		C3C8E844E8AAF2DEBC58A92B /* SetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7EE3EB6E2624053E7D467FC /* SetupView.swift */; };
 		CC2DA1AA093DF7D28E9E86A4 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3272DA0935BA832663FC915B /* HomeView.swift */; };
@@ -46,12 +48,14 @@
 		2856999DD0F558CCEB895897 /* Supabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Supabase.swift; sourceTree = "<group>"; };
 		2AE4CCF2F447C5DB9EAE33AC /* chores.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = chores.json; sourceTree = "<group>"; };
 		3272DA0935BA832663FC915B /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		3586296EE565482DC2C3729D /* BackupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupView.swift; sourceTree = "<group>"; };
 		46FDBB957624185A85BA0061 /* GyattChoresApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GyattChoresApp.swift; sourceTree = "<group>"; };
 		4971E3BEE78F1A82504A5490 /* AppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStore.swift; sourceTree = "<group>"; };
 		51E25F92C2A2E95EA8800ED0 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		5713C489E0FED8ACE31202AF /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
 		5D9BE8C4B00AA3D1C1CFCD63 /* GyattChoresUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = GyattChoresUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		88B421E0D81623C58D00E31C /* AdminView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminView.swift; sourceTree = "<group>"; };
+		9A816062A9FD976D43C9FD9A /* Backup+Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Backup+Store.swift"; sourceTree = "<group>"; };
 		AD615C04B74E794B9204B97B /* Feedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Feedback.swift; sourceTree = "<group>"; };
 		B1546F72E810EE14A38EEA3E /* PuzzleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PuzzleView.swift; sourceTree = "<group>"; };
 		D096B95D3190ED58C9D5CEA7 /* DaresView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaresView.swift; sourceTree = "<group>"; };
@@ -146,6 +150,8 @@
 				88B421E0D81623C58D00E31C /* AdminView.swift */,
 				4971E3BEE78F1A82504A5490 /* AppStore.swift */,
 				51E25F92C2A2E95EA8800ED0 /* Assets.xcassets */,
+				9A816062A9FD976D43C9FD9A /* Backup+Store.swift */,
+				3586296EE565482DC2C3729D /* BackupView.swift */,
 				FE96A0A80C56CD579D06D53D /* ChoreIntakeView.swift */,
 				5713C489E0FED8ACE31202AF /* Components.swift */,
 				AD615C04B74E794B9204B97B /* Feedback.swift */,
@@ -272,6 +278,8 @@
 			files = (
 				49AB36F0DC1C70923F894ECA /* AdminView.swift in Sources */,
 				A828A79D9FB56E67813DEF64 /* AppStore.swift in Sources */,
+				BB97D5802E276F750ED728C3 /* Backup+Store.swift in Sources */,
+				044BFEB97E4071B9EC36B7B8 /* BackupView.swift in Sources */,
 				D9D61CC5B28C43AB8C5F970C /* ChoreIntakeView.swift in Sources */,
 				4AEAF7A73B7B929C12295533 /* Components.swift in Sources */,
 				119A6151A3B3BEE96F14F13C /* DaresView.swift in Sources */,
@@ -311,6 +319,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.gyattchores.app.uitests;
 				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) FAMILY_SYNC";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = GyattChores;
@@ -678,6 +687,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.gyattchores.app.uitests;
 				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) FAMILY_SYNC";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = GyattChores;

@@ -8,6 +8,7 @@ let package = Package(
     products: [.library(name: "GyattCore", targets: ["GyattCore"])],
     targets: [
         .target(name: "GyattCore"),
-        .testTarget(name: "GyattCoreTests", dependencies: ["GyattCore"]),
+        // Fixtures: backups written by the real apps, so the format can't drift unnoticed.
+        .testTarget(name: "GyattCoreTests", dependencies: ["GyattCore"], resources: [.copy("Fixtures")]),
     ]
 )

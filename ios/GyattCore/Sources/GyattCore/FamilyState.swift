@@ -17,6 +17,7 @@ import Foundation
 /// | `member_joined` | `"id:millis"` |
 /// | `next_player_id` | the next free id, as one item. Ids are never reused. |
 /// | `dare\|<fromId>\|<yyyy-MM-dd>` | `"targetId:choreId"` |
+/// | `restored_backups` | ids of backups restored into the family (see `Backup`) |
 ///
 /// `players`, `removed_players`, `display|…` and `dare|…` are what the first synced versions
 /// (Android 0.3.x, iOS 0.1.0) already read and write, so they keep working beside this one.
@@ -30,6 +31,8 @@ public enum FamilyState {
     public static let choreAdded = "chore_added"
     public static let memberJoined = "member_joined"
     public static let nextPlayerId = "next_player_id"
+    /// Ids of backups already restored into the family, so the same file can't be added twice.
+    public static let restoredBackups = "restored_backups"
     public static func displayKey(_ id: String) -> String { "display|\(id)" }
     public static func adminCodeKey(_ id: String) -> String { "admin_code|\(id)" }
     public static func dareKey(from: String, day: String) -> String { "dare|\(from)|\(day)" }

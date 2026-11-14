@@ -65,6 +65,33 @@ Under `-uiTesting` sync is off, as before, so a test run never reads or writes t
 To archive the family build for TestFlight, use the archive steps below with
 `-scheme "GyattChores Family"` in place of `-scheme GyattChores`.
 
+## Backups
+
+Admin → device → **save a backup…** writes the whole scoreboard to a file the family keeps
+(`gyattchores-backup-YYYY-MM-DD.json`, saved through the system's save panel: Files, iCloud Drive,
+AirDrop…). **restore from a backup…** is on the same screen and on setup's first screen, for a new
+phone. The format is `GyattCore/Sources/GyattCore/Backup.swift`; the Android app reads and writes the
+same files, so a backup from either platform restores on the other.
+
+- **Public app:** restoring replaces everything on the device, after a confirmation that says what
+  the backup holds. A backup with no admin (from an early version) still runs setup, with its players
+  already in.
+- **Family build:** restoring *adds* the backup to the family. People are matched by username,
+  chores by id or name, and a logged chore the family already has (same server row, or the same
+  person and chore on the same day) is left out. A family with no admin yet takes the backup's admins
+  and codes; otherwise its own admins never change. Restored logs keep their dates on the server.
+  The same backup can't be restored twice (`restored_backups` in the shared state).
+
+A backup holds names, chores, history and the admins' code hashes, so saving and restoring are
+behind the admin unlock (restoring on a brand-new phone's setup screen needs none: there's nothing
+to protect yet).
+
+## Testing sync without the family's data
+
+Debug builds of the family scheme accept `-uiTesting -syncURL http://127.0.0.1:8789`, which points
+sync at a test server instead of the family's Supabase project. Without `-syncURL`, `-uiTesting`
+keeps sync off entirely.
+
 ## Build
 
 ```bash

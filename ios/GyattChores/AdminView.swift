@@ -14,6 +14,7 @@ struct AdminView: View {
     @State private var authed = false
     @State private var code = ""
     @State private var wrong = false
+    @FocusState private var codeFocused: Bool
     private var canBio: Bool {
         store.settings.biometricUnlock && LAContext().canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil)
     }
@@ -30,6 +31,7 @@ struct AdminView: View {
             if authed { AdminContent() } else {
                 VStack(alignment: .leading, spacing: 12) {
                     SecureField("admin code", text: $code).textFieldStyle(.roundedBorder).textContentType(.oneTimeCode)
+                        .focused($codeFocused)
                         .onSubmit(verify)
                         // Clear the message once they start typing again — not when a wrong code empties the field.
                         .onChange(of: code) { _, now in if !now.isEmpty { wrong = false } }
@@ -40,7 +42,8 @@ struct AdminView: View {
                     Spacer()
                 }
                 .padding(20)
-                .task { if canBio { biometric() } }
+                // Face ID first when it's on; otherwise the keyboard is up and ready for the code.
+                .task { if canBio { biometric() } else { codeFocused = true } }
             }
         }
         .onChange(of: authed) { _, now in if now { fb.unlock() } }
@@ -113,6 +116,21 @@ private struct Approvals: View {
         .pickerStyle(.menu)
 
         if shown.isEmpty { Text("nothing \(filter == "all" ? "logged yet" : filter)").foregroundStyle(.secondary).padding(.vertical, 24) }
+        // A day's card is usually several chores from one person: approve them in one go.
+        if filter == Status.pending {
+            let byPlayer = Dictionary(grouping: shown, by: \.playerId)
+            ForEach(byPlayer.keys.sorted { (names[$0] ?? $0) < (names[$1] ?? $1) }, id: \.self) { id in
+                if let list = byPlayer[id], list.count > 1 {
+                    Button("✓ approve all \(list.count) from \(names[id] ?? list[0].playerName)") {
+                        var leveled = false
+                        for l in list where store.approve(l) { leveled = true }
+                        if leveled { fb.levelUp() } else { fb.approve() }
+                    }
+                    .buttonStyle(.borderedProminent).tint(Theme.good).padding(.top, 6)
+                    .accessibilityIdentifier("approve-all-\(id)")
+                }
+            }
+        }
         // The one list here that can run to hundreds of rows.
         LazyVStack(alignment: .leading, spacing: 0) { ForEach(shown) { l in
             VStack(alignment: .leading, spacing: 4) {
@@ -332,12 +350,20 @@ private struct Device: View {
         SectionLabel("your data")
         Text("this is the family build: players, chores, codes and points are shared with the family's other phones. sync: \(store.syncStatus).")
             .font(.callout).foregroundStyle(.secondary)
+        SectionLabel("backup")
+        Text("save the whole scoreboard as a file, or add one saved earlier (from this app or the public one, on iPhone or Android) to the family.")
+            .font(.footnote).foregroundStyle(.secondary)
+        BackupControls().padding(.top, 4)
         Text("version \(AppInfo.version)").font(.footnote).foregroundStyle(.secondary).padding(.top, 8)
         #else
         SectionLabel("your data")
         Text("everything this app knows — names, chores and points — is kept on this device and nowhere else. there's no account and nothing is sent to anyone, including us. deleting the app deletes it all.")
             .font(.callout).foregroundStyle(.secondary)
         Link("privacy policy", destination: Links.privacy).font(.callout).frame(minHeight: 44)
+        SectionLabel("backup")
+        Text("save the whole scoreboard as a file you keep — in Files, iCloud Drive, or anywhere you like. restore it on a new phone, or bring it into a family account later.")
+            .font(.footnote).foregroundStyle(.secondary)
+        BackupControls().padding(.top, 4)
         eraseButton
         #endif
     }
@@ -348,7 +374,7 @@ private struct Device: View {
             .confirmationDialog("Erase this scoreboard?", isPresented: $confirmingErase, titleVisibility: .visible) {
                 Button("Erase players, chores and points", role: .destructive) { fb.reject(); store.eraseEverything() }
                 Button("Cancel", role: .cancel) {}
-            } message: { Text("Everything is deleted from this device and the app starts over. This can't be undone.") }
+            } message: { Text("Everything is deleted from this device and the app starts over. This can't be undone — save a backup first if you might want it back.") }
     }
 }
 

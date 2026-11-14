@@ -14,7 +14,8 @@ import GyattCore
 extension AppStore {
     /// One pass at a time; a request that arrives mid-pass runs one follow-up pass instead of overlapping.
     func requestSync() {
-        if Self.uiTesting { syncStatus = "off (ui testing)"; return }
+        // UI tests never reach the family's data: sync is off, unless pointed at a test server.
+        if Self.uiTesting && SyncConfig.testURL == nil { syncStatus = "off (ui testing)"; return }
         if syncing { syncAgain = true; return }
         syncing = true
         syncStatus = "syncing"
@@ -71,7 +72,13 @@ extension AppStore {
         if shared[FamilyState.players] != nil || shared[FamilyState.staff] != nil, family.members != members {
             members = family.members
         }
-        if let chores = family.chores, chores != pool { pool = chores }
+        if let chores = family.chores, chores != pool {
+            pool = chores
+            // A chore taken off the list on another phone: a card still being checked off loses it
+            // and its player picks again, rather than having it vanish when they submit.
+            let ids = Set(chores.map(\.id))
+            cards = cards.filter { $0.value.submitted || $0.value.choreIds.allSatisfy(ids.contains) }
+        }
         var next = settings
         next.adminCodes = family.codes
         next.choreAdded.merge(family.choreAdded) { _, theirs in theirs }
@@ -99,6 +106,16 @@ extension AppStore {
     /// The next player id no one has used, here or on any other device.
     var familyNextId: Int {
         FamilyState.nextFreeId(.init(members: members, removed: removedIds), logs: logs)
+    }
+
+    // MARK: Backups
+
+    /// Ids of backups already restored into this family, on any device.
+    var restoredBackupIds: Set<String> { Set(shared[FamilyState.restoredBackups]?.items ?? []) }
+
+    func markRestored(_ backupId: String) {
+        let items = (shared[FamilyState.restoredBackups]?.items ?? []) + [backupId]
+        shared[FamilyState.restoredBackups] = LocalEntry(items: items, updatedAt: Int64(Date().timeIntervalSince1970 * 1000), dirty: true)
     }
 
     // MARK: Dares
