@@ -4,7 +4,8 @@ name: iOS
 #   fixtures — the shared test data still matches the web app's engine
 #   core     — the Swift port of the game rules passes its tests
 #   app      — the SwiftUI app builds and its UI tests pass in an iOS simulator
-#   release  — the app archives in Release with the newest Xcode, as TestFlight needs
+#   release  — the app archives in Release with the newest Xcode, as TestFlight needs, and so
+#              does the family build ("GyattChores Family", which syncs); only it has a server address
 #   store-screenshots — takes the App Store listing's screenshots at the sizes Apple asks for
 # index.html is in the path list because it's the source of truth for the game
 # rules: change a rule there and this says whether the native ports still agree.
@@ -292,7 +293,26 @@ jobs:
           check "privacy manifest"              'test -f "$APP/PrivacyInfo.xcprivacy"'
           check "chore list"                    'test -f "$APP/chores.json"'
           check "puzzle levels"                 'test -f "$APP/puzzles.json"'
+          # The App Store build keeps everything on the device: no server address may be in it.
+          check "no server address (public)"    '! grep -rqa "supabase.co" "$APP"'
           exit $failed
+      - name: Archive the family build without signing
+        working-directory: ios
+        run: |
+          # The family's own build (FAMILY_SYNC), shared through TestFlight only. It must keep building too.
+          set -o pipefail
+          xcodebuild archive \
+            -project GyattChores.xcodeproj \
+            -scheme "GyattChores Family" \
+            -configuration Release-Family \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/GyattChoresFamily.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO \
+            < /dev/null 2>&1 | tee build-release-family.log | grep -E "error:|\*\* " || true
+          grep -q "ARCHIVE SUCCEEDED" build-release-family.log
+          APP="$RUNNER_TEMP/GyattChoresFamily.xcarchive/Products/Applications/GyattChores.app"
+          grep -rqa "supabase.co" "$APP" || { echo "::error::The family build has no sync address in it"; exit 1; }
+          echo "ok:      family build syncs"
       - name: Upload log
         if: failure()
         uses: actions/upload-artifact@v4
