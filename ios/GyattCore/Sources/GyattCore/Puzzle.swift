@@ -94,12 +94,17 @@ public struct PuzzlePack: Decodable, Sendable {
 
     public init(json: Data) throws { self = try JSONDecoder().decode(PuzzlePack.self, from: json) }
 
-    /// Which entry of the pack plays as level `number` (1-based).
+    /// How many of the last levels are replayed once the pack runs out.
+    public static let replay = 100
+
+    /// Which entry of the pack plays as level `number` (1-based). Past the last level, the last
+    /// `replay` levels (all on the big board) come round again, or the harder half of a smaller
+    /// pack. Same rule as Android.
     public func index(for number: Int) -> Int {
         let n = max(1, number)
         if n <= levels.count { return n - 1 }
-        let half = levels.count / 2
-        return half + (n - levels.count - 1) % (levels.count - half)
+        let start = max(levels.count / 2, levels.count - Self.replay)
+        return start + (n - levels.count - 1) % (levels.count - start)
     }
 
     public func board(_ number: Int) -> PuzzleBoard {

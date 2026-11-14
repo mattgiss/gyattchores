@@ -16,7 +16,7 @@ final class PuzzleTests: XCTestCase {
 
     func testPackShape() {
         XCTAssertEqual(Self.pack.version, 1)
-        XCTAssertEqual(Self.pack.levels.count, 200)
+        XCTAssertEqual(Self.pack.levels.count, 300)
         XCTAssertEqual(Self.fixtures.levels.count, Self.pack.levels.count)
         for (i, l) in Self.pack.levels.enumerated() {
             XCTAssertEqual(l.cells.count, l.w * l.h, "level \(i + 1)")
@@ -85,13 +85,24 @@ final class PuzzleTests: XCTestCase {
         XCTAssertTrue(line.canMatch(0, 3))
     }
 
-    func testLevelsPastTheEndReplayTheHardHalf() {
+    func testFromLevel200TheBoardHasTwiceTheRoom() {
+        let small = Self.pack.levels[198]
+        XCTAssertEqual(small.w * small.h, 48, "level 199: 6 by 8")
+        for n in 200...300 {
+            let l = Self.pack.levels[n - 1]
+            XCTAssertEqual([l.w, l.h], [8, 12], "level \(n)")
+            XCTAssertEqual(l.w * l.h, 2 * small.w * small.h, "level \(n)")
+        }
+    }
+
+    func testLevelsPastTheEndReplayTheLastHundredOnTheBigBoard() {
         let p = Self.pack
         XCTAssertEqual(p.index(for: 0), 0)
         XCTAssertEqual(p.index(for: 1), 0)
-        XCTAssertEqual(p.index(for: 200), 199)
-        XCTAssertEqual(p.index(for: 201), 100)
-        XCTAssertEqual(p.index(for: 300), 199)
-        XCTAssertEqual(p.index(for: 301), 100)
+        XCTAssertEqual(p.index(for: 300), 299)
+        XCTAssertEqual(p.index(for: 301), 200)
+        XCTAssertEqual(p.index(for: 400), 299)
+        XCTAssertEqual(p.index(for: 401), 200)
+        for n in 301...450 { XCTAssertEqual(p.board(n).width, 8, "level \(n)") }
     }
 }

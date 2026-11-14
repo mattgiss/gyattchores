@@ -25,7 +25,9 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const LEVELS = 200;
+const LEVELS = 300;
+/** From this level on the board has twice the room: 8 by 12 instead of 6 by 8. */
+const BIG_FROM = 200;
 
 // ─── Rules ───────────────────────────────────────────────────────────────────
 
@@ -93,8 +95,14 @@ function rng(seed) {
   };
 }
 
-/** Size, pair count and walls for a level: the board grows and fills slowly. */
+/**
+ * Size, pair count and walls for a level: the board grows and fills slowly, then at BIG_FROM it
+ * doubles in area. More pairs on it would be fairer to the extra room, but the exact solver below
+ * takes ~10 s a level at 12 pairs (CI regenerates every level), so the room goes into longer lines
+ * and more walls instead.
+ */
 function shape(level) {
+  if (level >= BIG_FROM) return { w: 8, h: 12, pairs: 10, walls: 8 };
   const pairs = Math.min(2 + Math.floor((level - 1) / 5), 8);
   const w = Math.min(4 + Math.floor((level - 1) / 16), 6);
   const h = Math.min(5 + Math.floor((level - 1) / 10), 8);
@@ -198,5 +206,5 @@ const fixtures = {
 mkdirSync(join(root, 'native/fixtures'), { recursive: true });
 writeFileSync(join(root, 'native/fixtures/puzzle-scenarios.json'), JSON.stringify(fixtures) + '\n');
 
-const show = [1, 2, 4, 10, 25, 50, 100, 150, 200].map(n => `${n}:${levels[n - 1].w}x${levels[n - 1].h}/${levels[n - 1].solution.length}p ${(levels[n - 1].chance * 100).toFixed(1)}%`);
+const show = [1, 2, 4, 10, 25, 50, 100, 150, 199, 200, 250, 300].map(n => `${n}:${levels[n - 1].w}x${levels[n - 1].h}/${levels[n - 1].solution.length}p ${(levels[n - 1].chance * 100).toFixed(1)}%`);
 console.log(`wrote ${LEVELS} levels — ${show.join('  ')}`);

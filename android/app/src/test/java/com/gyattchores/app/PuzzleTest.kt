@@ -33,7 +33,7 @@ class PuzzleTest {
 
     @Test fun packShape() {
         assertEquals(1, pack.version)
-        assertEquals(200, pack.levels.size)
+        assertEquals(300, pack.levels.size)
         assertEquals(pack.levels.size, fixtures.size)
         pack.levels.forEachIndexed { i, l ->
             assertEquals("level ${i + 1}", l.w * l.h, l.cells.length)
@@ -103,12 +103,26 @@ class PuzzleTest {
         assertTrue(line.match(1, 2)!!.canMatch(0, 3))
     }
 
-    @Test fun levelsPastTheEndReplayTheHardHalf() {
+    @Test fun fromLevel200TheBoardHasTwiceTheRoom() {
+        val small = pack.levels[198]
+        assertEquals(48, small.w * small.h)                  // level 199: 6 by 8
+        for (n in 200..300) {
+            val l = pack.levels[n - 1]
+            assertEquals("level $n", 8 to 12, l.w to l.h)
+            assertEquals("level $n", 2 * small.w * small.h, l.w * l.h)
+        }
+    }
+
+    @Test fun levelsPastTheEndReplayTheLastHundredOnTheBigBoard() {
         assertEquals(0, pack.index(0))
         assertEquals(0, pack.index(1))
-        assertEquals(199, pack.index(200))
-        assertEquals(100, pack.index(201))
-        assertEquals(199, pack.index(300))
-        assertEquals(100, pack.index(301))
+        assertEquals(299, pack.index(300))
+        assertEquals(200, pack.index(301))
+        assertEquals(299, pack.index(400))
+        assertEquals(200, pack.index(401))
+        for (n in 301..450) assertEquals("level $n", 8, pack.board(n).width)
+        // A small pack still replays its harder half.
+        val four = PuzzlePack(1, List(4) { PuzzlePack.Level(1, 2, "PK") })
+        assertEquals(listOf(2, 3, 2, 3), (5..8).map { four.index(it) })
     }
 }

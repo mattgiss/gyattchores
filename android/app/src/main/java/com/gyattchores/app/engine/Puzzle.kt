@@ -84,7 +84,10 @@ class PuzzleBoard private constructor(val width: Int, val height: Int, private v
     }
 }
 
-/** The level pack. Levels after the last one replay the harder half, so the level number keeps climbing. */
+/**
+ * The level pack. Levels after the last one replay the last [REPLAY] (all on the big board), or the
+ * harder half of a smaller pack, so the level number keeps climbing. Same rule as iOS.
+ */
 @Serializable
 data class PuzzlePack(val version: Int, val levels: List<Level>) {
     @Serializable
@@ -94,13 +97,15 @@ data class PuzzlePack(val version: Int, val levels: List<Level>) {
     fun index(number: Int): Int {
         val n = maxOf(1, number)
         if (n <= levels.size) return n - 1
-        val half = levels.size / 2
-        return half + (n - levels.size - 1) % (levels.size - half)
+        val start = maxOf(levels.size / 2, levels.size - REPLAY)
+        return start + (n - levels.size - 1) % (levels.size - start)
     }
 
     fun board(number: Int): PuzzleBoard = levels[index(number)].let { PuzzleBoard(it.w, it.h, it.cells) }
 
     companion object {
+        /** How many of the last levels are replayed once the pack runs out. */
+        const val REPLAY = 100
         private val json = Json { ignoreUnknownKeys = true }
         fun parse(text: String): PuzzlePack = json.decodeFromString(serializer(), text)
     }
