@@ -235,9 +235,9 @@ fun PuzzleScreen(vm: AppViewModel, player: Player, onBack: () -> Unit) {
         ) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = { fb.tap(); onBack() }) { Text("← back") }
-                Text("CLEAR THE GRID", style = MaterialTheme.typography.labelMedium, letterSpacing = 3.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, softWrap = false,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(horizontal = 4.dp))
+                // Shrinks rather than cutting off, so a three-digit level still leaves the whole title.
+                FitText("CLEAR THE GRID", style = MaterialTheme.typography.labelMedium, letterSpacing = 3.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, minScale = 0.5f, modifier = Modifier.weight(1f).padding(horizontal = 4.dp))
                 Text("LVL $level", color = Accent, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                 TextButton(onClick = ::restart, enabled = !busy && !celebrating) { Text("restart") }
             }
