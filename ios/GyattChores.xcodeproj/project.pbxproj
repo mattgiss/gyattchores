@@ -8,19 +8,22 @@
 
 /* Begin PBXBuildFile section */
 		119A3672AD8787ADC74C613B /* PlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB22028F8301385EF58C79DE /* PlayerView.swift */; };
+		119A6151A3B3BEE96F14F13C /* DaresView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D096B95D3190ED58C9D5CEA7 /* DaresView.swift */; };
 		2E032658D2557E5FB845C1DC /* GyattChoresApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46FDBB957624185A85BA0061 /* GyattChoresApp.swift */; };
+		2F7375E6A72363482F52CB66 /* Supabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2856999DD0F558CCEB895897 /* Supabase.swift */; };
+		45CEBC3536B866B34A7A4806 /* FamilySync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 039B149E89F0E77F200C94AE /* FamilySync.swift */; };
 		49AB36F0DC1C70923F894ECA /* AdminView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88B421E0D81623C58D00E31C /* AdminView.swift */; };
 		4AEAF7A73B7B929C12295533 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5713C489E0FED8ACE31202AF /* Components.swift */; };
+		56E16671FC92615EB8F01BEB /* chores.json in Resources */ = {isa = PBXBuildFile; fileRef = 2AE4CCF2F447C5DB9EAE33AC /* chores.json */; };
 		5D0DBCEA64EBEAD0FE8720B6 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 147CAD24C71D72F3E322CABA /* PrivacyInfo.xcprivacy */; };
 		5F1F395619FAD4DA41D774A8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 51E25F92C2A2E95EA8800ED0 /* Assets.xcassets */; };
 		860B2F5DA0F42A045C292891 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E05411D9D6D89454354D6504 /* RootView.swift */; };
 		916FD9E47347E1253B010B01 /* GyattChoresUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F41F120FFA15EAABE3146658 /* GyattChoresUITests.swift */; };
-		93CFA127208AB4B255C85DBF /* chores.json in Resources */ = {isa = PBXBuildFile; fileRef = 1DDE444A4832988FAF4F5C8C /* chores.json */; };
-		1AA401F187837E3F36FC9E32 /* puzzles.json in Resources */ = {isa = PBXBuildFile; fileRef = F64F0F52728D819650490A72 /* puzzles.json */; };
-		EC5F25A632469FFAACF40059 /* PuzzleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67BA2998CF55F99A8EC09B5A /* PuzzleView.swift */; };
+		9B45257610B8CBC6E1472B98 /* PuzzleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1546F72E810EE14A38EEA3E /* PuzzleView.swift */; };
 		9FDBA5BF4A17A0156A9260C8 /* GyattCore in Frameworks */ = {isa = PBXBuildFile; productRef = 082E13C94D4E9AAC05E89A26 /* GyattCore */; };
 		A010EF76DAC311B90FEA0C3F /* Feedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD615C04B74E794B9204B97B /* Feedback.swift */; };
 		A828A79D9FB56E67813DEF64 /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4971E3BEE78F1A82504A5490 /* AppStore.swift */; };
+		BC80B33017B00D80B125B844 /* puzzles.json in Resources */ = {isa = PBXBuildFile; fileRef = D1F1B7B95ABEFD6DC4A59705 /* puzzles.json */; };
 		C3C8E844E8AAF2DEBC58A92B /* SetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7EE3EB6E2624053E7D467FC /* SetupView.swift */; };
 		CC2DA1AA093DF7D28E9E86A4 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3272DA0935BA832663FC915B /* HomeView.swift */; };
 		D9D61CC5B28C43AB8C5F970C /* ChoreIntakeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE96A0A80C56CD579D06D53D /* ChoreIntakeView.swift */; };
@@ -37,11 +40,11 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		039B149E89F0E77F200C94AE /* FamilySync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilySync.swift; sourceTree = "<group>"; };
 		14360DD67502C08B0BB5668E /* GyattChores.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = GyattChores.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		147CAD24C71D72F3E322CABA /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		1DDE444A4832988FAF4F5C8C /* chores.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = chores.json; sourceTree = "<group>"; };
-		F64F0F52728D819650490A72 /* puzzles.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = puzzles.json; sourceTree = "<group>"; };
-		67BA2998CF55F99A8EC09B5A /* PuzzleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PuzzleView.swift; sourceTree = "<group>"; };
+		2856999DD0F558CCEB895897 /* Supabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Supabase.swift; sourceTree = "<group>"; };
+		2AE4CCF2F447C5DB9EAE33AC /* chores.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = chores.json; sourceTree = "<group>"; };
 		3272DA0935BA832663FC915B /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		46FDBB957624185A85BA0061 /* GyattChoresApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GyattChoresApp.swift; sourceTree = "<group>"; };
 		4971E3BEE78F1A82504A5490 /* AppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStore.swift; sourceTree = "<group>"; };
@@ -50,6 +53,9 @@
 		5D9BE8C4B00AA3D1C1CFCD63 /* GyattChoresUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = GyattChoresUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		88B421E0D81623C58D00E31C /* AdminView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminView.swift; sourceTree = "<group>"; };
 		AD615C04B74E794B9204B97B /* Feedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Feedback.swift; sourceTree = "<group>"; };
+		B1546F72E810EE14A38EEA3E /* PuzzleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PuzzleView.swift; sourceTree = "<group>"; };
+		D096B95D3190ED58C9D5CEA7 /* DaresView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaresView.swift; sourceTree = "<group>"; };
+		D1F1B7B95ABEFD6DC4A59705 /* puzzles.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = puzzles.json; sourceTree = "<group>"; };
 		E05411D9D6D89454354D6504 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		E7EE3EB6E2624053E7D467FC /* SetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupView.swift; sourceTree = "<group>"; };
 		F41F120FFA15EAABE3146658 /* GyattChoresUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GyattChoresUITests.swift; sourceTree = "<group>"; };
@@ -70,15 +76,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		297CE583A041583ECB64DEB9 /* native */ = {
-			isa = PBXGroup;
-			children = (
-				1DDE444A4832988FAF4F5C8C /* chores.json */,
-				F64F0F52728D819650490A72 /* puzzles.json */,
-			);
-			path = native;
-			sourceTree = "<group>";
-		};
 		70535BCFA2D37ADC85CC5073 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -92,20 +89,39 @@
 			isa = PBXGroup;
 			children = (
 				F171BE575C3CC7912AB5A64F /* GyattChores */,
+				A0E0D2927C1835524EE50448 /* gyattchores-ios */,
 				F02CC4544EA8AE0525188C2A /* GyattChoresUITests */,
-				A47E4A1EA07C99AF2FB8D79F /* nci */,
 				D785E7BDBF4977B0F6F50E63 /* Packages */,
 				70535BCFA2D37ADC85CC5073 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		A47E4A1EA07C99AF2FB8D79F /* nci */ = {
+		8F0D7133BE1B69A247807342 /* native */ = {
 			isa = PBXGroup;
 			children = (
-				297CE583A041583ECB64DEB9 /* native */,
+				2AE4CCF2F447C5DB9EAE33AC /* chores.json */,
+				D1F1B7B95ABEFD6DC4A59705 /* puzzles.json */,
 			);
-			name = nci;
+			path = native;
+			sourceTree = "<group>";
+		};
+		A0E0D2927C1835524EE50448 /* gyattchores-ios */ = {
+			isa = PBXGroup;
+			children = (
+				8F0D7133BE1B69A247807342 /* native */,
+			);
+			name = "gyattchores-ios";
 			path = ..;
+			sourceTree = "<group>";
+		};
+		B278290B65B7829B31BF1804 /* Family */ = {
+			isa = PBXGroup;
+			children = (
+				D096B95D3190ED58C9D5CEA7 /* DaresView.swift */,
+				039B149E89F0E77F200C94AE /* FamilySync.swift */,
+				2856999DD0F558CCEB895897 /* Supabase.swift */,
+			);
+			path = Family;
 			sourceTree = "<group>";
 		};
 		D785E7BDBF4977B0F6F50E63 /* Packages */ = {
@@ -137,9 +153,10 @@
 				3272DA0935BA832663FC915B /* HomeView.swift */,
 				FB22028F8301385EF58C79DE /* PlayerView.swift */,
 				147CAD24C71D72F3E322CABA /* PrivacyInfo.xcprivacy */,
-				67BA2998CF55F99A8EC09B5A /* PuzzleView.swift */,
+				B1546F72E810EE14A38EEA3E /* PuzzleView.swift */,
 				E05411D9D6D89454354D6504 /* RootView.swift */,
 				E7EE3EB6E2624053E7D467FC /* SetupView.swift */,
+				B278290B65B7829B31BF1804 /* Family */,
 			);
 			path = GyattChores;
 			sourceTree = "<group>";
@@ -233,8 +250,8 @@
 			files = (
 				5F1F395619FAD4DA41D774A8 /* Assets.xcassets in Resources */,
 				5D0DBCEA64EBEAD0FE8720B6 /* PrivacyInfo.xcprivacy in Resources */,
-				93CFA127208AB4B255C85DBF /* chores.json in Resources */,
-				1AA401F187837E3F36FC9E32 /* puzzles.json in Resources */,
+				56E16671FC92615EB8F01BEB /* chores.json in Resources */,
+				BC80B33017B00D80B125B844 /* puzzles.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -257,13 +274,16 @@
 				A828A79D9FB56E67813DEF64 /* AppStore.swift in Sources */,
 				D9D61CC5B28C43AB8C5F970C /* ChoreIntakeView.swift in Sources */,
 				4AEAF7A73B7B929C12295533 /* Components.swift in Sources */,
+				119A6151A3B3BEE96F14F13C /* DaresView.swift in Sources */,
+				45CEBC3536B866B34A7A4806 /* FamilySync.swift in Sources */,
 				A010EF76DAC311B90FEA0C3F /* Feedback.swift in Sources */,
 				2E032658D2557E5FB845C1DC /* GyattChoresApp.swift in Sources */,
 				CC2DA1AA093DF7D28E9E86A4 /* HomeView.swift in Sources */,
 				119A3672AD8787ADC74C613B /* PlayerView.swift in Sources */,
-				EC5F25A632469FFAACF40059 /* PuzzleView.swift in Sources */,
+				9B45257610B8CBC6E1472B98 /* PuzzleView.swift in Sources */,
 				860B2F5DA0F42A045C292891 /* RootView.swift in Sources */,
 				C3C8E844E8AAF2DEBC58A92B /* SetupView.swift in Sources */,
+				2F7375E6A72363482F52CB66 /* Supabase.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -278,6 +298,172 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		124CE81A6F1CB794D8F5A337 /* Release-Family */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.gyattchores.app.uitests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = GyattChores;
+			};
+			name = "Release-Family";
+		};
+		2E274E3982BC0FD5B1A41FF9 /* Release-Family */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = GyattChores;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Open the admin area to approve chores.";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gyattchores.app;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) FAMILY_SYNC";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = "Release-Family";
+		};
+		4851D8CA149473E60590B15A /* Debug-Family */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = "Debug-Family";
+		};
+		544F75C53D8558FE1815F318 /* Release-Family */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = "Release-Family";
+		};
 		54727BAA9E13AC5564162914 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -333,6 +519,34 @@
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
+		};
+		5A128A5CC3B69BD8A3A88EE3 /* Debug-Family */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = GyattChores;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Open the admin area to approve chores.";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gyattchores.app;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) FAMILY_SYNC";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = "Debug-Family";
 		};
 		69790EFD8CD4980FC13D08A5 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -451,6 +665,25 @@
 			};
 			name = Debug;
 		};
+		BE4792F986D463972985006E /* Debug-Family */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.gyattchores.app.uitests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = GyattChores;
+			};
+			name = "Debug-Family";
+		};
 		D7362F5318893CD7BC7B199E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -496,7 +729,9 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				B8737FFB45E2930C7951679C /* Debug */,
+				5A128A5CC3B69BD8A3A88EE3 /* Debug-Family */,
 				6C581090B0647FF38ACD734E /* Release */,
+				2E274E3982BC0FD5B1A41FF9 /* Release-Family */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
@@ -505,7 +740,9 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D7362F5318893CD7BC7B199E /* Debug */,
+				BE4792F986D463972985006E /* Debug-Family */,
 				FA8A05BE181214A84453B982 /* Release */,
+				124CE81A6F1CB794D8F5A337 /* Release-Family */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
@@ -514,7 +751,9 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				69790EFD8CD4980FC13D08A5 /* Debug */,
+				4851D8CA149473E60590B15A /* Debug-Family */,
 				54727BAA9E13AC5564162914 /* Release */,
+				544F75C53D8558FE1815F318 /* Release-Family */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

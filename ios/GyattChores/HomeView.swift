@@ -10,6 +10,9 @@ struct HomeView: View {
     var selectedId: String? = nil
     let onPick: (Player) -> Void
     let onAdmin: () -> Void
+    #if FAMILY_SYNC
+    var onDares: () -> Void = {}
+    #endif
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -28,7 +31,7 @@ struct HomeView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     Text("\(Engine.dailyMinutes) minutes a day. that's it.").foregroundStyle(.secondary)
-                    Text(fb.soundOn ? "♪ sound: on" : "♪ sound: off")
+                    Text(soundLine)
                         .font(.caption).foregroundStyle(.secondary).padding(.vertical, 10).contentShape(Rectangle())
                         .onTapGesture { fb.soundOn.toggle(); fb.tick(fb.soundOn) }
                         .accessibilityHint("Toggles sound")
@@ -37,6 +40,10 @@ struct HomeView: View {
                         Text("nobody's playing yet. an admin can add players in the admin area.")
                             .foregroundStyle(.secondary).padding(.vertical, 24)
                     }
+
+                    #if FAMILY_SYNC
+                    FamilyHomeSection(onDares: onDares)
+                    #endif
 
                     SectionLabel("this week")
                     let board = store.players.map { ($0, store.weekPoints($0.id)) }
@@ -80,8 +87,12 @@ struct HomeView: View {
                                     byDay: Engine.minutesByDay(playerId: p.id, logs: store.logs, pool: store.poolById, calendar: store.calendar))
                     }
 
+                    #if !FAMILY_SYNC
                     Text("everything here stays on this device. no accounts, nothing sent anywhere.")
                         .font(.caption2).foregroundStyle(.secondary).padding(.top, 8)
+                    #endif
+                    // Which build a phone is running, as on Android: handy after a TestFlight update.
+                    Text("version \(AppInfo.version)").font(.caption2).foregroundStyle(.secondary).padding(.top, 8)
                 }
                 .padding(.horizontal, 20).padding(.bottom, 16)
             }
@@ -90,6 +101,78 @@ struct HomeView: View {
         }
     }
 }
+
+extension HomeView {
+    private var soundLine: String {
+        let sound = fb.soundOn ? "♪ sound: on" : "♪ sound: off"
+        #if FAMILY_SYNC
+        return sound + "   ⇅ \(store.syncStatus)"
+        #else
+        return sound
+        #endif
+    }
+}
+
+/// The app's version and build, e.g. "1.0 (202611141817)", and which kind of build it is.
+enum AppInfo {
+    static var version: String {
+        let info = Bundle.main.infoDictionary ?? [:]
+        let v = info["CFBundleShortVersionString"] as? String ?? "?"
+        let b = info["CFBundleVersion"] as? String ?? "?"
+        #if FAMILY_SYNC
+        return "\(v) (\(b)) · family"
+        #else
+        return "\(v) (\(b))"
+        #endif
+    }
+}
+
+#if FAMILY_SYNC
+/// Family build: whose phone this is, the dares button, and yesterday's dares revealed.
+private struct FamilyHomeSection: View {
+    @EnvironmentObject var store: AppStore
+    @EnvironmentObject var fb: Feedback
+    let onDares: () -> Void
+
+    var body: some View {
+        let names = Dictionary(store.members.map { ($0.id, store.shownName($0)) }, uniquingKeysWith: { a, _ in a })
+        let dares = store.dares
+        // Whose phone is this? Asked once; changing it later needs an admin.
+        if let me = store.me, names[me] != nil {
+            let used = dares.filter { $0.from == me && $0.day == store.todayKey }.count
+            // Optional, so it's an outline: the players below are the main thing here.
+            OutlineButton(label: "> DARES · \(Engine.maxDaresPerDay - used) LEFT TODAY") { fb.tap(); onDares() }.padding(.top, 4)
+            Text("this phone: \(names[me] ?? "")").lineLimit(1).font(.caption2).foregroundStyle(.secondary).padding(.top, 4)
+        } else if !store.players.isEmpty {
+            SectionLabel("whose phone is this?")
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) { ForEach(store.players) { p in Button(store.shownName(p)) { fb.tap(); store.setMe(p) }.buttonStyle(.bordered) } }
+            }
+        }
+
+        // Yesterday's dares, revealed after midnight.
+        let yesterday = Engine.dayKey(store.calendar.date(byAdding: .day, value: -1, to: Date())!, calendar: store.calendar)
+        let revealed = dares.filter { $0.day == yesterday }
+        if !revealed.isEmpty {
+            SectionLabel("yesterday's dares · revealed")
+            let myPoints = store.me.map { id in revealed.reduce(0) { $0 + Engine.darePoints(playerId: id, $1, logs: store.logs, calendar: store.calendar) } } ?? 0
+            if myPoints > 0 {
+                Text("★ you earned +\(myPoints) from dares").bold().foregroundStyle(Theme.accent).padding(.bottom, 6)
+                    .task { if store.firstReveal(yesterday) { fb.dareLanded() } }
+            }
+            ForEach(revealed, id: \.self) { d in
+                let landed = Engine.dareLanded(d, logs: store.logs, calendar: store.calendar)
+                HStack {
+                    Text("\(names[d.from] ?? d.from) → \(names[d.target] ?? d.target): \(store.choreName(d.choreId))").font(.callout)
+                    Spacer()
+                    Text(landed ? "✓ +\(Engine.dareGuesserPoints)" : "✗").foregroundStyle(landed ? Theme.good : .secondary)
+                }
+                .padding(.vertical, 3)
+            }
+        }
+    }
+}
+#endif
 
 private struct DailyLogRow: View {
     let name: String

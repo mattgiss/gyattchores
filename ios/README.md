@@ -34,6 +34,37 @@ A device that ran an earlier, synced build keeps its players and history: on
 first launch of this version it asks for an admin name and code and carries
 on from there, on its own.
 
+## Two builds: public and family
+
+One codebase, two schemes:
+
+| scheme | configs | what it is |
+|---|---|---|
+| **GyattChores** | Debug, Release | The App Store app. Everything stays on the device; the binary has no network code. |
+| **GyattChores Family** | Debug-Family, Release-Family | The family's own build, compiled with `FAMILY_SYNC`. It syncs with the family's Supabase tables (`simple_logs`, `family_state`) and has dares, like the Android family flavor. The version line at the bottom of Home ends in "· family". |
+
+Both use the bundle id `com.gyattchores.app`, so a family build sent through TestFlight upgrades the
+family's phones in place. Only public builds go to App Store review.
+
+What the family build shares, and how, is in `GyattCore/Sources/GyattCore/FamilyState.swift`; the
+sync passes are `Sync.swift` and the app's `Family/` folder. In the family build:
+
+- players, display names, admin codes and the chore list live in the shared state, so a change on
+  one phone reaches all of them;
+- the family is set up once it has an admin. A new phone syncs before deciding: it shows setup only
+  if the family has no admin yet, and a retry screen if it can't reach the server, so it never
+  starts a second family. A family from before admins existed runs setup once, which merges into
+  its players by username;
+- removing a player takes them off every phone's list and deletes their logs on this phone, but
+  never their logs on the server;
+- Face ID for the admin area is a setting on each phone, not shared;
+- "erase everything" isn't offered (it would only clear this phone's copy).
+
+Under `-uiTesting` sync is off, as before, so a test run never reads or writes the family's data.
+
+To archive the family build for TestFlight, use the archive steps below with
+`-scheme "GyattChores Family"` in place of `-scheme GyattChores`.
+
 ## Build
 
 ```bash

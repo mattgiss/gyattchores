@@ -1,9 +1,14 @@
 import Foundation
 import GyattCore
 
-/// All app state and actions. Everything lives in this app's own storage on this device and is
-/// written to disk the moment it changes. There is no account, no server and no network code:
-/// nothing a family enters ever leaves the phone or tablet it was entered on.
+/// All app state and actions. Everything is written to this app's own storage the moment it changes.
+///
+/// The public app (the App Store build) has no account, no server and no network code: nothing a
+/// family enters ever leaves the phone or tablet it was entered on.
+///
+/// The family build (`FAMILY_SYNC`, the "GyattChores Family" scheme) is for one family's own
+/// phones: it also keeps the players, chores, admin codes, chore logs and dares in step with the
+/// family's shared Supabase tables, like the Android app's family flavor. See `FamilySync.swift`.
 @MainActor
 final class AppStore: ObservableObject {
     /// What's kept beside the players, chores and logs.
@@ -26,34 +31,60 @@ final class AppStore: ObservableObject {
     /// The starter chores that ship with the app.
     let starterChores: [Chore]
 
-    @Published private(set) var settings: Settings { didSet { save("settings.json", settings) } }
+    @Published var settings: Settings { didSet { save("settings.json", settings) } }
     /// Everyone in the family, admins who don't do chores included.
-    @Published private(set) var members: [Player] { didSet { save("players.json", members) } }
+    @Published var members: [Player] { didSet { save("players.json", members) } }
     /// The family's own chore list.
-    @Published private(set) var pool: [Chore] { didSet { save("chores.json", pool); poolById = Self.index(pool) } }
-    private(set) var poolById: [String: Chore]
-    @Published private(set) var logs: [ChoreLog] { didSet { save("logs.json", logs) } }
+    @Published var pool: [Chore] { didSet { save("chores.json", pool); poolById = Self.index(pool) } }
+    var poolById: [String: Chore]
+    @Published var logs: [ChoreLog] { didSet { save("logs.json", logs) } }
     /// Keyed "playerId|yyyy-MM-dd".
-    @Published private(set) var cards: [String: Card] { didSet { save("cards.json", cards) } }
+    @Published var cards: [String: Card] { didSet { save("cards.json", cards) } }
+    #if FAMILY_SYNC
+    /// The family's shared lists (`family_state`), as last synced plus any changes made here.
+    @Published var shared: [String: LocalEntry] { didSet { save("family_state.json", shared) } }
+    /// Whose phone this is. Dares are made as this player.
+    @Published var me: String? { didSet { UserDefaults.standard.set(me, forKey: Self.meKey) } }
+    /// "syncing", "synced", "offline", or "off (ui testing)".
+    @Published var syncStatus = "idle"
+    /// True once this device has heard from the server at least once: until then an empty player
+    /// list only means "not loaded yet", not "a new family".
+    @Published var hasSynced: Bool { didSet { UserDefaults.standard.set(hasSynced, forKey: Self.syncedKey) } }
+    /// Players taken off the list. Their logs stay on the server.
+    var removedIds: Set<String> = []
+    let api = Supabase()
+    var syncing = false, syncAgain = false
+    static let meKey = uiTesting ? "ui-testing.me" : "me"
+    static let syncedKey = uiTesting ? "ui-testing.has_synced" : "has_synced"
+    /// Every dare in the shared state.
+    var dares: [Dare] { FamilyState.dares(shared.mapValues(\.items)) }
+    #else
     /// Dares made in an earlier version of the app. Nothing adds to them now; they're read so the
     /// points they earned aren't lost.
     private var dares: [Dare]
+    #endif
 
     /// The people on the scoreboard.
     var players: [Player] { members.filter(\.plays) }
     var admins: [Player] { members.filter(\.isAdmin) }
+    #if FAMILY_SYNC
+    /// A family build is set up once the family has an admin. A family from before admins existed
+    /// runs setup once, which merges into its players by username.
+    var isSetUp: Bool { members.contains(where: \.isAdmin) }
+    #else
     var isSetUp: Bool { settings.setUp }
+    #endif
 
     /// Debug builds only: `-uiTesting` is how the UI tests launch the app. It gives them their own
     /// data folder, so a test run can never touch a real scoreboard. With it, `-resetData` starts
     /// from a fresh install, `-demoFamily` from a family that's already set up, and `-demoData`
     /// from that family with a made-up month of chores.
     #if DEBUG
-    private static let launchArguments = ProcessInfo.processInfo.arguments
+    static let launchArguments = ProcessInfo.processInfo.arguments
     #else
-    private static let launchArguments: [String] = []
+    static let launchArguments: [String] = []
     #endif
-    private static let uiTesting = launchArguments.contains("-uiTesting")
+    static let uiTesting = launchArguments.contains("-uiTesting")
     /// On top of `-uiTesting`: the made-up family in the App Store pictures (`testAppStoreScreenshots`)
     /// has three players with names fit for a store page, and logs its chores before 9:41.
     private static let screenshots = uiTesting && launchArguments.contains("-screenshots")
@@ -66,7 +97,7 @@ final class AppStore: ObservableObject {
             d = d.appendingPathComponent("ui-testing", isDirectory: true)
             if launchArguments.contains("-resetData") {
                 try? FileManager.default.removeItem(at: d)
-                for key in UserDefaults.standard.dictionaryRepresentation().keys where key.hasPrefix(puzzleKey) {
+                for key in UserDefaults.standard.dictionaryRepresentation().keys where key.hasPrefix(puzzleKey) || key.hasPrefix("ui-testing.") {
                     UserDefaults.standard.removeObject(forKey: key)
                 }
             }
@@ -92,6 +123,12 @@ final class AppStore: ObservableObject {
             let used = (members.map(\.id) + logs.map(\.playerId) + removed).compactMap(Int.init)
             settings.nextPlayerId = max(settings.nextPlayerId, (used.max() ?? 0) + 1)
         }
+        #if FAMILY_SYNC
+        let shared: [String: LocalEntry] = Self.load("family_state.json") ?? [:]
+        self.shared = shared
+        me = UserDefaults.standard.string(forKey: Self.meKey)
+        hasSynced = Self.uiTesting || UserDefaults.standard.bool(forKey: Self.syncedKey)
+        #else
         dares = legacy.flatMap { key, entry -> [Dare] in
             let parts = key.split(separator: "|").map(String.init)
             guard parts.count == 3, parts[0] == "dare" else { return [] }
@@ -100,6 +137,7 @@ final class AppStore: ObservableObject {
                 return t.count == 2 ? Dare(from: parts[1], target: t[0], choreId: t[1], day: parts[2]) : nil
             }
         }
+        #endif
         let pool: [Chore] = Self.load("chores.json") ?? starterChores
         self.settings = settings
         self.members = members
@@ -107,6 +145,9 @@ final class AppStore: ObservableObject {
         self.poolById = Self.index(pool)
         self.logs = logs
         self.cards = Self.load("cards.json") ?? [:]
+        #if FAMILY_SYNC
+        applyShared()
+        #endif
         #if DEBUG
         if Self.uiTesting, !settings.setUp, Self.launchArguments.contains("-demoFamily") || Self.launchArguments.contains("-demoData") {
             finishSetup(adminName: "pat", adminPlays: false, code: Self.demoAdminCode, biometricUnlock: false,
@@ -133,8 +174,11 @@ final class AppStore: ObservableObject {
 
     /// Finishes the first-run setup: who's in charge, who's playing and what needs doing.
     func finishSetup(adminName: String, adminPlays: Bool, code: String, biometricUnlock: Bool, playerNames: [String], chores: [Chore]) {
-        guard !settings.setUp, let adminCode = AdminCode(code), let admin = Self.tidy(adminName) else { return }
+        guard !isSetUp, let adminCode = AdminCode(code), let admin = Self.tidy(adminName) else { return }
         var next = settings
+        #if FAMILY_SYNC
+        next.nextPlayerId = max(next.nextPlayerId, familyNextId)
+        #endif
         var list = members
         let now = Date()
         func find(_ name: String) -> Int? { list.firstIndex { $0.name.lowercased() == name.lowercased() } }
@@ -160,6 +204,7 @@ final class AppStore: ObservableObject {
         members = list
         pool = list2
         settings = next
+        familyChanged()
     }
 
     private static func tidy(_ name: String) -> String? {
@@ -177,7 +222,10 @@ final class AppStore: ObservableObject {
         for key in defaults.dictionaryRepresentation().keys where key.hasPrefix("seen_level_") || key.hasPrefix(Self.puzzleKey) {
             defaults.removeObject(forKey: key)
         }
-        cards = [:]; logs = []; members = []; pool = starterChores; dares = []
+        cards = [:]; logs = []; members = []; pool = starterChores
+        #if !FAMILY_SYNC
+        dares = []
+        #endif
         settings = Settings()
     }
 
@@ -264,11 +312,13 @@ final class AppStore: ObservableObject {
         let c = Card(date: card.date, choreIds: keep.map { card.choreIds[$0] }, minutes: keep.map { card.minutes[$0] },
                      checked: keep.map { _ in true }, escal: keep.map { $0 < card.escal.count ? card.escal[$0] : 0 }, submitted: true)
         cards["\(player.id)|\(c.date)"] = c
+        logsChanged()
     }
 
     /// Bonus round: extra chores logged straight away, no minute cap.
     func logBonus(_ player: Player, _ chosen: [EnrichedChore]) {
         logs += chosen.compactMap { newLog(player, $0.id, $0.currentMinutes) }
+        logsChanged()
     }
 
     private func newLog(_ player: Player, _ choreId: String, _ minutes: Int) -> ChoreLog? {
@@ -281,7 +331,7 @@ final class AppStore: ObservableObject {
 
     /// True if `code` is any admin's code.
     func checkAdminCode(_ code: String) -> Bool {
-        admins.contains { settings.adminCodes[$0.id]?.matches(code) == true }
+        return admins.contains { settings.adminCodes[$0.id]?.matches(code) == true }
     }
 
     func setBiometricUnlock(_ on: Bool) { settings.biometricUnlock = on }
@@ -291,6 +341,8 @@ final class AppStore: ObservableObject {
     func setStatus(_ log: ChoreLog, _ status: String) {
         guard let i = logs.firstIndex(where: { $0.id == log.id }) else { return }
         logs[i].status = status
+        logs[i].statusDirty = true
+        logsChanged()
     }
 
     /// Approves a log. Returns true if that took the player up a level.
@@ -337,6 +389,9 @@ final class AppStore: ObservableObject {
     func saveMember(_ draft: MemberDraft, id: String?) -> Bool {
         guard problem(with: draft, for: id) == nil, let name = Self.tidy(draft.name) else { return false }
         var next = settings
+        #if FAMILY_SYNC
+        next.nextPlayerId = max(next.nextPlayerId, familyNextId)
+        #endif
         var member: Player
         if let id, let current = members.first(where: { $0.id == id }) { member = current } else {
             member = Player(id: String(next.nextPlayerId), name: name); next.nextPlayerId += 1
@@ -350,21 +405,29 @@ final class AppStore: ObservableObject {
         else if let code = AdminCode(draft.newCode) { next.adminCodes[member.id] = code }
         if let i = members.firstIndex(where: { $0.id == member.id }) { members[i] = member } else { members.append(member) }
         settings = next
+        familyChanged()
         return true
     }
 
     func canRemove(_ member: Player) -> Bool { !(member.isAdmin && admins.count == 1) }
 
-    /// Removes someone and everything kept about them: their chores, points and code.
+    /// Removes someone and everything kept about them on this device: their chores, points and code.
+    /// In the family build they're also taken off every other device's list; their logs on the
+    /// server are left alone.
     func removeMember(_ member: Player) {
         guard canRemove(member) else { return }
         members.removeAll { $0.id == member.id }
         logs.removeAll { $0.playerId == member.id }
+        #if FAMILY_SYNC
+        // Their rows on the server are left alone; sync keeps them off this device.
+        removedIds.insert(member.id)
+        #endif
         cards = cards.filter { !$0.key.hasPrefix("\(member.id)|") }
         settings.adminCodes[member.id] = nil
         settings.memberJoined[member.id] = nil
         UserDefaults.standard.removeObject(forKey: "seen_level_\(member.id)")
         UserDefaults.standard.removeObject(forKey: Self.puzzleKey + member.id)
+        familyChanged()
     }
 
     // MARK: Display names
@@ -374,6 +437,7 @@ final class AppStore: ObservableObject {
     func setDisplayName(_ playerId: String, _ raw: String) {
         guard let i = members.firstIndex(where: { $0.id == playerId }) else { return }
         members[i].displayName = DisplayName.clean(raw)
+        familyChanged()
     }
 
     /// What to show for a player: their display name, or their username if they haven't set one.
@@ -400,6 +464,7 @@ final class AppStore: ObservableObject {
             let now = Date()
             for chore in fresh { settings.choreAdded[chore.id] = now }
             pool += fresh
+            familyChanged()
         }
         return fresh.count
     }
@@ -408,6 +473,7 @@ final class AppStore: ObservableObject {
     func updateChore(_ chore: Chore, name: String, minutes: Int) {
         guard let i = pool.firstIndex(where: { $0.id == chore.id }), let clean = ChoreIntake.tidyName(name) else { return }
         pool[i] = ChoreIntake.make(name: clean, minutes: minutes, id: chore.id)
+        familyChanged()
     }
 
     /// Takes a chore off the list. Chores already logged keep their points; a card someone is
@@ -417,6 +483,7 @@ final class AppStore: ObservableObject {
         pool.removeAll { $0.id == chore.id }
         settings.choreAdded[chore.id] = nil
         cards = cards.filter { $0.value.submitted || !$0.value.choreIds.contains(chore.id) }
+        familyChanged()
     }
 
     // MARK: Puzzle
@@ -483,14 +550,20 @@ final class AppStore: ObservableObject {
     }
     #endif
 
+    #if !FAMILY_SYNC
+    /// The family build pushes these to the other devices; the public app has nowhere to send them.
+    func familyChanged() {}
+    func logsChanged() {}
+    #endif
+
     // MARK: Disk
 
-    private static func load<T: Decodable>(_ name: String) -> T? {
+    static func load<T: Decodable>(_ name: String) -> T? {
         guard let data = try? Data(contentsOf: dir.appendingPathComponent(name)) else { return nil }
         return try? JSONDecoder().decode(T.self, from: data)
     }
 
-    private func save<T: Encodable>(_ name: String, _ value: T) {
+    func save<T: Encodable>(_ name: String, _ value: T) {
         guard let data = try? JSONEncoder().encode(value) else { return }
         try? data.write(to: Self.dir.appendingPathComponent(name), options: .atomic)
     }

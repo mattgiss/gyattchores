@@ -51,7 +51,9 @@ struct ChoreIntakeView: View {
             writing = false
             found = ChoreIntake.parse(text, existing: existing).map { Found(id: $0.id, name: $0.name, minutes: $0.tiers[0]) }
         }
-        Text("sorted on this device. nothing you write or say here is sent anywhere by this app.")
+        Text(SetupView.familyBuild
+             ? "sorted on this device. only the chores you add are shared with the family's phones."
+             : "sorted on this device. nothing you write or say here is sent anywhere by this app.")
             .font(.caption2).foregroundStyle(.secondary)
     }
 

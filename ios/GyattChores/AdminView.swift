@@ -36,8 +36,7 @@ struct AdminView: View {
                     if wrong { Text("that code didn't match").font(.footnote).foregroundStyle(Theme.bad) }
                     TermButton(label: "UNLOCK", enabled: !code.isEmpty, action: verify)
                     if canBio { OutlineButton(label: "use face id / touch id", action: biometric) }
-                    Text("forgot the code? it's kept only on this device, so it can't be looked up. deleting the app erases this scoreboard and lets you start a new one.")
-                        .font(.footnote).foregroundStyle(.secondary).padding(.top, 8)
+                    Text(forgotCodeNote).font(.footnote).foregroundStyle(.secondary).padding(.top, 8)
                     Spacer()
                 }
                 .padding(20)
@@ -47,6 +46,14 @@ struct AdminView: View {
         .onChange(of: authed) { _, now in if now { fb.unlock() } }
         // The scoreboard was erased from in here: there's nothing left to administer.
         .onChange(of: store.isSetUp) { _, now in if !now { if let onBack { onBack() } else { dismiss() } } }
+    }
+
+    private var forgotCodeNote: String {
+        #if FAMILY_SYNC
+        "forgot the code? another admin can set a new one for you from their phone."
+        #else
+        "forgot the code? it's kept only on this device, so it can't be looked up. deleting the app erases this scoreboard and lets you start a new one."
+        #endif
     }
 
     private func verify() {
@@ -311,10 +318,31 @@ private struct Device: View {
             Toggle("face id / touch id opens the admin area", isOn: Binding(get: { store.settings.biometricUnlock }, set: { store.setBiometricUnlock($0) }))
             Text("only turn this on if this is your own device, not a player's.").font(.footnote).foregroundStyle(.secondary)
         }
+        #if FAMILY_SYNC
+        SectionLabel("this phone belongs to")
+        Text("dares are made as this person.").font(.footnote).foregroundStyle(.secondary)
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(store.players) { p in
+                    if p.id == store.me { Button(store.shownName(p)) {}.buttonStyle(.borderedProminent) }
+                    else { Button(store.shownName(p)) { fb.tap(); store.setMe(p) }.buttonStyle(.bordered) }
+                }
+            }
+        }
+        SectionLabel("your data")
+        Text("this is the family build: players, chores, codes and points are shared with the family's other phones. sync: \(store.syncStatus).")
+            .font(.callout).foregroundStyle(.secondary)
+        Text("version \(AppInfo.version)").font(.footnote).foregroundStyle(.secondary).padding(.top, 8)
+        #else
         SectionLabel("your data")
         Text("everything this app knows — names, chores and points — is kept on this device and nowhere else. there's no account and nothing is sent to anyone, including us. deleting the app deletes it all.")
             .font(.callout).foregroundStyle(.secondary)
         Link("privacy policy", destination: Links.privacy).font(.callout).frame(minHeight: 44)
+        eraseButton
+        #endif
+    }
+
+    private var eraseButton: some View {
         Button("erase everything…", role: .destructive) { confirmingErase = true }
             .buttonStyle(.bordered).padding(.vertical, 12)
             .confirmationDialog("Erase this scoreboard?", isPresented: $confirmingErase, titleVisibility: .visible) {

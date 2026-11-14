@@ -1,5 +1,16 @@
 # Generates GyattChores.xcodeproj. Run `xcodegen` in this folder after adding or removing files.
 name: GyattChores
+# Two builds from one codebase:
+# - Debug / Release: the public App Store app. Everything stays on the device; no network code.
+# - Debug-Family / Release-Family (scheme "GyattChores Family"): the family's own build, with the
+#   FAMILY_SYNC flag. It syncs with the family's Supabase tables and has dares, like the Android
+#   family flavor. Same bundle id, so a TestFlight family build upgrades the family's phones in place;
+#   only public builds go to App Store review.
+configs:
+  Debug: debug
+  Release: release
+  Debug-Family: debug
+  Release-Family: release
 options:
   deploymentTarget:
     iOS: "18.0"
@@ -37,6 +48,11 @@ targets:
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+      configs:
+        Debug-Family:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) FAMILY_SYNC"
+        Release-Family:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) FAMILY_SYNC"
   GyattChoresUITests:
     type: bundle.ui-testing
     platform: iOS
@@ -72,3 +88,17 @@ schemes:
       config: Debug
     archive:
       config: Release
+  GyattChores Family:
+    build:
+      targets:
+        GyattChores: all
+    run:
+      config: Debug-Family
+    test:
+      config: Debug-Family
+    profile:
+      config: Release-Family
+    analyze:
+      config: Debug-Family
+    archive:
+      config: Release-Family

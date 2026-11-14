@@ -71,6 +71,14 @@ struct SetupView: View {
             Text("· points, streaks and a weekly winner follow")
         }
         .foregroundStyle(.secondary)
+        #if FAMILY_SYNC
+        SectionLabel("the family build")
+        VStack(alignment: .leading, spacing: 6) {
+            Text("· players, chores and points are shared with the family's other phones")
+            Text("· no accounts, no sign-in, no ads, no tracking")
+        }
+        .foregroundStyle(.secondary)
+        #else
         SectionLabel("private by design")
         VStack(alignment: .leading, spacing: 6) {
             Text("· everything stays on this device")
@@ -78,7 +86,8 @@ struct SetupView: View {
             Text("· delete the app and it's all gone")
         }
         .foregroundStyle(.secondary)
-        if !alreadyHere.isEmpty {
+        #endif
+        if !alreadyHere.isEmpty && !Self.familyBuild {
             Text("your players and their points are still here. this device now keeps its own scoreboard: it no longer shares with other phones.")
                 .font(.footnote).foregroundStyle(Theme.warn).padding(.top, 4)
         }
@@ -112,7 +121,9 @@ struct SetupView: View {
             .textFieldStyle(.roundedBorder).textContentType(.oneTimeCode).submitLabel(.done)
             .accessibilityIdentifier("admin-code-again")
         if let codeProblem { Text(codeProblem).font(.footnote).foregroundStyle(Theme.bad) }
-        Text("keep the code from the players. it isn't stored anywhere but this device, so nobody can look it up for you: if it's forgotten, the way back in is to delete the app and start a new scoreboard.")
+        Text(Self.familyBuild
+             ? "keep the code from the players. only a scrambled copy is shared with the family's phones; if it's forgotten, another admin can set a new one."
+             : "keep the code from the players. it isn't stored anywhere but this device, so nobody can look it up for you: if it's forgotten, the way back in is to delete the app and start a new scoreboard.")
             .font(.footnote).foregroundStyle(.secondary)
         Toggle("i do chores too", isOn: $adminPlays)
         if canBio {
@@ -193,4 +204,12 @@ struct SetupView: View {
             OutlineButton(label: "write or say your own") { fb.tap(); writingChores = true }
         }
     }
+}
+
+extension SetupView {
+    #if FAMILY_SYNC
+    static let familyBuild = true
+    #else
+    static let familyBuild = false
+    #endif
 }

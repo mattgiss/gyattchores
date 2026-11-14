@@ -21,6 +21,9 @@ public struct AdminCode: Codable, Hashable, Sendable {
         self.hash = Engine.fnv1a(salt + trimmed)
     }
 
+    /// A code read back from the family's shared state, where it's kept as "salt" and "hash".
+    public init(salt: String, hash: UInt32) { self.salt = salt; self.hash = hash }
+
     public func matches(_ code: String) -> Bool {
         Engine.fnv1a(salt + Self.tidy(code)) == hash
     }
