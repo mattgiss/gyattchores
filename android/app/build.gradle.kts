@@ -13,8 +13,8 @@ android {
         applicationId = "com.gyattchores.app"
         minSdk = 29
         targetSdk = 35
-        versionCode = 6
-        versionName = "0.3.4"
+        versionCode = 7
+        versionName = "0.4.0"
     }
 
     // family: syncs with the family's shared Supabase tables; keeps the id the installed phones have.
