@@ -5,6 +5,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,30 +18,72 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.gyattchores.app.engine.Engine
 import com.gyattchores.app.model.Rank
 
-/** "> LABEL" terminal-style button. */
+/**
+ * One line of text that shrinks to fit the room it has, instead of wrapping or being cut off:
+ * "GYATTCHORES" broken across two lines in a narrow pane reads as a bug. Below [minScale] it
+ * stops shrinking and trims with an ellipsis.
+ */
+@Composable
+fun FitText(
+    text: String,
+    style: TextStyle,
+    modifier: Modifier = Modifier,
+    color: Color = Color.Unspecified,
+    fontWeight: FontWeight? = null,
+    letterSpacing: TextUnit = 0.sp,
+    minScale: Float = 0.6f,
+) {
+    BoxWithConstraints(modifier) {
+        // Start again from full size when the text or the room changes (say, on unfolding).
+        var scale by remember(text, maxWidth) { mutableFloatStateOf(1f) }
+        var settled by remember(text, maxWidth) { mutableStateOf(false) }
+        Text(
+            text, color = color, fontWeight = fontWeight, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis,
+            style = style.copy(fontSize = style.fontSize * scale, letterSpacing = letterSpacing * scale),
+            // Hidden until it fits, so the sizes tried on the way are never seen.
+            modifier = Modifier.drawWithContent { if (settled) drawContent() },
+            onTextLayout = { result ->
+                if (result.hasVisualOverflow && scale > minScale) scale = (scale - 0.05f).coerceAtLeast(minScale) else settled = true
+            },
+        )
+    }
+}
+
+/** "> LABEL" terminal-style button. The label stays on one line, shrinking a little if it must. */
 @Composable
 fun TermButton(label: String, enabled: Boolean = true, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Button(
         onClick = onClick, enabled = enabled, shape = MaterialTheme.shapes.small,
         colors = ButtonDefaults.buttonColors(containerColor = Accent),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         modifier = modifier.fillMaxWidth().heightIn(min = 52.dp),
-    ) { Text("> $label", fontWeight = FontWeight.Bold, letterSpacing = 1.sp) }
+    ) { FitText("> $label", style = LocalTextStyle.current, fontWeight = FontWeight.Bold, letterSpacing = 1.sp, color = LocalContentColor.current) }
 }
 
 @Composable
