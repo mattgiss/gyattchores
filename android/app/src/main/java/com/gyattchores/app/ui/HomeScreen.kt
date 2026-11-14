@@ -35,6 +35,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.gyattchores.app.AppViewModel
@@ -46,7 +47,7 @@ import com.gyattchores.app.sync.LocalEntry
 import java.time.LocalDate
 
 /**
- * Home: players, this week's leaderboard, dares, and the 30-day log.
+ * Home: players, dares, this week's leaderboard, and the 30-day log.
  * Tapping the title 5x opens the parent gate.
  */
 @OptIn(ExperimentalLayoutApi::class)
@@ -76,10 +77,10 @@ fun HomeScreen(
     val names = players.associate { it.id to it.name }
 
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp)) {
-        Text(
+        FitText(
             "GYATTCHORES", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold,
             letterSpacing = 4.sp, color = Accent,
-            modifier = Modifier.clickable(onClickLabel = "title") {
+            modifier = Modifier.fillMaxWidth().clickable(onClickLabel = "title") {
                 fb.tap()
                 val t = System.currentTimeMillis()
                 taps = if (t - lastTap < 2000) taps + 1 else 1
@@ -107,6 +108,26 @@ fun HomeScreen(
                 modifier = Modifier.padding(top = 4.dp))
         }
 
+        // The players come first: opening your day is what this screen is for, and on a short, wide
+        // screen (a foldable on its side) anything below the dares and the leaderboard is off the bottom.
+        SectionLabel("who's playing")
+        for (p in players) {
+            val rank = Engine.rank(vm.totalXp(p.id, logs, shared))
+            val streak = Engine.streak(p.id, logs, now, zone)
+            val selected = p.id == selectedId
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 64.dp)
+                    .then(if (selected) Modifier.background(MaterialTheme.colorScheme.secondaryContainer) else Modifier)
+                    .clickable(onClickLabel = "open ${p.name}") { fb.tap(); onPick(p) }.padding(horizontal = 8.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("> ", color = Accent)
+                Text(p.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text("${rank.version} · 🔥$streak", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            HorizontalDivider()
+        }
+
         // Yesterday's dares, revealed after midnight.
         val yesterday = today.minusDays(1).toString()
         val revealed = dares.filter { it.day == yesterday }
@@ -125,27 +146,10 @@ fun HomeScreen(
         board.forEachIndexed { i, (p, pts) ->
             Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                 Text("${i + 1}. ", color = if (i == 0 && pts > 0) Accent else MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(p.name, modifier = Modifier.weight(1f), fontWeight = if (i == 0 && pts > 0) FontWeight.Bold else FontWeight.Normal)
+                Text(p.name, modifier = Modifier.weight(1f), fontWeight = if (i == 0 && pts > 0) FontWeight.Bold else FontWeight.Normal,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text("$pts pts", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-        }
-
-        SectionLabel("who's playing")
-        for (p in players) {
-            val rank = Engine.rank(vm.totalXp(p.id, logs, shared))
-            val streak = Engine.streak(p.id, logs, now, zone)
-            val selected = p.id == selectedId
-            Row(
-                Modifier.fillMaxWidth().heightIn(min = 64.dp)
-                    .then(if (selected) Modifier.background(MaterialTheme.colorScheme.secondaryContainer) else Modifier)
-                    .clickable(onClickLabel = "open ${p.name}") { fb.tap(); onPick(p) }.padding(horizontal = 8.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text("> ", color = Accent)
-                Text(p.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                Text("${rank.version} · 🔥$streak", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            HorizontalDivider()
         }
 
         SectionLabel("daily log · last ${Engine.LOG_DAYS} days")
@@ -159,13 +163,20 @@ fun HomeScreen(
     }
 }
 
-/** "megadinolava dared bekindhearted: scrub toilet  ✓ +10" */
+/**
+ * One revealed dare: who dared whom on a small line, the chore beneath it, the result on the right.
+ * Two short lines on purpose: as one sentence it wrapped wherever it happened to run out of room.
+ */
 @Composable
 fun DareLine(d: Dare, names: Map<String, String>, choreName: String, landed: Boolean) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 3.dp)) {
-        Text("${names[d.from] ?: d.from} → ${names[d.target] ?: d.target}: $choreName", modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.bodyMedium)
-        Text(if (landed) "✓ +${Engine.DARE_GUESSER_POINTS}" else "✗", color = if (landed) Good else MaterialTheme.colorScheme.onSurfaceVariant)
+    Row(Modifier.fillMaxWidth().padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text("${names[d.from] ?: d.from} → ${names[d.target] ?: d.target}", style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(choreName, style = MaterialTheme.typography.bodyMedium)
+        }
+        Text(if (landed) "✓ +${Engine.DARE_GUESSER_POINTS}" else "✗", color = if (landed) Good else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 12.dp))
     }
 }
 
