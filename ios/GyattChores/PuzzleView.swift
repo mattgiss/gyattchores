@@ -105,13 +105,29 @@ struct PuzzleView: View {
         }
     }
 
+    /// The title sits between "back" and the level when it fits. On a narrow phone, or once the
+    /// level has three digits, it moves to its own line instead of being cut off.
     private var header: some View {
+        ViewThatFits(in: .horizontal) {
+            headerRow(withTitle: true)
+            VStack(alignment: .leading, spacing: 0) {
+                headerRow(withTitle: false)
+                title.padding(.horizontal, 20).padding(.bottom, 6)
+            }
+        }
+    }
+
+    private var title: some View {
+        Text("CLEAR THE GRID").font(.caption).kerning(3).foregroundStyle(.secondary).lineLimit(1).fixedSize()
+    }
+
+    private func headerRow(withTitle: Bool) -> some View {
         HStack(spacing: 12) {
-            Button("← back") { fb.tap(); dismiss() }.accessibilityIdentifier("puzzle-back")
-            Text("CLEAR THE GRID").font(.caption).kerning(3).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.6)
-            Spacer()
-            Text("LVL \(level)").font(.headline).foregroundStyle(Theme.accent)
-            Button("restart") { restart() }.disabled(busy || celebrating)
+            Button("← back") { fb.tap(); dismiss() }.fixedSize().accessibilityIdentifier("puzzle-back")
+            if withTitle { title }
+            Spacer(minLength: 0)
+            Text("LVL \(level)").font(.headline).foregroundStyle(Theme.accent).fixedSize()
+            Button("restart") { restart() }.fixedSize().disabled(busy || celebrating)
         }
         .padding(.horizontal, 20).padding(.vertical, 12)
     }
