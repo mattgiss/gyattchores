@@ -81,6 +81,8 @@ fun PlayerScreen(
     cards: Map<String, Card>,
     hinge: Hinge?,
     onBack: (() -> Unit)?,
+    /** Opens the puzzle; offered once today's card is submitted. */
+    onPuzzle: () -> Unit = {},
 ) {
     val now = remember(logs, cards) { vm.now() }
     val card = vm.cardFor(player.id, cards, logs)
@@ -105,7 +107,8 @@ fun PlayerScreen(
             }
             else -> {
                 TopBar(player.name, onBack)
-                CardRun(vm, player, card, logs, todays, hinge, bonusLeft = vm.store.pool.count { it.id !in loggedToday }) { bonusPicking = true }
+                CardRun(vm, player, card, logs, todays, hinge, bonusLeft = vm.store.pool.count { it.id !in loggedToday },
+                    onPuzzle = onPuzzle) { bonusPicking = true }
             }
         }
     }
@@ -201,6 +204,7 @@ private fun CardRun(
     todays: List<ChoreLog>,
     hinge: Hinge?,
     bonusLeft: Int,
+    onPuzzle: () -> Unit,
     onBonus: () -> Unit,
 ) {
     val fb = LocalFeedback.current
@@ -247,6 +251,8 @@ private fun CardRun(
                     TermButton(if (allChecked) "SUBMIT FOR APPROVAL" else "CHECK OFF EVERYTHING FIRST", enabled = allChecked) {
                         vm.submit(player, card); fb.submit()
                     }
+                    Text("🔒 the puzzle unlocks when this card is submitted", style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
                     Text("change my picks", color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.align(Alignment.CenterHorizontally).clickable { fb.tap(); vm.clearCard(player) }.padding(14.dp))
                 } else {
@@ -262,6 +268,9 @@ private fun CardRun(
                         else -> "done — ${verdicts.size - rejected} approved, $rejected rejected" to MaterialTheme.colorScheme.onSurfaceVariant
                     }
                     Text(line, color = lineColor, modifier = Modifier.padding(bottom = 8.dp))
+                    TermButton("PLAY · CLEAR THE GRID · LVL ${vm.puzzleLevel(player.id)}", modifier = Modifier.padding(bottom = 8.dp)) {
+                        fb.unlock(); onPuzzle()
+                    }
                     if (bonusLeft > 0) OutlinedButton(onClick = { fb.tap(); onBonus() }, modifier = Modifier.fillMaxWidth()) { Text("+ bonus round") }
                 }
             }

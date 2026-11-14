@@ -1,4 +1,5 @@
 import AVFoundation
+import CoreHaptics
 import SwiftUI
 import UIKit
 
@@ -80,7 +81,96 @@ final class Feedback: ObservableObject {
                        N(77, 90, wave: 0.6), N(79, 90, wave: 0.6), N(84, 420, wave: 0.6), N(96, 300, gain: 0.5)])
     }
 
+    // MARK: Puzzle
+
+    /// Picking up a block.
+    func puzzleSelect() { impact(.rigid, 0.55); play("pz-sel", [N(88, 22, gain: 0.45), N(95, 30, gain: 0.35)]) }
+
+    /// Two blocks collide and vanish: a sharp crack with a little weight behind it.
+    func puzzleMatch() {
+        if !rich([Self.hit(0, 1, 1), Self.hit(0.012, 0.6, 0.15)]) { impact(.heavy, 1) }
+        play("pz-hit", [N(98, 22, end: 74, wave: 1, gain: 0.55), N(62, 70, end: 41, wave: 0.8, gain: 0.7)])
+    }
+
+    /// That block can't be reached from here.
+    func puzzleMiss() {
+        pattern([(0, 0.45), (62, 0.45)])
+        play("pz-miss", [N(52, 50, wave: 1, gain: 0.6), N(0, 20), N(47, 70, wave: 1, gain: 0.6)])
+    }
+
+    /// The board is clear — the big one, in three beats timed to the screen: the impact, `freeze`
+    /// seconds of dead stillness while the frame is frozen, then a surge that quickens into a slam.
+    func puzzleLevelUp(freeze: TimeInterval) {
+        let f = freeze
+        var events = [Self.hit(0, 1, 1), Self.rumble(0, 0.07, 1, 0.15),
+                      Self.hit(f, 1, 0.9), Self.rumble(f, 0.62, 1, 0.3)]
+        // Ticks that come faster and harder, like a charge building.
+        for (i, t) in [0.10, 0.18, 0.25, 0.31, 0.36, 0.40, 0.43].enumerated() {
+            events.append(Self.hit(f + t, Float(0.7 + 0.05 * Double(i)), 0.6))
+        }
+        events += [Self.hit(f + 0.5, 1, 0.25), Self.rumble(f + 0.5, 0.3, 1, 0.05)]
+        // The surge swells, holds through the slam, then dies away.
+        let swell = CHHapticParameterCurve(parameterID: .hapticIntensityControl, controlPoints: [
+            .init(relativeTime: 0, value: 0.4), .init(relativeTime: 0.35, value: 1),
+            .init(relativeTime: 0.52, value: 1), .init(relativeTime: 0.8, value: 0),
+        ], relativeTime: f)
+        let edge = CHHapticParameterCurve(parameterID: .hapticSharpnessControl, controlPoints: [
+            .init(relativeTime: 0, value: -0.2), .init(relativeTime: 0.35, value: 0.4), .init(relativeTime: 0.5, value: 0),
+        ], relativeTime: f)
+        if !rich(events, curves: [swell, edge]) {
+            let ms = Int(f * 1000)
+            pattern([(0, 1), (ms, 0.7), (ms + 100, 0.75), (ms + 180, 0.8), (ms + 250, 0.85), (ms + 310, 0.9),
+                     (ms + 360, 0.95), (ms + 400, 1), (ms + 430, 1), (ms + 500, 1)])
+            DispatchQueue.main.asyncAfter(deadline: .now() + f + 0.5) { [weak self] in
+                MainActor.assumeIsolated { self?.impact(.heavy, 1) }
+            }
+        }
+        let rest = max(0, Int(f * 1000) - 110)
+        play("pz-level-\(rest)", [
+            N(40, 110, end: 26, wave: 1, gain: 0.9), N(0, rest),
+            N(36, 90, end: 48, wave: 1, gain: 0.8),
+            N(60, 55, wave: 0.6), N(64, 55, wave: 0.6), N(67, 55, wave: 0.6), N(72, 55, wave: 0.6),
+            N(76, 55, wave: 0.6), N(79, 55, wave: 0.6), N(84, 340, wave: 0.6),
+            N(96, 60, gain: 0.45), N(103, 260, gain: 0.4),
+        ])
+    }
+
     // MARK: Haptics
+
+    /// Core Haptics, for the puzzle's moments: sharper, heavier and more precisely timed than the
+    /// stock generators. Nil on hardware without it (an iPad), where the generators stand in.
+    private lazy var hapticEngine: CHHapticEngine? = {
+        guard CHHapticEngine.capabilitiesForHardware().supportsHaptics, let engine = try? CHHapticEngine() else { return nil }
+        engine.playsHapticsOnly = true
+        engine.isAutoShutdownEnabled = true
+        engine.resetHandler = { [weak engine] in try? engine?.start() }
+        return engine
+    }()
+
+    /// Plays a Core Haptics pattern. False when this device can't, so the caller can fall back.
+    private func rich(_ events: [CHHapticEvent], curves: [CHHapticParameterCurve] = []) -> Bool {
+        guard let engine = hapticEngine,
+              let pattern = try? CHHapticPattern(events: events, parameterCurves: curves),
+              (try? engine.start()) != nil,
+              let player = try? engine.makePlayer(with: pattern) else { return false }
+        return (try? player.start(atTime: CHHapticTimeImmediate)) != nil
+    }
+
+    /// A single tap: strength and sharpness 0…1, `t` seconds into the pattern.
+    private static func hit(_ t: TimeInterval, _ intensity: Float, _ sharpness: Float) -> CHHapticEvent {
+        CHHapticEvent(eventType: .hapticTransient, parameters: [
+            CHHapticEventParameter(parameterID: .hapticIntensity, value: intensity),
+            CHHapticEventParameter(parameterID: .hapticSharpness, value: sharpness),
+        ], relativeTime: t)
+    }
+
+    /// A held buzz.
+    private static func rumble(_ t: TimeInterval, _ duration: TimeInterval, _ intensity: Float, _ sharpness: Float) -> CHHapticEvent {
+        CHHapticEvent(eventType: .hapticContinuous, parameters: [
+            CHHapticEventParameter(parameterID: .hapticIntensity, value: intensity),
+            CHHapticEventParameter(parameterID: .hapticSharpness, value: sharpness),
+        ], relativeTime: t, duration: duration)
+    }
 
     // Firm and strong by design: "rigid" is the crisp, hard-edged tap and "heavy" the full thud,
     // both played near full strength. The generators are kept and re-armed after every use, because

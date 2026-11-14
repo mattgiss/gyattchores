@@ -141,6 +141,7 @@ private struct CardRunView: View {
     let others: [String: String]
     let bonusLeft: Int
     let onBonus: () -> Void
+    @State private var puzzleOpen = false
 
     var body: some View {
         let rank = store.rank(player.id)
@@ -197,6 +198,7 @@ private struct CardRunView: View {
                         store.submit(player, card); fb.submit()
                     }
                     Button("change my picks") { fb.tap(); store.clearCard(player) }.foregroundStyle(.secondary).frame(maxWidth: .infinity, minHeight: 44)
+                    Text("🔒 the puzzle unlocks when this card is submitted").font(.footnote).foregroundStyle(.secondary)
                 } else {
                     // Say what's actually left: every chore logged today is pending, approved or rejected.
                     let verdicts = (card.choreIds + extras.map(\.choreId)).map { statusByChore[$0] ?? Status.pending }
@@ -210,6 +212,7 @@ private struct CardRunView: View {
                     if rejected > 0 {
                         Text("rejected chores can be done again from the bonus round").font(.footnote).foregroundStyle(.secondary)
                     }
+                    TermButton(label: "PLAY · CLEAR THE GRID · LVL \(store.puzzleLevel(player.id))") { fb.unlock(); puzzleOpen = true }
                     if bonusLeft > 0 { OutlineButton(label: "+ bonus round") { fb.tap(); onBonus() } }
                 }
             }
@@ -218,5 +221,8 @@ private struct CardRunView: View {
         }
         // Celebrate the first time this screen shows a new version (approval may have happened elsewhere).
         .task(id: rank.level) { if store.isNewLevel(player.id, rank.level) { fb.levelUp() } }
+        .fullScreenCover(isPresented: $puzzleOpen) {
+            PuzzleView(player: player).environmentObject(store).environmentObject(fb).fontDesign(.monospaced).tint(Theme.accent)
+        }
     }
 }

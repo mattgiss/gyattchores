@@ -4,6 +4,7 @@ import android.content.Context
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
+import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -95,7 +96,82 @@ class Feedback(context: Context) {
         }
     }
 
+    // ─── Puzzle ─────────────────────────────────────────────────────────────
+
+    /** Picking up a block. */
+    fun puzzleSelect() { buzz(VibrationEffect.EFFECT_TICK); play("pz-sel") { synth(N(88, 22, gain = 0.45f), N(95, 30, gain = 0.35f)) } }
+
+    /** Two blocks collide and vanish: a sharp crack with a little weight behind it. */
+    fun puzzleMatch() {
+        compose(fallback = { pattern(longArrayOf(0, 16, 18, 28), intArrayOf(0, 255, 0, 110)) }) {
+            addPrimitive(VibrationEffect.Composition.PRIMITIVE_CLICK, 1f)
+            addPrimitive(thud(), 0.55f, 12)
+        }
+        play("pz-hit") { synth(N(98, 22, end = 74, wave = 1f, gain = 0.55f), N(62, 70, end = 41, wave = 0.8f, gain = 0.7f)) }
+    }
+
+    /** That block can't be reached from here. */
+    fun puzzleMiss() {
+        pattern(longArrayOf(0, 22, 40, 22), intArrayOf(0, 120, 0, 120))
+        play("pz-miss") { synth(N(52, 50, wave = 1f, gain = 0.6f), N(0, 20), N(47, 70, wave = 1f, gain = 0.6f)) }
+    }
+
+    /**
+     * The board is clear — the big one, in three beats timed to the screen: the impact, [freezeMs] of
+     * dead stillness while the frame is frozen, then a surge that quickens into a final slam.
+     */
+    fun puzzleLevelUp(freezeMs: Int) {
+        compose(fallback = {
+            pattern(
+                longArrayOf(0, 45, freezeMs.toLong(), 90, 22, 34, 18, 30, 14, 26, 10, 24, 40, 220),
+                intArrayOf(0, 255, 0, 170, 0, 210, 0, 235, 0, 255, 0, 255, 0, 255),
+            )
+        }) {
+            addPrimitive(VibrationEffect.Composition.PRIMITIVE_CLICK, 1f)
+            addPrimitive(thud(), 1f, 0)
+            addPrimitive(VibrationEffect.Composition.PRIMITIVE_QUICK_RISE, 1f, freezeMs)
+            for ((gap, strength) in listOf(40 to 0.7f, 32 to 0.8f, 26 to 0.9f, 20 to 1f, 16 to 1f, 14 to 1f)) {
+                addPrimitive(VibrationEffect.Composition.PRIMITIVE_CLICK, strength, gap)
+            }
+            addPrimitive(spin(), 1f, 24)
+            addPrimitive(thud(), 1f, 50)
+            addPrimitive(VibrationEffect.Composition.PRIMITIVE_QUICK_FALL, 0.8f, 40)
+        }
+        play("pz-level-$freezeMs") {
+            synth(
+                N(40, 110, end = 26, wave = 1f, gain = 0.9f), N(0, (freezeMs - 110).coerceAtLeast(0)),
+                N(36, 90, end = 48, wave = 1f, gain = 0.8f),
+                N(60, 55, wave = 0.6f), N(64, 55, wave = 0.6f), N(67, 55, wave = 0.6f), N(72, 55, wave = 0.6f),
+                N(76, 55, wave = 0.6f), N(79, 55, wave = 0.6f), N(84, 340, wave = 0.6f),
+                N(96, 60, gain = 0.45f), N(103, 260, gain = 0.4f),
+            )
+        }
+    }
+
     // ─── Haptics ────────────────────────────────────────────────────────────
+
+    // The richer primitives arrived in Android 12; before that, a click stands in for each.
+    private fun thud() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) VibrationEffect.Composition.PRIMITIVE_THUD else VibrationEffect.Composition.PRIMITIVE_CLICK
+    private fun spin() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) VibrationEffect.Composition.PRIMITIVE_SPIN else VibrationEffect.Composition.PRIMITIVE_QUICK_RISE
+
+    /**
+     * A composed effect from the haptic primitives, which feel sharper and heavier than a waveform,
+     * on phones whose motor supports every primitive used; otherwise [fallback].
+     */
+    private fun compose(fallback: () -> Unit, build: VibrationEffect.Composition.() -> Unit) = runCatching {
+        val v = vibrator ?: return@runCatching
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val used = mutableListOf(
+                VibrationEffect.Composition.PRIMITIVE_CLICK, VibrationEffect.Composition.PRIMITIVE_QUICK_RISE,
+                VibrationEffect.Composition.PRIMITIVE_QUICK_FALL, thud(), spin(),
+            )
+            if (v.areAllPrimitivesSupported(*used.toIntArray())) {
+                v.vibrate(VibrationEffect.startComposition().apply(build).compose())
+                return@runCatching
+            }
+        }
+        fallback()
+    }
 
     private fun buzz(effect: Int) = runCatching { vibrator?.vibrate(VibrationEffect.createPredefined(effect)) }
 

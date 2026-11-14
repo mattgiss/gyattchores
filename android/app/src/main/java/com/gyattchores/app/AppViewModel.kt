@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import com.gyattchores.app.data.Store
 import com.gyattchores.app.engine.Engine
+import com.gyattchores.app.engine.PuzzlePack
 import com.gyattchores.app.model.Card
 import com.gyattchores.app.model.ChoreLog
 import com.gyattchores.app.model.EnrichedChore
@@ -175,6 +176,19 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val last = seen.getInt(playerId, 1)
         if (level != last) seen.edit().putInt(playerId, level).apply()
         return level > last
+    }
+
+    // ─── Puzzle ─────────────────────────────────────────────────────────────
+
+    val puzzlePack: PuzzlePack by lazy { PuzzlePack.parse(app.assets.open("puzzles.json").bufferedReader().readText()) }
+    private val puzzleProgress = app.getSharedPreferences("puzzle", android.content.Context.MODE_PRIVATE)
+
+    /** The puzzle level a player plays next (1 until they clear one). Kept on this phone. */
+    fun puzzleLevel(playerId: String): Int = puzzleProgress.getInt(playerId, 1)
+
+    /** A player cleared [level]: the next one is unlocked. Replaying an old level changes nothing. */
+    fun puzzleCleared(playerId: String, level: Int) {
+        if (level >= puzzleLevel(playerId)) puzzleProgress.edit().putInt(playerId, level + 1).apply()
     }
 
     /** True the first time yesterday's dare results are shown on this phone. */

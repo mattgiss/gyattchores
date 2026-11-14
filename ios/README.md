@@ -66,12 +66,26 @@ When a game rule changes in `index.html`, regenerate both and commit them; a
 failing test then names the rule a native port still has wrong.
 
 The rest cover what only the native app has: sorting typed or spoken text
-into chores, admin codes, and loading saves from earlier versions.
+into chores, admin codes, loading saves from earlier versions, and the puzzle.
+
+The puzzle unlocked by a submitted card ("CLEAR THE GRID") has no web version.
+Its levels come from `node native/tools/puzzles.mjs`, which builds each level
+backwards from a solution (so every level can be cleared), orders them by how
+often random tapping wins, and writes:
+
+- `native/puzzles.json`, the level pack both apps ship (and its copy in
+  `android/app/src/main/assets/`)
+- `native/fixtures/puzzle-scenarios.json`, a solution and a random-play trace
+  per level, which the Swift and Kotlin engines both replay
+
+It takes about 40 seconds. CI regenerates both and fails if the committed copies
+are out of date.
 
 **The app itself** — UI tests set a family up from a fresh install with
 chores typed as a sentence, play a day (suggest a card, lock it in, check
 everything off, submit, log a bonus chore, relaunch), approve chores as an
-admin, add a player and make them an admin, add a chore, and erase everything.
+admin, add a player and make them an admin, add a chore, erase everything,
+and open the puzzle from a submitted card and clear level 1.
 
 ```bash
 cd ios && xcodegen

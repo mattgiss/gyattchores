@@ -62,7 +62,10 @@ fun AppRoot(vm: AppViewModel, fold: FoldingFeature?) {
     var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
     var adminOpen by rememberSaveable { mutableStateOf(false) }
     var daresOpen by rememberSaveable { mutableStateOf(false) }
+    // The puzzle takes the whole window, even beside the list on a foldable, so its flash fills the screen.
+    var puzzleId by rememberSaveable { mutableStateOf<String?>(null) }
     val selected = players.firstOrNull { it.id == selectedId }
+    val puzzlePlayer = players.firstOrNull { it.id == puzzleId }
 
     // Tabletop: half-open with a horizontal hinge. Content above it, controls below.
     val hinge = if (fold != null && fold.state == FoldingFeature.State.HALF_OPENED && fold.orientation == FoldingFeature.Orientation.HORIZONTAL)
@@ -72,8 +75,9 @@ fun AppRoot(vm: AppViewModel, fold: FoldingFeature?) {
 
     val myId = me
     val showDares = daresOpen && myId != null
-    BackHandler(enabled = adminOpen || showDares || selected != null) {
-        if (adminOpen) adminOpen = false else if (showDares) daresOpen = false else selectedId = null
+    BackHandler(enabled = puzzlePlayer != null || adminOpen || showDares || selected != null) {
+        if (puzzlePlayer != null) puzzleId = null
+        else if (adminOpen) adminOpen = false else if (showDares) daresOpen = false else selectedId = null
     }
 
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -87,7 +91,9 @@ fun AppRoot(vm: AppViewModel, fold: FoldingFeature?) {
                     onPick = { adminOpen = false; daresOpen = false; selectedId = it.id }, onAdmin = { daresOpen = false; adminOpen = true },
                     onDares = { adminOpen = false; daresOpen = true })
             }
-            if (twoPane) {
+            if (puzzlePlayer != null) {
+                PuzzleScreen(vm, puzzlePlayer, onBack = { puzzleId = null })
+            } else if (twoPane) {
                 val hingeLeft = hingeX?.let { with(LocalDensity.current) { it.toDp() } }
                 Row(Modifier.fillMaxSize()) {
                     Box(Modifier.width(listPaneWidth(windowWidth, hingeLeft)).fillMaxHeight()) { home() }
@@ -97,7 +103,7 @@ fun AppRoot(vm: AppViewModel, fold: FoldingFeature?) {
                             when {
                                 adminOpen -> AdminScreen(vm, logs, players, onBack = { adminOpen = false })
                                 showDares -> DaresScreen(vm, players, logs, shared, myId!!, onBack = { daresOpen = false })
-                                selected != null -> PlayerScreen(vm, selected, logs, cards, hinge, onBack = null)
+                                selected != null -> PlayerScreen(vm, selected, logs, cards, hinge, onBack = null, onPuzzle = { puzzleId = selected.id })
                                 else -> Text("> pick a player", color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.align(Alignment.Center))
                             }
@@ -108,7 +114,8 @@ fun AppRoot(vm: AppViewModel, fold: FoldingFeature?) {
                 when {
                     adminOpen -> AdminScreen(vm, logs, players, onBack = { adminOpen = false })
                     showDares -> DaresScreen(vm, players, logs, shared, myId!!, onBack = { daresOpen = false })
-                    selected != null -> PlayerScreen(vm, selected, logs, cards, hinge, onBack = { selectedId = null })
+                    selected != null -> PlayerScreen(vm, selected, logs, cards, hinge, onBack = { selectedId = null },
+                        onPuzzle = { puzzleId = selected.id })
                     else -> home()
                 }
             }
