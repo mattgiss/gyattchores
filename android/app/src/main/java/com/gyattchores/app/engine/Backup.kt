@@ -62,8 +62,19 @@ data class BackupFile(
 class BackupException(message: String) : Exception(message)
 
 /** What a restore brought in, for the "here's what came in" message. */
-data class RestoreCounts(val players: Int, val chores: Int, val logs: Int) {
-    fun describe() = "${n(players, "player")}, ${n(chores, "chore")}, ${n(logs, "chore")} logged"
+data class RestoreCounts(val players: Int, val chores: Int, val logs: Int,
+                         /** On a family merge: how many of the backup's people and chores were already here. */
+                         val playersHere: Int? = null, val choresHere: Int? = null) {
+    fun describe(): String {
+        if (playersHere == null || choresHere == null) return "${n(players, "player")}, ${n(chores, "chore")}, ${n(logs, "chore")} logged"
+        fun part(added: Int, here: Int, w: String) = when {
+            added == 0 && here == 0 -> "no ${w}s"
+            added == 0 -> "no new ${w}s ($here already here)"
+            here == 0 -> "${n(added, w)} added"
+            else -> "${n(added, w)} added ($here already here)"
+        }
+        return "${part(players, playersHere, "player")}, ${part(chores, choresHere, "chore")}, ${n(logs, "chore")} logged"
+    }
     private fun n(k: Int, w: String) = "$k $w${if (k == 1) "" else "s"}"
 }
 
@@ -205,6 +216,7 @@ object Backup {
             chores = if (choresAdded > 0) chores else family.chores,
             choreAdded = added, nextPlayerId = next,
         )
-        return Merged(merged, newLogs, levels, RestoreCounts(playersAdded, choresAdded, newLogs.size))
+        val playersHere = b.members.count { m -> m.plays && family.members.any { it.name.equals(m.name, ignoreCase = true) } }
+        return Merged(merged, newLogs, levels, RestoreCounts(playersAdded, choresAdded, newLogs.size, playersHere, b.chores.size - choresAdded))
     }
 }

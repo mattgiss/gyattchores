@@ -175,6 +175,14 @@ class BackupTest {
         assertTrue(m.newLogs.any { it.playerId == sam.id })
     }
 
+    @Test fun aMergeSaysWhatWasNewAndWhatWasAlreadyHere() {
+        val m = Backup.merge(family, family.chores!!, familyLogs, emptyMap(), backup(), zone, now)
+        // riley was here; pat and sam are new. dishes matched by name; trash came in under a fresh id.
+        assertEquals("2 players added (1 already here), 1 chore added (1 already here), 2 chores logged", m.counts.describe())
+        val again = Backup.merge(m.family, m.family.chores!!, familyLogs + m.newLogs, emptyMap(), backup(), zone, now)
+        assertEquals("no new players (2 already here), no new chores (2 already here), 0 chores logged", again.counts.describe())
+    }
+
     @Test fun puzzleLevelsKeepTheHigherOfTheTwo() {
         val m = Backup.merge(family, family.chores!!, familyLogs, mapOf("11" to 2), backup(), zone, now)
         assertEquals(4, m.puzzleLevels["11"])
