@@ -47,7 +47,8 @@ import com.gyattchores.app.model.Rank
 /**
  * One line of text that shrinks to fit the room it has, instead of wrapping or being cut off:
  * "GYATTCHORES" broken across two lines in a narrow pane reads as a bug. Below [minScale] it
- * stops shrinking and trims with an ellipsis.
+ * stops shrinking and trims with an ellipsis. Given a [shorter] text, that's used instead whenever
+ * [text] doesn't fit at full size, and shrinks the same way.
  */
 @Composable
 fun FitText(
@@ -58,32 +59,39 @@ fun FitText(
     fontWeight: FontWeight? = null,
     letterSpacing: TextUnit = 0.sp,
     minScale: Float = 0.6f,
+    shorter: String? = null,
 ) {
     BoxWithConstraints(modifier) {
         // Start again from full size when the text or the room changes (say, on unfolding).
-        var scale by remember(text, maxWidth) { mutableFloatStateOf(1f) }
-        var settled by remember(text, maxWidth) { mutableStateOf(false) }
+        var scale by remember(text, shorter, maxWidth) { mutableFloatStateOf(1f) }
+        var settled by remember(text, shorter, maxWidth) { mutableStateOf(false) }
+        var short by remember(text, shorter, maxWidth) { mutableStateOf(false) }
         Text(
-            text, color = color, fontWeight = fontWeight, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis,
+            if (short && shorter != null) shorter else text, color = color, fontWeight = fontWeight, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis,
             style = style.copy(fontSize = style.fontSize * scale, letterSpacing = letterSpacing * scale),
             // Hidden until it fits, so the sizes tried on the way are never seen.
             modifier = Modifier.drawWithContent { if (settled) drawContent() },
             onTextLayout = { result ->
-                if (result.hasVisualOverflow && scale > minScale) scale = (scale - 0.05f).coerceAtLeast(minScale) else settled = true
+                if (result.hasVisualOverflow && !short && shorter != null) short = true
+                else if (result.hasVisualOverflow && scale > minScale) scale = (scale - 0.05f).coerceAtLeast(minScale) else settled = true
             },
         )
     }
 }
 
-/** "> LABEL" terminal-style button. The label stays on one line, shrinking a little if it must. */
+/**
+ * "> LABEL" terminal-style button. The label stays on one line, shrinking a little if it must;
+ * a [shortLabel] takes its place when the full one doesn't fit.
+ */
 @Composable
-fun TermButton(label: String, enabled: Boolean = true, modifier: Modifier = Modifier, onClick: () -> Unit) {
+fun TermButton(label: String, enabled: Boolean = true, modifier: Modifier = Modifier, shortLabel: String? = null, onClick: () -> Unit) {
     Button(
         onClick = onClick, enabled = enabled, shape = MaterialTheme.shapes.small,
         colors = ButtonDefaults.buttonColors(containerColor = Accent),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         modifier = modifier.fillMaxWidth().heightIn(min = 52.dp),
-    ) { FitText("> $label", style = LocalTextStyle.current, fontWeight = FontWeight.Bold, letterSpacing = 1.sp, color = LocalContentColor.current) }
+    ) { FitText("> $label", style = LocalTextStyle.current, fontWeight = FontWeight.Bold, letterSpacing = 1.sp,
+        color = LocalContentColor.current, shorter = shortLabel?.let { "> $it" }) }
 }
 
 @Composable

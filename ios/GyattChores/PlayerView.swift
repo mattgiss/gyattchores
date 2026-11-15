@@ -214,7 +214,13 @@ private struct CardRunView: View {
                     }
                     let minutesLeft = store.puzzleMinutesLeft(player.id)
                     if minutesLeft > 0 {
-                        TermButton(label: "PLAY · CLEAR THE GRID · LVL \(store.puzzleLevel(player.id)) · \(minutesLeft) MIN LEFT") { fb.unlock(); puzzleOpen = true }
+                        let level = store.puzzleLevel(player.id)
+                        let play = { fb.unlock(); puzzleOpen = true }
+                        // On a narrow phone (an iPhone 16e) the minutes left matter more than the puzzle's name.
+                        ViewThatFits(in: .horizontal) {
+                            TermButton(label: "PLAY · CLEAR THE GRID · LVL \(level) · \(minutesLeft) MIN LEFT", action: play)
+                            TermButton(label: "PLAY · LVL \(level) · \(minutesLeft) MIN LEFT", action: play)
+                        }
                     } else {
                         Text("puzzle time's up for today · back tomorrow").foregroundStyle(.secondary)
                     }

@@ -337,7 +337,10 @@ private fun CardRun(
                         modifier = Modifier.padding(bottom = 8.dp))
                     val minutesLeft = com.gyattchores.app.engine.PuzzleTime.minutesLeft(vm.puzzleUsedMs(player.id))
                     if (minutesLeft > 0) {
-                        TermButton("PLAY · CLEAR THE GRID · LVL ${vm.puzzleLevel(player.id)} · $minutesLeft MIN LEFT", modifier = Modifier.padding(bottom = 8.dp)) {
+                        val level = vm.puzzleLevel(player.id)
+                        // On a narrow phone the minutes left matter more than the puzzle's name.
+                        TermButton("PLAY · CLEAR THE GRID · LVL $level · $minutesLeft MIN LEFT", modifier = Modifier.padding(bottom = 8.dp),
+                            shortLabel = "PLAY · LVL $level · $minutesLeft MIN LEFT") {
                             fb.unlock(); onPuzzle()
                         }
                     } else {
