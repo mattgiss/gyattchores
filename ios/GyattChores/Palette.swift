@@ -198,6 +198,11 @@ extension View {
     /// The colour runs right up under the status bar, so the system's darkening at the top edge of
     /// a scroll view only muddies it.
     @ViewBuilder func noScrollEdgeShade() -> some View {
+        // Built with Xcode 26 or later (the iOS 26 SDK); Xcode 16, which CI also uses, doesn't have it.
+        #if compiler(>=6.2)
         if #available(iOS 26.0, *) { scrollEdgeEffectHidden(true, for: .top) } else { self }
+        #else
+        self
+        #endif
     }
 }

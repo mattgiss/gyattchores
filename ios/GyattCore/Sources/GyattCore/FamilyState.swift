@@ -125,7 +125,8 @@ public enum FamilyState {
     /// The next free player id: never one in use, removed, with history on the server, or below
     /// what any device has recorded as next.
     public static func nextFreeId(_ family: Family, logs: [ChoreLog]) -> Int {
-        let used = (family.members.map(\.id) + family.removed + logs.map(\.playerId)).compactMap(Int.init)
+        // Spelled out as arrays: older compilers (Xcode 16) can't add a Set to an Array here.
+        let used = (family.members.map(\.id) + Array(family.removed) + logs.map(\.playerId)).compactMap(Int.init)
         return max((used.max() ?? 0) + 1, family.nextPlayerId ?? 1)
     }
 
