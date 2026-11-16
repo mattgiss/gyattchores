@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -7,15 +9,31 @@ plugins {
 
 android {
     namespace = "com.gyattchores.app"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.gyattchores.app"
         minSdk = 29
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 11
         versionName = "0.7.0"
     }
+
+    // The Play Store upload key. Its password lives outside the repo, in
+    // ~/.android/gyattchores-upload.properties (storeFile, storePassword, keyAlias, keyPassword);
+    // override the path with GYATTCHORES_UPLOAD_PROPERTIES. Without that file, the public release
+    // falls back to the debug key, so a fresh checkout still builds.
+    val uploadProps = File(System.getenv("GYATTCHORES_UPLOAD_PROPERTIES")
+        ?: "${System.getProperty("user.home")}/.android/gyattchores-upload.properties")
+    val upload = if (uploadProps.isFile) {
+        val p = Properties().apply { uploadProps.inputStream().use(::load) }
+        signingConfigs.create("upload") {
+            storeFile = File(p.getProperty("storeFile"))
+            storePassword = p.getProperty("storePassword")
+            keyAlias = p.getProperty("keyAlias")
+            keyPassword = p.getProperty("keyPassword")
+        }
+    } else null
 
     // family: syncs with the family's shared Supabase tables; keeps the id the installed phones have.
     // public: everything stays on the device; no INTERNET permission and no sync is ever started.
@@ -24,11 +42,16 @@ android {
         create("family") {
             dimension = "edition"
             buildConfigField("boolean", "FAMILY_SYNC", "true")
+            // Sideloaded through GitHub releases and Obtainium: stays on the key the family's
+            // phones already have, or their updates would be refused.
+            signingConfig = signingConfigs.getByName("debug")
         }
         create("public") {
             dimension = "edition"
             applicationIdSuffix = ".public"
             buildConfigField("boolean", "FAMILY_SYNC", "false")
+            // The Play Store edition: signed with the upload key (Play re-signs it for phones).
+            signingConfig = upload ?: signingConfigs.getByName("debug")
         }
     }
 
@@ -41,8 +64,7 @@ android {
         release {
             buildConfigField("boolean", "REAL_SYNC", "true")
             isMinifyEnabled = false
-            // Debug key for now so the APK can be sideloaded; swap for a real keystore before Play.
-            signingConfig = signingConfigs.getByName("debug")
+            // Signing is set per edition above.
         }
     }
     compileOptions {
