@@ -1,5 +1,20 @@
 package com.gyattchores.app.ui
 
+import com.gyattchores.app.engine.Phrase
+import com.gyattchores.app.engine.Engine
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK
 import androidx.biometric.BiometricPrompt
@@ -79,10 +94,13 @@ fun AdminScreen(vm: AppViewModel, logs: List<ChoreLog>, onBack: (() -> Unit)?) {
     val bioOn by vm.biometricUnlock.collectAsState()
     LaunchedEffect(authed) { if (authed) fb.unlock() }
 
-    Column(Modifier.fillMaxSize()) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (onBack != null) TextButton(onClick = onBack) { Text("← back") }
-            Text("ADMIN", color = Accent, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(12.dp))
+    // The admin area is in Clear's ocean theme, so it's plain at a glance which mode you're in.
+    CompositionLocalProvider(LocalPalette provides Palette.OCEAN) {
+    Column(Modifier.fillMaxSize().background(Bg)) {
+        Row(Modifier.fillMaxWidth().background(Palette.OCEAN.stops[0]).statusBarsPadding().padding(start = 4.dp, end = 12.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically) {
+            if (onBack != null) TextButton(onClick = onBack) { Text("Back", color = Palette.OCEAN.ink, fontWeight = FontWeight.Bold) }
+            Text("Admin", color = Palette.OCEAN.ink, fontSize = 24.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(horizontal = 12.dp))
         }
         if (!authed) {
             val canBio = remember(bioOn) { bioOn && biometricAvailable(activity) }
@@ -101,17 +119,16 @@ fun AdminScreen(vm: AppViewModel, logs: List<ChoreLog>, onBack: (() -> Unit)?) {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(onDone = { verify() }), modifier = Modifier.fillMaxWidth().focusRequester(focus),
                 )
-                TermButton("UNLOCK", enabled = code.isNotEmpty()) { verify() }
-                if (canBio) OutlinedButton(onClick = { promptBiometric(activity) { authed = true } }, modifier = Modifier.fillMaxWidth()) {
-                    Text("use fingerprint / face")
-                }
-                Text(if (vm.familySync) "forgot the code? another admin can set a new one for you."
-                    else "forgot the code? it's kept only on this phone, so it can't be looked up. erasing the app's data starts a new scoreboard.",
-                    style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                TermButton("Unlock", enabled = code.isNotEmpty(), modifier = Modifier.bleed(20.dp)) { verify() }
+                if (canBio) QuietButton("Use my fingerprint or face", Modifier.bleed(20.dp)) { promptBiometric(activity) { authed = true } }
+                Text(if (vm.familySync) "Forgot your code? Another admin can set a new one for you."
+                    else "Forgot your code? It's only kept on this phone, so it can't be looked up. Clearing the app's data starts a new scoreboard.",
+                    style = MaterialTheme.typography.bodyMedium, color = Done)
             }
         } else {
             AdminContent(vm, logs)
         }
+    }
     }
 }
 
@@ -138,7 +155,7 @@ private fun AdminContent(vm: AppViewModel, logs: List<ChoreLog>) {
     if (addingChores) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("ADD CHORES", color = Accent, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                Text("Add chores", color = Accent, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
                 TextButton(onClick = { addingChores = false }) { Text("cancel") }
             }
             ChoreIntakePanel(pool) { vm.addChores(it); fb.submit(); addingChores = false }
@@ -148,9 +165,11 @@ private fun AdminContent(vm: AppViewModel, logs: List<ChoreLog>) {
 
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
         item {
-            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.padding(vertical = 12.dp).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 for (f in listOf(Status.PENDING, Status.APPROVED, Status.REJECTED, "all")) {
-                    FilterChip(selected = filter == f, onClick = { filter = f }, label = { Text(f) })
+                    FilterChip(selected = filter == f, onClick = { filter = f }, label = {
+                        Text(when (f) { Status.PENDING -> "Waiting"; Status.APPROVED -> "Approved"; Status.REJECTED -> "Turned down"; else -> "Everything" })
+                    })
                 }
             }
         }
@@ -158,26 +177,46 @@ private fun AdminContent(vm: AppViewModel, logs: List<ChoreLog>) {
             val byPlayer = shown.groupBy { it.playerId }.filterValues { it.size > 1 }
             items(byPlayer.keys.toList(), key = { "all$it" }) { id ->
                 val mine = byPlayer.getValue(id)
-                OutlinedButton(onClick = { if (vm.approveAll(mine)) fb.levelUp() else fb.approve() }, modifier = Modifier.padding(top = 6.dp)) {
-                    Text("✓ approve all ${mine.size} from ${names[id] ?: mine.first().playerName}", color = Good)
+                TermButton("Approve all ${mine.size} of ${names[id] ?: mine.first().playerName}'s chores", modifier = Modifier.bleed(20.dp).padding(top = 6.dp)) {
+                    if (vm.approveAll(mine)) fb.levelUp() else fb.approve()
                 }
             }
         }
-        if (shown.isEmpty()) item { Text("nothing ${if (filter == "all") "logged yet" else filter}", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 24.dp)) }
-        items(shown, key = { it.id }) { l ->
-            Column(Modifier.padding(vertical = 10.dp)) {
-                Text("${names[l.playerId] ?: l.playerName} · ${l.choreName}", style = MaterialTheme.typography.bodyLarge)
-                Text("${l.points} xp · ${l.minutes?.let { "${it}m · " } ?: ""}${fmt.format(Instant.ofEpochMilli(l.timestamp))} · ${l.status}",
-                    style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                if (l.status == Status.PENDING) Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 6.dp)) {
-                    OutlinedButton(onClick = { if (vm.approve(l)) fb.levelUp() else fb.approve() }) { Text("✓ approve", color = Good) }
-                    OutlinedButton(onClick = { vm.setStatus(l, Status.REJECTED); fb.reject() }) { Text("✗ reject", color = Bad) }
+        if (shown.isEmpty()) item {
+            Text(when (filter) {
+                Status.PENDING -> "Nothing's waiting for you. All caught up!"
+                Status.APPROVED -> "Nothing's been approved yet."
+                Status.REJECTED -> "Nothing's been turned down."
+                else -> "Nobody's logged a chore yet."
+            }, color = Done, modifier = Modifier.padding(vertical = 24.dp))
+        }
+        // Each chore as a sentence, the way you'd hear about it: "Sam emptied the kids bathroom trash
+        // today. Approve it?" Waiting ones are bands down the ocean gradient; judged ones drop to black.
+        itemsIndexed(shown, key = { _, l -> l.id }) { i, l ->
+            val waiting = l.status == Status.PENDING
+            val who = names[l.playerId] ?: l.playerName
+            val said = Phrase.sentence(who, l.choreName, Engine.dayOf(l.timestamp, vm.zone), vm.today())
+            Band(i, shown.size, Modifier.bleed(20.dp), done = !waiting, minHeight = 60.dp) {
+                Column(Modifier.weight(1f)) {
+                    Text(said, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = if (waiting) Palette.OCEAN.ink else Ink.copy(alpha = 0.75f))
+                    Text(when (l.status) {
+                        Status.PENDING -> "Worth ${l.points} points. Approve it?"
+                        Status.APPROVED -> "Approved · ${l.points} points"
+                        else -> "Turned down"
+                    }, style = MaterialTheme.typography.bodyMedium, color = if (waiting) Palette.OCEAN.ink.copy(alpha = 0.85f) else if (l.status == Status.APPROVED) Good else Bad)
+                }
+                if (waiting) {
+                    Text("Yes", fontWeight = FontWeight.Black, color = Palette.OCEAN.stops[0],
+                        modifier = Modifier.clip(CircleShape).background(Palette.OCEAN.ink).clickable(onClickLabel = "approve") { if (vm.approve(l)) fb.levelUp() else fb.approve() }
+                            .padding(horizontal = 16.dp, vertical = 12.dp))
+                    Text("No", fontWeight = FontWeight.Black, color = Palette.OCEAN.ink,
+                        modifier = Modifier.clip(CircleShape).border(2.dp, Palette.OCEAN.ink.copy(alpha = 0.8f), CircleShape)
+                            .clickable(onClickLabel = "turn down") { vm.setStatus(l, Status.REJECTED); fb.reject() }.padding(horizontal = 16.dp, vertical = 12.dp))
                 }
             }
-            HorizontalDivider()
         }
         if (vm.familySync && family.players.isNotEmpty()) {
-            item { SectionLabel("this phone belongs to") }
+            item { SectionLabel("this phone belongs to", padded = false) }
             item {
                 Text("dares are made as this person. only an admin can change it.",
                     style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -186,7 +225,7 @@ private fun AdminContent(vm: AppViewModel, logs: List<ChoreLog>) {
                 }
             }
         }
-        item { SectionLabel("people") }
+        item { SectionLabel("people", padded = false) }
         item { Text("admins approve chores and can change everything here. each admin has their own code.",
             style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         items(family.members, key = { "p" + it.id }) { p ->
@@ -201,7 +240,7 @@ private fun AdminContent(vm: AppViewModel, logs: List<ChoreLog>) {
         }
         item { OutlinedButton(onClick = { fb.tap(); adding = true }, modifier = Modifier.padding(vertical = 12.dp)) { Text("+ add player") } }
 
-        item { SectionLabel("chores") }
+        item { SectionLabel("chores", padded = false) }
         item { Text("${pool.size} chores. left undone, a chore takes longer the next time it's picked.",
             style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         item { OutlinedButton(onClick = { fb.tap(); addingChores = true }, modifier = Modifier.padding(vertical = 12.dp)) { Text("+ add chores") } }
@@ -213,7 +252,7 @@ private fun AdminContent(vm: AppViewModel, logs: List<ChoreLog>) {
             }
         }
 
-        item { SectionLabel("this phone") }
+        item { SectionLabel("this phone", padded = false) }
         if (canBio) item {
             SwitchRow("fingerprint / face opens the admin area", bioOn) { vm.setBiometricUnlock(it) }
             Text("only turn this on if this is your own phone, not a player's.",

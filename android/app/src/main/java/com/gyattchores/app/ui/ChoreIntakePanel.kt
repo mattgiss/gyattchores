@@ -76,7 +76,7 @@ fun ChoreIntakePanel(existing: List<Chore>, onDone: (List<Chore>) -> Unit) {
                 val ids = existing.map { it.id }.toMutableSet()
                 onDone(chosen.map { item -> ChoreIntake.make(item.name, item.minutes, ids).also { ids += it.id } })
             }
-            OutlinedButton(onClick = { fb.tap(); reviewing = false }, modifier = Modifier.fillMaxWidth()) { Text("← write some more") }
+            OutlinedButton(onClick = { fb.tap(); reviewing = false }, modifier = Modifier.fillMaxWidth()) { Text("Write some more") }
         }
     }
 }

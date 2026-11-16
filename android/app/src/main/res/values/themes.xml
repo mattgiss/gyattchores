@@ -1,5 +1,7 @@
 <resources>
-    <style name="Theme.GyattChores" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:windowBackground">@android:color/white</item>
+    <!-- Dark only, like Clear: black from the first frame, including the launch splash. -->
+    <style name="Theme.GyattChores" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:windowSplashScreenBackground">@android:color/black</item>
     </style>
 </resources>

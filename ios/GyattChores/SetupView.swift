@@ -26,10 +26,10 @@ struct SetupView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .firstTextBaseline) {
-                Text("GYATTCHORES").font(.title).bold().kerning(4).foregroundStyle(Theme.accent)
+                Text("GyattChores").font(.app(fixedSize: 34, weight: .black)).foregroundStyle(Palette.heat.stops[0])
                     .lineLimit(1).minimumScaleFactor(0.6)
                 Spacer(minLength: 8)
-                if step != .welcome { Text("step \(step.rawValue) of 3").font(.footnote).foregroundStyle(.secondary) }
+                if step != .welcome { Text("step \(step.rawValue) of 3").font(.app(.footnote)).foregroundStyle(.secondary) }
             }
             .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 4)
             // The same column as the steps below, so the title sits above them on an iPad too.
@@ -43,7 +43,7 @@ struct SetupView: View {
                     case .chores: chores
                     }
                     if step != .welcome {
-                        Button("← back") { fb.tap(); back() }.foregroundStyle(.secondary).frame(minHeight: 44)
+                        Button("Back") { fb.tap(); back() }.foregroundStyle(.secondary).frame(minHeight: 44)
                     }
                 }
                 .padding(.horizontal, 20).padding(.bottom, 24)
@@ -64,7 +64,7 @@ struct SetupView: View {
     // MARK: Welcome
 
     @ViewBuilder private var welcome: some View {
-        Text("a chore scoreboard for your family.").font(.headline).padding(.top, 8)
+        Text("a chore scoreboard for your family.").font(.app(.headline)).padding(.top, 8)
         VStack(alignment: .leading, spacing: 6) {
             Text("· everyone picks \(Engine.dailyMinutes) minutes of chores a day")
             Text("· an admin approves what got done")
@@ -89,12 +89,12 @@ struct SetupView: View {
         #endif
         if !alreadyHere.isEmpty && !Self.familyBuild {
             Text("your players and their points are still here. this device now keeps its own scoreboard: it no longer shares with other phones.")
-                .font(.footnote).foregroundStyle(Theme.warn).padding(.top, 4)
+                .font(.app(.footnote)).foregroundStyle(Theme.warn).padding(.top, 4)
         }
         TermButton(label: "SET UP THIS DEVICE") { fb.tap(); step = .admin }.padding(.top, 12)
         // A new phone for a family that already has a scoreboard saved as a file.
         BackupControls(canSave: false).padding(.top, 4)
-        Link("privacy policy", destination: Links.privacy).font(.footnote).frame(maxWidth: .infinity, minHeight: 44)
+        Link("privacy policy", destination: Links.privacy).font(.app(.footnote)).frame(maxWidth: .infinity, minHeight: 44)
     }
 
     // MARK: Admin
@@ -110,9 +110,9 @@ struct SetupView: View {
     }
 
     @ViewBuilder private var admin: some View {
-        Text("who's in charge?").font(.headline).padding(.top, 8)
+        Text("who's in charge?").font(.app(.headline)).padding(.top, 8)
         Text("an admin approves chores and can change the players and the chore list. you can make more people admins later.")
-            .font(.callout).foregroundStyle(.secondary)
+            .font(.app(.callout)).foregroundStyle(.secondary)
         TextField("your name", text: $adminName)
             .textFieldStyle(.roundedBorder).textInputAutocapitalization(.never).autocorrectionDisabled()
             .submitLabel(.done).accessibilityIdentifier("admin-name")
@@ -122,15 +122,15 @@ struct SetupView: View {
         SecureField("the same code again", text: $codeAgain)
             .textFieldStyle(.roundedBorder).textContentType(.oneTimeCode).submitLabel(.done)
             .accessibilityIdentifier("admin-code-again")
-        if let codeProblem { Text(codeProblem).font(.footnote).foregroundStyle(Theme.bad) }
+        if let codeProblem { Text(codeProblem).font(.app(.footnote)).foregroundStyle(Theme.bad) }
         Text(Self.familyBuild
              ? "keep the code from the players. only a scrambled copy is shared with the family's phones; if it's forgotten, another admin can set a new one."
              : "keep the code from the players. it isn't stored anywhere but this device, so nobody can look it up for you: if it's forgotten, the way back in is to delete the app and start a new scoreboard.")
-            .font(.footnote).foregroundStyle(.secondary)
+            .font(.app(.footnote)).foregroundStyle(.secondary)
         Toggle("i do chores too", isOn: $adminPlays)
         if canBio {
             Toggle("face id / touch id also opens the admin area", isOn: $biometricUnlock)
-            Text("only turn this on if this is your own device, not a player's.").font(.footnote).foregroundStyle(.secondary)
+            Text("only turn this on if this is your own device, not a player's.").font(.app(.footnote)).foregroundStyle(.secondary)
         }
         TermButton(label: "NEXT", enabled: adminReady) { fb.tap(); step = .players }.padding(.top, 4)
     }
@@ -154,9 +154,9 @@ struct SetupView: View {
     }
 
     @ViewBuilder private var players: some View {
-        Text("who's playing?").font(.headline).padding(.top, 8)
+        Text("who's playing?").font(.app(.headline)).padding(.top, 8)
         Text("everyone who does chores. first names or nicknames are plenty, and you can add or change them later.")
-            .font(.callout).foregroundStyle(.secondary)
+            .font(.app(.callout)).foregroundStyle(.secondary)
         if adminPlays, !adminIsListed { nameRow(adminName.trimmingCharacters(in: .whitespaces), note: "you") }
         ForEach(alreadyHere, id: \.self) { nameRow($0, note: "already here") }
         ForEach(playerNames, id: \.self) { name in
@@ -178,9 +178,9 @@ struct SetupView: View {
             HStack {
                 Text("> ").foregroundStyle(Theme.accent)
                 Text(name).lineLimit(1)
-                if let note { Text("· \(note)").font(.footnote).foregroundStyle(.secondary) }
+                if let note { Text("· \(note)").font(.app(.footnote)).foregroundStyle(.secondary) }
                 Spacer()
-                if let onRemove { Button("remove", action: onRemove).font(.footnote) }
+                if let onRemove { Button("remove", action: onRemove).font(.app(.footnote)) }
             }
             .frame(minHeight: 44)
             Divider()
@@ -196,12 +196,12 @@ struct SetupView: View {
     }
 
     @ViewBuilder private var chores: some View {
-        Text("what needs doing?").font(.headline).padding(.top, 8)
+        Text("what needs doing?").font(.app(.headline)).padding(.top, 8)
         if writingChores {
             ChoreIntakeView(existing: []) { finish(with: $0) }
         } else {
             Text("start from a list of \(store.starterChores.count) everyday chores, or write your own. either way an admin can add, change and remove chores at any time.")
-                .font(.callout).foregroundStyle(.secondary)
+                .font(.app(.callout)).foregroundStyle(.secondary)
             TermButton(label: "USE THE STARTER LIST") { finish(with: store.starterChores) }
             OutlineButton(label: "write or say your own") { fb.tap(); writingChores = true }
         }

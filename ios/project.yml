@@ -43,6 +43,8 @@ targets:
         INFOPLIST_KEY_NSFaceIDUsageDescription: Open the admin area to approve chores.
         INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        # Dark only, like Clear.
+        INFOPLIST_KEY_UIUserInterfaceStyle: Dark
         # Portrait on a phone; any way up on an iPad (which also lets it share the screen with other apps).
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"

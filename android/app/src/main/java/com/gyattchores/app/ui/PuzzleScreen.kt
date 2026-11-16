@@ -215,7 +215,7 @@ fun PuzzleScreen(vm: AppViewModel, player: Player, onBack: () -> Unit) {
                 cleared = pack.board(level).blocksLeft   // every block the level started with
                 vm.puzzleCleared(player.id, level)
                 launch { zoom.animateTo(1f, spring(dampingRatio = 0.4f, stiffness = Spring.StiffnessMedium)) }
-                burst(hit, listOf(Accent, ink, Accent, Color.White), 90, 7f)
+                burst(hit, listOf(BlockA, BlockB, BlockA, Color.White), 90, 7f)
                 repeat(3) { rings += Ring(hit.x, hit.y, now, it * 90f, cellPx * (6f + it * 2f)) }
                 launch { flash.snapTo(if (calm) 0.35f else 0.92f); flash.animateTo(0f, tween(520)) }
                 shake(cellPx * 0.28f)
@@ -226,7 +226,7 @@ fun PuzzleScreen(vm: AppViewModel, player: Player, onBack: () -> Unit) {
                 fb.puzzleMatch()
                 cells = next.cellString
                 flying = null
-                burst(hit, listOf(Accent, ink), 22, 3f)
+                burst(hit, listOf(BlockA, BlockB), 22, 3f)
                 rings += Ring(hit.x, hit.y, now, 0f, cellPx * 3f)
                 shake(cellPx * 0.06f)
                 if (next.stuck) { delay(250); fb.reject() }
@@ -257,7 +257,7 @@ fun PuzzleScreen(vm: AppViewModel, player: Player, onBack: () -> Unit) {
                 .offset { IntOffset(shakeX.value.roundToInt(), shakeY.value.roundToInt()) },
         ) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = { fb.tap(); onBack() }) { Text("← back") }
+                TextButton(onClick = { fb.tap(); onBack() }) { Text("Back") }
                 // Shrinks rather than cutting off, so a three-digit level still leaves the whole title.
                 FitText("CLEAR THE GRID", style = MaterialTheme.typography.labelMedium, letterSpacing = 3.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant, minScale = 0.5f, modifier = Modifier.weight(1f).padding(horizontal = 4.dp))
@@ -267,7 +267,7 @@ fun PuzzleScreen(vm: AppViewModel, player: Player, onBack: () -> Unit) {
             Text(
                 when {
                     board.stuck -> "no moves left — the order matters. restart and try another way."
-                    selected != null -> "now tap a ${if (board[selected!!] == PuzzleBoard.PINK) "black" else "pink"} block in line with it"
+                    selected != null -> "now tap a block of the other colour in line with it"
                     else -> "tap a block, then one of the other colour in line with it. clear them all."
                 },
                 color = if (board.stuck) Bad else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -314,7 +314,7 @@ fun PuzzleScreen(vm: AppViewModel, player: Player, onBack: () -> Unit) {
                 Text("TIME'S UP", color = Accent, fontWeight = FontWeight.Black, style = MaterialTheme.typography.headlineMedium, letterSpacing = 3.sp)
                 Text("that's an hour of puzzles today. back tomorrow.", color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center)
-                TextButton(onClick = { fb.tap(); onBack() }) { Text("← back") }
+                TextButton(onClick = { fb.tap(); onBack() }) { Text("Back") }
             }
         }
     }
@@ -343,7 +343,7 @@ private fun DrawScope.drawBoard(
         }
         if (flying?.first == i) continue   // drawn on top, in flight
         // During the freeze everything else drops back while the impact hangs in the air.
-        val color = (if (c == PuzzleBoard.PINK) Accent else ink).let { if (frozen) it.copy(alpha = 0.3f) else it }
+        val color = (if (c == PuzzleBoard.PINK) BlockA else BlockB).let { if (frozen) it.copy(alpha = 0.3f) else it }
         var shift = Offset.Zero
         if (miss != null && miss.first == i && now - miss.second < 260) {
             val k = (now - miss.second) / 260f
@@ -371,7 +371,7 @@ private fun DrawScope.drawBoard(
         val a = Offset(board.column(from) * cell, board.row(from) * cell)
         val b = Offset(board.column(to) * cell, board.row(to) * cell)
         val p = a + (b - a) * fly
-        val color = if (board[from] == PuzzleBoard.PINK) Accent else ink
+        val color = if (board[from] == PuzzleBoard.PINK) BlockA else BlockB
         // A streak behind the block in flight.
         drawLine(color.copy(alpha = 0.35f), a + Offset(cell / 2, cell / 2), p + Offset(cell / 2, cell / 2), cell * 0.5f)
         drawRoundRect(color, p + Offset(pad, pad), Size(cell - 2 * pad, cell - 2 * pad), corner)

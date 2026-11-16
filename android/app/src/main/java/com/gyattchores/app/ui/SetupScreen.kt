@@ -92,10 +92,10 @@ fun SetupScreen(vm: AppViewModel) {
                     Text("a chore scoreboard for your family.", style = MaterialTheme.typography.titleMedium)
                     Muted("· everyone picks ${Engine.DAILY_MINUTES} minutes of chores a day\n· an admin approves what got done\n· points, streaks and a weekly winner follow")
                     if (vm.familySync) {
-                        SectionLabel("shared with your family")
+                        SectionLabel("shared with your family", padded = false)
                         Muted("· this edition keeps the family's chores and points in step across your family's phones")
                     } else {
-                        SectionLabel("private by design")
+                        SectionLabel("private by design", padded = false)
                         Muted("· everything stays on this phone\n· no accounts, no sign-in, no ads, no tracking\n· uninstall the app and it's all gone")
                     }
                     if (alreadyHere.isNotEmpty()) Text("your players and their points are still here. they just need someone in charge.",
@@ -152,7 +152,7 @@ fun SetupScreen(vm: AppViewModel) {
                     }
                 }
             }
-            if (step > 0) TextButton(onClick = { fb.tap(); back() }) { Text("← back", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            if (step > 0) TextButton(onClick = { fb.tap(); back() }) { Text("Back", color = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
     }
 }

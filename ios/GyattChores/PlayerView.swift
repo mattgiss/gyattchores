@@ -23,26 +23,33 @@ struct PlayerView: View {
         let others = store.takenByOthers(player.id)
         let taken = Engine.standingToday(statusToday).union((card?.choreIds ?? []).filter { statusToday[$0] == nil }).union(others.keys)
         VStack(spacing: 0) {
+            // The screen's first band: who this is, their version and streak, in white on red,
+            // running up under the status bar.
+            VStack(alignment: .leading, spacing: 8) {
             HStack {
                 // Leaving the bonus picker always needs a way back, even with no screen behind this one.
                 if showsBack || bonusPicking {
-                    Button("← back") { fb.tap(); if bonusPicking { bonusPicking = false } else { dismiss() } }
-                        .padding(.trailing, 8)
+                    Button("Back") { fb.tap(); if bonusPicking { bonusPicking = false } else { dismiss() } }
+                        .font(.app(.callout)).fontWeight(.bold).frame(minWidth: 44, minHeight: 44, alignment: .leading).padding(.trailing, 8)
                 }
-                Text(bonusPicking ? "\(store.shownName(player)) · bonus round" : store.shownName(player)).font(.headline).lineLimit(1)
+                Text(bonusPicking ? "\(store.shownName(player)) · bonus" : store.shownName(player)).font(.app(.title3)).fontWeight(.black).lineLimit(1).minimumScaleFactor(0.6)
                 Spacer(minLength: 8)
                 // Their own nickname, their own call: no admin needed, and it can't change the
                 // username their points are kept under.
                 if !bonusPicking {
-                    Button("✎ name") {
+                    Button("Rename") {
                         fb.tap()
                         displayNameDraft = player.displayName ?? ""
                         editingDisplayName = true
                     }
-                    .font(.footnote).frame(minHeight: 36)
+                    .font(.app(.callout)).fontWeight(.bold).frame(minHeight: 44)
                 }
             }
-            .padding(.horizontal, 20).padding(.vertical, 12)
+            StatsHeader(rank: store.rank(player.id), streak: store.streak(player.id))
+            }
+            .foregroundStyle(Palette.heat.ink).tint(Palette.heat.ink)
+            .padding(.horizontal, 16).padding(.bottom, 12)
+            .background(Palette.heat.stops[0].ignoresSafeArea(edges: .top))
 
             if let card {
                 if bonusPicking {
@@ -55,12 +62,13 @@ struct PlayerView: View {
                 }
             } else {
                 PickerView(pool: store.pickable(player.id).filter { others[$0.id] == nil }, bonus: false,
-                           notes: (store.rejectedToday(player.id) ? ["today's earlier chores were rejected — build a new card"] : [])
-                               + (others.isEmpty ? [] : ["\(others.count) chore\(others.count == 1 ? "" : "s") already taken by someone else today"])) { chosen in
+                           notes: (store.rejectedToday(player.id) ? ["Today's earlier chores were turned down, so let's build a new card."] : [])
+                               + (others.isEmpty ? [] : ["Someone else already has \(others.count == 1 ? "one" : "\(others.count)") of today's chores."])) { chosen in
                     store.lockIn(player, chosen); fb.lockIn()
                 }
             }
         }
+        .background(Color.appBackground)
         .toolbar(.hidden, for: .navigationBar)
         .alert("Display name", isPresented: $editingDisplayName) {
             TextField("anything you like", text: $displayNameDraft)
@@ -92,39 +100,48 @@ private struct PickerView: View {
         VStack(spacing: 0) {
             ScrollView {
                 LazyVStack(spacing: 0) {
-                    Text(bonus ? "log extra chores — no cap, all normal points" : "pick what you want — then fill to \(Engine.dailyMinutes) min")
-                        .foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 8)
+                    Text(bonus ? "Did a bit extra today? Pick what you did. Every chore still earns its points." : "Pick what you'd like to do today, then fill it up to \(Engine.dailyMinutes) minutes.")
+                        .font(.app(.callout)).foregroundStyle(Color.done).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 20).padding(.vertical, 14)
                     ForEach(notes, id: \.self) { note in
-                        Text(note).font(.footnote).foregroundStyle(Theme.warn).frame(maxWidth: .infinity, alignment: .leading).padding(.bottom, 8)
+                        Text(note).font(.app(.footnote)).foregroundStyle(Theme.warn).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 20).padding(.bottom, 10)
                     }
-                    ForEach(pool) { c in
+                    ForEach(Array(pool.enumerated()), id: \.element.id) { i, c in
                         let isPicked = picked.contains(c.id)
-                        ChoreRow(name: c.name + (suggested.contains(c.id) ? " ✨" : ""), minutes: c.currentMinutes, escalLevel: c.escalLevel, checked: isPicked) {
+                        ChoreRow(name: c.name, minutes: c.currentMinutes, escalLevel: c.escalLevel, checked: isPicked,
+                                 index: i, count: pool.count, picking: true) {
                             if isPicked { fb.tick(false); picked.removeAll { $0 == c.id }; suggested.remove(c.id) }
                             else if c.currentMinutes <= remaining { fb.tick(true); picked.append(c.id); suggested.remove(c.id) }
                             else { fb.error() }
                         }
                     }
                 }
-                .padding(.horizontal, 20)
             }
             .scrollBounceBehavior(.basedOnSize)
-            VStack(alignment: .leading, spacing: 8) {
-                Text(bonus ? "\(total)m" : "\(total) / \(Engine.dailyMinutes)m").bold()
+            VStack(alignment: .leading, spacing: 0) {
+                HStack {
+                    Text(bonus ? Phrase.count(total, "minute") : "\(total) of \(Engine.dailyMinutes) minutes").font(.app(.title3)).fontWeight(.black)
+                    Spacer()
+                }
+                .padding(.horizontal, 20).padding(.vertical, 10)
                 if !bonus {
-                    ProgressView(value: min(1, Double(total) / Double(Engine.dailyMinutes))).animation(.easeOut(duration: 0.2), value: total)
-                    OutlineButton(label: chosen.isEmpty ? "✨ suggest a \(Engine.dailyMinutes)-min card" : "✨ fill to \(Engine.dailyMinutes)m") {
+                    // How full the card is, as a strip of the gradient across the screen.
+                    GeometryReader { g in
+                        Rectangle().fill(LinearGradient(colors: Palette.heat.stops, startPoint: .leading, endPoint: .trailing))
+                            .frame(width: g.size.width * min(1, CGFloat(total) / CGFloat(Engine.dailyMinutes)))
+                    }
+                    .frame(height: 4).background(Color.surface)
+                    .animation(.easeOut(duration: 0.2), value: total)
+                    OutlineButton(label: chosen.isEmpty ? "Suggest a \(Engine.dailyMinutes)-minute card" : "Fill it up to \(Engine.dailyMinutes) minutes") {
                         fb.fill()
                         let next = Engine.suggestFill(pickedIds: picked, pool: pool)
                         suggested = suggested.intersection(next).union(next.filter { !picked.contains($0) })
                         picked = next
                     }
                 }
-                TermButton(label: ready ? (bonus ? "LOG \(chosen.count) CHORES" : "LOCK IN CARD")
-                           : !chosen.isEmpty ? "ADD MORE TO REACH \(Engine.dailyMinutes)M" : bonus ? "PICK CHORES TO LOG" : "PICK OR SUGGEST CHORES",
+                TermButton(label: ready ? (bonus ? "Log \(chosen.count == 1 ? "this chore" : "these \(chosen.count) chores")" : "Lock in my card")
+                           : !chosen.isEmpty ? "Add a few more to reach \(Engine.dailyMinutes) minutes" : bonus ? "Pick the chores you did" : "Pick some chores, or let me suggest some",
                            enabled: ready) { onConfirm(chosen) }
             }
-            .padding(.horizontal, 20).padding(.vertical, 12)
         }
         // Chime once when the card first becomes a full day.
         .onChange(of: ready) { _, now in if now && !bonus { fb.ready() } }
@@ -159,81 +176,89 @@ private struct CardRunView: View {
         let keep = card.choreIds.indices.filter { !lost.contains(card.choreIds[$0]) }
         let allChecked = !keep.isEmpty && keep.allSatisfy { card.checked[$0] }
 
+        // One gradient down the whole day: the card, then the bonus round, then anything rejected.
+        let rows = card.choreIds.count + bonusLogs.count + (card.submitted ? rejectedExtras.count : 0)
         VStack(spacing: 0) {
             ScrollView {
                 LazyVStack(spacing: 0) {
-                    StatsHeader(rank: rank, streak: store.streak(player.id))
-                    SectionLabel("today's card · \(card.minutes.reduce(0, +))m")
+                    SectionLabel("Today's card · \(Phrase.count(card.minutes.reduce(0, +), "minute"))")
                     ForEach(Array(card.choreIds.enumerated()), id: \.element) { i, id in
                         ChoreRow(name: store.choreName(id), minutes: card.minutes[i],
                                  escalLevel: i < card.escal.count ? card.escal[i] : 0, checked: card.checked[i],
-                                 status: card.submitted ? (statusByChore[id] ?? Status.pending) : (lost.contains(id) ? ChoreRow.taken : nil)) {
+                                 status: card.submitted ? (statusByChore[id] ?? Status.pending) : (lost.contains(id) ? ChoreRow.taken : nil),
+                                 index: i, count: rows) {
                             fb.tick(!card.checked[i]); store.toggle(player, card, i)
                         }
                     }
                     if !bonusLogs.isEmpty {
-                        SectionLabel("bonus round")
-                        ForEach(bonusLogs) { l in
-                            ChoreRow(name: l.choreName, minutes: Engine.choreMinutes(l, pool: store.poolById), checked: true, status: statusByChore[l.choreId])
+                        SectionLabel("Bonus round")
+                        ForEach(Array(bonusLogs.enumerated()), id: \.element.id) { i, l in
+                            ChoreRow(name: l.choreName, minutes: Engine.choreMinutes(l, pool: store.poolById), checked: true, status: statusByChore[l.choreId],
+                                     index: card.choreIds.count + i, count: rows)
                         }
                     }
                     // Kept off a card that's still being checked off, where it would only be in the way.
                     if card.submitted && !rejectedExtras.isEmpty {
-                        SectionLabel("rejected today")
+                        SectionLabel("Turned down today")
                         ForEach(rejectedExtras) { l in
                             ChoreRow(name: l.choreName, minutes: Engine.choreMinutes(l, pool: store.poolById), checked: true, status: Status.rejected)
                         }
                     }
                 }
-                .padding(.horizontal, 20)
             }
             .scrollBounceBehavior(.basedOnSize)
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 0) {
                 if !card.submitted {
                     if !lost.isEmpty {
-                        Text("taken = someone else got it first today — it won't be submitted").font(.footnote).foregroundStyle(.secondary)
+                        Text("Someone else got to the ones marked taken first, so they won't be sent.").font(.app(.footnote)).foregroundStyle(Color.done).padding(.horizontal, 20).padding(.bottom, 8)
                     }
-                    TermButton(label: allChecked ? "SUBMIT FOR APPROVAL" : keep.isEmpty ? "ALL TAKEN TODAY — CHANGE PICKS" : "CHECK OFF EVERYTHING FIRST",
+                    TermButton(label: allChecked ? "Send it off for approval" : keep.isEmpty ? "Everything's been taken today. Change your picks" : "Check everything off first",
                                enabled: allChecked) {
                         store.submit(player, card); fb.submit()
                     }
-                    Button("change my picks") { fb.tap(); store.clearCard(player) }.foregroundStyle(.secondary).frame(maxWidth: .infinity, minHeight: 44)
-                    Text("🔒 the puzzle unlocks when this card is submitted").font(.footnote).foregroundStyle(.secondary)
+                    HStack {
+                        Text("The puzzle opens once you send your card.").font(.app(.footnote)).foregroundStyle(Color.done)
+                        Spacer()
+                        Button("Change my picks") { fb.tap(); store.clearCard(player) }.font(.app(.footnote)).fontWeight(.bold).foregroundStyle(Color.appText).frame(minHeight: 44)
+                    }
+                    .padding(.horizontal, 20)
                 } else {
                     // Say what's actually left: every chore logged today is pending, approved or rejected.
                     let verdicts = (card.choreIds + extras.map(\.choreId)).map { statusByChore[$0] ?? Status.pending }
                     let waiting = verdicts.filter { $0 == Status.pending }.count
                     let rejected = verdicts.filter { $0 == Status.rejected }.count
-                    if waiting == verdicts.count { Text("card submitted — waiting on an admin").foregroundStyle(.secondary) }
-                    else if waiting > 0 { Text("\(waiting) of \(verdicts.count) still waiting on an admin").foregroundStyle(.secondary) }
-                    else if rejected == 0 { Text("✓ all approved — nice work").foregroundStyle(Theme.good) }
-                    else if rejected == verdicts.count { Text("✗ none approved today").foregroundStyle(Theme.bad) }
-                    else { Text("done — \(verdicts.count - rejected) approved, \(rejected) rejected").foregroundStyle(.secondary) }
-                    if rejected > 0 {
-                        Text("rejected chores can be done again from the bonus round").font(.footnote).foregroundStyle(.secondary)
+                    Group {
+                        if waiting == verdicts.count { Text("Sent! Now it's waiting for an admin to look at it.").foregroundStyle(Color.done) }
+                        else if waiting > 0 { Text("\(waiting) of \(verdicts.count) are still waiting for an admin.").foregroundStyle(Color.done) }
+                        else if rejected == 0 { Text("Everything's approved. Nice work!").foregroundStyle(Theme.good) }
+                        else if rejected == verdicts.count { Text("None of today's chores were approved.").foregroundStyle(Theme.bad) }
+                        else { Text("\(verdicts.count - rejected) approved and \(rejected) turned down.").foregroundStyle(Color.done) }
+                        if rejected > 0 {
+                            Text("You can redo the turned-down ones in a bonus round.").font(.app(.footnote)).foregroundStyle(Color.done)
+                        }
                     }
+                    .font(.app(.callout)).fontWeight(.semibold).padding(.horizontal, 20).padding(.vertical, 10)
                     let minutesLeft = store.puzzleMinutesLeft(player.id)
                     if minutesLeft > 0 {
                         let level = store.puzzleLevel(player.id)
                         let play = { fb.unlock(); puzzleOpen = true }
                         // On a narrow phone (an iPhone 16e) the minutes left matter more than the puzzle's name.
                         ViewThatFits(in: .horizontal) {
-                            TermButton(label: "PLAY · CLEAR THE GRID · LVL \(level) · \(minutesLeft) MIN LEFT", action: play)
-                            TermButton(label: "PLAY · LVL \(level) · \(minutesLeft) MIN LEFT", action: play)
+                            TermButton(label: "Play level \(level) · \(Phrase.count(minutesLeft, "minute")) left today", action: play)
+                            TermButton(label: "Play level \(level) · \(minutesLeft) min left", action: play)
                         }
                     } else {
-                        Text("puzzle time's up for today · back tomorrow").foregroundStyle(.secondary)
+                        Text("That's your hour of puzzles for today. See you tomorrow!").foregroundStyle(Color.done).padding(.horizontal, 20).padding(.vertical, 18)
                     }
-                    if bonusLeft > 0 { OutlineButton(label: "+ bonus round") { fb.tap(); onBonus() } }
+                    if bonusLeft > 0 { OutlineButton(label: "Do a bonus round") { fb.tap(); onBonus() } }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 20).padding(.vertical, 12)
         }
         // Celebrate the first time this screen shows a new version (approval may have happened elsewhere).
         .task(id: rank.level) { if store.isNewLevel(player.id, rank.level) { fb.levelUp() } }
         .fullScreenCover(isPresented: $puzzleOpen, onDismiss: { store.puzzleTimeShown() }) {
-            PuzzleView(player: player).environmentObject(store).environmentObject(fb).fontDesign(.monospaced).tint(Theme.accent)
+            PuzzleView(player: player).environmentObject(store).environmentObject(fb).font(.app(.body)).tint(Theme.accent)
         }
     }
 }

@@ -33,7 +33,7 @@ struct ChoreIntakeView: View {
 
     @ViewBuilder private var write: some View {
         Text("list the chores in your home, in your own words. type them, or tap the mic on the keyboard and say them.")
-            .font(.callout).foregroundStyle(.secondary)
+            .font(.app(.callout)).foregroundStyle(.secondary)
         TextEditor(text: $text)
             .focused($writing)
             .frame(height: 140)
@@ -54,7 +54,7 @@ struct ChoreIntakeView: View {
         Text(SetupView.familyBuild
              ? "sorted on this device. only the chores you add are shared with the family's phones."
              : "sorted on this device. nothing you write or say here is sent anywhere by this app.")
-            .font(.caption2).foregroundStyle(.secondary)
+            .font(.app(.caption2)).foregroundStyle(.secondary)
     }
 
     // MARK: Reviewing
@@ -66,7 +66,7 @@ struct ChoreIntakeView: View {
                 .foregroundStyle(Theme.warn)
         } else {
             Text("found \(items.count). untick any you don't want; fix names and minutes as you like.")
-                .font(.callout).foregroundStyle(.secondary)
+                .font(.app(.callout)).foregroundStyle(.secondary)
             ForEach(items.indices, id: \.self) { i in
                 HStack(spacing: 10) {
                     Button { fb.tick(!items[i].on); found?[i].on.toggle() } label: {
@@ -95,6 +95,6 @@ struct ChoreIntakeView: View {
             }
             onDone(chores)
         }
-        OutlineButton(label: "← write some more") { fb.tap(); found = nil }
+        OutlineButton(label: "Write some more") { fb.tap(); found = nil }
     }
 }

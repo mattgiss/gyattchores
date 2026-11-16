@@ -6,7 +6,13 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.MaterialTheme
@@ -94,7 +100,9 @@ fun AppRoot(vm: AppViewModel, fold: FoldingFeature?) {
             }
             return@Surface
         }
-        BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding()) {
+        // No padding at the top: each screen's first band runs up under the status bar and pads
+        // itself, so the colour fills the screen, as in Clear.
+        BoxWithConstraints(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom))) {
             // Two panes whenever both fit. The Z Fold 7's inner screen is about 750dp by 830dp, so
             // it gets two panes whichever way up it's held; its cover screen and other phones don't.
             val windowWidth = maxWidth
@@ -105,7 +113,7 @@ fun AppRoot(vm: AppViewModel, fold: FoldingFeature?) {
                     onDares = { adminOpen = false; daresOpen = true })
             }
             if (puzzlePlayer != null) {
-                PuzzleScreen(vm, puzzlePlayer, onBack = { puzzleId = null })
+                Box(Modifier.statusBarsPadding()) { PuzzleScreen(vm, puzzlePlayer, onBack = { puzzleId = null }) }
             } else if (twoPane) {
                 val hingeLeft = hingeX?.let { with(LocalDensity.current) { it.toDp() } }
                 Row(Modifier.fillMaxSize()) {
@@ -118,7 +126,7 @@ fun AppRoot(vm: AppViewModel, fold: FoldingFeature?) {
                                 showDares -> DaresScreen(vm, players, logs, shared, myId!!, onBack = { daresOpen = false })
                                 selected != null -> PlayerScreen(vm, selected, logs, cards, hinge, onBack = null, onPuzzle = { puzzleId = selected.id })
                                 else -> Text(if (players.isEmpty()) "> add players in the admin area" else "> pick a player", color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.align(Alignment.Center))
+                                    modifier = Modifier.align(Alignment.Center).statusBarsPadding())
                             }
                         }
                     }

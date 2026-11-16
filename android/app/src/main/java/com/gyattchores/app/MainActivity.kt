@@ -25,7 +25,11 @@ class MainActivity : FragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        // Dark only: white status and navigation bar icons over the colour bands and the black.
+        enableEdgeToEdge(
+            statusBarStyle = androidx.activity.SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+            navigationBarStyle = androidx.activity.SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+        )
         takeTestSyncUrl(intent)
 
         lifecycleScope.launch {
@@ -50,8 +54,16 @@ class MainActivity : FragmentActivity() {
         vm.requestSync()
     }
 
-    /** Debug builds: `adb shell am start ... --es syncURL http://<host>:8789` picks a test server. Ignored in release. */
+    /**
+     * Debug builds: `adb shell am start ... --es syncURL http://<host>:8789` picks a test server, and
+     * `--es restoreFile <name>` restores a backup pushed to the app's external files folder (for
+     * previews on an emulator). Both ignored in release.
+     */
     private fun takeTestSyncUrl(intent: android.content.Intent?) {
         intent?.getStringExtra("syncURL")?.let { vm.setTestSyncUrl(it) }
+        if (BuildConfig.DEBUG) intent?.getStringExtra("restoreFile")?.let { name ->
+            runCatching { vm.restore(com.gyattchores.app.engine.Backup.decode(java.io.File(getExternalFilesDir(null), name).readText())) }
+                .onFailure { android.util.Log.w("GyattChores", "restoreFile $name: $it") }
+        }
     }
 }

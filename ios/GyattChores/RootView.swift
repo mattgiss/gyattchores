@@ -85,7 +85,7 @@ struct RootView: View {
                 .toolbar(.hidden, for: .navigationBar)
         }
         .fullScreenCover(isPresented: $adminOpen) {
-            AdminView().environmentObject(store).environmentObject(fb).fontDesign(.monospaced).tint(Theme.accent)
+            AdminView().environmentObject(store).environmentObject(fb).font(.app(.body)).tint(Theme.accent)
         }
         #if FAMILY_SYNC
         .sheet(isPresented: $daresOpen) { DaresView().appChrome(store, fb) }
@@ -141,7 +141,7 @@ private struct FamilyLoadingView: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            Text("GYATTCHORES").font(.title).bold().kerning(4).foregroundStyle(Theme.accent)
+            Text("GyattChores").font(.app(fixedSize: 34, weight: .black)).foregroundStyle(Palette.heat.stops[0])
             if store.syncStatus == "offline" {
                 Text("can't reach the family's scoreboard. check the connection.").foregroundStyle(.secondary).multilineTextAlignment(.center)
                 Button("try again") { store.requestSync() }.buttonStyle(.bordered)

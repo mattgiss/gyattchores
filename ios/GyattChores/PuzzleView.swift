@@ -55,11 +55,11 @@ struct PuzzleView: View {
 
     var body: some View {
         ZStack {
-            Color(.systemBackground).ignoresSafeArea()
+            Color.appBackground.ignoresSafeArea()
             VStack(spacing: 0) {
                 header
                 Text(hint)
-                    .font(.footnote).foregroundStyle(board.stuck ? Theme.bad : .secondary)
+                    .font(.app(.footnote)).foregroundStyle(board.stuck ? Theme.bad : .secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 20).padding(.bottom, 4)
                 GeometryReader { geo in
@@ -136,15 +136,15 @@ struct PuzzleView: View {
     }
 
     private var title: some View {
-        Text("CLEAR THE GRID").font(.caption).kerning(3).foregroundStyle(.secondary).lineLimit(1).fixedSize()
+        Text("CLEAR THE GRID").font(.app(.caption)).kerning(3).foregroundStyle(.secondary).lineLimit(1).fixedSize()
     }
 
     private func headerRow(withTitle: Bool) -> some View {
         HStack(spacing: 12) {
-            Button("← back") { fb.tap(); dismiss() }.fixedSize().accessibilityIdentifier("puzzle-back")
+            Button("Back") { fb.tap(); dismiss() }.fixedSize().accessibilityIdentifier("puzzle-back")
             if withTitle { title }
             Spacer(minLength: 0)
-            Text("LVL \(level)").font(.headline).foregroundStyle(Theme.accent).fixedSize()
+            Text("LVL \(level)").font(.app(.headline)).foregroundStyle(Theme.accent).fixedSize()
             Button("restart") { restart() }.fixedSize().disabled(busy || celebrating)
         }
         .padding(.horizontal, 20).padding(.vertical, 12)
@@ -152,7 +152,7 @@ struct PuzzleView: View {
 
     private var hint: String {
         if board.stuck { return "no moves left — the order matters. restart and try another way." }
-        if let s = selected { return "now tap a \(board.cells[s] == .pink ? "black" : "pink") block in line with it" }
+        if let s = selected { return "now tap a block of the other colour in line with it" }
         return "tap a block, then one of the other colour in line with it. clear them all."
     }
 
@@ -171,7 +171,7 @@ struct PuzzleView: View {
                 cellView(i, size, isTarget: targets.contains(i))
             }
             if let from = flyFrom, let to = flyTo {
-                BlockTile(color: board.cells[from] == .pink ? Theme.accent : .primary, size: size, selected: false, target: false)
+                BlockTile(color: board.cells[from] == .pink ? Theme.blockA : Theme.blockB, size: size, selected: false, target: false)
                     .shadow(color: Theme.accent.opacity(0.8), radius: 10)
                     .position(flyDone ? center(to, size) : center(from, size))
                 if frozen {
@@ -203,7 +203,7 @@ struct PuzzleView: View {
         case .wall:
             WallTile(size: size).position(p).accessibilityLabel("wall")
         case .pink, .ink:
-            BlockTile(color: c == .pink ? Theme.accent : .primary, size: size, selected: selected == i, target: isTarget)
+            BlockTile(color: c == .pink ? Theme.blockA : Theme.blockB, size: size, selected: selected == i, target: isTarget)
                 .opacity(flyFrom == i ? 0 : frozen ? 0.3 : 1)
                 .keyframeAnimator(initialValue: 0.0, trigger: missTrigger) { content, x in
                     content.offset(x: missCell == i ? CGFloat(x) * size : 0)
@@ -285,7 +285,7 @@ struct PuzzleView: View {
                 flyFrom = nil; flyTo = nil
                 store.puzzleCleared(player.id, level)
                 withAnimation(.spring(response: 0.35, dampingFraction: 0.4)) { zoom = 1 }
-                burst(at: hit, colors: [Theme.accent, .primary, Theme.accent, .white], count: 90, power: 7)
+                burst(at: hit, colors: [Theme.blockA, Theme.blockB, Theme.blockA, .white], count: 90, power: 7)
                 let now = clock
                 rings += (0..<3).map { Ring(x: hit.x, y: hit.y, born: now + Double($0) * 0.09, speed: Double(cell) * (6 + Double($0) * 2)) }
                 shake(Double(cell) * 0.28)
@@ -299,7 +299,7 @@ struct PuzzleView: View {
                 fb.puzzleMatch()
                 board = next
                 flyFrom = nil; flyTo = nil
-                burst(at: hit, colors: [Theme.accent, .primary], count: 22, power: 3)
+                burst(at: hit, colors: [Theme.blockA, Theme.blockB], count: 22, power: 3)
                 rings.append(Ring(x: hit.x, y: hit.y, born: clock, speed: Double(cell) * 3))
                 shake(Double(cell) * 0.06)
                 if next.stuck { try? await Task.sleep(for: .milliseconds(250)); fb.reject() }
@@ -419,7 +419,7 @@ private struct LevelUpCard: View {
             // The colour split closes up as the glitch settles, leaving a clean title.
             let split: CGFloat = calm ? 0 : CGFloat(3 * (1 - min(1, age / 0.65)))
             ZStack {
-                Color(.systemBackground).opacity(0.82).ignoresSafeArea()
+                Color.appBackground.opacity(0.82).ignoresSafeArea()
                 Canvas { ctx, size in
                     let a: Double = max(0, 1 - age / 1.2) * 0.12
                     guard a > 0 else { return }
@@ -441,7 +441,7 @@ private struct LevelUpCard: View {
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel("LEVEL UP")
                     Text("LVL \(level)")
-                        .font(.system(size: 64, weight: .black, design: .monospaced))
+                        .font(.app(fixedSize: 64, weight: .black))
                         .foregroundStyle(Theme.accent)
                         .scaleEffect(slam)
                     Text("\(cleared) blocks cleared").foregroundStyle(.secondary)
@@ -469,7 +469,7 @@ private struct LevelUpCard: View {
     }
 
     private var title: some View {
-        Text("LEVEL UP").font(.system(size: 40, weight: .black, design: .monospaced))
+        Text("LEVEL UP").font(.app(fixedSize: 40, weight: .black))
     }
 
     /// Repeatable pseudo-random 0…1 for frame `n`, so the jitter is jagged rather than smooth.
@@ -484,12 +484,11 @@ private struct TimeUpCard: View {
     let onBack: () -> Void
     var body: some View {
         ZStack {
-            Color(.systemBackground).opacity(0.96).ignoresSafeArea()
+            Color.appBackground.opacity(0.96).ignoresSafeArea()
             VStack(spacing: 20) {
-                Text("⏳").font(.system(size: 56))
                 Text("that's an hour of puzzles today. back tomorrow.")
-                    .font(.headline).multilineTextAlignment(.center)
-                Button("← back", action: onBack).font(.headline).foregroundStyle(Theme.accent)
+                    .font(.app(.headline)).multilineTextAlignment(.center)
+                Button("Back", action: onBack).font(.app(.headline)).foregroundStyle(Theme.accent)
                     .frame(minHeight: 44).accessibilityIdentifier("puzzle-timeup-back")
             }
             .padding(32)

@@ -20,53 +20,67 @@ struct DaresView: View {
         let mine = store.dares.filter { $0.from == me && $0.day == store.todayKey }
         let names = Dictionary(uniqueKeysWithValues: store.players.map { ($0.id, store.shownName($0)) })
         VStack(spacing: 0) {
-            HStack {
-                Button("← back") { fb.tap(); if let onBack { onBack() } else { dismiss() } }
-                Text("DARES").font(.headline).foregroundStyle(Theme.accent).padding(.leading, 8)
+            // Dares are in Clear's plum theme: a secret, after-dark corner of the app.
+            HStack(spacing: 12) {
+                Button("Back") { fb.tap(); if let onBack { onBack() } else { dismiss() } }
+                    .font(.app(.callout)).fontWeight(.bold).frame(minWidth: 44, minHeight: 44, alignment: .leading)
+                Text("Dares").font(.app(fixedSize: 24, weight: .black))
                 Spacer()
             }
-            .padding(.horizontal, 20).padding(.vertical, 12)
+            .foregroundStyle(Palette.plum.ink).tint(Palette.plum.ink)
+            .padding(.horizontal, 16).padding(.bottom, 10)
+            .background(Palette.plum.stops[0].ignoresSafeArea(edges: .top))
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
-                    Text("guess what someone will do today. if they do it and it's approved, you get +\(Engine.dareGuesserPoints) and they get +\(Engine.dareDoerPoints). nobody sees dares until tomorrow.")
-                        .font(.callout).foregroundStyle(.secondary)
-                    Text("\(mine.count) of \(Engine.maxDaresPerDay) used today").bold().padding(.top, 10)
+                    Text("Guess what someone will do today. If they do it and it's approved, you get \(Engine.dareGuesserPoints) points and they get \(Engine.dareDoerPoints). Nobody sees the dares until tomorrow.")
+                        .font(.app(.callout)).foregroundStyle(Color.done).padding(.top, 14)
+                    Text(mine.isEmpty ? "You haven't made any dares today." : mine.count == Engine.maxDaresPerDay ? "You've made all \(mine.count) of today's dares."
+                         : "You've made \(mine.count) of your \(Engine.maxDaresPerDay) dares today.").bold().padding(.top, 10)
                     ForEach(mine, id: \.self) { d in
-                        Text("· \(names[d.target] ?? d.target): \(store.poolById[d.choreId]?.name ?? d.choreId)").font(.callout).padding(.top, 2)
+                        Text("You dared \(names[d.target] ?? d.target) to \(store.poolById[d.choreId]?.name ?? d.choreId).").font(.app(.callout))
+                            .foregroundStyle(Palette.plum.ink).padding(.top, 2)
                     }
                     // A locked target already has its own standing line below; don't say it twice.
                     let locked = target.map { store.submittedToday($0.id) } ?? false
-                    if let note, !locked { Text(note).font(.footnote).foregroundStyle(Theme.bad).padding(.top, 6) }
+                    if let note, !locked { Text(note).font(.app(.footnote)).foregroundStyle(Theme.bad).padding(.top, 6) }
 
                     if let target {
-                        SectionLabel("who are you daring?")
+                        SectionLabel("Who are you daring?")
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 8) {
                                 ForEach(others) { p in
-                                    if p.id == target.id { Button(store.shownName(p)) {}.buttonStyle(.borderedProminent) }
-                                    else { Button(store.shownName(p)) { fb.tap(); targetId = p.id; note = nil }.buttonStyle(.bordered) }
+                                    Button(store.shownName(p)) { fb.tap(); targetId = p.id; note = nil }
+                                        .font(.app(.callout)).fontWeight(.bold)
+                                        .foregroundStyle(p.id == target.id ? Palette.plum.ink : Color.appText)
+                                        .padding(.horizontal, 18).frame(minHeight: 44)
+                                        .background(p.id == target.id ? Palette.plum.stops[0] : Color.surface, in: Capsule())
                                 }
                             }
                         }
                         if store.submittedToday(target.id) {
-                            Text("locked — \(store.shownName(target)) already submitted today").font(.footnote).foregroundStyle(Theme.warn).padding(.top, 8)
+                            Text("\(store.shownName(target)) already sent today's card, so it's too late to dare them.").font(.app(.footnote)).foregroundStyle(Theme.warn).padding(.top, 8)
                         }
                         // The same list the target sees, most overdue first: the likeliest chores are on top.
-                        ForEach(store.pickable(target.id)) { c in
+                        let pool = store.pickable(target.id)
+                        ForEach(Array(pool.enumerated()), id: \.element.id) { i, c in
                             let on = mine.contains { $0.target == target.id && $0.choreId == c.id }
-                            ChoreRow(name: c.name, minutes: c.currentMinutes, escalLevel: c.escalLevel, checked: on) {
+                            ChoreRow(name: c.name, minutes: c.currentMinutes, escalLevel: c.escalLevel, checked: on,
+                                     index: i, count: pool.count, picking: true) {
                                 let why = store.toggleDare(target, c.id)
                                 note = why
                                 if why != nil { fb.error() } else if on { fb.tick(false) } else { fb.dare() }
                             }
+                            .padding(.horizontal, -20)
                         }
                     } else {
-                        Text("add another player to dare them.").foregroundStyle(.secondary).padding(.vertical, 24)
+                        Text("Once there's someone else playing, you can dare them.").foregroundStyle(.secondary).padding(.vertical, 24)
                     }
                 }
                 .padding(.horizontal, 20)
             }
         }
+        .background(Color.appBackground)
+        .environment(\.palette, .plum)
     }
 }
 #endif

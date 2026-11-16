@@ -21,24 +21,28 @@ struct AdminView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack {
-                Button("← back") { fb.tap(); if let onBack { onBack() } else { dismiss() } }
-                Text("ADMIN").font(.headline).foregroundStyle(Theme.accent).padding(.leading, 8)
+            // The admin area is in Clear's ocean theme, so it's plain at a glance which mode you're in.
+            HStack(spacing: 12) {
+                Button("Back") { fb.tap(); if let onBack { onBack() } else { dismiss() } }
+                    .font(.app(.callout)).fontWeight(.bold).frame(minWidth: 44, minHeight: 44, alignment: .leading)
+                Text("Admin").font(.app(fixedSize: 24, weight: .black))
                 Spacer()
             }
-            .padding(.horizontal, 20).padding(.vertical, 12)
+            .foregroundStyle(Palette.ocean.ink).tint(Palette.ocean.ink)
+            .padding(.horizontal, 16).padding(.bottom, 10)
+            .background(Palette.ocean.stops[0].ignoresSafeArea(edges: .top))
 
             if authed { AdminContent() } else {
                 VStack(alignment: .leading, spacing: 12) {
-                    SecureField("admin code", text: $code).textFieldStyle(.roundedBorder).textContentType(.oneTimeCode)
+                    SecureField("Your admin code", text: $code).textFieldStyle(.roundedBorder).textContentType(.oneTimeCode)
                         .focused($codeFocused)
                         .onSubmit(verify)
                         // Clear the message once they start typing again — not when a wrong code empties the field.
                         .onChange(of: code) { _, now in if !now.isEmpty { wrong = false } }
-                    if wrong { Text("that code didn't match").font(.footnote).foregroundStyle(Theme.bad) }
-                    TermButton(label: "UNLOCK", enabled: !code.isEmpty, action: verify)
-                    if canBio { OutlineButton(label: "use face id / touch id", action: biometric) }
-                    Text(forgotCodeNote).font(.footnote).foregroundStyle(.secondary).padding(.top, 8)
+                    if wrong { Text("That code didn't match. Try again?").font(.app(.footnote)).foregroundStyle(Theme.bad) }
+                    TermButton(label: "Unlock", enabled: !code.isEmpty, action: verify).padding(.horizontal, -20)
+                    if canBio { OutlineButton(label: "Use Face ID or Touch ID", action: biometric).padding(.horizontal, -20) }
+                    Text(forgotCodeNote).font(.app(.footnote)).foregroundStyle(Color.done).padding(.top, 8)
                     Spacer()
                 }
                 .padding(20)
@@ -46,6 +50,9 @@ struct AdminView: View {
                 .task { if canBio { biometric() } else { codeFocused = true } }
             }
         }
+        .background(Color.appBackground)
+        .environment(\.palette, .ocean)
+        .tint(Color.appText)
         .onChange(of: authed) { _, now in if now { fb.unlock() } }
         // The scoreboard was erased from in here: there's nothing left to administer.
         .onChange(of: store.isSetUp) { _, now in if !now { if let onBack { onBack() } else { dismiss() } } }
@@ -53,9 +60,9 @@ struct AdminView: View {
 
     private var forgotCodeNote: String {
         #if FAMILY_SYNC
-        "forgot the code? another admin can set a new one for you from their phone."
+        "Forgot your code? Another admin can set a new one for you from their phone."
         #else
-        "forgot the code? it's kept only on this device, so it can't be looked up. deleting the app erases this scoreboard and lets you start a new one."
+        "Forgot your code? It's only kept on this device, so it can't be looked up. Deleting the app erases this scoreboard and lets you start a new one."
         #endif
     }
 
@@ -82,10 +89,10 @@ private struct AdminContent: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 Picker("section", selection: $section) {
-                    ForEach(Section.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                    ForEach(Section.allCases, id: \.self) { Text($0.rawValue.prefix(1).uppercased() + $0.rawValue.dropFirst()).tag($0) }
                 }
                 .pickerStyle(.segmented)
-                .padding(.bottom, 12)
+                .padding(.vertical, 14)
 
                 switch section {
                 case .approve: Approvals()
@@ -110,44 +117,70 @@ private struct Approvals: View {
     var body: some View {
         let shown = store.logs.filter { filter == "all" || $0.status == filter }.sorted { $0.timestamp > $1.timestamp }
         let names = Dictionary(store.members.map { ($0.id, store.adminLabel($0)) }, uniquingKeysWith: { first, _ in first })
-        Picker("show", selection: $filter) {
-            ForEach([Status.pending, Status.approved, Status.rejected, "all"], id: \.self) { Text($0).tag($0) }
+        let spoken = Dictionary(store.members.map { ($0.id, store.shownName($0)) }, uniquingKeysWith: { first, _ in first })
+        Picker("Show", selection: $filter) {
+            ForEach([Status.pending, Status.approved, Status.rejected, "all"], id: \.self) { f in
+                Text(f == Status.pending ? "Waiting" : f == Status.approved ? "Approved" : f == Status.rejected ? "Turned down" : "Everything").tag(f)
+            }
         }
         .pickerStyle(.menu)
 
-        if shown.isEmpty { Text("nothing \(filter == "all" ? "logged yet" : filter)").foregroundStyle(.secondary).padding(.vertical, 24) }
+        if shown.isEmpty {
+            Text(filter == Status.pending ? "Nothing's waiting for you. All caught up!" : filter == Status.approved ? "Nothing's been approved yet."
+                 : filter == Status.rejected ? "Nothing's been turned down." : "Nobody's logged a chore yet.")
+                .foregroundStyle(Color.done).padding(.vertical, 24)
+        }
         // A day's card is usually several chores from one person: approve them in one go.
         if filter == Status.pending {
             let byPlayer = Dictionary(grouping: shown, by: \.playerId)
             ForEach(byPlayer.keys.sorted { (names[$0] ?? $0) < (names[$1] ?? $1) }, id: \.self) { id in
                 if let list = byPlayer[id], list.count > 1 {
-                    Button("✓ approve all \(list.count) from \(names[id] ?? list[0].playerName)") {
+                    Button("Approve all \(list.count) of \(spoken[id] ?? list[0].playerName)'s chores") {
                         var leveled = false
                         for l in list where store.approve(l) { leveled = true }
                         if leveled { fb.levelUp() } else { fb.approve() }
                     }
-                    .buttonStyle(.borderedProminent).tint(Theme.good).padding(.top, 6)
+                    .buttonStyle(TermButtonStyle(filled: true)).padding(.horizontal, -20).padding(.top, 6)
                     .accessibilityIdentifier("approve-all-\(id)")
                 }
             }
         }
         // The one list here that can run to hundreds of rows.
-        LazyVStack(alignment: .leading, spacing: 0) { ForEach(shown) { l in
-            VStack(alignment: .leading, spacing: 4) {
-                Text("\(names[l.playerId] ?? l.playerName) · \(l.choreName)")
-                Text("\(l.points) xp · \(l.minutes.map { "\($0)m · " } ?? "")\(l.timestamp.formatted(date: .numeric, time: .shortened)) · \(l.status)")
-                    .font(.footnote).foregroundStyle(.secondary)
-                if l.status == Status.pending {
-                    HStack(spacing: 8) {
-                        Button("✓ approve") { if store.approve(l) { fb.levelUp() } else { fb.approve() } }.buttonStyle(.bordered).tint(Theme.good)
-                        Button("✗ reject") { store.setStatus(l, Status.rejected); fb.reject() }.buttonStyle(.bordered).tint(Theme.bad)
+        // Waiting chores are bands down the ocean gradient, with a tick and a cross at the end;
+        // ones already judged drop to black, as in Clear.
+        LazyVStack(alignment: .leading, spacing: 0) { ForEach(Array(shown.enumerated()), id: \.element.id) { i, l in
+            let waiting = l.status == Status.pending
+            Band(index: i, count: shown.count, done: !waiting, minHeight: 60) {
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        // Said the way you'd hear about it: "Sam emptied the kids bathroom trash today."
+                        Text(Phrase.sentence(spoken[l.playerId] ?? l.playerName, l.choreName, on: l.timestamp, today: Date(), calendar: store.calendar))
+                            .foregroundStyle(waiting ? Palette.ocean.ink : Color.appText.opacity(0.75))
+                        Text(waiting ? "Worth \(l.points) points. Approve it?" : l.status == Status.approved ? "Approved · \(l.points) points" : "Turned down")
+                            .font(.app(.callout)).fontWeight(.regular)
+                            .foregroundStyle(waiting ? Palette.ocean.ink.opacity(0.85) : l.status == Status.approved ? Theme.good : Theme.bad)
                     }
-                    .padding(.top, 2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    if waiting {
+                        Button { if store.approve(l) { fb.levelUp() } else { fb.approve() } } label: {
+                            Text("Yes").font(.app(.callout)).fontWeight(.black).foregroundStyle(Palette.ocean.stops[0])
+                                .padding(.horizontal, 16).frame(minHeight: 44).background(Palette.ocean.ink, in: Capsule())
+                        }
+                        .accessibilityLabel("Approve this chore")
+                        Button { store.setStatus(l, Status.rejected); fb.reject() } label: {
+                            Text("No").font(.app(.callout)).fontWeight(.black).foregroundStyle(Palette.ocean.ink)
+                                .padding(.horizontal, 16).frame(minHeight: 44).overlay(Capsule().strokeBorder(Palette.ocean.ink.opacity(0.8), lineWidth: 2))
+                        }
+                        .accessibilityLabel("Turn down this chore")
+                    } else {
+                        Text(l.status == Status.approved ? "yes" : "no").font(.app(.footnote)).fontWeight(.black).foregroundStyle(l.status == Status.approved ? Theme.good : Theme.bad)
+                    }
                 }
+                .padding(.vertical, 6)
             }
-            .padding(.vertical, 10)
-            Divider()
+            .buttonStyle(.plain)
         } }
+        .padding(.horizontal, -20)
     }
 }
 
@@ -161,13 +194,13 @@ private struct Members: View {
 
     var body: some View {
         Text("admins approve chores and can change everything here. each admin has their own code.")
-            .font(.footnote).foregroundStyle(.secondary)
+            .font(.app(.footnote)).foregroundStyle(.secondary)
         ForEach(store.members) { m in
             VStack(spacing: 0) {
                 HStack {
                     Text(store.adminLabel(m)).lineLimit(1)
                     Text([m.isAdmin ? "admin" : nil, m.plays ? nil : "not playing"].compactMap { $0 }.joined(separator: " · "))
-                        .font(.footnote).foregroundStyle(.secondary).lineLimit(1)
+                        .font(.app(.footnote)).foregroundStyle(.secondary).lineLimit(1)
                     Spacer()
                     Button("edit") { fb.tap(); editing = m }.accessibilityLabel("edit \(m.name)")
                 }
@@ -194,7 +227,7 @@ private struct MemberEditor: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    Text(member == nil ? "ADD PLAYER" : "EDIT PLAYER").font(.headline).foregroundStyle(Theme.accent)
+                    Text(member == nil ? "Add a player" : "Edit player").font(.app(.headline)).foregroundStyle(Theme.accent)
                     Spacer()
                     Button("cancel") { dismiss() }
                 }
@@ -204,7 +237,7 @@ private struct MemberEditor: View {
                 TextField("display name (optional)", text: $draft.displayName)
                     .textFieldStyle(.roundedBorder).textInputAutocapitalization(.never).autocorrectionDisabled()
                 Text("the display name is only what's shown; the username is what chores and points are kept under.")
-                    .font(.footnote).foregroundStyle(.secondary)
+                    .font(.app(.footnote)).foregroundStyle(.secondary)
                 Toggle("does chores", isOn: $draft.plays)
                 Toggle("admin", isOn: $draft.isAdmin)
                 if draft.isAdmin {
@@ -213,7 +246,7 @@ private struct MemberEditor: View {
                         .textFieldStyle(.roundedBorder).textContentType(.oneTimeCode)
                         .accessibilityIdentifier("member-code")
                 }
-                if let problem, !draft.name.isEmpty { Text(problem).font(.footnote).foregroundStyle(Theme.bad) }
+                if let problem, !draft.name.isEmpty { Text(problem).font(.app(.footnote)).foregroundStyle(Theme.bad) }
                 TermButton(label: "SAVE", enabled: problem == nil) {
                     if store.saveMember(draft, id: member?.id) { fb.approve(); dismiss() }
                 }
@@ -243,7 +276,7 @@ private struct ChoreList: View {
 
     var body: some View {
         Text("\(store.pool.count) chores. left undone, a chore takes longer the next time it's picked.")
-            .font(.footnote).foregroundStyle(.secondary)
+            .font(.app(.footnote)).foregroundStyle(.secondary)
         Button("+ add chores") { fb.tap(); adding = true }.buttonStyle(.bordered).padding(.vertical, 12)
             .sheet(item: $editing) { c in ChoreEditor(chore: c).appChrome(store, fb) }
             .sheet(isPresented: $adding) { ChoreAdder().appChrome(store, fb) }
@@ -271,7 +304,7 @@ private struct ChoreAdder: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    Text("ADD CHORES").font(.headline).foregroundStyle(Theme.accent)
+                    Text("Add chores").font(.app(.headline)).foregroundStyle(Theme.accent)
                     Spacer()
                     Button("cancel") { dismiss() }
                 }
@@ -297,7 +330,7 @@ private struct ChoreEditor: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    Text("EDIT CHORE").font(.headline).foregroundStyle(Theme.accent)
+                    Text("Edit chore").font(.app(.headline)).foregroundStyle(Theme.accent)
                     Spacer()
                     Button("cancel") { dismiss() }
                 }
@@ -305,15 +338,15 @@ private struct ChoreEditor: View {
                     .textFieldStyle(.roundedBorder).textInputAutocapitalization(.never)
                     .accessibilityIdentifier("chore-name")
                 Stepper("\(minutes) minutes", value: $minutes, in: ChoreIntake.minuteRange)
-                Text("worth \(ChoreIntake.make(name: "x", minutes: minutes).pts) points.").font(.footnote).foregroundStyle(.secondary)
-                if clash { Text("there's already a chore with that name").font(.footnote).foregroundStyle(Theme.bad) }
+                Text("worth \(ChoreIntake.make(name: "x", minutes: minutes).pts) points.").font(.app(.footnote)).foregroundStyle(.secondary)
+                if clash { Text("there's already a chore with that name").font(.app(.footnote)).foregroundStyle(Theme.bad) }
                 TermButton(label: "SAVE", enabled: clean != nil && !clash) {
                     store.updateChore(chore, name: name, minutes: minutes); fb.approve(); dismiss()
                 }
                 if store.pool.count > 1 {
                     Button("remove this chore", role: .destructive) { store.removeChore(chore); fb.reject(); dismiss() }
                         .frame(maxWidth: .infinity, minHeight: 44)
-                    Text("points already earned for it are kept.").font(.footnote).foregroundStyle(.secondary)
+                    Text("points already earned for it are kept.").font(.app(.footnote)).foregroundStyle(.secondary)
                 }
             }
             .padding(20)
@@ -334,11 +367,11 @@ private struct Device: View {
     var body: some View {
         if hasBio {
             Toggle("face id / touch id opens the admin area", isOn: Binding(get: { store.settings.biometricUnlock }, set: { store.setBiometricUnlock($0) }))
-            Text("only turn this on if this is your own device, not a player's.").font(.footnote).foregroundStyle(.secondary)
+            Text("only turn this on if this is your own device, not a player's.").font(.app(.footnote)).foregroundStyle(.secondary)
         }
         #if FAMILY_SYNC
         SectionLabel("this phone belongs to")
-        Text("dares are made as this person.").font(.footnote).foregroundStyle(.secondary)
+        Text("dares are made as this person.").font(.app(.footnote)).foregroundStyle(.secondary)
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(store.players) { p in
@@ -349,20 +382,20 @@ private struct Device: View {
         }
         SectionLabel("your data")
         Text("this is the family build: players, chores, codes and points are shared with the family's other phones. sync: \(store.syncStatus).")
-            .font(.callout).foregroundStyle(.secondary)
+            .font(.app(.callout)).foregroundStyle(.secondary)
         SectionLabel("backup")
         Text("save the whole scoreboard as a file, or add one saved earlier (from this app or the public one, on iPhone or Android) to the family.")
-            .font(.footnote).foregroundStyle(.secondary)
+            .font(.app(.footnote)).foregroundStyle(.secondary)
         BackupControls().padding(.top, 4)
-        Text("version \(AppInfo.version)").font(.footnote).foregroundStyle(.secondary).padding(.top, 8)
+        Text("version \(AppInfo.version)").font(.app(.footnote)).foregroundStyle(.secondary).padding(.top, 8)
         #else
         SectionLabel("your data")
         Text("everything this app knows — names, chores and points — is kept on this device and nowhere else. there's no account and nothing is sent to anyone, including us. deleting the app deletes it all.")
-            .font(.callout).foregroundStyle(.secondary)
-        Link("privacy policy", destination: Links.privacy).font(.callout).frame(minHeight: 44)
+            .font(.app(.callout)).foregroundStyle(.secondary)
+        Link("privacy policy", destination: Links.privacy).font(.app(.callout)).frame(minHeight: 44)
         SectionLabel("backup")
         Text("save the whole scoreboard as a file you keep — in Files, iCloud Drive, or anywhere you like. restore it on a new phone, or bring it into a family account later.")
-            .font(.footnote).foregroundStyle(.secondary)
+            .font(.app(.footnote)).foregroundStyle(.secondary)
         BackupControls().padding(.top, 4)
         eraseButton
         #endif
@@ -381,6 +414,6 @@ private struct Device: View {
 extension View {
     /// Sheets are their own window: hand them the app's objects and look.
     func appChrome(_ store: AppStore, _ fb: Feedback) -> some View {
-        environmentObject(store).environmentObject(fb).fontDesign(.monospaced).tint(Theme.accent)
+        environmentObject(store).environmentObject(fb).font(.app(.body)).tint(Theme.accent).preferredColorScheme(.dark)
     }
 }

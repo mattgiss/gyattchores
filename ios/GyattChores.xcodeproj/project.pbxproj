@@ -8,27 +8,33 @@
 
 /* Begin PBXBuildFile section */
 		044BFEB97E4071B9EC36B7B8 /* BackupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3586296EE565482DC2C3729D /* BackupView.swift */; };
+		0E0DC795D8BB72CE8D359815 /* SchibstedGrotesk-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4771E51A15CF9AEA20D52803 /* SchibstedGrotesk-Bold.ttf */; };
 		119A3672AD8787ADC74C613B /* PlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB22028F8301385EF58C79DE /* PlayerView.swift */; };
 		119A6151A3B3BEE96F14F13C /* DaresView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D096B95D3190ED58C9D5CEA7 /* DaresView.swift */; };
+		1A9C627FBFB9084C372F44B4 /* Palette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62B65A76A66B53134EF79DFF /* Palette.swift */; };
+		2A7ABDE26286C1DAF3A382ED /* puzzles.json in Resources */ = {isa = PBXBuildFile; fileRef = F3A5421D0874ADF5517A9979 /* puzzles.json */; };
+		2D1229719B7182769514C458 /* SchibstedGrotesk-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0047F64BBDB5A15BD507B24E /* SchibstedGrotesk-Regular.ttf */; };
 		2E032658D2557E5FB845C1DC /* GyattChoresApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46FDBB957624185A85BA0061 /* GyattChoresApp.swift */; };
 		2F7375E6A72363482F52CB66 /* Supabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2856999DD0F558CCEB895897 /* Supabase.swift */; };
+		40CB841B6113A9E41606900B /* SchibstedGrotesk-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C3BE9EFE4605E34DA58153E6 /* SchibstedGrotesk-Black.ttf */; };
+		443A320072CEE803339DA733 /* SchibstedGrotesk-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B702638EB01A201DCC1EFB50 /* SchibstedGrotesk-SemiBold.ttf */; };
 		45CEBC3536B866B34A7A4806 /* FamilySync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 039B149E89F0E77F200C94AE /* FamilySync.swift */; };
 		49AB36F0DC1C70923F894ECA /* AdminView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88B421E0D81623C58D00E31C /* AdminView.swift */; };
 		4AEAF7A73B7B929C12295533 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5713C489E0FED8ACE31202AF /* Components.swift */; };
-		56E16671FC92615EB8F01BEB /* chores.json in Resources */ = {isa = PBXBuildFile; fileRef = 2AE4CCF2F447C5DB9EAE33AC /* chores.json */; };
 		5D0DBCEA64EBEAD0FE8720B6 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 147CAD24C71D72F3E322CABA /* PrivacyInfo.xcprivacy */; };
 		5F1F395619FAD4DA41D774A8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 51E25F92C2A2E95EA8800ED0 /* Assets.xcassets */; };
 		860B2F5DA0F42A045C292891 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E05411D9D6D89454354D6504 /* RootView.swift */; };
 		916FD9E47347E1253B010B01 /* GyattChoresUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F41F120FFA15EAABE3146658 /* GyattChoresUITests.swift */; };
+		9AAA5EB7566D8F8664316A80 /* chores.json in Resources */ = {isa = PBXBuildFile; fileRef = 44339DF38F0B41428DED1FA0 /* chores.json */; };
 		9B45257610B8CBC6E1472B98 /* PuzzleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1546F72E810EE14A38EEA3E /* PuzzleView.swift */; };
 		9FDBA5BF4A17A0156A9260C8 /* GyattCore in Frameworks */ = {isa = PBXBuildFile; productRef = 082E13C94D4E9AAC05E89A26 /* GyattCore */; };
 		A010EF76DAC311B90FEA0C3F /* Feedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD615C04B74E794B9204B97B /* Feedback.swift */; };
 		A828A79D9FB56E67813DEF64 /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4971E3BEE78F1A82504A5490 /* AppStore.swift */; };
 		BB97D5802E276F750ED728C3 /* Backup+Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A816062A9FD976D43C9FD9A /* Backup+Store.swift */; };
-		BC80B33017B00D80B125B844 /* puzzles.json in Resources */ = {isa = PBXBuildFile; fileRef = D1F1B7B95ABEFD6DC4A59705 /* puzzles.json */; };
 		C3C8E844E8AAF2DEBC58A92B /* SetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7EE3EB6E2624053E7D467FC /* SetupView.swift */; };
 		CC2DA1AA093DF7D28E9E86A4 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3272DA0935BA832663FC915B /* HomeView.swift */; };
 		D9D61CC5B28C43AB8C5F970C /* ChoreIntakeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE96A0A80C56CD579D06D53D /* ChoreIntakeView.swift */; };
+		DC6BCC290A01A4251A401851 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A3CD50235F612923A1E5C5C /* Typography.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -42,26 +48,32 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		0047F64BBDB5A15BD507B24E /* SchibstedGrotesk-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SchibstedGrotesk-Regular.ttf"; sourceTree = "<group>"; };
 		039B149E89F0E77F200C94AE /* FamilySync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilySync.swift; sourceTree = "<group>"; };
 		14360DD67502C08B0BB5668E /* GyattChores.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = GyattChores.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		147CAD24C71D72F3E322CABA /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		2856999DD0F558CCEB895897 /* Supabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Supabase.swift; sourceTree = "<group>"; };
-		2AE4CCF2F447C5DB9EAE33AC /* chores.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = chores.json; sourceTree = "<group>"; };
 		3272DA0935BA832663FC915B /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		3586296EE565482DC2C3729D /* BackupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupView.swift; sourceTree = "<group>"; };
+		44339DF38F0B41428DED1FA0 /* chores.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = chores.json; sourceTree = "<group>"; };
 		46FDBB957624185A85BA0061 /* GyattChoresApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GyattChoresApp.swift; sourceTree = "<group>"; };
+		4771E51A15CF9AEA20D52803 /* SchibstedGrotesk-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SchibstedGrotesk-Bold.ttf"; sourceTree = "<group>"; };
 		4971E3BEE78F1A82504A5490 /* AppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStore.swift; sourceTree = "<group>"; };
+		4A3CD50235F612923A1E5C5C /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
 		51E25F92C2A2E95EA8800ED0 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		5713C489E0FED8ACE31202AF /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
 		5D9BE8C4B00AA3D1C1CFCD63 /* GyattChoresUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = GyattChoresUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		62B65A76A66B53134EF79DFF /* Palette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Palette.swift; sourceTree = "<group>"; };
 		88B421E0D81623C58D00E31C /* AdminView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminView.swift; sourceTree = "<group>"; };
 		9A816062A9FD976D43C9FD9A /* Backup+Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Backup+Store.swift"; sourceTree = "<group>"; };
 		AD615C04B74E794B9204B97B /* Feedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Feedback.swift; sourceTree = "<group>"; };
 		B1546F72E810EE14A38EEA3E /* PuzzleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PuzzleView.swift; sourceTree = "<group>"; };
+		B702638EB01A201DCC1EFB50 /* SchibstedGrotesk-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SchibstedGrotesk-SemiBold.ttf"; sourceTree = "<group>"; };
+		C3BE9EFE4605E34DA58153E6 /* SchibstedGrotesk-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SchibstedGrotesk-Black.ttf"; sourceTree = "<group>"; };
 		D096B95D3190ED58C9D5CEA7 /* DaresView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaresView.swift; sourceTree = "<group>"; };
-		D1F1B7B95ABEFD6DC4A59705 /* puzzles.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = puzzles.json; sourceTree = "<group>"; };
 		E05411D9D6D89454354D6504 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		E7EE3EB6E2624053E7D467FC /* SetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupView.swift; sourceTree = "<group>"; };
+		F3A5421D0874ADF5517A9979 /* puzzles.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = puzzles.json; sourceTree = "<group>"; };
 		F41F120FFA15EAABE3146658 /* GyattChoresUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GyattChoresUITests.swift; sourceTree = "<group>"; };
 		FADAACA5C517EC47FDA95485 /* GyattCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = GyattCore; path = GyattCore; sourceTree = SOURCE_ROOT; };
 		FB22028F8301385EF58C79DE /* PlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerView.swift; sourceTree = "<group>"; };
@@ -80,6 +92,24 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		07AF51CD8985294E6444E019 /* native */ = {
+			isa = PBXGroup;
+			children = (
+				44339DF38F0B41428DED1FA0 /* chores.json */,
+				F3A5421D0874ADF5517A9979 /* puzzles.json */,
+			);
+			path = native;
+			sourceTree = "<group>";
+		};
+		0D6D417FDFB4B80637094427 /* gyattchores */ = {
+			isa = PBXGroup;
+			children = (
+				07AF51CD8985294E6444E019 /* native */,
+			);
+			name = gyattchores;
+			path = ..;
+			sourceTree = "<group>";
+		};
 		70535BCFA2D37ADC85CC5073 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -93,29 +123,22 @@
 			isa = PBXGroup;
 			children = (
 				F171BE575C3CC7912AB5A64F /* GyattChores */,
-				A0E0D2927C1835524EE50448 /* gyattchores-ios */,
+				0D6D417FDFB4B80637094427 /* gyattchores */,
 				F02CC4544EA8AE0525188C2A /* GyattChoresUITests */,
 				D785E7BDBF4977B0F6F50E63 /* Packages */,
 				70535BCFA2D37ADC85CC5073 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		8F0D7133BE1B69A247807342 /* native */ = {
+		8CB9B947A9FA4B4444C0CFB3 /* Fonts */ = {
 			isa = PBXGroup;
 			children = (
-				2AE4CCF2F447C5DB9EAE33AC /* chores.json */,
-				D1F1B7B95ABEFD6DC4A59705 /* puzzles.json */,
+				C3BE9EFE4605E34DA58153E6 /* SchibstedGrotesk-Black.ttf */,
+				4771E51A15CF9AEA20D52803 /* SchibstedGrotesk-Bold.ttf */,
+				0047F64BBDB5A15BD507B24E /* SchibstedGrotesk-Regular.ttf */,
+				B702638EB01A201DCC1EFB50 /* SchibstedGrotesk-SemiBold.ttf */,
 			);
-			path = native;
-			sourceTree = "<group>";
-		};
-		A0E0D2927C1835524EE50448 /* gyattchores-ios */ = {
-			isa = PBXGroup;
-			children = (
-				8F0D7133BE1B69A247807342 /* native */,
-			);
-			name = "gyattchores-ios";
-			path = ..;
+			path = Fonts;
 			sourceTree = "<group>";
 		};
 		B278290B65B7829B31BF1804 /* Family */ = {
@@ -157,12 +180,15 @@
 				AD615C04B74E794B9204B97B /* Feedback.swift */,
 				46FDBB957624185A85BA0061 /* GyattChoresApp.swift */,
 				3272DA0935BA832663FC915B /* HomeView.swift */,
+				62B65A76A66B53134EF79DFF /* Palette.swift */,
 				FB22028F8301385EF58C79DE /* PlayerView.swift */,
 				147CAD24C71D72F3E322CABA /* PrivacyInfo.xcprivacy */,
 				B1546F72E810EE14A38EEA3E /* PuzzleView.swift */,
 				E05411D9D6D89454354D6504 /* RootView.swift */,
 				E7EE3EB6E2624053E7D467FC /* SetupView.swift */,
+				4A3CD50235F612923A1E5C5C /* Typography.swift */,
 				B278290B65B7829B31BF1804 /* Family */,
+				8CB9B947A9FA4B4444C0CFB3 /* Fonts */,
 			);
 			path = GyattChores;
 			sourceTree = "<group>";
@@ -256,8 +282,12 @@
 			files = (
 				5F1F395619FAD4DA41D774A8 /* Assets.xcassets in Resources */,
 				5D0DBCEA64EBEAD0FE8720B6 /* PrivacyInfo.xcprivacy in Resources */,
-				56E16671FC92615EB8F01BEB /* chores.json in Resources */,
-				BC80B33017B00D80B125B844 /* puzzles.json in Resources */,
+				40CB841B6113A9E41606900B /* SchibstedGrotesk-Black.ttf in Resources */,
+				0E0DC795D8BB72CE8D359815 /* SchibstedGrotesk-Bold.ttf in Resources */,
+				2D1229719B7182769514C458 /* SchibstedGrotesk-Regular.ttf in Resources */,
+				443A320072CEE803339DA733 /* SchibstedGrotesk-SemiBold.ttf in Resources */,
+				9AAA5EB7566D8F8664316A80 /* chores.json in Resources */,
+				2A7ABDE26286C1DAF3A382ED /* puzzles.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -287,11 +317,13 @@
 				A010EF76DAC311B90FEA0C3F /* Feedback.swift in Sources */,
 				2E032658D2557E5FB845C1DC /* GyattChoresApp.swift in Sources */,
 				CC2DA1AA093DF7D28E9E86A4 /* HomeView.swift in Sources */,
+				1A9C627FBFB9084C372F44B4 /* Palette.swift in Sources */,
 				119A3672AD8787ADC74C613B /* PlayerView.swift in Sources */,
 				9B45257610B8CBC6E1472B98 /* PuzzleView.swift in Sources */,
 				860B2F5DA0F42A045C292891 /* RootView.swift in Sources */,
 				C3C8E844E8AAF2DEBC58A92B /* SetupView.swift in Sources */,
 				2F7375E6A72363482F52CB66 /* Supabase.swift in Sources */,
+				DC6BCC290A01A4251A401851 /* Typography.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -341,6 +373,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -544,6 +577,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -635,6 +669,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -662,6 +697,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

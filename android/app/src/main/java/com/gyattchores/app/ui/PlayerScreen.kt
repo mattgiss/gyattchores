@@ -1,5 +1,10 @@
 package com.gyattchores.app.ui
 
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import com.gyattchores.app.AppViewModel
 import com.gyattchores.app.engine.DisplayName
 import com.gyattchores.app.engine.Engine
+import com.gyattchores.app.engine.Phrase
 import com.gyattchores.app.model.Card
 import com.gyattchores.app.model.ChoreLog
 import com.gyattchores.app.model.EnrichedChore
@@ -68,13 +74,21 @@ fun TwoZone(hinge: Hinge?, top: @Composable () -> Unit, bottom: @Composable () -
     }
 }
 
+/**
+ * The screen's first band: who this is (and, on their day, their version and streak) in white on
+ * red, running up under the status bar.
+ */
 @Composable
-private fun TopBar(title: String, onBack: (() -> Unit)?, onName: (() -> Unit)? = null) {
-    Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-        if (onBack != null) TextButton(onClick = onBack) { Text("← back") }
-        Text(title, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f).padding(horizontal = 8.dp, vertical = 12.dp))
-        if (onName != null) TextButton(onClick = onName) { Text("✎ name") }
+private fun TopBar(title: String, onBack: (() -> Unit)?, onName: (() -> Unit)? = null, stats: (@Composable () -> Unit)? = null) {
+    val ink = Palette.HEAT.ink
+    Column(Modifier.fillMaxWidth().background(Palette.HEAT.stops[0]).statusBarsPadding().padding(start = 4.dp, end = 4.dp, bottom = 12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (onBack != null) TextButton(onClick = onBack) { Text("Back", color = ink, fontWeight = FontWeight.Bold) }
+            Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = ink, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f).padding(horizontal = 12.dp, vertical = 8.dp))
+            if (onName != null) TextButton(onClick = onName) { Text("Rename", color = ink, fontWeight = FontWeight.Bold) }
+        }
+        if (stats != null) Box(Modifier.padding(horizontal = 12.dp)) { stats() }
     }
 }
 
@@ -91,8 +105,8 @@ private fun DisplayNameDialog(player: Player, onDismiss: () -> Unit, onSave: (St
                     style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
             }
         },
-        confirmButton = { TextButton(onClick = { onSave(draft) }) { Text("save") } },
-        dismissButton = { TextButton(onClick = { onSave("") }) { Text("use my username") } },
+        confirmButton = { TextButton(onClick = { onSave(draft) }) { Text("Save") } },
+        dismissButton = { TextButton(onClick = { onSave("") }) { Text("Use my username") } },
     )
 }
 
@@ -125,13 +139,17 @@ fun PlayerScreen(
     // A rejected chore isn't — it can be done again.
     val taken = Engine.standingToday(statusToday) + card?.choreIds.orEmpty().filter { it !in statusToday } + others.keys
 
-    Column(Modifier.fillMaxSize()) {
+    val shared by vm.store.state.collectAsState()
+    val rank = Engine.rank(vm.totalXp(player.id, logs, shared))
+    val streak = Engine.streak(player.id, logs, now, vm.zone)
+    val stats = @Composable { StatsHeader(rank, streak) }
+    Column(Modifier.fillMaxSize().background(Bg)) {
         when {
             card == null -> {
-                TopBar(player.shownName, onBack) { naming = true }
+                TopBar(player.shownName, onBack, { naming = true }, stats)
                 val notes = listOfNotNull(
-                    "today's earlier chores were rejected — build a new card".takeIf { vm.rejectedToday(player.id, logs) },
-                    "${others.size} chore${if (others.size == 1) "" else "s"} already taken by someone else today".takeIf { others.isNotEmpty() },
+                    "Today's earlier chores were turned down, so let's build a new card.".takeIf { vm.rejectedToday(player.id, logs) },
+                    "Someone else already has ${if (others.size == 1) "one" else "${others.size}"} of today's chores.".takeIf { others.isNotEmpty() },
                 )
                 Picker(player.id, pool.filter { it.id !in others }, bonus = false, hinge = hinge, notes = notes) { vm.lockIn(player, it); fb.lockIn() }
             }
@@ -142,7 +160,7 @@ fun PlayerScreen(
                 }
             }
             else -> {
-                TopBar(player.shownName, onBack) { naming = true }
+                TopBar(player.shownName, onBack, { naming = true }, stats)
                 CardRun(vm, player, card, logs, todays, others, hinge, bonusLeft = vm.store.pool.count { it.id !in taken },
                     onPuzzle = onPuzzle) { bonusPicking = true }
             }
@@ -175,24 +193,25 @@ private fun Picker(
     TwoZone(
         hinge,
         top = {
-            LazyColumn(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
+            LazyColumn(Modifier.fillMaxSize()) {
                 item {
                     Text(
-                        if (bonus) "log extra chores — no cap, all normal points"
-                        else "pick what you want — then fill to ${Engine.DAILY_MINUTES} min",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 8.dp),
+                        if (bonus) "Did a bit extra today? Pick what you did. Every chore still earns its points."
+                        else "Pick what you'd like to do today, then fill it up to ${Engine.DAILY_MINUTES} minutes.",
+                        color = Done, modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
                     )
                 }
                 items(notes) { note ->
-                    Text(note, color = Warn, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 8.dp))
+                    Text(note, color = Warn, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(horizontal = 20.dp).padding(bottom = 10.dp))
                 }
-                items(pool, key = { it.id }) { c ->
+                itemsIndexed(pool, key = { _, c -> c.id }) { i, c ->
                     val isPicked = c.id in picked
                     val fits = isPicked || c.currentMinutes <= remaining
                     Box(Modifier.then(if (fits) Modifier else Modifier.padding(start = 0.dp))) {
                         ChoreRow(
-                            name = c.name + if (c.id in suggested) " ✨" else "",
+                            name = c.name,
                             minutes = c.currentMinutes, escalLevel = c.escalLevel, checked = isPicked,
+                            index = i, count = pool.size, picking = true,
                             onToggle = {
                                 if (isPicked) { fb.tick(false); picked = picked - c.id; suggested = suggested - c.id }
                                 else if (fits) { fb.tick(true); picked = picked + c.id; suggested = suggested - c.id }
@@ -204,30 +223,28 @@ private fun Picker(
             }
         },
         bottom = {
-            Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp)) {
-                Text(if (bonus) "${total}m" else "$total / ${Engine.DAILY_MINUTES}m", fontWeight = FontWeight.Bold)
+            Column(Modifier.fillMaxWidth()) {
+                Text(if (bonus) Phrase.count(total, "minute") else "$total of ${Engine.DAILY_MINUTES} minutes", fontWeight = FontWeight.Black,
+                    style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp))
                 if (!bonus) {
-                    Spacer(Modifier.height(6.dp))
                     MinutesBar(total, Engine.DAILY_MINUTES)
-                    Spacer(Modifier.height(10.dp))
-                    OutlinedButton(
+                    QuietButton(
+                        if (chosen.isEmpty()) "Suggest a ${Engine.DAILY_MINUTES}-minute card" else "Fill it up to ${Engine.DAILY_MINUTES} minutes",
                         onClick = {
                             fb.fill()
                             val next = Engine.suggestFill(picked, pool)
                             suggested = (suggested.filter { it in next } + next.filter { it !in picked }).distinct()
                             picked = next
                         },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) { Text(if (chosen.isEmpty()) "✨ suggest a ${Engine.DAILY_MINUTES}-min card" else "✨ fill to ${Engine.DAILY_MINUTES}m") }
+                    )
                 }
-                Spacer(Modifier.height(8.dp))
                 TermButton(
                     label = when {
-                        ready && bonus -> "LOG ${chosen.size} CHORES"
-                        ready -> "LOCK IN CARD"
-                        chosen.isNotEmpty() -> "ADD MORE TO REACH ${Engine.DAILY_MINUTES}M"
-                        bonus -> "PICK CHORES TO LOG"
-                        else -> "PICK OR SUGGEST CHORES"
+                        ready && bonus -> "Log ${if (chosen.size == 1) "this chore" else "these ${chosen.size} chores"}"
+                        ready -> "Lock in my card"
+                        chosen.isNotEmpty() -> "Add a few more to reach ${Engine.DAILY_MINUTES} minutes"
+                        bonus -> "Pick the chores you did"
+                        else -> "Pick some chores, or let me suggest some"
                     },
                     enabled = ready,
                 ) { onConfirm(chosen) }
@@ -251,10 +268,8 @@ private fun CardRun(
     onBonus: () -> Unit,
 ) {
     val fb = LocalFeedback.current
-    val now = remember(logs) { vm.now() }
     val shared by vm.store.state.collectAsState()
     val rank = Engine.rank(vm.totalXp(player.id, logs, shared))
-    val streak = Engine.streak(player.id, logs, now, vm.zone)
     // Celebrate the first time this screen shows a new version (approval may have happened elsewhere).
     LaunchedEffect(player.id, rank.level) { if (vm.isNewLevel(player.id, rank.level)) fb.levelUp() }
     // Approved wins; otherwise the latest log for a chore decides, so one redone after a rejection is awaiting again.
@@ -274,27 +289,30 @@ private fun CardRun(
     TwoZone(
         hinge,
         top = {
-            LazyColumn(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
-                item { StatsHeader(rank, streak) }
-                item { SectionLabel("today's card · ${total}m") }
+            // One gradient down the whole day: the card, then the bonus round, then anything turned down.
+            val rows = card.choreIds.size + bonusLogs.size + if (card.submitted) rejectedExtras.size else 0
+            LazyColumn(Modifier.fillMaxSize()) {
+                item { SectionLabel("Today's card · ${Phrase.count(total, "minute")}") }
                 itemsIndexed(card.choreIds) { i, id ->
                     ChoreRow(
                         name = vm.choreName(id), minutes = card.minutes[i],
                         escalLevel = card.escal.getOrElse(i) { 0 },
                         checked = card.checked[i],
                         status = if (card.submitted) statusByChore[id] ?: Status.PENDING else if (id in lost) TAKEN else null,
+                        index = i, count = rows,
                         onToggle = { fb.tick(!card.checked[i]); vm.toggle(player, card, i) },
                     )
                 }
                 if (bonusLogs.isNotEmpty()) {
-                    item { SectionLabel("bonus round") }
-                    items(bonusLogs, key = { it.id }) { l ->
-                        ChoreRow(l.choreName, Engine.choreMinutes(l, vm.store.poolById), 0, checked = true, status = statusByChore[l.choreId])
+                    item { SectionLabel("Bonus round") }
+                    itemsIndexed(bonusLogs, key = { _, l -> l.id }) { i, l ->
+                        ChoreRow(l.choreName, Engine.choreMinutes(l, vm.store.poolById), 0, checked = true, status = statusByChore[l.choreId],
+                            index = card.choreIds.size + i, count = rows)
                     }
                 }
                 // Kept off a card that's still being checked off, where it would only be in the way.
                 if (card.submitted && rejectedExtras.isNotEmpty()) {
-                    item { SectionLabel("rejected today") }
+                    item { SectionLabel("Turned down today") }
                     items(rejectedExtras, key = { it.id }) { l ->
                         ChoreRow(l.choreName, Engine.choreMinutes(l, vm.store.poolById), 0, checked = true, status = Status.REJECTED)
                     }
@@ -302,52 +320,51 @@ private fun CardRun(
             }
         },
         bottom = {
-            Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp)) {
+            Column(Modifier.fillMaxWidth()) {
                 if (!card.submitted) {
-                    if (lost.isNotEmpty()) Text("taken = someone else got it first today — it won't be submitted",
-                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 8.dp))
+                    if (lost.isNotEmpty()) Text("Someone else got to the ones marked taken first, so they won't be sent.",
+                        style = MaterialTheme.typography.bodyMedium, color = Done, modifier = Modifier.padding(horizontal = 20.dp).padding(bottom = 8.dp))
+                    Row(Modifier.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("The puzzle opens once you send your card.", style = MaterialTheme.typography.bodyMedium, color = Done, modifier = Modifier.weight(1f))
+                        Text("Change my picks", color = Ink, fontWeight = FontWeight.Bold,
+                            modifier = Modifier.clickable { fb.tap(); vm.clearCard(player) }.padding(vertical = 14.dp, horizontal = 4.dp))
+                    }
                     TermButton(
                         when {
-                            allChecked -> "SUBMIT FOR APPROVAL"
-                            keep.isEmpty() -> "ALL TAKEN TODAY — CHANGE PICKS"
-                            else -> "CHECK OFF EVERYTHING FIRST"
+                            allChecked -> "Send it off for approval"
+                            keep.isEmpty() -> "Everything's been taken today. Change your picks"
+                            else -> "Check everything off first"
                         },
                         enabled = allChecked,
                     ) { vm.submit(player, card); fb.submit() }
-                    Text("🔒 the puzzle unlocks when this card is submitted", style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
-                    Text("change my picks", color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.align(Alignment.CenterHorizontally).clickable { fb.tap(); vm.clearCard(player) }.padding(14.dp))
                 } else {
                     // Say what's actually left: every chore logged today is pending, approved or rejected.
                     val verdicts = (card.choreIds + extras.map { it.choreId }).map { statusByChore[it] ?: Status.PENDING }
                     val waiting = verdicts.count { it == Status.PENDING }
                     val rejected = verdicts.count { it == Status.REJECTED }
                     val (line, lineColor) = when {
-                        waiting == verdicts.size -> "card submitted — waiting on a parent" to MaterialTheme.colorScheme.onSurfaceVariant
-                        waiting > 0 -> "$waiting of ${verdicts.size} still waiting on a parent" to MaterialTheme.colorScheme.onSurfaceVariant
-                        rejected == 0 -> "✓ all approved — nice work" to Good
-                        rejected == verdicts.size -> "✗ none approved today" to Bad
-                        else -> "done — ${verdicts.size - rejected} approved, $rejected rejected" to MaterialTheme.colorScheme.onSurfaceVariant
+                        waiting == verdicts.size -> "Sent! Now it's waiting for an admin to look at it." to Done
+                        waiting > 0 -> "$waiting of ${verdicts.size} are still waiting for an admin." to Done
+                        rejected == 0 -> "Everything's approved. Nice work!" to Good
+                        rejected == verdicts.size -> "None of today's chores were approved." to Bad
+                        else -> "${verdicts.size - rejected} approved and $rejected turned down." to Done
                     }
-                    Text(line, color = lineColor, modifier = Modifier.padding(bottom = 8.dp))
-                    if (rejected > 0) Text("rejected chores can be done again from the bonus round",
-                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 8.dp))
+                    Text(line, color = lineColor, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp))
+                    if (rejected > 0) Text("You can redo the turned-down ones in a bonus round.",
+                        style = MaterialTheme.typography.bodyMedium, color = Done, modifier = Modifier.padding(horizontal = 20.dp).padding(bottom = 10.dp))
                     val minutesLeft = com.gyattchores.app.engine.PuzzleTime.minutesLeft(vm.puzzleUsedMs(player.id))
                     if (minutesLeft > 0) {
                         val level = vm.puzzleLevel(player.id)
                         // On a narrow phone the minutes left matter more than the puzzle's name.
-                        TermButton("PLAY · CLEAR THE GRID · LVL $level · $minutesLeft MIN LEFT", modifier = Modifier.padding(bottom = 8.dp),
-                            shortLabel = "PLAY · LVL $level · $minutesLeft MIN LEFT") {
+                        TermButton("Play level $level · ${Phrase.count(minutesLeft, "minute")} left today",
+                            shortLabel = "Play level $level · $minutesLeft min left") {
                             fb.unlock(); onPuzzle()
                         }
                     } else {
-                        Text("puzzle time's up for today · back tomorrow", color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(bottom = 8.dp))
+                        Text("That's your hour of puzzles for today. See you tomorrow!", color = Done,
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 18.dp))
                     }
-                    if (bonusLeft > 0) OutlinedButton(onClick = { fb.tap(); onBonus() }, modifier = Modifier.fillMaxWidth()) { Text("+ bonus round") }
+                    if (bonusLeft > 0) QuietButton("Do a bonus round") { fb.tap(); onBonus() }
                 }
             }
         },

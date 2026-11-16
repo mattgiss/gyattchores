@@ -26,7 +26,7 @@ final class GyattChoresUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-uiTesting"] + extra
         app.launch()
-        XCTAssertTrue(app.staticTexts["GYATTCHORES"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["GyattChores"].waitForExistence(timeout: wait))
         return app
     }
 
@@ -38,14 +38,14 @@ final class GyattChoresUITests: XCTestCase {
 
     /// Opens the admin area and unlocks it.
     private func unlockAdmin(in app: XCUIApplication, code: String? = nil) {
-        app.buttons["admin"].tap()
+        app.buttons["Admin"].tap()
         type(code ?? adminCode, into: app.secureTextFields.firstMatch)
-        app.buttons["> UNLOCK"].tap()
+        app.buttons["Unlock"].tap()
         XCTAssertTrue(app.segmentedControls.firstMatch.waitForExistence(timeout: wait), "the right code opens the admin area")
     }
 
     private func adminSection(_ name: String, in app: XCUIApplication) {
-        app.segmentedControls.firstMatch.buttons[name].tap()
+        app.segmentedControls.firstMatch.buttons[name.prefix(1).uppercased() + name.dropFirst()].tap()
     }
 
     /// Flips a switch. Tapping the middle of a labelled switch lands on its label, which does nothing.
@@ -70,16 +70,21 @@ final class GyattChoresUITests: XCTestCase {
         add(attachment)
     }
 
-    /// The row on the home screen that opens a player's day (it's the one showing their streak).
+    /// The row on the home screen that opens a player's day (it's the one showing their points).
     private func playerRow(_ name: String, in app: XCUIApplication) -> XCUIElement {
-        app.buttons.matching(NSPredicate(format: "label CONTAINS %@ AND label CONTAINS '🔥'", name)).firstMatch
+        app.buttons.matching(NSPredicate(format: "label CONTAINS %@ AND label CONTAINS ' pts'", name)).firstMatch
     }
 
-    /// The big "> LABEL" button at the bottom of the picker and the card. The home screen's player
-    /// rows also start with "> ", and the home screen is still around while the next screen slides
-    /// in (and always, on an iPad), so rule those out.
+    /// The big band button at the bottom of the picker and the card. The home screen is still
+    /// around while the next screen slides in (and always, on an iPad), and its dares button is the
+    /// same kind of button, so rule that out.
     private func mainButton(in app: XCUIApplication) -> XCUIElement {
-        app.buttons.matching(NSPredicate(format: "label BEGINSWITH '> ' AND NOT (label CONTAINS '🔥')")).firstMatch
+        app.buttons.matching(NSPredicate(format: "identifier == 'main' AND NOT (label BEGINSWITH 'Make a dare')")).firstMatch
+    }
+
+    /// The puzzle's play button. On a narrow phone it leaves out the puzzle's name, so match the end.
+    private func playButton(level: Int, minutes: Int, in app: XCUIApplication) -> XCUIElement {
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@ AND label CONTAINS %@", "Play level \(level) · ", " \(minutes) min")).firstMatch
     }
 
     private func uncheckedChores(in app: XCUIApplication) -> XCUIElementQuery {
@@ -101,7 +106,7 @@ final class GyattChoresUITests: XCTestCase {
 
     /// Checks off every chore on the card and returns the submit button, now enabled.
     private func checkOffEverything(in app: XCUIApplication) -> XCUIElement {
-        let submit = app.buttons["> SUBMIT FOR APPROVAL"]
+        let submit = app.buttons["Send it off for approval"]
         var steps = 0
         while !submit.exists, steps < 40 {
             steps += 1
@@ -121,16 +126,16 @@ final class GyattChoresUITests: XCTestCase {
             // The day opens beside the list; there's nothing to go back to.
             XCTAssertTrue(row.isSelected, "\(name) should be highlighted in the list")
         } else {
-            XCTAssertTrue(app.buttons["← back"].waitForExistence(timeout: wait), "\(name)'s screen should open")
+            XCTAssertTrue(app.buttons["Back"].waitForExistence(timeout: wait), "\(name)'s screen should open")
         }
     }
 
     /// Back to the home list. On an iPad it never left, so there's only something to close when
     /// the admin area or the bonus picker is open.
     private func goBack(in app: XCUIApplication) {
-        let back = app.buttons["← back"]
+        let back = app.buttons["Back"]
         if back.exists { back.tap() }
-        XCTAssertTrue(app.staticTexts["GYATTCHORES"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["GyattChores"].waitForExistence(timeout: wait))
     }
 
     // MARK: Tests
@@ -148,21 +153,21 @@ final class GyattChoresUITests: XCTestCase {
         open("riley", in: app)
         let main = mainButton(in: app)
         XCTAssertTrue(main.waitForExistence(timeout: wait))
-        XCTAssertEqual(main.label, "> PICK OR SUGGEST CHORES")
+        XCTAssertEqual(main.label, "Pick some chores, or let me suggest some")
         XCTAssertFalse(main.isEnabled)
-        XCTAssertTrue(app.staticTexts["0 / 25m"].exists)
+        XCTAssertTrue(app.staticTexts["0 of 25 minutes"].exists)
         screenshot("02-picker-empty", of: app)
 
         // Suggest a full card, then lock it in.
-        app.buttons["✨ suggest a 25-min card"].tap()
-        XCTAssertEqual(main.label, "> LOCK IN CARD")
+        app.buttons["Suggest a 25-minute card"].tap()
+        XCTAssertEqual(main.label, "Lock in my card")
         XCTAssertTrue(main.isEnabled)
-        XCTAssertFalse(app.staticTexts["0 / 25m"].exists, "the suggestion added minutes")
+        XCTAssertFalse(app.staticTexts["0 of 25 minutes"].exists, "the suggestion added minutes")
         screenshot("03-picker-suggested", of: app)
         main.tap()
 
         // Card: submit stays off until every chore is checked.
-        XCTAssertTrue(app.buttons["> CHECK OFF EVERYTHING FIRST"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.buttons["Check everything off first"].waitForExistence(timeout: wait))
         XCTAssertFalse(mainButton(in: app).isEnabled)
         XCTAssertGreaterThan(uncheckedChores(in: app).count, 0)
         screenshot("04-card-unchecked", of: app)
@@ -171,33 +176,33 @@ final class GyattChoresUITests: XCTestCase {
         screenshot("05-card-checked", of: app)
 
         submit.tap()
-        XCTAssertTrue(app.staticTexts["card submitted — waiting on an admin"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["Sent! Now it's waiting for an admin to look at it."].waitForExistence(timeout: wait))
         XCTAssertEqual(uncheckedChores(in: app).count, 0, "a submitted card can't be unchecked")
         screenshot("06-card-submitted", of: app)
 
         // Bonus round: one extra chore, logged straight to pending.
-        app.buttons["+ bonus round"].tap()
-        XCTAssertTrue(app.buttons["> PICK CHORES TO LOG"].waitForExistence(timeout: wait))
+        app.buttons["Do a bonus round"].tap()
+        XCTAssertTrue(app.buttons["Pick the chores you did"].waitForExistence(timeout: wait))
         uncheckedChores(in: app).firstMatch.tap()
-        let logOne = app.buttons["> LOG 1 CHORES"]
+        let logOne = app.buttons["Log this chore"]
         XCTAssertTrue(logOne.waitForExistence(timeout: wait))
         screenshot("07-bonus-picker", of: app)
         logOne.tap()
-        XCTAssertTrue(app.staticTexts["BONUS ROUND"].waitForExistence(timeout: wait))
-        XCTAssertTrue(app.staticTexts["card submitted — waiting on an admin"].exists)
+        XCTAssertTrue(app.staticTexts["Bonus round"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["Sent! Now it's waiting for an admin to look at it."].exists)
         screenshot("08-card-with-bonus", of: app)
 
         // Relaunch: the day is still there.
         app.terminate()
         let relaunched = launch()
         open("riley", in: relaunched)
-        XCTAssertTrue(relaunched.staticTexts["card submitted — waiting on an admin"].waitForExistence(timeout: wait))
-        XCTAssertTrue(relaunched.staticTexts["BONUS ROUND"].exists)
+        XCTAssertTrue(relaunched.staticTexts["Sent! Now it's waiting for an admin to look at it."].waitForExistence(timeout: wait))
+        XCTAssertTrue(relaunched.staticTexts["Bonus round"].exists)
 
         // The other player's day is untouched.
         goBack(in: relaunched)
         open("sam", in: relaunched)
-        XCTAssertTrue(relaunched.buttons["> PICK OR SUGGEST CHORES"].waitForExistence(timeout: wait))
+        XCTAssertTrue(relaunched.buttons["Pick some chores, or let me suggest some"].waitForExistence(timeout: wait))
     }
 
     func testAdminGateAndApprovals() {
@@ -205,46 +210,47 @@ final class GyattChoresUITests: XCTestCase {
         let code = app.secureTextFields.firstMatch
 
         // A wrong code gets nowhere.
-        app.buttons["admin"].tap()
+        app.buttons["Admin"].tap()
         type("definitely-not-it", into: code)
-        app.buttons["> UNLOCK"].tap()
-        XCTAssertTrue(app.staticTexts["that code didn't match"].waitForExistence(timeout: wait))
+        app.buttons["Unlock"].tap()
+        XCTAssertTrue(app.staticTexts["That code didn't match. Try again?"].waitForExistence(timeout: wait))
         XCTAssertEqual(app.segmentedControls.count, 0, "a wrong code must not reach the approvals")
-        XCTAssertFalse(app.buttons["✓ approve"].exists)
+        XCTAssertFalse(app.buttons["Approve this chore"].exists)
         screenshot("09-admin-wrong-code", of: app)
 
         // The admin's code opens it: sam's chores from today are waiting.
         type(adminCode, into: code)
-        app.buttons["> UNLOCK"].tap()
+        app.buttons["Unlock"].tap()
         XCTAssertTrue(app.segmentedControls.firstMatch.waitForExistence(timeout: wait))
-        let approve = app.buttons["✓ approve"].firstMatch
+        let approve = app.buttons["Approve this chore"].firstMatch
         XCTAssertTrue(approve.waitForExistence(timeout: wait))
         screenshot("09b-admin-approvals", of: app)
         var approved = 0
-        while approve.exists, approved < 20 { approve.tap(); approved += 1 }
+        // Each row redraws as it's judged, so give the next one a moment to appear.
+        while approve.waitForExistence(timeout: 2), approved < 30 { approve.tap(); approved += 1 }
         XCTAssertGreaterThan(approved, 0)
-        XCTAssertTrue(app.staticTexts["nothing pending"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["Nothing's waiting for you. All caught up!"].waitForExistence(timeout: wait))
 
         // Back on sam's card, everything reads approved.
         goBack(in: app)
         open("sam", in: app)
-        XCTAssertTrue(app.staticTexts["✓ all approved — nice work"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["Everything's approved. Nice work!"].waitForExistence(timeout: wait))
     }
 
     /// The admin's code box is ready to type into as soon as the lock screen opens, and a day's
     /// worth of one person's chores is approved with one tap.
     func testApproveAllOfADayInOneTap() {
         let app = launch(["-resetData", "-demoData"])
-        app.buttons["admin"].tap()
+        app.buttons["Admin"].tap()
         XCTAssertTrue(app.secureTextFields.firstMatch.waitForExistence(timeout: wait))
         // No tap on the field first: it already has the keyboard.
         app.typeText(adminCode + "\n")
         XCTAssertTrue(app.segmentedControls.firstMatch.waitForExistence(timeout: wait), "the code typed straight away should unlock")
-        let all = app.buttons.matching(NSPredicate(format: "label BEGINSWITH '✓ approve all'")).firstMatch
+        let all = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Approve all'")).firstMatch
         XCTAssertTrue(all.waitForExistence(timeout: wait), "sam has several chores waiting: there should be an approve-all")
         screenshot("09c-approve-all", of: app)
         all.tap()
-        XCTAssertTrue(app.staticTexts["nothing pending"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["Nothing's waiting for you. All caught up!"].waitForExistence(timeout: wait))
     }
 
     /// A backup saved to Files brings the whole scoreboard back after erasing everything.
@@ -365,7 +371,7 @@ final class GyattChoresUITests: XCTestCase {
         let app = launch(["-resetData"])
 
         // No players are built in: a fresh install starts with the welcome.
-        let start = app.buttons["> SET UP THIS DEVICE"]
+        let start = app.buttons["SET UP THIS DEVICE"]
         XCTAssertTrue(start.waitForExistence(timeout: wait))
         #if FAMILY_SYNC
         XCTAssertTrue(app.staticTexts["· players, chores and points are shared with the family's other phones"].exists)
@@ -373,12 +379,12 @@ final class GyattChoresUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["· everything stays on this device"].exists)
         #endif
         XCTAssertTrue(app.staticTexts["· no accounts, no sign-in, no ads, no tracking"].exists)
-        XCTAssertFalse(app.buttons["admin"].exists)
+        XCTAssertFalse(app.buttons["Admin"].exists)
         screenshot("20-setup-welcome", of: app)
         start.tap()
 
         // Who's in charge: a name and a code typed twice.
-        let next = app.buttons["> NEXT"]
+        let next = app.buttons["NEXT"]
         XCTAssertTrue(next.waitForExistence(timeout: wait))
         XCTAssertFalse(next.isEnabled)
         type("pat", into: app.textFields["admin-name"])
@@ -404,19 +410,19 @@ final class GyattChoresUITests: XCTestCase {
         // What needs doing: said in a sentence, sorted into a list.
         let own = app.buttons["write or say your own"]
         XCTAssertTrue(own.waitForExistence(timeout: wait))
-        XCTAssertTrue(app.buttons["> USE THE STARTER LIST"].exists)
+        XCTAssertTrue(app.buttons["USE THE STARTER LIST"].exists)
         own.tap()
         type("We need to do the dishes and take out the trash, someone has to feed the dog for 5 minutes. Water plants", into: app.textViews["chore-text"])
         screenshot("23-setup-chores-written", of: app)
-        app.buttons["> SORT INTO CHORES"].tap()
-        XCTAssertTrue(app.buttons["> ADD 4 CHORES"].waitForExistence(timeout: wait))
+        app.buttons["SORT INTO CHORES"].tap()
+        XCTAssertTrue(app.buttons["ADD 4 CHORES"].waitForExistence(timeout: wait))
         for name in ["do the dishes", "take out the trash", "feed the dog", "water plants"] {
             XCTAssertTrue(app.textFields.matching(NSPredicate(format: "value == %@", name)).firstMatch.exists, "\(name) should be on the list")
         }
         XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label == '5m'")).firstMatch.exists, "the time that was mentioned is kept")
         screenshot("24-setup-chores-sorted", of: app)
         app.buttons["leave out water plants"].tap()
-        let add = app.buttons["> ADD 3 CHORES"]
+        let add = app.buttons["ADD 3 CHORES"]
         XCTAssertTrue(add.waitForExistence(timeout: wait))
         add.tap()
 
@@ -439,7 +445,7 @@ final class GyattChoresUITests: XCTestCase {
         app.terminate()
         let relaunched = launch()
         XCTAssertTrue(playerRow("sam", in: relaunched).waitForExistence(timeout: wait))
-        XCTAssertFalse(relaunched.buttons["> SET UP THIS DEVICE"].exists)
+        XCTAssertFalse(relaunched.buttons["SET UP THIS DEVICE"].exists)
         unlockAdmin(in: relaunched)
         goBack(in: relaunched)
     }
@@ -452,7 +458,7 @@ final class GyattChoresUITests: XCTestCase {
         // Add a player.
         adminSection("players", in: app)
         app.buttons["+ add player"].tap()
-        let save = app.buttons["> SAVE"]
+        let save = app.buttons["SAVE"]
         XCTAssertTrue(save.waitForExistence(timeout: wait))
         XCTAssertFalse(save.isEnabled, "a player needs a name")
         type("sam", into: app.textFields["member-name"])
@@ -485,8 +491,8 @@ final class GyattChoresUITests: XCTestCase {
         adminSection("chores", in: app)
         app.buttons["+ add chores"].tap()
         type("feed the fish 2 minutes, make bed", into: app.textViews["chore-text"])
-        app.buttons["> SORT INTO CHORES"].tap()
-        let add = app.buttons["> ADD 1 CHORE"]
+        app.buttons["SORT INTO CHORES"].tap()
+        let add = app.buttons["ADD 1 CHORE"]
         XCTAssertTrue(add.waitForExistence(timeout: wait), "make bed is already on the list, so only the fish is new")
         add.tap()
         XCTAssertTrue(app.buttons["edit feed the fish"].waitForExistence(timeout: wait))
@@ -507,7 +513,7 @@ final class GyattChoresUITests: XCTestCase {
         let app = launch(["-resetData", "-demoData"])
         unlockAdmin(in: app)
         adminSection("device", in: app)
-        XCTAssertTrue(app.staticTexts["YOUR DATA"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["Your data"].waitForExistence(timeout: wait))
         XCTAssertFalse(app.buttons["erase everything…"].exists, "the family build must not offer erasing")
         XCTAssertTrue(app.buttons["save-backup"].exists)
         #else
@@ -515,7 +521,7 @@ final class GyattChoresUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["27/30 · 90%"].waitForExistence(timeout: wait))
         unlockAdmin(in: app)
         adminSection("device", in: app)
-        XCTAssertTrue(app.staticTexts["YOUR DATA"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["Your data"].waitForExistence(timeout: wait))
         screenshot("30-admin-device", of: app)
         app.buttons["erase everything…"].tap()
         let confirm = app.buttons["Erase players, chores and points"]
@@ -523,11 +529,11 @@ final class GyattChoresUITests: XCTestCase {
         confirm.tap()
 
         // Back to a fresh install, and it stays that way after a restart.
-        XCTAssertTrue(app.buttons["> SET UP THIS DEVICE"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.buttons["SET UP THIS DEVICE"].waitForExistence(timeout: wait))
         XCTAssertFalse(playerRow("riley", in: app).exists)
         app.terminate()
         let relaunched = launch()
-        XCTAssertTrue(relaunched.buttons["> SET UP THIS DEVICE"].waitForExistence(timeout: wait))
+        XCTAssertTrue(relaunched.buttons["SET UP THIS DEVICE"].waitForExistence(timeout: wait))
         XCTAssertFalse(relaunched.staticTexts["27/30 · 90%"].exists)
         #endif
     }
@@ -543,18 +549,18 @@ final class GyattChoresUITests: XCTestCase {
 
         // The second player's chores for today are waiting on an admin.
         open("sam", in: app)
-        XCTAssertTrue(app.staticTexts["card submitted — waiting on an admin"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["Sent! Now it's waiting for an admin to look at it."].waitForExistence(timeout: wait))
         screenshot("11-card-awaiting", of: app)
 
         // The first player's are approved.
         goBack(in: app)
         open("riley", in: app)
-        XCTAssertTrue(app.staticTexts["✓ all approved — nice work"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["Everything's approved. Nice work!"].waitForExistence(timeout: wait))
         screenshot("12-card-approved", of: app)
 
         goBack(in: app)
         // However far the list is pushed, the title stays where it is.
-        let title = app.staticTexts["GYATTCHORES"]
+        let title = app.staticTexts["GyattChores"]
         let before = title.frame
         app.staticTexts["27/30 · 90%"].swipeUp()
         XCTAssertEqual(title.frame, before, "the title shouldn't scroll away")
@@ -571,20 +577,20 @@ final class GyattChoresUITests: XCTestCase {
         open("sam", in: app)
         let main = mainButton(in: app)
         XCTAssertTrue(main.waitForExistence(timeout: wait))
-        XCTAssertEqual(main.label, "> PICK OR SUGGEST CHORES", "a day of rejections should offer the picker, not a finished card")
-        XCTAssertTrue(app.staticTexts["today's earlier chores were rejected — build a new card"].exists)
+        XCTAssertEqual(main.label, "Pick some chores, or let me suggest some", "a day of rejections should offer the picker, not a finished card")
+        XCTAssertTrue(app.staticTexts["Today's earlier chores were turned down, so let's build a new card."].exists)
         // The other player's six approved chores are spoken for today.
-        XCTAssertTrue(app.staticTexts["6 chores already taken by someone else today"].exists)
-        XCTAssertFalse(app.buttons["+ bonus round"].exists)
+        XCTAssertTrue(app.staticTexts["Someone else already has 6 of today's chores."].exists)
+        XCTAssertFalse(app.buttons["Do a bonus round"].exists)
         screenshot("15-rejected-day-picker", of: app)
 
-        app.buttons["✨ suggest a 25-min card"].tap()
-        XCTAssertEqual(main.label, "> LOCK IN CARD")
+        app.buttons["Suggest a 25-minute card"].tap()
+        XCTAssertEqual(main.label, "Lock in my card")
         main.tap()
         checkOffEverything(in: app).tap()
 
         // The new card is in and waiting; nothing on it reads as rejected.
-        let waiting = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'waiting on an admin'")).firstMatch
+        let waiting = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'waiting for an admin'")).firstMatch
         XCTAssertTrue(waiting.waitForExistence(timeout: wait))
         XCTAssertEqual(uncheckedChores(in: app).count, 0)
         screenshot("16-rejected-day-resubmitted", of: app)
@@ -592,7 +598,7 @@ final class GyattChoresUITests: XCTestCase {
         // Someone else's day is untouched.
         goBack(in: app)
         open("riley", in: app)
-        XCTAssertTrue(app.staticTexts["✓ all approved — nice work"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["Everything's approved. Nice work!"].waitForExistence(timeout: wait))
     }
 
     /// Submitting today's card unlocks the puzzle. A move that isn't allowed changes nothing;
@@ -600,15 +606,15 @@ final class GyattChoresUITests: XCTestCase {
     func testSubmittingUnlocksThePuzzleAndClearingLevelsUp() {
         let app = launch(["-resetData", "-demoFamily"])
         open("riley", in: app)
-        app.buttons["✨ suggest a 25-min card"].tap()
+        app.buttons["Suggest a 25-minute card"].tap()
         mainButton(in: app).tap()
 
         // Locked until the card is in.
-        XCTAssertTrue(app.staticTexts["🔒 the puzzle unlocks when this card is submitted"].waitForExistence(timeout: wait))
-        XCTAssertFalse(app.buttons["> PLAY · CLEAR THE GRID · LVL 1 · 60 MIN LEFT"].exists)
+        XCTAssertTrue(app.staticTexts["The puzzle opens once you send your card."].waitForExistence(timeout: wait))
+        XCTAssertFalse(playButton(level: 1, minutes: 60, in: app).exists)
         checkOffEverything(in: app).tap()
 
-        let play = app.buttons["> PLAY · CLEAR THE GRID · LVL 1 · 60 MIN LEFT"]
+        let play = playButton(level: 1, minutes: 60, in: app)
         XCTAssertTrue(play.waitForExistence(timeout: wait), "a submitted card unlocks the puzzle")
         screenshot("puzzle-1-unlocked", of: app)
         play.tap()
@@ -627,7 +633,7 @@ final class GyattChoresUITests: XCTestCase {
 
         // Pink 0 and black 7 aren't in line: nothing happens.
         cell(0).tap()
-        XCTAssertTrue(app.staticTexts["now tap a black block in line with it"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["now tap a block of the other colour in line with it"].waitForExistence(timeout: wait))
         cell(7).tap()
         XCTAssertTrue(app.staticTexts["4 blocks left"].exists, "a move that isn't allowed removes nothing")
 
@@ -645,7 +651,7 @@ final class GyattChoresUITests: XCTestCase {
         XCTAssertTrue(levelUp.waitForExistence(timeout: wait), "clearing the board levels up")
         XCTAssertTrue(app.staticTexts["LVL 2"].exists)
         XCTAssertTrue(app.staticTexts["4 blocks cleared"].exists)
-        let next = app.buttons["> NEXT LEVEL"]
+        let next = app.buttons["NEXT LEVEL"]
         XCTAssertTrue(next.waitForExistence(timeout: wait))
         screenshot("puzzle-3-level-up", of: app)
         next.tap()
@@ -656,7 +662,7 @@ final class GyattChoresUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["4 blocks left"].exists)
         screenshot("puzzle-4-level-2", of: app)
         app.buttons["puzzle-back"].tap()
-        XCTAssertTrue(app.buttons["> PLAY · CLEAR THE GRID · LVL 2 · 60 MIN LEFT"].waitForExistence(timeout: wait))
+        XCTAssertTrue(playButton(level: 2, minutes: 60, in: app).waitForExistence(timeout: wait))
     }
 
     /// The puzzle gets an hour a day per player. The play button counts down; when the hour runs
@@ -664,17 +670,17 @@ final class GyattChoresUITests: XCTestCase {
     func testThePuzzleStopsAfterAnHourADay() {
         let app = launch(["-resetData", "-demoFamily", "-puzzleSecondsLeft", "125"])
         open("riley", in: app)
-        app.buttons["✨ suggest a 25-min card"].tap()
+        app.buttons["Suggest a 25-minute card"].tap()
         mainButton(in: app).tap()
         checkOffEverything(in: app).tap()
-        let play = app.buttons["> PLAY · CLEAR THE GRID · LVL 1 · 3 MIN LEFT"]
+        let play = playButton(level: 1, minutes: 3, in: app)
         XCTAssertTrue(play.waitForExistence(timeout: wait), "125 seconds left shows as 3 minutes")
         app.terminate()
 
         // Down to the last few seconds: they run out while the board is up.
         let again = launch(["-puzzleSecondsLeft", "3"])
         open("riley", in: again)
-        let last = again.buttons["> PLAY · CLEAR THE GRID · LVL 1 · 1 MIN LEFT"]
+        let last = playButton(level: 1, minutes: 1, in: again)
         XCTAssertTrue(last.waitForExistence(timeout: wait))
         last.tap()
         XCTAssertTrue(again.descendants(matching: .any)["cell-0"].waitForExistence(timeout: wait))
@@ -682,7 +688,7 @@ final class GyattChoresUITests: XCTestCase {
         XCTAssertTrue(covered.waitForExistence(timeout: 10), "the board is covered when time runs out")
         screenshot("puzzle-time-up", of: again)
         again.buttons["puzzle-timeup-back"].tap()
-        XCTAssertTrue(again.staticTexts["puzzle time's up for today · back tomorrow"].waitForExistence(timeout: wait))
+        XCTAssertTrue(again.staticTexts["That's your hour of puzzles for today. See you tomorrow!"].waitForExistence(timeout: wait))
         XCTAssertFalse(again.buttons.matching(NSPredicate(format: "label BEGINSWITH '> PLAY'")).firstMatch.exists)
     }
 
@@ -694,7 +700,7 @@ final class GyattChoresUITests: XCTestCase {
 
         // A player gives themselves a display name from their own screen: no admin needed.
         open("sam", in: app)
-        app.buttons["✎ name"].tap()
+        app.buttons["Rename"].tap()
         let field = app.alerts.textFields.firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: wait))
         field.typeText(nickname)
@@ -716,7 +722,7 @@ final class GyattChoresUITests: XCTestCase {
 
         // …and comes off again, with the username underneath untouched.
         open(nickname, in: relaunched)
-        relaunched.buttons["✎ name"].tap()
+        relaunched.buttons["Rename"].tap()
         XCTAssertTrue(relaunched.alerts.buttons["Use my username"].waitForExistence(timeout: wait))
         relaunched.alerts.buttons["Use my username"].tap()
         goBack(in: relaunched)
@@ -730,40 +736,40 @@ final class GyattChoresUITests: XCTestCase {
 
         // sam builds a card but doesn't submit it yet.
         open("sam", in: app)
-        app.buttons["✨ suggest a 25-min card"].tap()
-        app.buttons["> LOCK IN CARD"].tap()
-        XCTAssertTrue(app.buttons["> CHECK OFF EVERYTHING FIRST"].waitForExistence(timeout: wait))
+        app.buttons["Suggest a 25-minute card"].tap()
+        app.buttons["Lock in my card"].tap()
+        XCTAssertTrue(app.buttons["Check everything off first"].waitForExistence(timeout: wait))
         let onCard = uncheckedChores(in: app).count
         XCTAssertGreaterThan(onCard, 0)
 
         // riley is offered the same suggestion, takes it, and gets it in first.
         goBack(in: app)
         open("riley", in: app)
-        app.buttons["✨ suggest a 25-min card"].tap()
-        app.buttons["> LOCK IN CARD"].tap()
+        app.buttons["Suggest a 25-minute card"].tap()
+        app.buttons["Lock in my card"].tap()
         checkOffEverything(in: app).tap()
-        XCTAssertTrue(app.staticTexts["card submitted — waiting on an admin"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["Sent! Now it's waiting for an admin to look at it."].waitForExistence(timeout: wait))
 
         // Back on sam's card every chore now reads as taken, and it can't be submitted.
         goBack(in: app)
         open("sam", in: app)
-        let blocked = app.buttons["> ALL TAKEN TODAY — CHANGE PICKS"]
+        let blocked = app.buttons["Everything's been taken today. Change your picks"]
         XCTAssertTrue(blocked.waitForExistence(timeout: wait))
         XCTAssertFalse(blocked.isEnabled)
         XCTAssertEqual(uncheckedChores(in: app).count, 0, "taken chores can't be checked off")
-        XCTAssertTrue(app.staticTexts["taken = someone else got it first today — it won't be submitted"].exists)
+        XCTAssertTrue(app.staticTexts["Someone else got to the ones marked taken first, so they won't be sent."].exists)
         screenshot("17-card-all-taken", of: app)
 
         // Picking again offers only what's left, and that card goes in.
-        app.buttons["change my picks"].tap()
-        let taken = app.staticTexts.matching(NSPredicate(format: "label ENDSWITH 'already taken by someone else today'")).firstMatch
+        app.buttons["Change my picks"].tap()
+        let taken = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Someone else already has'")).firstMatch
         XCTAssertTrue(taken.waitForExistence(timeout: wait))
-        XCTAssertTrue(taken.label.hasPrefix("\(onCard) chore"), taken.label)
+        XCTAssertTrue(taken.label.contains(onCard == 1 ? "has one of" : "has \(onCard) of"), taken.label)
         screenshot("18-picker-with-taken", of: app)
-        app.buttons["✨ suggest a 25-min card"].tap()
-        app.buttons["> LOCK IN CARD"].tap()
+        app.buttons["Suggest a 25-minute card"].tap()
+        app.buttons["Lock in my card"].tap()
         checkOffEverything(in: app).tap()
-        XCTAssertTrue(app.staticTexts["card submitted — waiting on an admin"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["Sent! Now it's waiting for an admin to look at it."].waitForExistence(timeout: wait))
     }
 
     /// Takes the six pictures for the App Store listing, with `-screenshots`' made-up family. CI
@@ -772,7 +778,7 @@ final class GyattChoresUITests: XCTestCase {
     func testAppStoreScreenshots() {
         // 2. A fresh install: what the app is and what it doesn't do with your data.
         let fresh = launch(["-resetData", "-screenshots"])
-        XCTAssertTrue(fresh.buttons["> SET UP THIS DEVICE"].waitForExistence(timeout: wait))
+        XCTAssertTrue(fresh.buttons["SET UP THIS DEVICE"].waitForExistence(timeout: wait))
         storeScreenshot("02-private-by-design", of: fresh)
         fresh.terminate()
 
@@ -782,7 +788,7 @@ final class GyattChoresUITests: XCTestCase {
         if isPad {
             // Half an iPad's screen would be empty with nobody picked: show a day waiting on an admin.
             open("dishwizard", in: app)
-            XCTAssertTrue(app.staticTexts["card submitted — waiting on an admin"].waitForExistence(timeout: wait))
+            XCTAssertTrue(app.staticTexts["Sent! Now it's waiting for an admin to look at it."].waitForExistence(timeout: wait))
         }
         storeScreenshot("01-scoreboard", of: app)
 
@@ -790,13 +796,13 @@ final class GyattChoresUITests: XCTestCase {
         open("broomrider", in: app)
         let main = mainButton(in: app)
         XCTAssertTrue(main.waitForExistence(timeout: wait))
-        app.buttons["✨ suggest a 25-min card"].tap()
-        XCTAssertEqual(main.label, "> LOCK IN CARD")
+        app.buttons["Suggest a 25-minute card"].tap()
+        XCTAssertEqual(main.label, "Lock in my card")
         storeScreenshot("03-pick-chores", of: app)
 
         // 4. The card, partly checked off.
         main.tap()
-        XCTAssertTrue(app.buttons["> CHECK OFF EVERYTHING FIRST"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.buttons["Check everything off first"].waitForExistence(timeout: wait))
         for _ in 0..<2 {
             let next = uncheckedChores(in: app).firstMatch
             XCTAssertTrue(next.waitForExistence(timeout: wait))
@@ -807,15 +813,15 @@ final class GyattChoresUITests: XCTestCase {
         // 6. The admin area, with today's chores waiting for a yes or no.
         goBack(in: app)
         unlockAdmin(in: app)
-        XCTAssertTrue(app.buttons["✓ approve"].firstMatch.waitForExistence(timeout: wait))
+        XCTAssertTrue(app.buttons["Approve this chore"].firstMatch.waitForExistence(timeout: wait))
         storeScreenshot("06-approvals", of: app)
 
         // 5. A household's own chores, said in a sentence and sorted into a list.
         adminSection("chores", in: app)
         app.buttons["+ add chores"].tap()
         type("Wash the car, walk the dog for 15 minutes, feed the fish and tidy the playroom. Clean out the fridge", into: app.textViews["chore-text"])
-        app.buttons["> SORT INTO CHORES"].tap()
-        XCTAssertTrue(app.buttons["> ADD 5 CHORES"].waitForExistence(timeout: wait))
+        app.buttons["SORT INTO CHORES"].tap()
+        XCTAssertTrue(app.buttons["ADD 5 CHORES"].waitForExistence(timeout: wait))
         storeScreenshot("05-your-own-chores", of: app)
     }
 
@@ -830,44 +836,44 @@ final class GyattChoresUITests: XCTestCase {
 
         // A player's day opens on the right; the list stays, with that player highlighted.
         open("sam", in: app)
-        XCTAssertTrue(app.staticTexts["card submitted — waiting on an admin"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["Sent! Now it's waiting for an admin to look at it."].waitForExistence(timeout: wait))
         XCTAssertTrue(app.staticTexts["27/30 · 90%"].exists, "the home list stays on screen")
         XCTAssertFalse(app.staticTexts["> pick a player"].exists)
-        XCTAssertFalse(app.buttons["← back"].exists, "nothing to go back to beside the list")
+        XCTAssertFalse(app.buttons["Back"].exists, "nothing to go back to beside the list")
         let listRight = playerRow("sam", in: app).frame.maxX
-        let dayLeft = app.staticTexts["card submitted — waiting on an admin"].frame.minX
+        let dayLeft = app.staticTexts["Sent! Now it's waiting for an admin to look at it."].frame.minX
         XCTAssertLessThan(listRight, dayLeft, "the day sits to the right of the list, not over it")
         screenshot("ipad-02-day-beside-list", of: app)
 
         // Picking someone else swaps the right-hand side.
         open("riley", in: app)
-        XCTAssertTrue(app.staticTexts["✓ all approved — nice work"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["Everything's approved. Nice work!"].waitForExistence(timeout: wait))
         XCTAssertFalse(playerRow("sam", in: app).isSelected)
 
         // The bonus picker needs its own way back, since there's no screen behind it.
-        app.buttons["+ bonus round"].tap()
-        XCTAssertTrue(app.buttons["> PICK CHORES TO LOG"].waitForExistence(timeout: wait))
+        app.buttons["Do a bonus round"].tap()
+        XCTAssertTrue(app.buttons["Pick the chores you did"].waitForExistence(timeout: wait))
         goBack(in: app)
-        XCTAssertTrue(app.staticTexts["✓ all approved — nice work"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["Everything's approved. Nice work!"].waitForExistence(timeout: wait))
 
         // The admin area opens on the right too, and closing it returns to the day.
-        app.buttons["admin"].tap()
+        app.buttons["Admin"].tap()
         XCTAssertTrue(app.secureTextFields.firstMatch.waitForExistence(timeout: wait))
         XCTAssertTrue(app.staticTexts["27/30 · 90%"].exists, "the home list stays on screen")
         XCTAssertFalse(playerRow("riley", in: app).isSelected, "no player is highlighted while the admin area is open")
         screenshot("ipad-03-admin-area", of: app)
         goBack(in: app)
-        XCTAssertTrue(app.staticTexts["✓ all approved — nice work"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["Everything's approved. Nice work!"].waitForExistence(timeout: wait))
 
         // Turned sideways it's still two panes on the same screen.
         XCUIDevice.shared.orientation = .landscapeLeft
-        XCTAssertTrue(app.staticTexts["✓ all approved — nice work"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["Everything's approved. Nice work!"].waitForExistence(timeout: wait))
         XCTAssertTrue(app.staticTexts["27/30 · 90%"].exists)
         XCTAssertTrue(playerRow("riley", in: app).isSelected)
         let wide = app.windows.firstMatch.frame
         XCTAssertGreaterThan(wide.width, wide.height, "the app should have turned with the iPad")
         XCTAssertLessThan(playerRow("riley", in: app).frame.maxX,
-                          app.staticTexts["✓ all approved — nice work"].frame.minX)
+                          app.staticTexts["Everything's approved. Nice work!"].frame.minX)
         // The whole screen, not the app's own snapshot, which comes back cropped when sideways.
         let sideways = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         sideways.name = "ipad-04-landscape"
