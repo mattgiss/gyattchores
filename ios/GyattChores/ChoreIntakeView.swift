@@ -32,7 +32,7 @@ struct ChoreIntakeView: View {
     // MARK: Writing
 
     @ViewBuilder private var write: some View {
-        Text("list the chores in your home, in your own words. type them, or tap the mic on the keyboard and say them.")
+        Text("List the chores in your home, in your own words. Type them, or tap the mic on the keyboard and say them.")
             .font(.app(.callout)).foregroundStyle(.secondary)
         TextEditor(text: $text)
             .focused($writing)
@@ -41,19 +41,19 @@ struct ChoreIntakeView: View {
             .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color(.separator)))
             .overlay(alignment: .topLeading) {
                 if text.isEmpty {
-                    Text("dishes, take out the trash, feed the dog 5 minutes…")
+                    Text("Dishes, take out the trash, feed the dog 5 minutes…")
                         .foregroundStyle(.tertiary).padding(.horizontal, 11).padding(.vertical, 14).allowsHitTesting(false)
                 }
             }
             .accessibilityIdentifier("chore-text")
-        TermButton(label: "SORT INTO CHORES", enabled: !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) {
+        TermButton(label: "Sort into chores", enabled: !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) {
             fb.fill()
             writing = false
             found = ChoreIntake.parse(text, existing: existing).map { Found(id: $0.id, name: $0.name, minutes: $0.tiers[0]) }
         }
         Text(SetupView.familyBuild
-             ? "sorted on this device. only the chores you add are shared with the family's phones."
-             : "sorted on this device. nothing you write or say here is sent anywhere by this app.")
+             ? "Sorted on this device. Only the chores you add are shared with the family's phones."
+             : "Sorted on this device. Nothing you write or say here is sent anywhere by this app.")
             .font(.app(.caption2)).foregroundStyle(.secondary)
     }
 
@@ -62,10 +62,10 @@ struct ChoreIntakeView: View {
     @ViewBuilder private func review(_ items: [Found]) -> some View {
         let chosen = items.filter { $0.on && ChoreIntake.tidyName($0.name) != nil }
         if items.isEmpty {
-            Text("couldn't find any new chores in that. try one per line, or separate them with commas.")
+            Text("Couldn't find any new chores in that. Try one per line, or separate them with commas.")
                 .foregroundStyle(Theme.warn)
         } else {
-            Text("found \(items.count). untick any you don't want; fix names and minutes as you like.")
+            Text("Found \(items.count). Untick any you don't want, and fix names and minutes as you like.")
                 .font(.app(.callout)).foregroundStyle(.secondary)
             ForEach(items.indices, id: \.self) { i in
                 HStack(spacing: 10) {
@@ -74,8 +74,8 @@ struct ChoreIntakeView: View {
                             .frame(minWidth: 36, minHeight: 44).contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel(items[i].on ? "leave out \(items[i].name)" : "include \(items[i].name)")
-                    TextField("chore", text: Binding(get: { found?[i].name ?? "" }, set: { found?[i].name = $0 }))
+                    .accessibilityLabel(items[i].on ? "Leave out \(items[i].name)" : "Include \(items[i].name)")
+                    TextField("Chore", text: Binding(get: { found?[i].name ?? "" }, set: { found?[i].name = $0 }))
                         .textInputAutocapitalization(.never)
                         .opacity(items[i].on ? 1 : 0.4)
                     Stepper("\(items[i].minutes)m", value: Binding(get: { found?[i].minutes ?? 5 }, set: { found?[i].minutes = $0 }),
@@ -86,7 +86,7 @@ struct ChoreIntakeView: View {
                 Divider()
             }
         }
-        TermButton(label: chosen.isEmpty ? "NOTHING TO ADD" : "ADD \(chosen.count) CHORE\(chosen.count == 1 ? "" : "S")", enabled: !chosen.isEmpty) {
+        TermButton(label: chosen.isEmpty ? "Nothing to add" : "Add \(chosen.count) chore\(chosen.count == 1 ? "" : "s")", enabled: !chosen.isEmpty) {
             var ids = Set(existing.map(\.id))
             let chores = chosen.map { item -> Chore in
                 let chore = ChoreIntake.make(name: item.name, minutes: item.minutes, takenIds: ids)

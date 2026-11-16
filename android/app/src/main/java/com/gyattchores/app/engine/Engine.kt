@@ -181,9 +181,9 @@ object Engine {
      * made today; [targetSubmitted] is whether the target already submitted today.
      */
     fun dareBlocked(from: String, target: String, mineToday: List<Dare>, targetSubmitted: Boolean): String? = when {
-        from == target -> "you can't dare yourself"
-        targetSubmitted -> "locked — they already submitted today"
-        mineToday.size >= MAX_DARES_PER_DAY -> "that's all $MAX_DARES_PER_DAY dares for today"
+        from == target -> "You can't dare yourself."
+        targetSubmitted -> "Locked. They already sent today's card in."
+        mineToday.size >= MAX_DARES_PER_DAY -> "That's all $MAX_DARES_PER_DAY dares for today."
         else -> null
     }
 

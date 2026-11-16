@@ -32,8 +32,8 @@ fun rememberBackup(vm: AppViewModel, onRestored: () -> Unit = {}): Pair<() -> Un
         if (uri == null) return@rememberLauncherForActivityResult
         message = runCatching {
             ctx.contentResolver.openOutputStream(uri, "wt")!!.use { it.write(vm.exportBackup().toByteArray()) }
-            "backup saved. keep it somewhere safe: it holds everyone's chores and the admin codes (scrambled)."
-        }.getOrElse { "couldn't save the backup there. try another place." }
+            "Backup saved. Keep it somewhere safe: it holds everyone's chores and the admin codes (scrambled)."
+        }.getOrElse { "Couldn't save the backup there. Try another place." }
     }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
@@ -43,13 +43,13 @@ fun rememberBackup(vm: AppViewModel, onRestored: () -> Unit = {}): Pair<() -> Un
             val problem = if (vm.familySync) null else Backup.replaceProblem(b)
             when {
                 problem != null -> { message = problem; fb.error() }
-                vm.alreadyRestored(b) -> message = "this backup has already been restored into the family."
+                vm.alreadyRestored(b) -> message = "This backup has already been restored into the family."
                 else -> pending = b
             }
         } catch (e: BackupException) {
             message = e.message; fb.error()
         } catch (e: Exception) {
-            message = "couldn't read that file."; fb.error()
+            message = "Couldn't read that file."; fb.error()
         }
     }
 
@@ -74,16 +74,16 @@ fun rememberBackup(vm: AppViewModel, onRestored: () -> Unit = {}): Pair<() -> Un
                     pending = null
                     fb.lockIn()
                     // Said by AppRoot: a restore during setup leaves this screen at once.
-                    vm.notice.value = "restored: ${c.describe()}."
+                    vm.notice.value = "Restored: ${c.describe()}."
                     onRestored()
-                }) { Text(if (joining) "add to the family" else "replace and restore") }
+                }) { Text(if (joining) "Add to the family" else "Replace and restore") }
             },
-            dismissButton = { TextButton(onClick = { pending = null }) { Text("cancel") } },
+            dismissButton = { TextButton(onClick = { pending = null }) { Text("Cancel") } },
         )
     }
     message?.let { m ->
         AlertDialog(onDismissRequest = { message = null }, text = { Text(m) },
-            confirmButton = { TextButton(onClick = { message = null }) { Text("ok") } })
+            confirmButton = { TextButton(onClick = { message = null }) { Text("OK") } })
     }
 
     return Pair(

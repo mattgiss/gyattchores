@@ -273,11 +273,11 @@ final class GyattChoresUITests: XCTestCase {
         saveButton.tap()
         let replace = app.buttons["Replace"]
         if replace.waitForExistence(timeout: 3) { replace.tap() }
-        XCTAssertTrue(app.staticTexts["backup saved. keep it somewhere safe, like Files or iCloud Drive."].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["Backup saved. Keep it somewhere safe, like Files or iCloud Drive."].waitForExistence(timeout: wait))
         app.buttons["OK"].tap()
 
         // Erase, then restore from the first screen, as a new phone would.
-        let erase = app.buttons["erase everything…"]
+        let erase = app.buttons["Erase everything…"]
         XCTAssertTrue(erase.waitForExistence(timeout: wait))
         erase.tap()
         app.buttons["Erase players, chores and points"].tap()
@@ -318,7 +318,7 @@ final class GyattChoresUITests: XCTestCase {
         confirm.tap()
 
         // Everything's back: the month of history, and the admin's code.
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'restored:'")).firstMatch.waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Restored:'")).firstMatch.waitForExistence(timeout: wait))
         app.buttons["OK"].tap()
         XCTAssertTrue(app.staticTexts["27/30 · 90%"].waitForExistence(timeout: wait))
         XCTAssertTrue(playerRow("riley", in: app).exists)
@@ -337,7 +337,7 @@ final class GyattChoresUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'replaced by it'")).firstMatch.exists,
                       "over an existing scoreboard the confirmation warns it will be replaced")
         replaceHere.tap()
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'restored:'")).firstMatch.waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Restored:'")).firstMatch.waitForExistence(timeout: wait))
         app.buttons["OK"].tap()
         goBack(in: app)
         XCTAssertTrue(app.staticTexts["27/30 · 90%"].waitForExistence(timeout: wait))
@@ -360,7 +360,7 @@ final class GyattChoresUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Save"].waitForExistence(timeout: wait), "the save panel should open")
         app.buttons["Save"].tap()
         if app.buttons["Replace"].waitForExistence(timeout: 3) { app.buttons["Replace"].tap() }
-        XCTAssertTrue(app.staticTexts["backup saved. keep it somewhere safe, like Files or iCloud Drive."].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["Backup saved. Keep it somewhere safe, like Files or iCloud Drive."].waitForExistence(timeout: wait))
         app.terminate()
 
         // A new phone for a family with nobody in it: setup, with a restore button.
@@ -390,7 +390,7 @@ final class GyattChoresUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'admins and their codes become the family'")).firstMatch.exists)
         screenshot("33-family-restore-confirm", of: app)
         add.tap()
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'restored:'")).firstMatch.waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Restored:'")).firstMatch.waitForExistence(timeout: wait))
         app.buttons["OK"].tap()
         XCTAssertTrue(app.staticTexts["27/30 · 90%"].waitForExistence(timeout: wait))
         unlockAdmin(in: app)
@@ -409,35 +409,35 @@ final class GyattChoresUITests: XCTestCase {
         let app = launch(["-resetData"])
 
         // No players are built in: a fresh install starts with the welcome.
-        let start = app.buttons["SET UP THIS DEVICE"]
+        let start = app.buttons["Set up this device"]
         XCTAssertTrue(start.waitForExistence(timeout: wait))
         #if FAMILY_SYNC
-        XCTAssertTrue(app.staticTexts["· players, chores and points are shared with the family's other phones"].exists)
+        XCTAssertTrue(app.staticTexts["Players, chores and points are shared with the family's other phones."].exists)
         #else
-        XCTAssertTrue(app.staticTexts["· everything stays on this device"].exists)
+        XCTAssertTrue(app.staticTexts["Everything stays on this device."].exists)
         #endif
-        XCTAssertTrue(app.staticTexts["· no accounts, no sign-in, no ads, no tracking"].exists)
+        XCTAssertTrue(app.staticTexts["No accounts, no sign-in, no ads, no tracking."].exists)
         XCTAssertFalse(app.buttons["Admin"].exists)
         screenshot("20-setup-welcome", of: app)
         start.tap()
 
         // Who's in charge: a name and a code typed twice.
-        let next = app.buttons["NEXT"]
+        let next = app.buttons["Next"]
         XCTAssertTrue(next.waitForExistence(timeout: wait))
         XCTAssertFalse(next.isEnabled)
         type("pat", into: app.textFields["admin-name"])
         type("2468", into: app.secureTextFields["admin-code"])
         type("246", into: app.secureTextFields["admin-code-again"])
-        XCTAssertTrue(app.staticTexts["those two codes don't match"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["Those two codes don't match."].waitForExistence(timeout: wait))
         XCTAssertFalse(next.isEnabled)
         app.secureTextFields["admin-code-again"].typeText("8\n")
-        XCTAssertFalse(app.staticTexts["those two codes don't match"].exists)
+        XCTAssertFalse(app.staticTexts["Those two codes don't match."].exists)
         XCTAssertTrue(next.isEnabled)
         screenshot("21-setup-admin", of: app)
         next.tap()
 
         // Who's playing: one added with the button, one left in the box.
-        XCTAssertTrue(app.staticTexts["who's playing?"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["Who's playing?"].waitForExistence(timeout: wait))
         XCTAssertFalse(next.isEnabled, "someone has to play")
         type("riley\n", into: app.textFields["player-name"])
         XCTAssertTrue(app.staticTexts["riley"].waitForExistence(timeout: wait))
@@ -446,21 +446,21 @@ final class GyattChoresUITests: XCTestCase {
         next.tap()
 
         // What needs doing: said in a sentence, sorted into a list.
-        let own = app.buttons["write or say your own"]
+        let own = app.buttons["Write or say your own"]
         XCTAssertTrue(own.waitForExistence(timeout: wait))
-        XCTAssertTrue(app.buttons["USE THE STARTER LIST"].exists)
+        XCTAssertTrue(app.buttons["Use the starter list"].exists)
         own.tap()
         type("We need to do the dishes and take out the trash, someone has to feed the dog for 5 minutes. Water plants", into: app.textViews["chore-text"])
         screenshot("23-setup-chores-written", of: app)
-        app.buttons["SORT INTO CHORES"].tap()
-        XCTAssertTrue(app.buttons["ADD 4 CHORES"].waitForExistence(timeout: wait))
+        app.buttons["Sort into chores"].tap()
+        XCTAssertTrue(app.buttons["Add 4 chores"].waitForExistence(timeout: wait))
         for name in ["do the dishes", "take out the trash", "feed the dog", "water plants"] {
             XCTAssertTrue(app.textFields.matching(NSPredicate(format: "value == %@", name)).firstMatch.exists, "\(name) should be on the list")
         }
         XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label == '5m'")).firstMatch.exists, "the time that was mentioned is kept")
         screenshot("24-setup-chores-sorted", of: app)
-        app.buttons["leave out water plants"].tap()
-        let add = app.buttons["ADD 3 CHORES"]
+        app.buttons["Leave out water plants"].tap()
+        let add = app.buttons["Add 3 chores"]
         XCTAssertTrue(add.waitForExistence(timeout: wait))
         add.tap()
 
@@ -483,7 +483,7 @@ final class GyattChoresUITests: XCTestCase {
         app.terminate()
         let relaunched = launch()
         XCTAssertTrue(playerRow("sam", in: relaunched).waitForExistence(timeout: wait))
-        XCTAssertFalse(relaunched.buttons["SET UP THIS DEVICE"].exists)
+        XCTAssertFalse(relaunched.buttons["Set up this device"].exists)
         unlockAdmin(in: relaunched)
         goBack(in: relaunched)
     }
@@ -496,44 +496,44 @@ final class GyattChoresUITests: XCTestCase {
         // Add a player.
         adminSection("players", in: app)
         app.buttons["+ add player"].tap()
-        let save = app.buttons["SAVE"]
+        let save = app.buttons["Save"]
         XCTAssertTrue(save.waitForExistence(timeout: wait))
         XCTAssertFalse(save.isEnabled, "a player needs a name")
         type("sam", into: app.textFields["member-name"])
-        XCTAssertTrue(app.staticTexts["someone already has that name"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["Someone already has that name."].waitForExistence(timeout: wait))
         XCTAssertFalse(save.isEnabled)
         app.textFields["member-name"].typeText("antha")
         XCTAssertTrue(save.isEnabled)
         save.tap()
-        XCTAssertTrue(app.buttons["edit samantha"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.buttons["Edit samantha"].waitForExistence(timeout: wait))
 
         // Make her an admin: that needs a code of her own.
-        app.buttons["edit samantha"].tap()
-        flip(app.switches["admin"])
+        app.buttons["Edit samantha"].tap()
+        flip(app.switches["Admin"])
         XCTAssertFalse(save.isEnabled, "an admin needs a code")
         type("1357", into: app.secureTextFields["member-code"])
         XCTAssertTrue(save.isEnabled)
         screenshot("27-admin-edit-player", of: app)
         save.tap()
-        XCTAssertTrue(app.buttons["edit samantha"].waitForExistence(timeout: wait))
-        XCTAssertTrue(app.staticTexts["admin · not playing"].exists, "pat runs the scoreboard without doing chores")
+        XCTAssertTrue(app.buttons["Edit samantha"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["Admin · not playing"].exists, "pat runs the scoreboard without doing chores")
         screenshot("28-admin-players", of: app)
 
         // The last admin can't be removed, but a player can.
-        app.buttons["edit pat"].tap()
+        app.buttons["Edit pat"].tap()
         XCTAssertTrue(save.waitForExistence(timeout: wait))
-        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'remove pat'")).firstMatch.exists, "with two admins, either can go")
-        app.buttons["cancel"].tap()
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Remove pat'")).firstMatch.exists, "with two admins, either can go")
+        app.buttons["Cancel"].tap()
 
         // Add a chore in plain words, then find it on the list.
         adminSection("chores", in: app)
         app.buttons["+ add chores"].tap()
         type("feed the fish 2 minutes, make bed", into: app.textViews["chore-text"])
-        app.buttons["SORT INTO CHORES"].tap()
-        let add = app.buttons["ADD 1 CHORE"]
+        app.buttons["Sort into chores"].tap()
+        let add = app.buttons["Add 1 chore"]
         XCTAssertTrue(add.waitForExistence(timeout: wait), "make bed is already on the list, so only the fish is new")
         add.tap()
-        XCTAssertTrue(app.buttons["edit feed the fish"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.buttons["Edit feed the fish"].waitForExistence(timeout: wait))
         XCTAssertTrue(app.staticTexts["28 chores. left undone, a chore takes longer the next time it's picked."].exists)
         screenshot("29-admin-chores", of: app)
 
@@ -552,7 +552,7 @@ final class GyattChoresUITests: XCTestCase {
         unlockAdmin(in: app)
         adminSection("device", in: app)
         XCTAssertTrue(app.staticTexts["Your data"].waitForExistence(timeout: wait))
-        XCTAssertFalse(app.buttons["erase everything…"].exists, "the family build must not offer erasing")
+        XCTAssertFalse(app.buttons["Erase everything…"].exists, "the family build must not offer erasing")
         XCTAssertTrue(app.buttons["save-backup"].exists)
         #else
         let app = launch(["-resetData", "-demoData"])
@@ -561,17 +561,17 @@ final class GyattChoresUITests: XCTestCase {
         adminSection("device", in: app)
         XCTAssertTrue(app.staticTexts["Your data"].waitForExistence(timeout: wait))
         screenshot("30-admin-device", of: app)
-        app.buttons["erase everything…"].tap()
+        app.buttons["Erase everything…"].tap()
         let confirm = app.buttons["Erase players, chores and points"]
         XCTAssertTrue(confirm.waitForExistence(timeout: wait))
         confirm.tap()
 
         // Back to a fresh install, and it stays that way after a restart.
-        XCTAssertTrue(app.buttons["SET UP THIS DEVICE"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.buttons["Set up this device"].waitForExistence(timeout: wait))
         XCTAssertFalse(playerRow("riley", in: app).exists)
         app.terminate()
         let relaunched = launch()
-        XCTAssertTrue(relaunched.buttons["SET UP THIS DEVICE"].waitForExistence(timeout: wait))
+        XCTAssertTrue(relaunched.buttons["Set up this device"].waitForExistence(timeout: wait))
         XCTAssertFalse(relaunched.staticTexts["27/30 · 90%"].exists)
         #endif
     }
@@ -671,7 +671,7 @@ final class GyattChoresUITests: XCTestCase {
 
         // Pink 0 and black 7 aren't in line: nothing happens.
         cell(0).tap()
-        XCTAssertTrue(app.staticTexts["now tap a block of the other colour in line with it"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["Now tap a block of the other colour in line with it."].waitForExistence(timeout: wait))
         cell(7).tap()
         XCTAssertTrue(app.staticTexts["4 blocks left"].exists, "a move that isn't allowed removes nothing")
 
@@ -685,11 +685,11 @@ final class GyattChoresUITests: XCTestCase {
         // The last pair clears the board: level up.
         cell(0).tap()
         cell(1).tap()
-        let levelUp = app.descendants(matching: .any)["LEVEL UP"]
+        let levelUp = app.descendants(matching: .any)["Level up"]
         XCTAssertTrue(levelUp.waitForExistence(timeout: wait), "clearing the board levels up")
         XCTAssertTrue(app.staticTexts["LVL 2"].exists)
         XCTAssertTrue(app.staticTexts["4 blocks cleared"].exists)
-        let next = app.buttons["NEXT LEVEL"]
+        let next = app.buttons["Next level"]
         XCTAssertTrue(next.waitForExistence(timeout: wait))
         screenshot("puzzle-3-level-up", of: app)
         next.tap()
@@ -722,7 +722,7 @@ final class GyattChoresUITests: XCTestCase {
         XCTAssertTrue(last.waitForExistence(timeout: wait))
         last.tap()
         XCTAssertTrue(again.descendants(matching: .any)["cell-0"].waitForExistence(timeout: wait))
-        let covered = again.staticTexts["that's an hour of puzzles today. back tomorrow."]
+        let covered = again.staticTexts["That's your hour of puzzles for today. See you tomorrow!"]
         XCTAssertTrue(covered.waitForExistence(timeout: 10), "the board is covered when time runs out")
         screenshot("puzzle-time-up", of: again)
         again.buttons["puzzle-timeup-back"].tap()
@@ -816,7 +816,7 @@ final class GyattChoresUITests: XCTestCase {
     func testAppStoreScreenshots() {
         // 2. A fresh install: what the app is and what it doesn't do with your data.
         let fresh = launch(["-resetData", "-screenshots"])
-        XCTAssertTrue(fresh.buttons["SET UP THIS DEVICE"].waitForExistence(timeout: wait))
+        XCTAssertTrue(fresh.buttons["Set up this device"].waitForExistence(timeout: wait))
         storeScreenshot("02-private-by-design", of: fresh)
         fresh.terminate()
 
@@ -858,8 +858,8 @@ final class GyattChoresUITests: XCTestCase {
         adminSection("chores", in: app)
         app.buttons["+ add chores"].tap()
         type("Wash the car, walk the dog for 15 minutes, feed the fish and tidy the playroom. Clean out the fridge", into: app.textViews["chore-text"])
-        app.buttons["SORT INTO CHORES"].tap()
-        XCTAssertTrue(app.buttons["ADD 5 CHORES"].waitForExistence(timeout: wait))
+        app.buttons["Sort into chores"].tap()
+        XCTAssertTrue(app.buttons["Add 5 chores"].waitForExistence(timeout: wait))
         storeScreenshot("05-your-own-chores", of: app)
     }
 

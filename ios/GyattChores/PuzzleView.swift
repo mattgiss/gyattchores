@@ -73,7 +73,7 @@ struct PuzzleView: View {
                 .padding(20)
                 VStack(alignment: .leading, spacing: 8) {
                     Text("\(board.blocksLeft) blocks left").foregroundStyle(.secondary)
-                    if board.stuck && !busy { TermButton(label: "RESTART LEVEL") { restart() } }
+                    if board.stuck && !busy { TermButton(label: "Start the level over") { restart() } }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 20).padding(.vertical, 12)
@@ -136,7 +136,7 @@ struct PuzzleView: View {
     }
 
     private var title: some View {
-        Text("CLEAR THE GRID").font(.app(.caption)).kerning(3).foregroundStyle(.secondary).lineLimit(1).fixedSize()
+        Text("Clear the grid").font(.app(.caption)).kerning(3).foregroundStyle(.secondary).lineLimit(1).fixedSize()
     }
 
     private func headerRow(withTitle: Bool) -> some View {
@@ -145,15 +145,15 @@ struct PuzzleView: View {
             if withTitle { title }
             Spacer(minLength: 0)
             Text("LVL \(level)").font(.app(.headline)).foregroundStyle(Theme.accent).fixedSize()
-            Button("restart") { restart() }.fixedSize().disabled(busy || celebrating)
+            Button("Start over") { restart() }.fixedSize().disabled(busy || celebrating)
         }
         .padding(.horizontal, 20).padding(.vertical, 12)
     }
 
     private var hint: String {
-        if board.stuck { return "no moves left — the order matters. restart and try another way." }
-        if let s = selected { return "now tap a block of the other colour in line with it" }
-        return "tap a block, then one of the other colour in line with it. clear them all."
+        if board.stuck { return "No moves left. The order matters, so start over and try another way." }
+        if let s = selected { return "Now tap a block of the other colour in line with it." }
+        return "Tap a block, then one of the other colour in line with it. Clear them all."
     }
 
     // MARK: Board
@@ -439,7 +439,7 @@ private struct LevelUpCard: View {
                         title.foregroundStyle(Color.primary)
                     }
                     .accessibilityElement(children: .ignore)
-                    .accessibilityLabel("LEVEL UP")
+                    .accessibilityLabel("Level up")
                     Text("LVL \(level)")
                         .font(.app(fixedSize: 64, weight: .black))
                         .foregroundStyle(Theme.accent)
@@ -447,8 +447,8 @@ private struct LevelUpCard: View {
                     Text("\(cleared) blocks cleared").foregroundStyle(.secondary)
                     Spacer().frame(height: 16)
                     if ready {
-                        TermButton(label: "NEXT LEVEL", action: onNext)
-                        OutlineButton(label: "back to my chores", action: onBack)
+                        TermButton(label: "Next level", action: onNext)
+                        OutlineButton(label: "Back to my chores", action: onBack)
                     } else {
                         Color.clear.frame(height: 92)
                     }
@@ -469,7 +469,7 @@ private struct LevelUpCard: View {
     }
 
     private var title: some View {
-        Text("LEVEL UP").font(.app(fixedSize: 40, weight: .black))
+        Text("Level up").font(.app(fixedSize: 40, weight: .black))
     }
 
     /// Repeatable pseudo-random 0…1 for frame `n`, so the jitter is jagged rather than smooth.
@@ -486,7 +486,7 @@ private struct TimeUpCard: View {
         ZStack {
             Color.appBackground.opacity(0.96).ignoresSafeArea()
             VStack(spacing: 20) {
-                Text("that's an hour of puzzles today. back tomorrow.")
+                Text("That's your hour of puzzles for today. See you tomorrow!")
                     .font(.app(.headline)).multilineTextAlignment(.center)
                 Button("Back", action: onBack).font(.app(.headline)).foregroundStyle(Theme.accent)
                     .frame(minHeight: 44).accessibilityIdentifier("puzzle-timeup-back")

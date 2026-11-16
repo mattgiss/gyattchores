@@ -106,11 +106,11 @@ fun HomeScreen(
                 Text(
                     (if (soundOn) "Sound on" else "Sound off") + if (vm.familySync) " · ${syncStatus.replaceFirstChar { it.uppercase() }}" else "", style = MaterialTheme.typography.labelMedium,
                     color = ink.copy(alpha = 0.7f), fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.clickable(onClickLabel = "toggle sound") { soundOn = !soundOn; fb.soundOn = soundOn; fb.tick(soundOn) }.padding(vertical = 4.dp),
+                    modifier = Modifier.clickable(onClickLabel = "Turn sound on or off") { soundOn = !soundOn; fb.soundOn = soundOn; fb.tick(soundOn) }.padding(vertical = 4.dp),
                 )
             }
 
-            if (players.isEmpty()) Text("nobody's playing yet. an admin can add players in the admin area.",
+            if (players.isEmpty()) Text("Nobody's playing yet. An admin can add players in Admin.",
                 color = Done, modifier = Modifier.padding(20.dp))
             board.forEachIndexed { i, (p, pts) ->
                 val rank = Engine.rank(vm.totalXp(p.id, logs, shared))
@@ -174,7 +174,7 @@ fun HomeScreen(
 
             // Lets you confirm which build a phone is running (useful after an Obtainium update).
             val version = remember { runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrNull() ?: "?" }
-            Text("version $version", style = MaterialTheme.typography.labelSmall, color = Done,
+            Text("Version $version", style = MaterialTheme.typography.labelSmall, color = Done,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
         }
     }

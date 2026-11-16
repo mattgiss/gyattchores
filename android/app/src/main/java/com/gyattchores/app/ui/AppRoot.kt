@@ -64,7 +64,7 @@ fun AppRoot(vm: AppViewModel, fold: FoldingFeature?) {
     val notice by vm.notice.collectAsState()
     notice?.let { m ->
         androidx.compose.material3.AlertDialog(onDismissRequest = { vm.notice.value = null }, text = { Text(m) },
-            confirmButton = { androidx.compose.material3.TextButton(onClick = { vm.notice.value = null }) { Text("ok") } })
+            confirmButton = { androidx.compose.material3.TextButton(onClick = { vm.notice.value = null }) { Text("OK") } })
     }
     val players = family.players
     val cards by vm.store.cards.collectAsState()

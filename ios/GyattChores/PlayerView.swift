@@ -71,7 +71,7 @@ struct PlayerView: View {
         .background(Color.appBackground)
         .toolbar(.hidden, for: .navigationBar)
         .alert("Display name", isPresented: $editingDisplayName) {
-            TextField("anything you like", text: $displayNameDraft)
+            TextField("Anything you like", text: $displayNameDraft)
                 .textInputAutocapitalization(.never).autocorrectionDisabled()
             Button("Save") { store.setDisplayName(player.id, displayNameDraft) }
             Button("Use my username", role: .destructive) { store.setDisplayName(player.id, "") }

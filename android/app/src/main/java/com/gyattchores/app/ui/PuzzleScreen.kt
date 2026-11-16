@@ -259,16 +259,16 @@ fun PuzzleScreen(vm: AppViewModel, player: Player, onBack: () -> Unit) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = { fb.tap(); onBack() }) { Text("Back") }
                 // Shrinks rather than cutting off, so a three-digit level still leaves the whole title.
-                FitText("CLEAR THE GRID", style = MaterialTheme.typography.labelMedium, letterSpacing = 3.sp,
+                FitText("Clear the grid", style = MaterialTheme.typography.labelMedium, letterSpacing = 3.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant, minScale = 0.5f, modifier = Modifier.weight(1f).padding(horizontal = 4.dp))
                 Text("LVL $level", color = Accent, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                TextButton(onClick = ::restart, enabled = !busy && !celebrating) { Text("restart") }
+                TextButton(onClick = ::restart, enabled = !busy && !celebrating) { Text("Start over") }
             }
             Text(
                 when {
-                    board.stuck -> "no moves left — the order matters. restart and try another way."
-                    selected != null -> "now tap a block of the other colour in line with it"
-                    else -> "tap a block, then one of the other colour in line with it. clear them all."
+                    board.stuck -> "No moves left. The order matters, so start over and try another way."
+                    selected != null -> "Now tap a block of the other colour in line with it."
+                    else -> "Tap a block, then one of the other colour in line with it. Clear them all."
                 },
                 color = if (board.stuck) Bad else MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodySmall,
@@ -281,7 +281,7 @@ fun PuzzleScreen(vm: AppViewModel, player: Player, onBack: () -> Unit) {
                 Canvas(
                     Modifier.size((cell * board.width).dp, (cell * board.height).dp)
                         .graphicsLayer { scaleX = zoom.value; scaleY = zoom.value }
-                        .semantics { contentDescription = "puzzle board, ${board.blocksLeft} blocks left" }
+                        .semantics { contentDescription = "Puzzle board, ${board.blocksLeft} blocks left" }
                         .pointerInput(board.width, board.height, cellPx) {
                             detectTapGestures { p ->
                                 val x = (p.x / cellPx).toInt(); val y = (p.y / cellPx).toInt()
@@ -297,7 +297,7 @@ fun PuzzleScreen(vm: AppViewModel, player: Player, onBack: () -> Unit) {
             Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp)) {
                 Text("${board.blocksLeft} blocks left", color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 8.dp))
-                if (board.stuck && !busy) TermButton("RESTART LEVEL") { restart() }
+                if (board.stuck && !busy) TermButton("Start the level over") { restart() }
             }
         }
 
@@ -311,8 +311,8 @@ fun PuzzleScreen(vm: AppViewModel, player: Player, onBack: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text("TIME'S UP", color = Accent, fontWeight = FontWeight.Black, style = MaterialTheme.typography.headlineMedium, letterSpacing = 3.sp)
-                Text("that's an hour of puzzles today. back tomorrow.", color = MaterialTheme.colorScheme.onSurfaceVariant,
+                Text("Time's up", color = Accent, fontWeight = FontWeight.Black, style = MaterialTheme.typography.headlineMedium, letterSpacing = 3.sp)
+                Text("That's your hour of puzzles for today. See you tomorrow!", color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center)
                 TextButton(onClick = { fb.tap(); onBack() }) { Text("Back") }
             }
@@ -435,7 +435,7 @@ private fun LevelUp(newLevel: Int, cleared: Int, now: Long, calm: Boolean, onNex
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
             modifier = Modifier.padding(32.dp)) {
             Box {
-                val title = "LEVEL UP"
+                val title = "Level up"
                 val style = MaterialTheme.typography.displaySmall
                 Text(title, style = style, fontWeight = FontWeight.Black, color = ink.copy(alpha = 0.7f),
                     modifier = Modifier.offset((-split + jitter).dp, 0.dp))
@@ -449,8 +449,8 @@ private fun LevelUp(newLevel: Int, cleared: Int, now: Long, calm: Boolean, onNex
             Text("$cleared blocks cleared", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
             Spacer(Modifier.height(28.dp))
             if (ready) {
-                TermButton("NEXT LEVEL", onClick = onNext)
-                OutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) { Text("back to my chores") }
+                TermButton("Next level", onClick = onNext)
+                OutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) { Text("Back to my chores") }
             } else Spacer(Modifier.height(104.dp))
         }
     }

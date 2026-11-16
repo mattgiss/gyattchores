@@ -143,11 +143,11 @@ private struct FamilyLoadingView: View {
         VStack(spacing: 16) {
             Text("GyattChores").font(.app(fixedSize: 34, weight: .black)).foregroundStyle(Palette.heat.stops[0])
             if store.syncStatus == "offline" {
-                Text("can't reach the family's scoreboard. check the connection.").foregroundStyle(.secondary).multilineTextAlignment(.center)
-                Button("try again") { store.requestSync() }.buttonStyle(.bordered)
+                Text("Can't reach the family's scoreboard. Check the connection and try again.").foregroundStyle(.secondary).multilineTextAlignment(.center)
+                Button("Try again") { store.requestSync() }.buttonStyle(.bordered)
             } else {
                 ProgressView()
-                Text("loading the family…").foregroundStyle(.secondary)
+                Text("Loading the family…").foregroundStyle(.secondary)
             }
         }
         .padding(24)

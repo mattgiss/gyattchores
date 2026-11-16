@@ -151,13 +151,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Adds or removes one of my dares for today. Returns why not, or null if it changed. */
     fun toggleDare(target: Player, choreId: String): String? {
-        val me = store.me.value ?: return "set whose phone this is first"
+        val me = store.me.value ?: return "Set whose phone this is first."
         val key = "dare|$me|${today()}"
         val items = store.state.value[key]?.items.orEmpty()
         val item = "${target.id}:$choreId"
         val locked = submittedToday(target.id, store.logs.value)
         if (item in items) {
-            if (locked) return "locked — they already submitted today"
+            if (locked) return "Locked. They already sent today's card in."
             store.setState(key, items - item, now())
         } else {
             val mine = items.map { Dare(me, it.substringBefore(':'), it.substringAfter(':'), today().toString()) }
@@ -372,14 +372,14 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     /** Why this change can't be saved, or null if it can. [id] is null for someone new. */
     fun problem(d: MemberDraft, id: String?): String? {
         val f = store.family.value
-        val name = tidy(d.name) ?: return "they need a name"
-        if (f.members.any { it.id != id && it.name.equals(name, ignoreCase = true) }) return "someone already has that name"
+        val name = tidy(d.name) ?: return "They need a name."
+        if (f.members.any { it.id != id && it.name.equals(name, ignoreCase = true) }) return "Someone already has that name."
         if (d.isAdmin) {
             val hasCode = id?.let { f.adminCodes[it] != null } ?: false
             if (if (d.newCode.isEmpty()) !hasCode else !AdminCode.isLongEnough(d.newCode))
-                return "an admin needs a code of ${AdminCode.MIN_LENGTH} or more characters"
-        } else if (id != null && f.admins.map { it.id } == listOf(id)) return "someone has to stay an admin"
-        if (!d.plays && !d.isAdmin) return "they need to do chores, be an admin, or both"
+                return "An admin needs a code of ${AdminCode.MIN_LENGTH} or more characters."
+        } else if (id != null && f.admins.map { it.id } == listOf(id)) return "Someone has to stay an admin."
+        if (!d.plays && !d.isAdmin) return "They need to do chores, be an admin, or both."
         return null
     }
 

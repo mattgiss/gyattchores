@@ -193,16 +193,16 @@ private struct Members: View {
     @State private var adding = false
 
     var body: some View {
-        Text("admins approve chores and can change everything here. each admin has their own code.")
+        Text("Admins approve chores and can change everything here. Each admin has their own code.")
             .font(.app(.footnote)).foregroundStyle(.secondary)
         ForEach(store.members) { m in
             VStack(spacing: 0) {
                 HStack {
                     Text(store.adminLabel(m)).lineLimit(1)
-                    Text([m.isAdmin ? "admin" : nil, m.plays ? nil : "not playing"].compactMap { $0 }.joined(separator: " · "))
+                    Text([m.isAdmin ? "Admin" : nil, m.plays ? nil : (m.isAdmin ? "not playing" : "Not playing")].compactMap { $0 }.joined(separator: " · "))
                         .font(.app(.footnote)).foregroundStyle(.secondary).lineLimit(1)
                     Spacer()
-                    Button("edit") { fb.tap(); editing = m }.accessibilityLabel("edit \(m.name)")
+                    Button("Edit") { fb.tap(); editing = m }.accessibilityLabel("Edit \(m.name)")
                 }
                 .frame(minHeight: 48)
                 Divider()
@@ -229,29 +229,29 @@ private struct MemberEditor: View {
                 HStack {
                     Text(member == nil ? "Add a player" : "Edit player").font(.app(.headline)).foregroundStyle(Theme.accent)
                     Spacer()
-                    Button("cancel") { dismiss() }
+                    Button("Cancel") { dismiss() }
                 }
-                TextField("username", text: $draft.name)
+                TextField("Username", text: $draft.name)
                     .textFieldStyle(.roundedBorder).textInputAutocapitalization(.never).autocorrectionDisabled()
                     .accessibilityIdentifier("member-name")
-                TextField("display name (optional)", text: $draft.displayName)
+                TextField("Display name (optional)", text: $draft.displayName)
                     .textFieldStyle(.roundedBorder).textInputAutocapitalization(.never).autocorrectionDisabled()
-                Text("the display name is only what's shown; the username is what chores and points are kept under.")
+                Text("The display name is only what's shown. The username is what chores and points are kept under.")
                     .font(.app(.footnote)).foregroundStyle(.secondary)
                 Toggle("does chores", isOn: $draft.plays)
-                Toggle("admin", isOn: $draft.isAdmin)
+                Toggle("Admin", isOn: $draft.isAdmin)
                 if draft.isAdmin {
-                    SecureField(member?.isAdmin == true ? "new admin code (leave empty to keep theirs)" : "their admin code (\(AdminCode.minLength) or more)",
+                    SecureField(member?.isAdmin == true ? "New admin code (leave empty to keep theirs)" : "Their admin code (\(AdminCode.minLength) or more)",
                                 text: $draft.newCode)
                         .textFieldStyle(.roundedBorder).textContentType(.oneTimeCode)
                         .accessibilityIdentifier("member-code")
                 }
                 if let problem, !draft.name.isEmpty { Text(problem).font(.app(.footnote)).foregroundStyle(Theme.bad) }
-                TermButton(label: "SAVE", enabled: problem == nil) {
+                TermButton(label: "Save", enabled: problem == nil) {
                     if store.saveMember(draft, id: member?.id) { fb.approve(); dismiss() }
                 }
                 if let member, store.canRemove(member) {
-                    Button("remove \(member.name)…", role: .destructive) { confirmingRemove = true }
+                    Button("Remove \(member.name)…", role: .destructive) { confirmingRemove = true }
                         .frame(maxWidth: .infinity, minHeight: 44)
                         .confirmationDialog("Remove \(member.name)?", isPresented: $confirmingRemove, titleVisibility: .visible) {
                             Button("Remove and delete their history", role: .destructive) { store.removeMember(member); dismiss() }
@@ -286,7 +286,7 @@ private struct ChoreList: View {
                     Text(c.name).lineLimit(1)
                     Spacer()
                     Text("\(c.tiers.first ?? 0)m").foregroundStyle(.secondary)
-                    Button("edit") { fb.tap(); editing = c }.accessibilityLabel("edit \(c.name)").padding(.leading, 8)
+                    Button("Edit") { fb.tap(); editing = c }.accessibilityLabel("Edit \(c.name)").padding(.leading, 8)
                 }
                 .frame(minHeight: 48)
                 Divider()
@@ -306,7 +306,7 @@ private struct ChoreAdder: View {
                 HStack {
                     Text("Add chores").font(.app(.headline)).foregroundStyle(Theme.accent)
                     Spacer()
-                    Button("cancel") { dismiss() }
+                    Button("Cancel") { dismiss() }
                 }
                 ChoreIntakeView(existing: store.pool) { store.addChores($0); fb.approve(); dismiss() }
             }
@@ -332,21 +332,21 @@ private struct ChoreEditor: View {
                 HStack {
                     Text("Edit chore").font(.app(.headline)).foregroundStyle(Theme.accent)
                     Spacer()
-                    Button("cancel") { dismiss() }
+                    Button("Cancel") { dismiss() }
                 }
-                TextField("chore", text: $name)
+                TextField("Chore", text: $name)
                     .textFieldStyle(.roundedBorder).textInputAutocapitalization(.never)
                     .accessibilityIdentifier("chore-name")
                 Stepper("\(minutes) minutes", value: $minutes, in: ChoreIntake.minuteRange)
-                Text("worth \(ChoreIntake.make(name: "x", minutes: minutes).pts) points.").font(.app(.footnote)).foregroundStyle(.secondary)
-                if clash { Text("there's already a chore with that name").font(.app(.footnote)).foregroundStyle(Theme.bad) }
-                TermButton(label: "SAVE", enabled: clean != nil && !clash) {
+                Text("Worth \(ChoreIntake.make(name: "x", minutes: minutes).pts) points.").font(.app(.footnote)).foregroundStyle(.secondary)
+                if clash { Text("There's already a chore with that name.").font(.app(.footnote)).foregroundStyle(Theme.bad) }
+                TermButton(label: "Save", enabled: clean != nil && !clash) {
                     store.updateChore(chore, name: name, minutes: minutes); fb.approve(); dismiss()
                 }
                 if store.pool.count > 1 {
-                    Button("remove this chore", role: .destructive) { store.removeChore(chore); fb.reject(); dismiss() }
+                    Button("Remove this chore", role: .destructive) { store.removeChore(chore); fb.reject(); dismiss() }
                         .frame(maxWidth: .infinity, minHeight: 44)
-                    Text("points already earned for it are kept.").font(.app(.footnote)).foregroundStyle(.secondary)
+                    Text("Points already earned for it are kept.").font(.app(.footnote)).foregroundStyle(.secondary)
                 }
             }
             .padding(20)
@@ -366,12 +366,12 @@ private struct Device: View {
 
     var body: some View {
         if hasBio {
-            Toggle("face id / touch id opens the admin area", isOn: Binding(get: { store.settings.biometricUnlock }, set: { store.setBiometricUnlock($0) }))
-            Text("only turn this on if this is your own device, not a player's.").font(.app(.footnote)).foregroundStyle(.secondary)
+            Toggle("Face ID or Touch ID opens Admin", isOn: Binding(get: { store.settings.biometricUnlock }, set: { store.setBiometricUnlock($0) }))
+            Text("Only turn this on if this is your own device, not a player's.").font(.app(.footnote)).foregroundStyle(.secondary)
         }
         #if FAMILY_SYNC
         SectionLabel("this phone belongs to")
-        Text("dares are made as this person.").font(.app(.footnote)).foregroundStyle(.secondary)
+        Text("Dares are made as this person.").font(.app(.footnote)).foregroundStyle(.secondary)
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(store.players) { p in
@@ -381,20 +381,20 @@ private struct Device: View {
             }
         }
         SectionLabel("your data")
-        Text("this is the family build: players, chores, codes and points are shared with the family's other phones. sync: \(store.syncStatus).")
+        Text("This is the family build. Players, chores, codes and points are shared with the family's other phones. Sync: \(store.syncStatus).")
             .font(.app(.callout)).foregroundStyle(.secondary)
         SectionLabel("backup")
-        Text("save the whole scoreboard as a file, or add one saved earlier (from this app or the public one, on iPhone or Android) to the family.")
+        Text("Save the whole scoreboard as a file, or add one saved earlier (from this app or the public one, on iPhone or Android) to the family.")
             .font(.app(.footnote)).foregroundStyle(.secondary)
         BackupControls().padding(.top, 4)
-        Text("version \(AppInfo.version)").font(.app(.footnote)).foregroundStyle(.secondary).padding(.top, 8)
+        Text("Version \(AppInfo.version)").font(.app(.footnote)).foregroundStyle(.secondary).padding(.top, 8)
         #else
         SectionLabel("your data")
-        Text("everything this app knows — names, chores and points — is kept on this device and nowhere else. there's no account and nothing is sent to anyone, including us. deleting the app deletes it all.")
+        Text("Everything this app knows, from names to chores and points, is kept on this device and nowhere else. There's no account and nothing is sent to anyone, including us. Deleting the app deletes it all.")
             .font(.app(.callout)).foregroundStyle(.secondary)
-        Link("privacy policy", destination: Links.privacy).font(.app(.callout)).frame(minHeight: 44)
+        Link("Privacy policy", destination: Links.privacy).font(.app(.callout)).frame(minHeight: 44)
         SectionLabel("backup")
-        Text("save the whole scoreboard as a file you keep — in Files, iCloud Drive, or anywhere you like. restore it on a new phone, or bring it into a family account later.")
+        Text("Save the whole scoreboard as a file you keep, in Files, iCloud Drive or anywhere you like. Restore it on a new phone, or bring it into a family account later.")
             .font(.app(.footnote)).foregroundStyle(.secondary)
         BackupControls().padding(.top, 4)
         eraseButton
@@ -402,7 +402,7 @@ private struct Device: View {
     }
 
     private var eraseButton: some View {
-        Button("erase everything…", role: .destructive) { confirmingErase = true }
+        Button("Erase everything…", role: .destructive) { confirmingErase = true }
             .buttonStyle(.bordered).padding(.vertical, 12)
             .confirmationDialog("Erase this scoreboard?", isPresented: $confirmingErase, titleVisibility: .visible) {
                 Button("Erase players, chores and points", role: .destructive) { fb.reject(); store.eraseEverything() }

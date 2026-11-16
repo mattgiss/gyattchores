@@ -124,12 +124,12 @@ extension AppStore {
 
     /// Adds or removes one of my dares for today. Returns why not, or nil if it changed.
     func toggleDare(_ target: Player, _ choreId: String) -> String? {
-        guard let me else { return "set whose phone this is first" }
+        guard let me else { return "Set whose phone this is first." }
         let key = FamilyState.dareKey(from: me, day: todayKey), item = "\(target.id):\(choreId)"
         var items = shared[key]?.items ?? []
         let locked = submittedToday(target.id)
         if let i = items.firstIndex(of: item) {
-            if locked { return "locked — they already submitted today" }
+            if locked { return "Locked. They already sent today's card in." }
             items.remove(at: i)
         } else {
             let mine = dares.filter { $0.from == me && $0.day == todayKey }

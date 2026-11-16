@@ -26,20 +26,20 @@ struct BackupControls: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             if canSave {
-                OutlineButton(label: "save a backup…") {
+                OutlineButton(label: "Save a backup…") {
                     fb.tap()
                     do { document = BackupDocument(data: try store.makeBackup().data()); exporting = true }
-                    catch { prompt = .message("couldn't make the backup: \(error.localizedDescription)") }
+                    catch { prompt = .message("Couldn't make the backup: \(error.localizedDescription)") }
                 }
                 .accessibilityIdentifier("save-backup")
             }
-            OutlineButton(label: "restore from a backup…") { fb.tap(); importing = true }
+            OutlineButton(label: "Restore from a backup…") { fb.tap(); importing = true }
                 .accessibilityIdentifier("restore-backup")
         }
         .fileExporter(isPresented: $exporting, document: document, contentType: .json, defaultFilename: Backup.fileName(calendar: store.calendar)) { result in
             switch result {
-            case .success: fb.approve(); prompt = .message("backup saved. keep it somewhere safe, like Files or iCloud Drive.")
-            case .failure(let e): if (e as NSError).code != NSUserCancelledError { prompt = .message("the backup wasn't saved: \(e.localizedDescription)") }
+            case .success: fb.approve(); prompt = .message("Backup saved. Keep it somewhere safe, like Files or iCloud Drive.")
+            case .failure(let e): if (e as NSError).code != NSUserCancelledError { prompt = .message("The backup wasn't saved: \(e.localizedDescription)") }
             }
         }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.json, .data]) { result in
@@ -48,7 +48,7 @@ struct BackupControls: View {
             defer { if scoped { url.stopAccessingSecurityScopedResource() } }
             do { loaded = try Backup.read(Data(contentsOf: url)) }
             catch let e as Backup.ReadError { fb.error(); prompt = .message(e.message) }
-            catch { fb.error(); prompt = .message("couldn't open that file: \(error.localizedDescription)") }
+            catch { fb.error(); prompt = .message("Couldn't open that file: \(error.localizedDescription)") }
         }
         // Asking while the file picker is still closing can lose the question, so wait for it to go.
         .onChange(of: importing) { _, open in

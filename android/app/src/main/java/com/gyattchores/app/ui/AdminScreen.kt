@@ -113,9 +113,9 @@ fun AdminScreen(vm: AppViewModel, logs: List<ChoreLog>, onBack: (() -> Unit)?) {
             val verify = { if (vm.checkAdminCode(code)) authed = true else { wrong = true; code = ""; fb.error() } }
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
-                    value = code, onValueChange = { code = it; wrong = false }, label = { Text("admin code") },
+                    value = code, onValueChange = { code = it; wrong = false }, label = { Text("Admin code") },
                     singleLine = true, isError = wrong, visualTransformation = PasswordVisualTransformation(),
-                    supportingText = { if (wrong) Text("that code didn't match") },
+                    supportingText = { if (wrong) Text("That code didn't match.") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(onDone = { verify() }), modifier = Modifier.fillMaxWidth().focusRequester(focus),
                 )
@@ -156,7 +156,7 @@ private fun AdminContent(vm: AppViewModel, logs: List<ChoreLog>) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("Add chores", color = Accent, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-                TextButton(onClick = { addingChores = false }) { Text("cancel") }
+                TextButton(onClick = { addingChores = false }) { Text("Cancel") }
             }
             ChoreIntakePanel(pool) { vm.addChores(it); fb.submit(); addingChores = false }
         }
@@ -207,18 +207,18 @@ private fun AdminContent(vm: AppViewModel, logs: List<ChoreLog>) {
                 }
                 if (waiting) {
                     Text("Yes", fontWeight = FontWeight.Black, color = Palette.OCEAN.stops[0],
-                        modifier = Modifier.clip(CircleShape).background(Palette.OCEAN.ink).clickable(onClickLabel = "approve") { if (vm.approve(l)) fb.levelUp() else fb.approve() }
+                        modifier = Modifier.clip(CircleShape).background(Palette.OCEAN.ink).clickable(onClickLabel = "Approve this chore") { if (vm.approve(l)) fb.levelUp() else fb.approve() }
                             .padding(horizontal = 16.dp, vertical = 12.dp))
                     Text("No", fontWeight = FontWeight.Black, color = Palette.OCEAN.ink,
                         modifier = Modifier.clip(CircleShape).border(2.dp, Palette.OCEAN.ink.copy(alpha = 0.8f), CircleShape)
-                            .clickable(onClickLabel = "turn down") { vm.setStatus(l, Status.REJECTED); fb.reject() }.padding(horizontal = 16.dp, vertical = 12.dp))
+                            .clickable(onClickLabel = "Turn down this chore") { vm.setStatus(l, Status.REJECTED); fb.reject() }.padding(horizontal = 16.dp, vertical = 12.dp))
                 }
             }
         }
         if (vm.familySync && family.players.isNotEmpty()) {
             item { SectionLabel("this phone belongs to", padded = false) }
             item {
-                Text("dares are made as this person. only an admin can change it.",
+                Text("Dares are made as this person. Only an admin can change it.",
                     style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     for (p in family.players) FilterChip(selected = p.id == me, onClick = { vm.setMe(p) }, label = { Text(p.shownName) })
@@ -226,51 +226,51 @@ private fun AdminContent(vm: AppViewModel, logs: List<ChoreLog>) {
             }
         }
         item { SectionLabel("people", padded = false) }
-        item { Text("admins approve chores and can change everything here. each admin has their own code.",
+        item { Text("Admins approve chores and can change everything here. Each admin has their own code.",
             style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         items(family.members, key = { "p" + it.id }) { p ->
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(p.adminLabel, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    val roles = listOfNotNull("admin".takeIf { p.isAdmin }, "does chores".takeIf { p.plays })
+                    val roles = listOfNotNull("Admin".takeIf { p.isAdmin }, (if (p.isAdmin) "does chores" else "Does chores").takeIf { p.plays })
                     Text(roles.joinToString(" · "), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                TextButton(onClick = { fb.tap(); editing = p }) { Text("edit") }
+                TextButton(onClick = { fb.tap(); editing = p }) { Text("Edit") }
             }
         }
-        item { OutlinedButton(onClick = { fb.tap(); adding = true }, modifier = Modifier.padding(vertical = 12.dp)) { Text("+ add player") } }
+        item { OutlinedButton(onClick = { fb.tap(); adding = true }, modifier = Modifier.padding(vertical = 12.dp)) { Text("Add a player") } }
 
         item { SectionLabel("chores", padded = false) }
-        item { Text("${pool.size} chores. left undone, a chore takes longer the next time it's picked.",
+        item { Text("${pool.size} chores. Left undone, a chore takes longer the next time it's picked.",
             style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-        item { OutlinedButton(onClick = { fb.tap(); addingChores = true }, modifier = Modifier.padding(vertical = 12.dp)) { Text("+ add chores") } }
+        item { OutlinedButton(onClick = { fb.tap(); addingChores = true }, modifier = Modifier.padding(vertical = 12.dp)) { Text("Add chores") } }
         items(pool, key = { "c" + it.id }) { c ->
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(c.name, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text("${c.tiers.firstOrNull() ?: 0}m", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                TextButton(onClick = { fb.tap(); editingChore = c }) { Text("edit") }
+                TextButton(onClick = { fb.tap(); editingChore = c }) { Text("Edit") }
             }
         }
 
         item { SectionLabel("this phone", padded = false) }
         if (canBio) item {
-            SwitchRow("fingerprint / face opens the admin area", bioOn) { vm.setBiometricUnlock(it) }
-            Text("only turn this on if this is your own phone, not a player's.",
+            SwitchRow("Fingerprint or face opens Admin", bioOn) { vm.setBiometricUnlock(it) }
+            Text("Only turn this on if this is your own phone, not a player's.",
                 style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item {
-            Text(if (vm.familySync) "this edition keeps the family's players, chores and points in step across your family's phones. resetting this phone clears what it keeps and fetches the family again; nothing is deleted for anyone else."
-                else "everything this app knows — names, chores and points — is kept on this phone and nowhere else. there's no account and nothing is sent to anyone, including us. uninstalling the app deletes it all.",
+            Text(if (vm.familySync) "This edition keeps the family's players, chores and points in step across your family's phones. Resetting this phone clears what it keeps and fetches the family again. Nothing is deleted for anyone else."
+                else "Everything this app knows, from names to chores and points, is kept on this phone and nowhere else. There's no account and nothing is sent to anyone, including us. Uninstalling the app deletes it all.",
                 style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
-                OutlinedButton(onClick = { fb.tap(); saveBackup() }) { Text("save a backup…") }
-                OutlinedButton(onClick = { fb.tap(); restoreBackup() }) { Text("restore…") }
+                OutlinedButton(onClick = { fb.tap(); saveBackup() }) { Text("Save a backup…") }
+                OutlinedButton(onClick = { fb.tap(); restoreBackup() }) { Text("Restore…") }
             }
-            Text(if (vm.familySync) "a backup holds the family's players, chores, history and admin codes (scrambled). restoring adds a backup to the family; it never removes anyone."
-                else "a backup holds everything here, admin codes included (scrambled). restoring one replaces what's on this phone.",
+            Text(if (vm.familySync) "A backup holds the family's players, chores, history and admin codes (scrambled). Restoring adds a backup to the family. It never removes anyone."
+                else "A backup holds everything here, admin codes included (scrambled). Restoring one replaces what's on this phone.",
                 style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
             TextButton(onClick = { confirmingErase = true }, modifier = Modifier.padding(vertical = 8.dp)) {
-                Text(if (vm.familySync) "reset this phone…" else "erase everything…", color = Bad)
+                Text(if (vm.familySync) "Reset this phone…" else "Erase everything…", color = Bad)
             }
         }
     }
@@ -284,8 +284,8 @@ private fun AdminContent(vm: AppViewModel, logs: List<ChoreLog>) {
         text = { Text(if (vm.familySync) "This phone forgets what it keeps and fetches the family again. Nobody else is affected."
             else "Players, chores and points are deleted from this phone and the app starts over. This can't be undone.") },
         confirmButton = { TextButton(onClick = { fb.reject(); confirmingErase = false; vm.eraseEverything() }) {
-            Text(if (vm.familySync) "reset" else "erase players, chores and points", color = Bad) } },
-        dismissButton = { TextButton(onClick = { confirmingErase = false }) { Text("cancel") } },
+            Text(if (vm.familySync) "Reset" else "Erase players, chores and points", color = Bad) } },
+        dismissButton = { TextButton(onClick = { confirmingErase = false }) { Text("Cancel") } },
     )
 }
 
@@ -300,26 +300,26 @@ private fun MemberDialog(vm: AppViewModel, member: Player?, onDismiss: () -> Uni
         onDismissRequest = onDismiss, title = { Text(if (member == null) "Add player" else "Edit ${member.name}") },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
-                OutlinedTextField(d.name, { d = d.copy(name = it) }, singleLine = true, label = { Text("username") })
-                OutlinedTextField(d.displayName, { d = d.copy(displayName = it) }, singleLine = true, label = { Text("display name (optional)") })
-                Text("the display name is only what's shown; the username is what chores and points are kept under.",
+                OutlinedTextField(d.name, { d = d.copy(name = it) }, singleLine = true, label = { Text("Username") })
+                OutlinedTextField(d.displayName, { d = d.copy(displayName = it) }, singleLine = true, label = { Text("Display name (optional)") })
+                Text("The display name is only what's shown. The username is what chores and points are kept under.",
                     style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                SwitchRow("does chores", d.plays) { d = d.copy(plays = it) }
-                SwitchRow("admin", d.isAdmin) { d = d.copy(isAdmin = it) }
-                if (d.isAdmin) CodeField(d.newCode, if (member?.isAdmin == true) "new code (leave empty to keep it)" else "their admin code") { d = d.copy(newCode = it) }
+                SwitchRow("Does chores", d.plays) { d = d.copy(plays = it) }
+                SwitchRow("Admin", d.isAdmin) { d = d.copy(isAdmin = it) }
+                if (d.isAdmin) CodeField(d.newCode, if (member?.isAdmin == true) "New code (leave empty to keep it)" else "Their admin code") { d = d.copy(newCode = it) }
                 if (problem != null) Text(problem, color = Bad, style = MaterialTheme.typography.labelMedium)
-                if (member != null && vm.canRemove(member)) TextButton(onClick = { confirmingRemove = true }) { Text("remove ${member.name}…", color = Bad) }
+                if (member != null && vm.canRemove(member)) TextButton(onClick = { confirmingRemove = true }) { Text("Remove ${member.name}…", color = Bad) }
             }
         },
-        confirmButton = { TextButton(onClick = { if (vm.saveMember(d, member?.id)) { fb.approve(); onDismiss() } }, enabled = problem == null) { Text("save") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("cancel") } },
+        confirmButton = { TextButton(onClick = { if (vm.saveMember(d, member?.id)) { fb.approve(); onDismiss() } }, enabled = problem == null) { Text("Save") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
     if (confirmingRemove && member != null) AlertDialog(
         onDismissRequest = { confirmingRemove = false }, title = { Text("Remove ${member.name}?") },
         text = { Text("Their chores and points are deleted${if (vm.familySync) " from the family's phones" else " from this phone"}. This can't be undone.") },
         confirmButton = { TextButton(onClick = { vm.removeMember(member); fb.reject(); confirmingRemove = false; onDismiss() }) {
-            Text("remove and delete their history", color = Bad) } },
-        dismissButton = { TextButton(onClick = { confirmingRemove = false }) { Text("cancel") } },
+            Text("Remove and delete their history", color = Bad) } },
+        dismissButton = { TextButton(onClick = { confirmingRemove = false }) { Text("Cancel") } },
     )
 }
 
@@ -334,16 +334,16 @@ private fun ChoreDialog(vm: AppViewModel, chore: Chore, pool: List<Chore>, onDis
         onDismissRequest = onDismiss, title = { Text("Edit chore") },
         text = {
             Column {
-                OutlinedTextField(name, { name = it }, singleLine = true, label = { Text("chore") })
+                OutlinedTextField(name, { name = it }, singleLine = true, label = { Text("Chore") })
                 MinuteStepper(minutes) { minutes = it }
-                Text("worth ${ChoreIntake.make("x", minutes).pts} points.", style = MaterialTheme.typography.labelMedium,
+                Text("Worth ${ChoreIntake.make("x", minutes).pts} points.", style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
-                if (clash) Text("there's already a chore with that name", color = Bad, style = MaterialTheme.typography.labelMedium)
-                if (pool.size > 1) TextButton(onClick = { vm.removeChore(chore); fb.reject(); onDismiss() }) { Text("remove this chore", color = Bad) }
-                Text("points already earned for it are kept.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (clash) Text("There's already a chore with that name.", color = Bad, style = MaterialTheme.typography.labelMedium)
+                if (pool.size > 1) TextButton(onClick = { vm.removeChore(chore); fb.reject(); onDismiss() }) { Text("Remove this chore", color = Bad) }
+                Text("Points already earned for it are kept.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         },
-        confirmButton = { TextButton(onClick = { vm.updateChore(chore, name, minutes); fb.approve(); onDismiss() }, enabled = clean != null && !clash) { Text("save") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("cancel") } },
+        confirmButton = { TextButton(onClick = { vm.updateChore(chore, name, minutes); fb.approve(); onDismiss() }, enabled = clean != null && !clash) { Text("Save") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
 }

@@ -100,7 +100,7 @@ private fun DisplayNameDialog(player: Player, onDismiss: () -> Unit, onSave: (St
         onDismissRequest = onDismiss, title = { Text("Display name") },
         text = {
             Column {
-                OutlinedTextField(draft, { draft = it }, singleLine = true, label = { Text("anything you like") })
+                OutlinedTextField(draft, { draft = it }, singleLine = true, label = { Text("Anything you like") })
                 Text("Shown in place of your username, ${player.name}. Your chores and points stay exactly as they are. Up to ${DisplayName.MAX_LENGTH} characters.",
                     style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
             }

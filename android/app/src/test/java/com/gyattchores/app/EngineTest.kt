@@ -107,7 +107,7 @@ class EngineTest {
         val three = List(3) { Dare("1", "2", "c$it", "2026-11-10") }
         assertEquals(null, Engine.dareBlocked("1", "2", emptyList(), targetSubmitted = false))
         assertTrue(Engine.dareBlocked("1", "1", emptyList(), false)!!.contains("yourself"))
-        assertTrue(Engine.dareBlocked("1", "2", emptyList(), true)!!.contains("locked"))
+        assertTrue(Engine.dareBlocked("1", "2", emptyList(), true)!!.contains("Locked"))
         assertTrue(Engine.dareBlocked("1", "2", three, false)!!.contains("3"))
     }
 

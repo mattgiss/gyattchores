@@ -40,24 +40,24 @@ fun ChoreIntakePanel(existing: List<Chore>, onDone: (List<Chore>) -> Unit) {
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         if (!reviewing) {
-            Text("list the chores in your home, in your own words. type them, or tap the mic on the keyboard and say them.",
+            Text("List the chores in your home, in your own words. Type them, or tap the mic on the keyboard and say them.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
             OutlinedTextField(text, { text = it }, modifier = Modifier.fillMaxWidth().heightIn(min = 140.dp),
-                placeholder = { Text("dishes, take out the trash, feed the dog 5 minutes…") })
-            TermButton("SORT INTO CHORES", enabled = text.isNotBlank()) {
+                placeholder = { Text("Dishes, take out the trash, feed the dog 5 minutes…") })
+            TermButton("Sort into chores", enabled = text.isNotBlank()) {
                 fb.tap()
                 found.clear()
                 found += ChoreIntake.parse(text, existing).map { Found(it.name, it.tiers[0]) }
                 reviewing = true
             }
-            Text("sorted on this phone. nothing you write or say here is sent anywhere by this app.",
+            Text("Sorted on this phone. Nothing you write or say here is sent anywhere by this app.",
                 style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         } else {
             val chosen = found.filter { it.on && ChoreIntake.tidyName(it.name) != null }
             if (found.isEmpty()) {
-                Text("couldn't find any new chores in that. try one per line, or separate them with commas.", color = Warn)
+                Text("Couldn't find any new chores in that. Try one per line, or separate them with commas.", color = Warn)
             } else {
-                Text("found ${found.size}. untick any you don't want; fix names and minutes as you like.",
+                Text("Found ${found.size}. Untick any you don't want, and fix names and minutes as you like.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                 found.forEachIndexed { i, f ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -72,7 +72,7 @@ fun ChoreIntakePanel(existing: List<Chore>, onDone: (List<Chore>) -> Unit) {
                 }
             }
             val n = chosen.size
-            TermButton(if (n == 0) "NOTHING TO ADD" else "ADD $n CHORE${if (n == 1) "" else "S"}", enabled = n > 0) {
+            TermButton(if (n == 0) "Nothing to add" else "Add $n chore${if (n == 1) "" else "s"}", enabled = n > 0) {
                 val ids = existing.map { it.id }.toMutableSet()
                 onDone(chosen.map { item -> ChoreIntake.make(item.name, item.minutes, ids).also { ids += it.id } })
             }

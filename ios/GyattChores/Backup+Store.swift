@@ -28,12 +28,12 @@ extension AppStore {
     func restorePreview(_ backup: Backup) -> String {
         let when = backup.exportedDate.formatted(date: .abbreviated, time: .shortened)
         #if FAMILY_SYNC
-        if restoredBackupIds.contains(backup.id) { return "this backup (saved \(when)) was already restored. restoring it again adds nothing." }
+        if restoredBackupIds.contains(backup.id) { return "This backup (saved \(when)) was already restored. Restoring it again adds nothing." }
         let plan = backup.mergePlan(members: members, chores: pool, logs: logs, nextId: familyNextId, calendar: calendar)
-        return "saved \(when): \(backup.summary).\n\nadding it to the family: \(plan.isEmpty ? plan.summary : plan.summary + ".")" + (isSetUp ? "" : " its admins and their codes become the family's.")
+        return "Saved \(when): \(backup.summary).\n\nAdding it to the family: \(plan.isEmpty ? plan.summary : plan.summary + ".")" + (isSetUp ? "" : " Its admins and their codes become the family's.")
         #else
-        guard backup.hasAdmin else { return "saved \(when): \(backup.summary). it has no admin, so it can't be restored here." }
-        return "saved \(when): \(backup.summary). " + (isSetUp ? "everything on this device now is replaced by it." : "it becomes this device's scoreboard.")
+        guard backup.hasAdmin else { return "Saved \(when): \(backup.summary). It has no admin, so it can't be restored here." }
+        return "Saved \(when): \(backup.summary). " + (isSetUp ? "Everything on this device now is replaced by it." : "It becomes this device's scoreboard.")
         #endif
     }
 
@@ -57,7 +57,7 @@ extension AppStore {
     #if !FAMILY_SYNC
     private func restoreReplacing(_ b: Backup) -> String {
         // Nobody could unlock the admin area afterwards. Android refuses these too.
-        guard b.hasAdmin else { return "this backup has no admin, so it can't be restored here. nothing changed." }
+        guard b.hasAdmin else { return "This backup has no admin, so it can't be restored here. Nothing changed." }
         eraseEverything()
         var next = Settings()
         next.adminCodes = b.codes.filter { id, _ in b.members.contains { $0.id == id && $0.isAdmin } }
@@ -72,13 +72,13 @@ extension AppStore {
         restoreLegacyDares(b.gameDares)
         settings = next
         setPuzzleLevels(b.puzzleLevels, idMap: Dictionary(b.members.map { ($0.id, $0.id) }, uniquingKeysWith: { a, _ in a }))
-        return "restored: \(b.summary)."
+        return "Restored: \(b.summary)."
     }
     #endif
 
     #if FAMILY_SYNC
     private func restoreIntoFamily(_ b: Backup) -> String {
-        guard !restoredBackupIds.contains(b.id) else { return "this backup was already restored. nothing changed." }
+        guard !restoredBackupIds.contains(b.id) else { return "This backup was already restored. Nothing changed." }
         let plan = b.mergePlan(members: members, chores: pool, logs: logs, nextId: familyNextId, calendar: calendar)
         var list = members + plan.newMembers
         var next = settings
@@ -103,7 +103,7 @@ extension AppStore {
         setPuzzleLevels(b.puzzleLevels, idMap: plan.idMap)
         markRestored(b.id)
         familyChanged()
-        return plan.isEmpty ? plan.summary : "restored: \(plan.summary)."
+        return plan.isEmpty ? "Nothing new. Everything in this backup is already here." : "Restored: \(plan.summary)."
     }
     #endif
 }

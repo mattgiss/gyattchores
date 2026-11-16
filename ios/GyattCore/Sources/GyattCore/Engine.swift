@@ -161,9 +161,9 @@ public enum Engine {
 
     /// Why `from` can't add this dare, or nil if they can.
     public static func dareBlocked(from: String, target: String, mineToday: [Dare], targetSubmitted: Bool) -> String? {
-        if from == target { return "you can't dare yourself" }
-        if targetSubmitted { return "locked — they already submitted today" }
-        if mineToday.count >= maxDaresPerDay { return "that's all \(maxDaresPerDay) dares for today" }
+        if from == target { return "You can't dare yourself." }
+        if targetSubmitted { return "Locked. They already sent today's card in." }
+        if mineToday.count >= maxDaresPerDay { return "That's all \(maxDaresPerDay) dares for today." }
         return nil
     }
 

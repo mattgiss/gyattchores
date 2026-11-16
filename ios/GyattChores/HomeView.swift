@@ -30,7 +30,7 @@ struct HomeView: View {
                         .background(Palette.heat.band(0, of: bands))
 
                     if store.players.isEmpty {
-                        Text("nobody's playing yet. an admin can add players in the admin area.")
+                        Text("Nobody's playing yet. An admin can add players in Admin.")
                             .foregroundStyle(Color.done).padding(20)
                     }
                     ForEach(Array(board.enumerated()), id: \.element.0.id) { i, row in
@@ -51,10 +51,10 @@ struct HomeView: View {
 
                     Group {
                         #if !FAMILY_SYNC
-                        Text("everything here stays on this device. no accounts, nothing sent anywhere.")
+                        Text("Everything here stays on this device. No accounts, nothing sent anywhere.")
                         #endif
                         // Which build a phone is running, as on Android: handy after a TestFlight update.
-                        Text("version \(AppInfo.version)")
+                        Text("Version \(AppInfo.version)")
                     }
                     .font(.app(.caption2)).foregroundStyle(Color.done).padding(.horizontal, 20).padding(.top, 8)
                 }

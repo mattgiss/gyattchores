@@ -382,17 +382,17 @@ final class AppStore: ObservableObject {
 
     /// Why this change can't be saved, or nil if it can. `id` is nil for someone new.
     func problem(with draft: MemberDraft, for id: String?) -> String? {
-        guard let name = Self.tidy(draft.name) else { return "they need a name" }
-        if members.contains(where: { $0.id != id && $0.name.lowercased() == name.lowercased() }) { return "someone already has that name" }
+        guard let name = Self.tidy(draft.name) else { return "They need a name." }
+        if members.contains(where: { $0.id != id && $0.name.lowercased() == name.lowercased() }) { return "Someone already has that name." }
         if draft.isAdmin {
             let hasCode = id.map { settings.adminCodes[$0] != nil } ?? false
             if draft.newCode.isEmpty ? !hasCode : !AdminCode.isLongEnough(draft.newCode) {
-                return "an admin needs a code of \(AdminCode.minLength) or more characters"
+                return "An admin needs a code of \(AdminCode.minLength) or more characters."
             }
         } else if let id, admins.map(\.id) == [id] {
-            return "someone has to stay an admin"
+            return "Someone has to stay an admin."
         }
-        if !draft.plays, !draft.isAdmin { return "they need to do chores, be an admin, or both" }
+        if !draft.plays, !draft.isAdmin { return "They need to do chores, be an admin, or both." }
         return nil
     }
 
