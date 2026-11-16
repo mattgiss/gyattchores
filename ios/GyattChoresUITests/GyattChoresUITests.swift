@@ -284,7 +284,19 @@ final class GyattChoresUITests: XCTestCase {
         let restore = app.buttons["restore-backup"]
         XCTAssertTrue(restore.waitForExistence(timeout: wait), "setup offers restoring a backup")
         restore.tap()
-        let file = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH 'gyattchores-backup'")).firstMatch
+        // Today's file by name: a simulator can still hold backups from earlier runs, with older demo history.
+        let day = DateFormatter(); day.locale = Locale(identifier: "en_US_POSIX"); day.dateFormat = "yyyy-MM-dd"
+        let file = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", "gyattchores-backup-\(day.string(from: Date()))")).firstMatch
+        // Older iOS opens the picker on Recents, which may not list the file yet: go to where it was saved.
+        if !file.waitForExistence(timeout: 5) {
+            for place in ["Browse", "On My iPhone", "On My iPad"] {
+                let control = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@ AND (elementType == %d OR elementType == %d OR elementType == %d)",
+                                                                                   place, XCUIElement.ElementType.button.rawValue,
+                                                                                   XCUIElement.ElementType.cell.rawValue, XCUIElement.ElementType.staticText.rawValue)).firstMatch
+                if control.waitForExistence(timeout: 3) { control.tap() }
+                if file.waitForExistence(timeout: 3) { break }
+            }
+        }
         XCTAssertTrue(file.waitForExistence(timeout: wait), "the saved backup should be in the picker")
         file.tap()
         let confirm = app.buttons["Replace everything here"]
@@ -344,7 +356,19 @@ final class GyattChoresUITests: XCTestCase {
         let restore = app.buttons["restore-backup"]
         XCTAssertTrue(restore.waitForExistence(timeout: wait))
         restore.tap()
-        let file = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH 'gyattchores-backup'")).firstMatch
+        // Today's file by name: a simulator can still hold backups from earlier runs, with older demo history.
+        let day = DateFormatter(); day.locale = Locale(identifier: "en_US_POSIX"); day.dateFormat = "yyyy-MM-dd"
+        let file = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", "gyattchores-backup-\(day.string(from: Date()))")).firstMatch
+        // Older iOS opens the picker on Recents, which may not list the file yet: go to where it was saved.
+        if !file.waitForExistence(timeout: 5) {
+            for place in ["Browse", "On My iPhone", "On My iPad"] {
+                let control = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@ AND (elementType == %d OR elementType == %d OR elementType == %d)",
+                                                                                   place, XCUIElement.ElementType.button.rawValue,
+                                                                                   XCUIElement.ElementType.cell.rawValue, XCUIElement.ElementType.staticText.rawValue)).firstMatch
+                if control.waitForExistence(timeout: 3) { control.tap() }
+                if file.waitForExistence(timeout: 3) { break }
+            }
+        }
         XCTAssertTrue(file.waitForExistence(timeout: wait), "the saved backup should be in the picker")
         file.tap()
         let add = app.buttons["Add it to the family"]
