@@ -300,6 +300,11 @@ final class GyattChoresUITests: XCTestCase {
         XCTAssertTrue(file.waitForExistence(timeout: wait), "the saved backup should be in the picker")
         file.tap()
         let confirm = app.buttons["Replace everything here"]
+        // Older iOS can select the file without opening it: open it.
+        if !confirm.waitForExistence(timeout: 5) {
+            let open = app.buttons["Open"]
+            if open.waitForExistence(timeout: 3) { open.tap() } else if file.exists { file.doubleTap() }
+        }
         XCTAssertTrue(confirm.waitForExistence(timeout: wait), "restoring asks first")
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS '2 players, 27 chores'")).firstMatch.exists)
         screenshot("32-backup-restore-confirm", of: app)
