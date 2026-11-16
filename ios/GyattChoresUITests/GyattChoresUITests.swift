@@ -298,12 +298,15 @@ final class GyattChoresUITests: XCTestCase {
             }
         }
         XCTAssertTrue(file.waitForExistence(timeout: wait), "the saved backup should be in the picker")
-        file.tap()
+        // Tap the file itself: on older iOS a tap on its name label (in the grid view) doesn't open it.
+        let cell = app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", "gyattchores-backup-\(day.string(from: Date()))")).firstMatch
+        if cell.exists { cell.tap() } else { file.tap() }
         let confirm = app.buttons["Replace everything here"]
         // Older iOS can select the file without opening it: open it.
         if !confirm.waitForExistence(timeout: 5) {
             let open = app.buttons["Open"]
-            if open.waitForExistence(timeout: 3) { open.tap() } else if file.exists { file.doubleTap() }
+            if open.waitForExistence(timeout: 3) { open.tap() }
+            else if file.exists { file.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).withOffset(CGVector(dx: 0, dy: -60)).tap() }
         }
         XCTAssertTrue(confirm.waitForExistence(timeout: wait), "restoring asks first")
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS '2 players, 27 chores'")).firstMatch.exists)
@@ -375,7 +378,9 @@ final class GyattChoresUITests: XCTestCase {
             }
         }
         XCTAssertTrue(file.waitForExistence(timeout: wait), "the saved backup should be in the picker")
-        file.tap()
+        // Tap the file itself: on older iOS a tap on its name label (in the grid view) doesn't open it.
+        let cell = app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", "gyattchores-backup-\(day.string(from: Date()))")).firstMatch
+        if cell.exists { cell.tap() } else { file.tap() }
         let add = app.buttons["Add it to the family"]
         XCTAssertTrue(add.waitForExistence(timeout: wait), "restoring asks first")
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'admins and their codes become the family'")).firstMatch.exists)
