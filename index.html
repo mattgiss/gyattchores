@@ -2,1214 +2,348 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#ffffff">
-<title>GyattChores</title>
-<link rel="icon" type="image/svg+xml" href="gyattchores-logo-transparent.svg">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="manifest" href="/manifest.json">
-<script crossorigin="anonymous" integrity="sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z" src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
-<script crossorigin="anonymous" integrity="sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1" src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
-<script crossorigin="anonymous" integrity="sha384-ezQ6HS3FLspd9te19o2McUV6FAK091+GG7KO54f/R8DKgCDi7fULhapNrd5LY+vG" src="https://unpkg.com/@babel/standalone@7.29.7/babel.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.108.0"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DOYOURWORK — the private chore scoreboard. Coming soon to iPhone, iPad and Android.</title>
+<meta name="description" content="A chore scoreboard for your household: 25 minutes a day each, approved by an admin. No accounts, no sign-up, and nothing ever leaves your device. Coming soon to iPhone, iPad and Android. Join the beta.">
+<meta name="theme-color" content="#D90015">
+<meta property="og:title" content="DOYOURWORK — the private chore scoreboard">
+<meta property="og:description" content="25 minutes a day. That's it. No accounts, and nothing ever leaves your device. Coming soon to iPhone, iPad and Android.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://gyattchores.com/">
+<meta property="og:image" content="https://gyattchores.com/img/social.png">
+<link rel="icon" type="image/svg+xml" href="/dyw-icon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preload" href="/fonts/SchibstedGrotesk-Black.ttf" as="font" type="font/ttf" crossorigin>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; background: #fff; color: #111; overflow: hidden; }
-body { font-family: 'Courier New', Courier, monospace; -webkit-font-smoothing: antialiased; }
-#root { height: 100%; }
-
-@supports (padding: env(safe-area-inset-top)) {
-  body {
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
-  }
+/* Nothing on this page is loaded from anyone else: the font is the app's own, served from here. */
+@font-face { font-family: "Schibsted Grotesk"; font-weight: 400; font-display: swap; src: url(/fonts/SchibstedGrotesk-Regular.ttf) format("truetype"); }
+@font-face { font-family: "Schibsted Grotesk"; font-weight: 600; font-display: swap; src: url(/fonts/SchibstedGrotesk-SemiBold.ttf) format("truetype"); }
+@font-face { font-family: "Schibsted Grotesk"; font-weight: 900; font-display: swap; src: url(/fonts/SchibstedGrotesk-Black.ttf) format("truetype"); }
+:root {
+  /* The app's own colours: black, with a run of heat for players and chores and ocean for the admin area. */
+  --bg: #000; --ink: #fff; --muted: #a6a6ad; --line: #26262a; --panel: #0e0e10;
+  --h1: #D90015; --h2: #DB2A15; --h3: #E04A19; --h4: #E2751C; --h5: #E99A22; --h6: #EDB82A;
+  --o1: #3E9FC4; --o3: #4FAFAE; --o6: #6BC276; --dark: #170600;
+  --sans: "Schibsted Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 17px; line-height: 1.55; }
+a { color: var(--h5); text-decoration: none; }
+a:hover { text-decoration: underline; }
+:focus-visible { outline: 3px solid #fff; outline-offset: 3px; border-radius: 4px; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 22px; }
 
-@keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
-.fade-in { animation: fadeIn 0.2s ease-out both; }
+nav { position: sticky; top: 0; z-index: 10; background: var(--h1); }
+nav .wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 58px; }
+.brand { color: #fff; font-weight: 900; font-size: 1.25rem; letter-spacing: 0.2px; display: inline-flex; align-items: center; gap: 10px; }
+.brand img { display: block; border-radius: 7px; }
+.brand:hover { text-decoration: none; }
+.links { display: flex; align-items: center; gap: 24px; font-weight: 600; font-size: 0.95rem; }
+.links a { color: #fff; }
+.links .cta { background: #fff; color: var(--h1); border-radius: 999px; padding: 7px 16px; }
+.links .cta:hover { text-decoration: none; background: #ffe9ea; }
+@media (max-width: 680px) { .links a:not(.cta) { display: none; } }
 
-.scroll { overflow-y:auto; -webkit-overflow-scrolling:touch; }
-.scroll::-webkit-scrollbar       { width:2px; }
-.scroll::-webkit-scrollbar-track { background:transparent; }
-.scroll::-webkit-scrollbar-thumb { background:#ccc; border-radius:2px; }
+.eyebrow { font-weight: 600; font-size: 0.95rem; opacity: 0.85; }
+h1 { font-weight: 900; font-size: clamp(2.6rem, 8.4vw, 4.6rem); line-height: 1.0; letter-spacing: -1.5px; margin: 14px 0 20px; }
+h2 { font-weight: 900; font-size: clamp(1.8rem, 4.6vw, 2.7rem); line-height: 1.08; letter-spacing: -0.8px; margin: 8px 0 16px; }
+h3 { font-weight: 900; font-size: 1.2rem; line-height: 1.2; margin-bottom: 6px; }
+p.lead { font-size: 1.2rem; max-width: 33rem; }
+p + p { margin-top: 12px; }
+.muted { color: var(--muted); }
+section { padding: 80px 0; }
+@media (max-width: 680px) { section { padding: 56px 0; } }
 
-button { -webkit-tap-highlight-color: transparent; }
+.btn { display: inline-flex; align-items: center; justify-content: center; min-height: 54px; padding: 0 26px; border-radius: 0;
+  font: inherit; font-weight: 900; font-size: 1.05rem; cursor: pointer; border: 0; }
+.btn:hover { text-decoration: none; }
+.btn.white { background: #fff; color: var(--h1); }
+.btn.white:hover { background: #ffe9ea; }
+.btn.ghost { background: transparent; color: #fff; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.7); font-weight: 600; }
+.btn.ghost:hover { background: rgba(255,255,255,0.12); }
+.row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+
+/* the hero is the app's first band; the bands under it step down the same run of colour */
+.hero { background: var(--h1); padding: 64px 0 0; overflow: hidden; }
+.hero .wrap { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 40px; align-items: end; }
+.hero .copy { padding-bottom: 72px; }
+.hero .row { margin-top: 28px; }
+.hero .fine { margin-top: 18px; font-size: 0.95rem; opacity: 0.9; }
+.pill { display: inline-block; font-weight: 600; font-size: 0.9rem; background: rgba(0,0,0,0.22); border-radius: 999px; padding: 6px 14px; }
+@media (max-width: 860px) { .hero .wrap { grid-template-columns: 1fr; gap: 8px; } .hero .copy { padding-bottom: 36px; } }
+.shot { display: block; width: 100%; height: auto; max-width: 330px; margin: 0 auto; border: 9px solid #111; border-radius: 34px; background: #000;
+  box-shadow: 0 30px 70px -20px rgba(0,0,0,0.7); }
+.hero .shot { border-bottom: 0; border-radius: 34px 34px 0 0; max-height: 520px; object-fit: cover; object-position: top; }
+
+.story { background: var(--h2); }
+.quote { font-weight: 900; font-size: clamp(1.5rem, 3.6vw, 2.3rem); line-height: 1.18; letter-spacing: -0.5px; max-width: 44rem; }
+.story p.after { margin-top: 20px; max-width: 40rem; font-size: 1.1rem; }
+
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+.split.flip > :first-child { order: 2; }
+@media (max-width: 860px) { .split { grid-template-columns: 1fr; gap: 36px; } .split.flip > :first-child { order: 0; } }
+ol.steps { list-style: none; counter-reset: s; margin-top: 22px; }
+ol.steps li { counter-increment: s; position: relative; padding: 0 0 20px 52px; }
+ol.steps li::before { content: counter(s); position: absolute; left: 0; top: 0; width: 34px; height: 34px; background: var(--h1); color: #fff;
+  display: grid; place-items: center; font-weight: 900; }
+ol.steps li:nth-child(2)::before { background: var(--h3); } ol.steps li:nth-child(3)::before { background: var(--h4); }
+ol.steps li:nth-child(4)::before { background: var(--h5); color: var(--dark); }
+ol.steps li p { color: var(--muted); }
+
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; margin-top: 30px; }
+@media (max-width: 860px) { .cards { grid-template-columns: 1fr; } }
+.card { background: var(--panel); border: 1px solid var(--line); padding: 26px; }
+.card p { color: var(--muted); }
+.note { font-size: 0.95rem; color: var(--muted); margin-top: 16px; }
+
+/* six reasons, as six bands */
+.bands { margin-top: 28px; }
+.band { padding: 22px 26px; display: grid; grid-template-columns: 17rem 1fr; gap: 6px 28px; align-items: baseline; }
+.band p { font-size: 1.05rem; }
+.band:nth-child(1) { background: var(--h1); } .band:nth-child(2) { background: var(--h2); } .band:nth-child(3) { background: var(--h3); }
+.band:nth-child(4) { background: var(--h4); color: var(--dark); } .band:nth-child(5) { background: var(--h5); color: var(--dark); }
+.band:nth-child(6) { background: var(--h6); color: var(--dark); }
+@media (max-width: 760px) { .band { grid-template-columns: 1fr; } }
+
+ul.ticks { list-style: none; margin-top: 16px; }
+ul.ticks li { position: relative; padding: 0 0 12px 30px; }
+ul.ticks li::before { content: ""; position: absolute; left: 0; top: 0.42em; width: 14px; height: 14px; background: currentColor; opacity: 0.9; }
+#device ul.ticks li { color: var(--muted); } #device ul.ticks li b { color: #fff; } #device ul.ticks li::before { background: var(--h3); opacity: 1; }
+
+/* the beta sits in the admin area's colours */
+.beta { background: linear-gradient(160deg, var(--o1), var(--o3) 55%, var(--o6)); color: #04222b; padding: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 44px; }
+@media (max-width: 860px) { .beta { grid-template-columns: 1fr; padding: 26px; gap: 26px; } }
+.beta h2, .beta .eyebrow { color: #04222b; }
+.beta a { color: #04222b; text-decoration: underline; }
+form label { display: block; font-weight: 600; font-size: 0.95rem; margin: 14px 0 6px; }
+form label:first-child { margin-top: 0; }
+input, select { width: 100%; min-height: 50px; border: 0; background: #fff; color: #111; font: inherit; font-size: 17px; padding: 0 14px; border-radius: 0; }
+form .btn { width: 100%; margin-top: 20px; background: #04222b; color: #fff; }
+form .btn:hover { background: #000; }
+.beta .note { color: #04222b; opacity: 0.85; }
+.addr { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 6px; font-weight: 600; }
+.addr button { font: inherit; font-size: 0.9rem; font-weight: 600; color: #04222b; background: rgba(255,255,255,0.55); border: 0; padding: 5px 12px; cursor: pointer; }
+
+details { border-bottom: 1px solid var(--line); padding: 18px 0; }
+details:first-of-type { border-top: 1px solid var(--line); }
+summary { cursor: pointer; font-weight: 900; font-size: 1.1rem; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+summary::-webkit-details-marker { display: none; }
+summary::after { content: "+"; color: var(--h4); }
+details[open] summary::after { content: "–"; }
+details p { color: var(--muted); margin-top: 10px; max-width: 44rem; }
+footer { border-top: 1px solid var(--line); padding: 32px 0 52px; font-size: 0.95rem; color: var(--muted); }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 28px; justify-content: space-between; }
+footer a { color: var(--muted); }
+footer a:hover { color: #fff; }
 </style>
 </head>
 <body>
-<div id="root"></div>
-<script type="text/babel">
-const { useState, useEffect, useCallback, useRef } = React;
 
-// ─── CONFIG ──────────────────────────────────────────────────────────────────
-// Admin code is stored as an FNV-1a hash rather than plaintext so it isn't
-// sitting in the page source. (Obfuscation, not real security — it's a
-// client-side app — but it keeps the code out of casual view.)
-const hashCode = s => { let h=2166136261>>>0; for (let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619)>>>0; } return h; };
-const ADMIN_CODE_HASH   = 3856382990;
-const STORAGE_KEY       = 'gyattchores_logs';
-const ACCENT            = '#F23861';
-const BUILD             = '2026.11.13.1'; // bump on every deploy — drives the build-freshness indicator
-const SUPABASE_URL      = 'https://ukshxdoqgwoxobjdclpx.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrc2h4ZG9xZ3dveG9iamRjbHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3MjI2NDEsImV4cCI6MjA4MDI5ODY0MX0.UGNrsfG6goEA0PPWG4x7gxBueA7D5Oe9uWI-iCXIar0';
-const supabase = window.supabase?.createClient
-  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-  : null;
-
-// ─── PLAYERS ─────────────────────────────────────────────────────────────────
-const PLAYERS = [
-  { id:'1', name:'bekindhearted' },
-  { id:'2', name:'megadinolava'  },
-];
-
-// ─── CHORE POOL ──────────────────────────────────────────────────────────────
-const CHORE_POOL = [
-  { id:'load-dishwasher',     name:'load dishwasher',            cat:'kitchen',  pts:15, tiers:[5,5,8],    tierDays:[0,3,6]  },
-  { id:'unload-dishwasher',   name:'unload dishwasher',          cat:'kitchen',  pts:15, tiers:[5,5,8],    tierDays:[0,3,6]  },
-  { id:'wipe-counters',       name:'wipe kitchen counters',      cat:'kitchen',  pts:10, tiers:[4,6,10],   tierDays:[0,2,5]  },
-  { id:'wipe-stovetop',       name:'wipe stovetop',              cat:'kitchen',  pts:15, tiers:[4,7,12],   tierDays:[0,3,7]  },
-  { id:'sweep-kitchen',       name:'sweep kitchen floor',        cat:'kitchen',  pts:15, tiers:[6,10,18],  tierDays:[0,2,5]  },
-  { id:'empty-kitchen-trash', name:'empty kitchen trash',        cat:'kitchen',  pts:10, tiers:[3,5,8],    tierDays:[0,2,4]  },
-  { id:'wipe-microwave',      name:'wipe microwave',             cat:'kitchen',  pts:10, tiers:[3,5,10],   tierDays:[0,4,8]  },
-  { id:'wipe-bath-counter',   name:'wipe bathroom counter',      cat:'bathroom', pts:10, tiers:[3,5,8],    tierDays:[0,2,5]  },
-  { id:'scrub-toilet',        name:'scrub toilet',               cat:'bathroom', pts:20, tiers:[5,9,15],   tierDays:[0,3,7]  },
-  { id:'wipe-mirrors',        name:'wipe mirrors',               cat:'bathroom', pts:8,  tiers:[3,4,6],    tierDays:[0,4,8]  },
-  { id:'sweep-bathroom',      name:'sweep bathroom floor',       cat:'bathroom', pts:10, tiers:[4,6,10],   tierDays:[0,3,7]  },
-  { id:'trash-kids-bath',     name:'empty kids bathroom trash',  cat:'bathroom', pts:8,  tiers:[2,3,5],    tierDays:[0,3,6]  },
-  { id:'trash-main-bath',     name:'empty main bathroom trash',  cat:'bathroom', pts:8,  tiers:[2,3,5],    tierDays:[0,3,6]  },
-  { id:'trash-guest-bath',    name:'empty guest bathroom trash', cat:'bathroom', pts:6,  tiers:[2,3,4],    tierDays:[0,4,8]  },
-  { id:'start-laundry',       name:'start a load of laundry',    cat:'laundry',  pts:10, tiers:[4,4,4],    tierDays:[0,0,0]  },
-  { id:'switch-laundry',      name:'switch laundry',             cat:'laundry',  pts:8,  tiers:[3,3,3],    tierDays:[0,0,0]  },
-  { id:'fold-laundry',        name:'fold and put away laundry',  cat:'laundry',  pts:25, tiers:[10,15,22], tierDays:[0,2,5]  },
-  { id:'collect-laundry',     name:'collect dirty laundry',      cat:'laundry',  pts:8,  tiers:[3,5,8],    tierDays:[0,2,4]  },
-  { id:'vacuum-living-room',  name:'vacuum living room',         cat:'floors',   pts:25, tiers:[10,14,20], tierDays:[0,3,7]  },
-  { id:'pick-up-clutter',     name:'pick up common area clutter',cat:'floors',   pts:12, tiers:[5,9,15],   tierDays:[0,2,4]  },
-  { id:'wipe-dining-table',   name:'wipe dining table',          cat:'floors',   pts:10, tiers:[4,6,8],    tierDays:[0,1,3]  },
-  { id:'dog-poop',            name:'pick up dog poop',           cat:'outdoor',  pts:15, tiers:[5,10,18],  tierDays:[0,1,3]  },
-  { id:'take-out-trash',      name:'take out trash/recycling',   cat:'outdoor',  pts:10, tiers:[4,4,6],    tierDays:[0,3,7]  },
-  { id:'water-plants',        name:'water plants',               cat:'outdoor',  pts:10, tiers:[4,4,8],    tierDays:[0,3,7]  },
-  { id:'make-bed',            name:'make bed',                   cat:'room',     pts:8,  tiers:[3,3,5],    tierDays:[0,2,4]  },
-  { id:'pick-up-room',        name:'pick up room floor',         cat:'room',     pts:12, tiers:[5,8,15],   tierDays:[0,2,4]  },
-  { id:'put-away-clothes',    name:'put away clean clothes',     cat:'room',     pts:12, tiers:[5,8,12],   tierDays:[0,2,5]  },
-];
-
-// ─── STORAGE ─────────────────────────────────────────────────────────────────
-const makeId     = () => `${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
-const loadLogs   = () => {
-  try {
-    return (JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'))
-      .sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
-  } catch { return []; }
-};
-const saveLogs   = logs => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(logs)); } catch {} };
-const toRow      = l => ({ player_id:l.playerId, player_name:l.playerName, chore_id:l.choreId, chore_name:l.choreName, chore_icon:'', points:l.points, status:l.status });
-const rowToLocal = r => ({ id:'r_'+r.id, remoteId:r.id, synced:true, statusDirty:false, playerId:r.player_id, playerName:r.player_name, choreId:r.chore_id, choreName:r.chore_name, choreIcon:'', points:r.points, timestamp:r.created_at, status:r.status });
-
-// ─── CARD ENGINE ─────────────────────────────────────────────────────────────
-const cardKey = id => `gyattchores_card_${id}_${new Date().toDateString()}`;
-
-const neglectDays = (choreId, playerId, logs) => {
-  const last = logs
-    .filter(l => l.playerId===playerId && l.choreId===choreId && l.status==='approved')
-    .sort((a,b) => new Date(b.timestamp)-new Date(a.timestamp))[0];
-  return last ? Math.floor((Date.now()-new Date(last.timestamp))/86400000) : 999;
-};
-
-const enrichChore = (chore, days) => {
-  let tier = 0;
-  for (let i = chore.tierDays.length-1; i>=0; i--) { if (days>=chore.tierDays[i]){ tier=i; break; } }
-  return { ...chore, neglectDays:days, currentMinutes:chore.tiers[tier], escalLevel:tier };
-};
-
-// How many minutes of chores a player can put on their daily card.
-const DAILY_MINUTES = 25;
-
-// The chore pool, enriched with each chore's current minutes/escalation for this
-// player, ranked most-neglected first so the overdue stuff surfaces as a
-// suggestion — but the player picks what actually goes on the card.
-const pickableChores = (playerId, logs) =>
-  CHORE_POOL
-    .map(c => enrichChore(c, neglectDays(c.id, playerId, logs)))
-    .sort((a,b) => (b.neglectDays - a.neglectDays) || (a.currentMinutes - b.currentMinutes));
-
-// Top a selection up to the daily budget with chores that "make sense": same
-// room/category as what's already picked first, then the most-neglected, always
-// the short everyday stuff. The goal is a full ~25-minute card, not a token one.
-const suggestFill = (pickedIds, pool, cap) => {
-  const result = [...pickedIds];
-  const cats   = new Set(pool.filter(c=>pickedIds.includes(c.id)).map(c=>c.cat));
-  let total    = pool.filter(c=>pickedIds.includes(c.id)).reduce((s,c)=>s+c.currentMinutes,0);
-  const candidates = pool
-    .filter(c => !pickedIds.includes(c.id))
-    .sort((a,b) => {
-      const aff = (cats.has(b.cat)?1:0) - (cats.has(a.cat)?1:0);   // same-area first
-      return aff || (b.neglectDays - a.neglectDays) || (b.currentMinutes - a.currentMinutes);
-    });
-  for (const c of candidates) {
-    if (total + c.currentMinutes <= cap) { result.push(c.id); total += c.currentMinutes; }
-  }
-  return result;
-};
-
-const loadCard = playerId => {
-  const cached = localStorage.getItem(cardKey(playerId));
-  return cached ? JSON.parse(cached) : null;
-};
-
-// Build a fresh card from the chores the player picked.
-const buildCard = (playerId, chores) => {
-  const card = { date:new Date().toDateString(), chores, checked:chores.map(()=>false), submitted:false };
-  localStorage.setItem(cardKey(playerId), JSON.stringify(card));
-  return card;
-};
-
-const clearCard = playerId => localStorage.removeItem(cardKey(playerId));
-
-const saveCard = (playerId, card) => localStorage.setItem(cardKey(playerId), JSON.stringify(card));
-
-// Reconstruct today's already-submitted card from the synced logs. The card
-// object itself only lives in the picking device's localStorage — only the
-// resulting chore logs sync between devices — so without this a parent (or any
-// other device) sees the picker again instead of what the kid already submitted.
-const cardFromLogs = (playerId, logs) => {
-  const today  = new Date().toDateString();
-  // Include rejected too, so a parent's rejection stays visible on the card
-  // (marked ✗) instead of the chore silently disappearing.
-  const todays = logs.filter(l =>
-    l.playerId === playerId &&
-    (l.status === 'pending' || l.status === 'approved' || l.status === 'rejected') &&
-    new Date(l.timestamp).toDateString() === today
-  );
-  if (!todays.length) return null;
-  // De-dupe by chore — a chore is only on the card once.
-  const seen = new Set();
-  const chores = [];
-  for (const l of todays) {
-    if (seen.has(l.choreId)) continue;
-    seen.add(l.choreId);
-    const base = CHORE_POOL.find(c => c.id === l.choreId);
-    chores.push(base
-      ? enrichChore(base, neglectDays(l.choreId, playerId, logs))
-      : { id:l.choreId, name:l.choreName, cat:'', pts:l.points, currentMinutes:0, escalLevel:0, neglectDays:0 });
-  }
-  return { date:today, chores, checked:chores.map(()=>true), submitted:true };
-};
-
-// ─── XP / RANK / STREAK ───────────────────────────────────────────────────────
-// Call-of-Duty-style progression: XP comes fast, levels are short so rank-ups
-// hit often, and momentum (a daily streak) multiplies the XP you earn.
-const DAY_MS = 86400000;
-
-// Streak multiplier — a day's chores are worth more XP the longer the run, up to 2x.
-const momentumMult = streak => 1 + Math.min(streak, 10) * 0.1;
-
-// XP needed to go from `lvl` to `lvl+1`. Short, gently rising → frequent level-ups.
-const xpToNext = lvl => 60 + (lvl - 1) * 20;
-
-// Lifetime XP. Approved chores are bucketed by day and each day's points are
-// scaled by that day's running streak multiplier, so consecutive days bank XP
-// faster. XP only ever grows; breaking a streak just resets the multiplier.
-// Approved logs for a player, collapsed to one per chore per local day. The
-// game only allows a chore once per day, so any extra rows are sync
-// duplicates — they must not double-bank XP or minutes.
-const approvedOncePerDay = (playerId, logs) => {
-  const seen = new Set(), out = [];
-  logs.filter(l => l.playerId===playerId && l.status==='approved').forEach(l => {
-    const d = new Date(l.timestamp); d.setHours(0,0,0,0);
-    const key = `${d.getTime()}|${l.choreId}`;
-    if (seen.has(key)) return;
-    seen.add(key); out.push({ day:d.getTime(), log:l });
-  });
-  return out;
-};
-
-const getXP = (playerId, logs) => {
-  const byDay = {};
-  approvedOncePerDay(playerId, logs).forEach(({day, log}) => {
-    byDay[day] = (byDay[day] || 0) + log.points;
-  });
-  const days = Object.keys(byDay).map(Number).sort((a,b)=>a-b);
-  let xp=0, run=0, prev=null;
-  for (const day of days) {
-    run = (prev!==null && day-prev===DAY_MS) ? run+1 : 1;
-    xp += Math.round(byDay[day] * momentumMult(run-1));   // first day of a run = 1x
-    prev = day;
-  }
-  return xp;
-};
-
-// Each level is framed as a version number — every level-up ships a new, better
-// release of yourself (v1.0 → v1.1 → … → v2.0). Ten minor versions roll into a
-// new major version.
-const toVersion = lvl => `v${Math.floor((lvl-1)/10)+1}.${(lvl-1)%10}`;
-
-// Resolve lifetime XP into a level/version and progress toward the next one.
-const getRank = xp => {
-  let level=1, into=xp;
-  while (into >= xpToNext(level)) { into -= xpToNext(level); level++; }
-  const need = xpToNext(level);
-  return { level, version:toVersion(level), nextVersion:toVersion(level+1), into, need, pct: Math.round(into/need*100) };
-};
-
-const getStreak = (playerId, logs) => {
-  let streak=0; const d=new Date(); d.setHours(0,0,0,0);
-  for (let i=0; i<365; i++) {
-    const has = logs.some(l => { const lt=new Date(l.timestamp); lt.setHours(0,0,0,0); return l.playerId===playerId && l.status==='approved' && lt.getTime()===d.getTime(); });
-    if (!has) break; streak++; d.setDate(d.getDate()-1);
-  }
-  return streak;
-};
-
-// ─── DAILY MINUTES LOG ─────────────────────────────────────────────────────────
-// How many days of the daily log the home-page grid shows.
-const LOG_DAYS = 30;
-
-// The minute value a chore contributed to a daily card. New logs record the
-// exact minutes the card was budgeted at (escalation included). Older logs and
-// rows pulled from another device predate that field, so fall back to the
-// chore's base tier — the minutes an un-escalated card is budgeted against —
-// and finally to the stored points for any chore no longer in the pool.
-const choreMinutes = log => {
-  if (typeof log.minutes === 'number') return log.minutes;
-  const c = CHORE_POOL.find(c => c.id === log.choreId);
-  return c ? c.tiers[0] : (log.points || 0);
-};
-
-// Minutes of *approved* chores a player completed on each local day, keyed by
-// that day's midnight timestamp. Approved (parent-verified) is what counts
-// everywhere else in the app — streaks, XP — so the log follows the same rule.
-const minutesByDay = (playerId, logs) => {
-  const byDay = {};
-  approvedOncePerDay(playerId, logs).forEach(({day, log}) => {
-    byDay[day] = (byDay[day] || 0) + choreMinutes(log);
-  });
-  return byDay;
-};
-
-// The last LOG_DAYS day-start timestamps, oldest → newest (today last).
-const recentDays = () => {
-  const today = new Date(); today.setHours(0,0,0,0);
-  const days = [];
-  for (let i=LOG_DAYS-1; i>=0; i--) { const d=new Date(today); d.setDate(d.getDate()-i); days.push(d.getTime()); }
-  return days;
-};
-
-// ─── CHORE ROW ───────────────────────────────────────────────────────────────
-function ChoreRow({ chore, checked, onToggle, status }) {
-  const escalLabel = ['', '!', '!!'][chore.escalLevel] || '';
-  const escalColor = ['#555', '#F5A623', '#EF4444'][chore.escalLevel];
-  // Once submitted, the right side reports the parent's verdict instead of minutes.
-  const statusMeta = {
-    approved: { txt:'✓ approved', col:'#16A34A' },
-    rejected: { txt:'✗ rejected', col:'#EF4444' },
-    pending:  { txt:'· awaiting', col:'#F5A623' },
-  }[status];
-  // Before submission the row is a toggle (done/not done); once a verdict is in
-  // it's read-only. Expose the right semantics + keyboard support either way.
-  const a11y = status
-    ? { 'aria-label': `${chore.name}, ${ {approved:'approved', rejected:'rejected', pending:'awaiting approval'}[status] }` }
-    : { role:'checkbox', 'aria-checked':checked, tabIndex:0, 'aria-label':chore.name,
-        onKeyDown:e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); onToggle(); } } };
-  return (
-    <div onClick={onToggle} {...a11y} style={{
-      display:'flex', alignItems:'center', gap:'12px',
-      padding:'14px 0', borderBottom:'1px solid #e5e5e5',
-      cursor:'pointer',
-    }}>
-      <span style={{
-        color: checked ? ACCENT : '#bbb',
-        fontFamily:'monospace', fontSize:'0.9rem', flexShrink:0, userSelect:'none',
-      }}>
-        {checked ? '[+]' : '[ ]'}
-      </span>
-      <span style={{
-        flex:1, fontFamily:'monospace', fontSize:'0.88rem',
-        color: checked ? '#bbb' : '#111',
-        textDecoration: checked ? 'line-through' : 'none',
-      }}>
-        {chore.name}
-      </span>
-      {statusMeta ? (
-        <span style={{
-          fontFamily:'monospace', fontSize:'0.72rem', flexShrink:0,
-          color: statusMeta.col, letterSpacing:'1px',
-        }}>
-          {statusMeta.txt}
-        </span>
-      ) : (
-        <span style={{
-          fontFamily:'monospace', fontSize:'0.75rem', flexShrink:0,
-          color: escalLabel ? escalColor : '#bbb',
-        }}>
-          {escalLabel ? `${escalLabel} ` : ''}{chore.currentMinutes}m
-        </span>
-      )}
+<nav>
+  <div class="wrap">
+    <a class="brand" href="/" aria-label="DOYOURWORK home"><img src="/dyw-icon.svg" width="30" height="30" alt="">DOYOURWORK</a>
+    <div class="links">
+      <a href="#how">How it works</a>
+      <a href="#private">Privacy</a>
+      <a href="#faq">Questions</a>
+      <a class="cta" href="#beta">Join the beta</a>
     </div>
-  );
-}
+  </div>
+</nav>
 
-// ─── SYNC + BUILD INDICATOR ───────────────────────────────────────────────────
-// Shows the sync state plus the build version. The build is BLUE when this is
-// the latest deployed build, RED when a newer one is live (you're on a cached/
-// stale copy — refresh), and grey when it can't be checked (e.g. offline).
-function SyncIndicator({ syncStatus, buildStatus }) {
-  const syncLabel = syncStatus==='syncing' ? 'sync...' : syncStatus==='offline' ? 'offline' : 'live';
-  const syncColor = syncStatus==='offline' ? '#EF4444' : syncStatus==='syncing' ? '#F5A623' : '#bbb';
-  const buildColor = buildStatus==='latest' ? '#3B82F6' : buildStatus==='stale' ? '#EF4444' : '#bbb';
-  const buildTitle = buildStatus==='stale'  ? 'A newer build is live — refresh to update'
-                   : buildStatus==='latest' ? 'You have the latest build'
-                   : 'Build status unknown';
-  return (
-    <span style={{display:'flex', gap:'8px', alignItems:'baseline', fontFamily:'monospace'}}>
-      <span style={{fontSize:'0.65rem', color:syncColor, letterSpacing:'2px'}}>{syncLabel}</span>
-      <span style={{fontSize:'0.58rem', color:buildColor, letterSpacing:'1px'}} title={buildTitle}>build {BUILD}</span>
-    </span>
-  );
-}
+<main>
 
-// ─── CHORE PICKER ────────────────────────────────────────────────────────────
-// A full day is ~25 min of work. The player picks what they want, then we
-// auto-suggest sensible short chores to fill the rest — building the habit of
-// doing a little every day so nothing piles up into a long chore.
-// In `bonus` mode (the bonus round, after the day's card is in) there's no
-// minute cap and no fill-to-25 — pick anything not already logged today and
-// every chore counts at normal points.
-function ChorePicker({ player, logs, syncStatus, buildStatus, onBack, onConfirm, bonus=false, excludeIds }) {
-  const pool = pickableChores(player.id, logs).filter(c => !(excludeIds && excludeIds.has(c.id)));
-  const [picked, setPicked]       = useState([]);  // all selected ids
-  const [suggested, setSuggested] = useState([]);  // subset of picked we auto-added
-  const [locking, setLocking]     = useState(false);
-
-  const chosen    = pool.filter(c => picked.includes(c.id));
-  const total     = chosen.reduce((s,c)=>s+c.currentMinutes, 0);
-  const remaining = (bonus ? Infinity : DAILY_MINUTES) - total;
-
-  const minUnpicked = pool.filter(c=>!picked.includes(c.id)).reduce((m,c)=>Math.min(m,c.currentMinutes), Infinity);
-  const canAddMore  = !bonus && minUnpicked <= remaining;   // a chore still fits the budget
-  const full        = total >= DAILY_MINUTES - 5;           // 20+ min counts as a full day
-  const ready       = chosen.length >= 1 && (bonus || full || !canAddMore);
-
-  const toggle = c => {
-    if (picked.includes(c.id)) {
-      setPicked(picked.filter(id=>id!==c.id));
-      setSuggested(suggested.filter(id=>id!==c.id));
-    } else if (c.currentMinutes <= remaining) {
-      setPicked([...picked, c.id]);                          // a manual pick, not a suggestion
-      setSuggested(suggested.filter(id=>id!==c.id));
-    }
-  };
-
-  const fill = () => {
-    const next  = suggestFill(picked, pool, DAILY_MINUTES);
-    const added = next.filter(id=>!picked.includes(id));
-    setPicked(next);
-    setSuggested([...new Set([...suggested.filter(id=>next.includes(id)), ...added])]);
-  };
-
-  return (
-    <div className="fade-in" style={{display:'flex', flexDirection:'column', height:'100%'}}>
-      <div style={{
-        display:'flex', alignItems:'center', justifyContent:'space-between',
-        padding:'12px 20px', borderBottom:'1px solid #e5e5e5', flexShrink:0,
-      }}>
-        <button onClick={onBack} aria-label="Go back" style={{
-          background:'none', border:'none', color:'#999',
-          fontSize:'0.75rem', cursor:'pointer', fontFamily:'monospace', letterSpacing:'1px',
-        }}>← back</button>
-        <SyncIndicator syncStatus={syncStatus} buildStatus={buildStatus} />
+<section class="hero">
+  <div class="wrap">
+    <div class="copy">
+      <span class="pill">Coming soon to iPhone, iPad and Android</span>
+      <h1>25 minutes a day. That's it.</h1>
+      <p class="lead">DOYOURWORK is a chore scoreboard for your household. Everyone picks a few chores, an admin approves what got done, and points, streaks and a weekly winner follow.</p>
+      <p class="lead" style="margin-top:12px"><b>No accounts. No sign-up. Nothing ever leaves your device.</b></p>
+      <div class="row">
+        <a class="btn white" href="#beta">Join the beta</a>
+        <a class="btn ghost" href="#how">See how a day works</a>
       </div>
+      <p class="fine">In testing now. The beta is free and has no ads.</p>
+    </div>
+    <img class="shot" src="/img/scoreboard.jpg" width="540" height="960" alt="The DOYOURWORK scoreboard: three players as small tiles, each with their own character, sockninja in the lead, and a 30-day log showing who hit 25 minutes each day.">
+  </div>
+</section>
 
-      <div className="scroll" style={{flex:1, padding:'28px 20px 0'}}>
-        <div style={{fontSize:'0.65rem', color:'#888', fontFamily:'monospace', letterSpacing:'3px', marginBottom:'6px'}}>
-          {bonus ? 'bonus round' : "build today's card"}
-        </div>
-        <div style={{fontSize:'0.82rem', color:'#111', fontFamily:'monospace', marginBottom:'2px'}}>
-          {bonus ? 'log extra chores — no cap, all normal points' : `pick what you want — then fill to ${DAILY_MINUTES} min`}
-        </div>
+<section class="story" id="story">
+  <div class="wrap">
+    <div class="eyebrow">Why it exists</div>
+    <p class="quote" style="margin-top:12px">A bowling alley doesn't ask who you are before it lets you play. It puts your name on a screen and keeps score. That's all a house full of chores needs too.</p>
+    <p class="after">DOYOURWORK started as one family's scoreboard, and that's still what it is: names, chores, points and a weekly winner, on a phone or tablet the household shares. There's no account to make, no email to hand over, and no database on our side holding your family's names.</p>
+  </div>
+</section>
 
-        <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginTop:'18px', marginBottom:'5px'}}>
-          <span style={{fontSize:'0.65rem', color:'#888', fontFamily:'monospace', letterSpacing:'2px'}}>
-            {chosen.length} picked
-          </span>
-          <span style={{fontSize:'0.72rem', color:ACCENT, fontFamily:'monospace', fontWeight:700}}>
-            {bonus ? `${total}m` : `${total} / ${DAILY_MINUTES}m`}
-          </span>
-        </div>
-        {!bonus && (
-          <div style={{height:'4px', background:'#eee', borderRadius:'2px', overflow:'hidden', marginBottom:'18px'}}>
-            <div style={{height:'100%', width:`${Math.min(100,(total/DAILY_MINUTES)*100)}%`, background:ACCENT, transition:'width 0.2s'}}/>
-          </div>
-        )}
+<section id="how">
+  <div class="wrap split">
+    <div>
+      <div class="eyebrow muted">How a day works</div>
+      <h2>Small enough to actually happen.</h2>
+      <ol class="steps">
+        <li><h3>Pick your 25 minutes</h3><p>Choose the chores you'd rather do, or let the app suggest a card for you.</p></li>
+        <li><h3>Check them off</h3><p>Tap each chore as you finish it, then send the card.</p></li>
+        <li><h3>An admin says yes or no</h3><p>Usually a parent, behind their own code, so nobody approves their own work.</p></li>
+        <li><h3>Points land</h3><p>Approved chores earn points, your streak grows, and the week's leaderboard moves.</p></li>
+      </ol>
+    </div>
+    <img class="shot" src="/img/pick.jpg" width="540" height="960" loading="lazy" alt="Picking today's chores: a list with minutes beside each one, filled up to 25 of 25 minutes, and a Lock in my card button.">
+  </div>
+</section>
 
-        <div style={{marginBottom:'16px'}}>
-          {pool.map(c => {
-            const on         = picked.includes(c.id);
-            const isSug      = suggested.includes(c.id);
-            const tooBig     = !on && c.currentMinutes > remaining;
-            const escalLabel = ['', '!', '!!'][c.escalLevel] || '';
-            const escalColor = ['#555', '#F5A623', '#EF4444'][c.escalLevel];
-            return (
-              <div key={c.id} onClick={()=>{ if(!tooBig) toggle(c); }} style={{
-                display:'flex', alignItems:'center', gap:'12px',
-                padding:'14px 0', borderBottom:'1px solid #e5e5e5',
-                cursor: tooBig ? 'default' : 'pointer', opacity: tooBig ? 0.35 : 1,
-              }}>
-                <span style={{
-                  color: on ? ACCENT : '#bbb',
-                  fontFamily:'monospace', fontSize:'0.9rem', flexShrink:0, userSelect:'none',
-                }}>
-                  {on ? '[+]' : '[ ]'}
-                </span>
-                <span style={{
-                  flex:1, fontFamily:'monospace', fontSize:'0.88rem',
-                  color: on ? ACCENT : '#111',
-                }}>
-                  {c.name}
-                  {isSug && (
-                    <span style={{marginLeft:'8px', fontSize:'0.6rem', color:'#bbb', letterSpacing:'1px'}}>suggested</span>
-                  )}
-                </span>
-                <span style={{
-                  fontFamily:'monospace', fontSize:'0.75rem', flexShrink:0,
-                  color: escalLabel ? escalColor : '#bbb',
-                }}>
-                  {escalLabel ? `${escalLabel} ` : ''}{c.currentMinutes}m
-                </span>
-              </div>
-            );
-          })}
-        </div>
+<section id="private" style="padding-top:0">
+  <div class="wrap">
+    <div class="eyebrow muted">Private by design</div>
+    <h2>We can't lose your data. We never have it.</h2>
+    <p class="lead muted">Most apps promise to look after what they collect. This one doesn't collect anything, so there's nothing to look after.</p>
+    <div class="cards">
+      <div class="card"><h3>No accounts</h3><p>Open it and start. No email, no password, no sign-in with anything.</p></div>
+      <div class="card"><h3>Stays on your device</h3><p>The app has no servers and never goes online. Names, chores and points live on your phone or tablet and nowhere else.</p></div>
+      <div class="card"><h3>Yours to keep, or erase</h3><p>Save a backup to a file you control and restore it on a new phone. Or tap Erase everything and it's gone. There's no copy on our side, because there never was one.</p></div>
+    </div>
+    <p class="note">No ads, no tracking, no in-app purchases. The full detail is in the <a href="/app-privacy.html">privacy policy</a>, which is short.</p>
+  </div>
+</section>
 
-        {pool.some(c=>c.escalLevel>0) && (
-          <div style={{fontSize:'0.62rem', color:'#777', fontFamily:'monospace', letterSpacing:'1px', marginBottom:'16px'}}>
-            ! = neglected &nbsp; !! = long overdue
-          </div>
-        )}
-        <div style={{height:'24px'}}/>
+<section id="words" style="padding-top:0">
+  <div class="wrap split flip">
+    <div>
+      <div class="eyebrow muted">Your chores, in your words</div>
+      <h2>Just say what needs doing.</h2>
+      <p class="muted">Every home is different, so the list is yours. Start from 27 everyday chores, or describe your own: type it, or tap the microphone on the keyboard and say it out loud.</p>
+      <p class="muted">"Wash the car, walk the dog for 15 minutes, feed the fish and tidy the playroom" becomes a list. Untick what you don't want, fix a name, change the minutes, and add it.</p>
+      <p class="note">The sorting happens on your device. What you write or say isn't sent anywhere by the app.</p>
+    </div>
+    <img class="shot" src="/img/chores.jpg" width="540" height="960" loading="lazy" alt="Adding chores: a sentence sorted by the app into five chores, each with its minutes: wash the car, walk the dog, feed the fish, tidy the playroom, clean out the fridge.">
+  </div>
+</section>
+
+<section id="keeps" style="padding-top:0">
+  <div class="wrap">
+    <div class="eyebrow muted">What keeps it going</div>
+    <h2>Fair, a little competitive, hard to argue with.</h2>
+    <div class="bands">
+      <div class="band"><h3>Skipped chores come back bigger</h3><p>A chore nobody has done for a few days takes longer next time and moves up the list, so the unpopular ones stop being ignored.</p></div>
+      <div class="band"><h3>Streaks multiply</h3><p>Hit your day, keep your streak. A streak multiplies the points you earn, up to double at ten days.</p></div>
+      <div class="band"><h3>Levels read like versions</h3><p>You're not level 14, you're v2.3. Every approved chore ships a slightly better version of you.</p></div>
+      <div class="band"><h3>One chore, one person, per day</h3><p>Once someone has a chore in, it's theirs until tomorrow. No arguments over who really did the dishes.</p></div>
+      <div class="band"><h3>A week and a month at a glance</h3><p>A weekly leaderboard names a winner. A 30-day log shows, honestly, who has been showing up.</p></div>
+      <div class="band"><h3>A game for finishing</h3><p>Send your card and a puzzle opens, with up to an hour of play a day. Done early? A bonus round takes extra chores too.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="device" style="padding-top:0">
+  <div class="wrap split">
+    <div>
+      <div class="eyebrow muted">One device, one scoreboard</div>
+      <h2>Put it where the household can see it.</h2>
+      <p class="muted">DOYOURWORK runs on a single phone or tablet that everyone shares: the tablet in the kitchen, or a parent's phone. On a tablet or an unfolded foldable, the scoreboard and the day's card sit side by side.</p>
+      <ul class="ticks">
+        <li><b>Admins run it.</b> Make anyone an admin, each with their own code. Admins approve chores and manage players and the chore list.</li>
+        <li><b>Players make it theirs.</b> Fifteen colour themes, and everyone can give themselves a display name. The sillier the better.</li>
+        <li><b>Moving house.</b> A backup made on an iPhone restores on Android, and the other way round.</li>
+        <li><b>Not yet:</b> one scoreboard shared live between several phones. That's planned, in a way that still won't pass through us.</li>
+      </ul>
+    </div>
+    <img class="shot" src="/img/approvals.jpg" width="540" height="960" loading="lazy" alt="The admin area: each chore waiting for approval is a sentence, such as Dishwizard emptied the kids bathroom trash today, with Yes and No buttons.">
+  </div>
+</section>
+
+<section id="beta" style="padding-top:0">
+  <div class="wrap">
+    <div class="beta">
+      <div>
+        <div class="eyebrow">Coming soon</div>
+        <h2>Join the beta.</h2>
+        <p>The app is in testing now, ahead of its release for iPhone, iPad and Android. We're opening the beta to a small number of households and inviting people as spots open.</p>
+        <p>Fittingly, there's no sign-up system. Ask by email and we'll reply with an invite to the test version for your device.</p>
+        <ul class="ticks">
+          <li>Free during the beta, with no ads.</li>
+          <li>Your email is used to send the invite and nothing else.</li>
+          <li>iPhone, iPad and Android, launching together.</li>
+        </ul>
       </div>
-
-      <div style={{padding:'14px 20px', borderTop:'1px solid #e5e5e5', flexShrink:0}}>
-        {canAddMore && (
-          <button onClick={fill} style={{
-            width:'100%', padding:'13px', marginBottom:'8px', cursor:'pointer',
-            background:'transparent', border:`1px solid ${ACCENT}`, color:ACCENT,
-            fontSize:'0.72rem', fontWeight:700, letterSpacing:'2px', fontFamily:'monospace',
-          }}>
-            {chosen.length ? `✨ FILL TO ${DAILY_MINUTES}M` : `✨ SUGGEST A ${DAILY_MINUTES}-MIN CARD`}
-          </button>
-        )}
-        <button onClick={()=>{ if(ready && !locking){ setLocking(true); onConfirm(chosen); } }} disabled={!ready||locking} style={{
-          width:'100%', padding:'17px', cursor:ready?'pointer':'default',
-          background: ready ? ACCENT : 'transparent',
-          border:`1px solid ${ready ? ACCENT : '#e0e0e0'}`,
-          color: ready ? '#fff' : '#aaa',
-          fontSize:'0.75rem', fontWeight:800, letterSpacing:'3px',
-          fontFamily:'monospace', transition:'all 0.15s',
-        }}>
-          {locking ? '...'
-            : ready
-              ? bonus
-                ? `LOG ${chosen.length} BONUS CHORE${chosen.length>1?'S':''} · ${total}M`
-                : `LOCK IN ${chosen.length} CHORE${chosen.length>1?'S':''} · ${total}M`
-              : chosen.length ? `ADD MORE TO REACH ${DAILY_MINUTES}M` : bonus ? `PICK CHORES TO LOG` : `PICK OR SUGGEST CHORES`}
-        </button>
+      <div>
+        <form id="beta-form" action="mailto:" method="get">
+          <label for="f-name">Your name <span aria-hidden="true">(optional)</span></label>
+          <input id="f-name" name="name" type="text" autocomplete="name" placeholder="A first name is plenty">
+          <label for="f-device">What would you test on?</label>
+          <select id="f-device" name="device">
+            <option>iPhone</option>
+            <option>iPad</option>
+            <option>Android phone</option>
+            <option>Android tablet or foldable</option>
+          </select>
+          <label for="f-size">How many people do chores at home? <span aria-hidden="true">(optional)</span></label>
+          <input id="f-size" name="size" type="text" inputmode="numeric" placeholder="e.g. 4">
+          <button class="btn" type="submit">Request an invite</button>
+        </form>
+        <p class="note">This opens your mail app with the request written for you. Send it from the address you use for your Apple or Google account, since that's where test invites are sent.</p>
+        <p class="note">No mail app on this device? Write to:</p>
+        <div class="addr"><a id="beta-address" href="#beta"></a><button type="button" id="copy-address">copy</button></div>
       </div>
     </div>
-  );
-}
+  </div>
+</section>
 
-// ─── PLAYER CARD VIEW ────────────────────────────────────────────────────────
-function PlayerCardView({ player, logs, onBack, onSubmitCard, syncStatus, buildStatus }) {
-  const streak   = getStreak(player.id, logs);
-  const xp       = getXP(player.id, logs);
-  const rank     = getRank(xp);
-  const mult     = momentumMult(streak);
-  const [card, setCard]         = useState(() => loadCard(player.id));
-  const [submitting, setSubmit] = useState(false);
-  const [bonusPicking, setBonusPicking] = useState(false);
+<section id="faq" style="padding-top:0">
+  <div class="wrap">
+    <div class="eyebrow muted">Questions</div>
+    <h2>Fair questions.</h2>
+    <details><summary>When is it out?</summary><p>Soon. It's in testing now and headed to iPhone, iPad and Android at the same time. Join the beta and you'll be among the first to know.</p></details>
+    <details><summary>What does it cost?</summary><p>The beta is free. There are no ads and no in-app purchases.</p></details>
+    <details><summary>What do you collect about my family?</summary><p>Nothing. The app has no accounts and no code that connects to the internet. Everything you put into it stays on your device. The <a href="/app-privacy.html">privacy policy</a> says the same thing at slightly greater length.</p></details>
+    <details><summary>Can we each use our own phone?</summary><p>Not yet. Today it's one shared scoreboard on one phone or tablet. Sharing one scoreboard live between a household's devices is planned.</p></details>
+    <details><summary>iPhone or Android?</summary><p>Both. iPhone, iPad and Android are launching together, and the beta covers all three.</p></details>
+    <details><summary>What if we get a new phone?</summary><p>Save a backup from the admin area. It's a file you keep wherever you like, and it restores the whole scoreboard on the new phone, even if you've switched between iPhone and Android.</p></details>
+    <details><summary>What if I forget the admin code?</summary><p>The code is kept only on your device, so nobody, including us, can look it up or reset it. A second admin can give you a new one, and you can let your device's face or fingerprint unlock open the admin area. Failing both, the way back in is to start a new scoreboard. Making a second person an admin on day one is the best protection.</p></details>
+    <details><summary>Is it only for families with children?</summary><p>No. It's for any household that shares chores: families, couples, housemates. Anyone who can read a list and tap a checkbox can play.</p></details>
+    <details><summary>Does this website track me?</summary><p>No. This page loads nothing from anyone else: no analytics, no cookies, no fonts or scripts from other companies. If you email us about the beta, we use your address to reply and to send the invite.</p></details>
+  </div>
+</section>
 
-  // The card the player is actively picking/checking lives in this device's
-  // localStorage. If there's none here, fall back to reconstructing today's
-  // already-submitted card from the synced logs, so every device shows what
-  // the kid picked instead of re-offering the picker.
-  const view = card || cardFromLogs(player.id, logs);
+</main>
 
-  // No card here and nothing submitted yet — let the player pick their chores.
-  if (!view) {
-    return (
-      <ChorePicker
-        player={player} logs={logs} syncStatus={syncStatus} buildStatus={buildStatus}
-        onBack={onBack}
-        onConfirm={chores => setCard(buildCard(player.id, chores))}
-      />
-    );
-  }
+<footer>
+  <div class="wrap">
+    <span>© 2026 DOYOURWORK. 25 minutes a day. That's it.</span>
+    <span><a href="/app.html">Support</a> &nbsp;·&nbsp; <a href="/app-privacy.html">Privacy policy</a> &nbsp;·&nbsp; <a href="#beta">Join the beta</a></span>
+  </div>
+</footer>
 
-  const totalMin   = view.chores.reduce((s,c)=>s+c.currentMinutes,0);
-  const allChecked = view.checked.every(Boolean);
-  const doneCount  = view.checked.filter(Boolean).length;
-  const pending    = logs.filter(l=>l.playerId===player.id&&l.status==='pending').length;
-
-  // Per-chore approval state for today, read from the synced logs so a parent's
-  // approve/reject actually shows up on the card (the card object itself only
-  // tracks checked/submitted, not approval). Approved/rejected win over pending
-  // if more than one log exists for a chore.
-  const today = new Date().toDateString();
-  const statusByChore = {};
-  const rankStatus = { approved:3, rejected:2, pending:1 };
-  logs.forEach(l => {
-    if (l.playerId!==player.id || new Date(l.timestamp).toDateString()!==today) return;
-    const cur = statusByChore[l.choreId];
-    if (!cur || (rankStatus[l.status]||0) > (rankStatus[cur]||0)) statusByChore[l.choreId] = l.status;
-  });
-  // On a submitted card a chore with no log yet is awaiting approval.
-  const choreStatus = c => statusByChore[c.id] || (view.submitted ? 'pending' : null);
-  const nApproved = view.chores.filter(c=>choreStatus(c)==='approved').length;
-  const nRejected = view.chores.filter(c=>choreStatus(c)==='rejected').length;
-  const nTotal    = view.chores.length;
-
-  // Bonus-round chores: today's logs that aren't on the card. The bonus round
-  // logs chores directly (no second check-off pass — the work is already done),
-  // so the card object alone doesn't tell the whole day. On a device that
-  // reconstructed the card from logs this is empty — everything shows on the
-  // card there, which is fine: the split is cosmetic, approval flow is the same.
-  const cardIds  = new Set(view.chores.map(c=>c.id));
-  const seenB    = new Set();
-  const bonusRows = [];
-  logs.forEach(l => {
-    if (l.playerId!==player.id || new Date(l.timestamp).toDateString()!==today) return;
-    if (l.status!=='pending' && l.status!=='approved' && l.status!=='rejected') return;
-    if (cardIds.has(l.choreId) || seenB.has(l.choreId)) return;
-    seenB.add(l.choreId);
-    const base = CHORE_POOL.find(c=>c.id===l.choreId);
-    bonusRows.push(base
-      ? enrichChore(base, neglectDays(l.choreId, player.id, logs))
-      : { id:l.choreId, name:l.choreName, cat:'', pts:l.points, currentMinutes:0, escalLevel:0, neglectDays:0 });
-  });
-  const bonusMin    = bonusRows.reduce((s,c)=>s+c.currentMinutes,0);
-  // A chore can be logged once per day, card or bonus — after that its
-  // "cooldown" restarts on approval and it comes back tomorrow at base minutes.
-  const loggedToday = new Set([...cardIds, ...bonusRows.map(c=>c.id)]);
-  const bonusLeft   = CHORE_POOL.filter(c=>!loggedToday.has(c.id)).length;
-
-  if (bonusPicking) {
-    return (
-      <ChorePicker
-        player={player} logs={logs} syncStatus={syncStatus} buildStatus={buildStatus}
-        bonus excludeIds={loggedToday}
-        onBack={()=>setBonusPicking(false)}
-        onConfirm={async chores => { await onSubmitCard(chores); setBonusPicking(false); }}
-      />
-    );
-  }
-
-  const toggle = i => {
-    if (!card || view.submitted) return;
-    const next = { ...card, checked: card.checked.map((v,idx)=>idx===i?!v:v) };
-    setCard(next); saveCard(player.id, next);
-  };
-
-  const submit = async () => {
-    if (!allChecked || submitting || !card || card.submitted) return;
-    setSubmit(true);
-    try {
-      await onSubmitCard(card.chores);
-      const next = { ...card, submitted:true };
-      setCard(next); saveCard(player.id, next);
-    } finally { setSubmit(false); }
-  };
-
-  return (
-    <div className="fade-in" style={{display:'flex', flexDirection:'column', height:'100%'}}>
-      <div style={{
-        display:'flex', alignItems:'center', justifyContent:'space-between',
-        padding:'12px 20px', borderBottom:'1px solid #e5e5e5', flexShrink:0,
-      }}>
-        <button onClick={onBack} aria-label="Go back" style={{
-          background:'none', border:'none', color:'#999',
-          fontSize:'0.75rem', cursor:'pointer', fontFamily:'monospace', letterSpacing:'1px',
-        }}>← back</button>
-        <SyncIndicator syncStatus={syncStatus} buildStatus={buildStatus} />
-      </div>
-
-      <div className="scroll" style={{flex:1, padding:'28px 20px 0'}}>
-
-        <div style={{marginBottom:'28px'}}>
-          <div style={{
-            fontSize:'0.65rem', color:'#888', fontFamily:'monospace',
-            letterSpacing:'3px', marginBottom:'6px',
-          }}>
-            player
-          </div>
-          <div style={{
-            fontSize:'1.4rem', fontWeight:900, color:'#111',
-            fontFamily:'monospace', letterSpacing:'3px', textTransform:'uppercase',
-          }}>
-            {player.name}
-          </div>
-          <div style={{
-            fontSize:'0.65rem', color:ACCENT, fontFamily:'monospace',
-            letterSpacing:'4px', marginTop:'4px',
-          }}>
-            {rank.version}
-          </div>
-
-          {/* XP progress to next level */}
-          <div style={{marginTop:'14px'}}>
-            <div style={{display:'flex', justifyContent:'space-between', marginBottom:'5px'}}>
-              <span style={{fontSize:'0.6rem', color:'#888', fontFamily:'monospace', letterSpacing:'1px'}}>
-                {rank.into} / {rank.need} XP
-              </span>
-              <span style={{fontSize:'0.6rem', color:'#888', fontFamily:'monospace', letterSpacing:'1px'}}>
-                {rank.nextVersion} →
-              </span>
-            </div>
-            <div style={{height:'6px', background:'#eee', borderRadius:'3px', overflow:'hidden'}}>
-              <div style={{height:'100%', width:`${rank.pct}%`, background:ACCENT, transition:'width 0.4s'}}/>
-            </div>
-          </div>
-
-          {/* Momentum — reward the streak */}
-          {streak>0 && (
-            <div style={{
-              marginTop:'10px', fontSize:'0.62rem', fontFamily:'monospace',
-              letterSpacing:'1px', color:'#F5A623',
-            }}>
-              🔥 {streak}-day streak · {mult.toFixed(1)}x momentum
-            </div>
-          )}
-
-          <div style={{
-            display:'flex', gap:'0', marginTop:'20px',
-            borderTop:'1px solid #e5e5e5', borderBottom:'1px solid #e5e5e5',
-          }}>
-            {[
-              {label:'xp',      val:xp.toLocaleString()},
-              {label:'streak',  val:streak},
-              {label:'version', val:rank.version},
-            ].map(({label,val},i,arr)=>(
-              <div key={label} style={{
-                flex:1, padding:'12px 0', textAlign:'center',
-                borderRight: i<arr.length-1 ? '1px solid #e5e5e5' : 'none',
-              }}>
-                <div style={{fontSize:'1rem', fontWeight:700, color:ACCENT, fontFamily:'monospace'}}>{val}</div>
-                <div style={{fontSize:'0.6rem', color:'#888', fontFamily:'monospace', letterSpacing:'2px', marginTop:'2px'}}>{label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div style={{
-          display:'flex', justifyContent:'space-between', alignItems:'baseline',
-          marginBottom:'4px',
-        }}>
-          <span style={{fontSize:'0.65rem', color:'#888', fontFamily:'monospace', letterSpacing:'3px'}}>
-            today's card
-            {!view.submitted && (
-              <button onClick={()=>{ clearCard(player.id); setCard(null); }} aria-label="Re-pick today's chores" style={{
-                marginLeft:'10px', background:'none', border:'none', color:ACCENT,
-                fontSize:'0.62rem', cursor:'pointer', fontFamily:'monospace', letterSpacing:'1px',
-              }}>↻ re-pick</button>
-            )}
-          </span>
-          <span style={{fontSize:'0.65rem', color:'#888', fontFamily:'monospace'}}>
-            {doneCount}/{view.chores.length} · {totalMin}m
-          </span>
-        </div>
-
-        <div style={{marginBottom:'16px'}}>
-          {view.chores.map((chore,i) => (
-            <ChoreRow key={chore.id} chore={chore}
-              checked={view.checked[i]}
-              status={choreStatus(chore)}
-              onToggle={()=>toggle(i)}/>
-          ))}
-        </div>
-
-        {bonusRows.length>0 && (
-          <div style={{marginBottom:'16px'}}>
-            <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:'4px'}}>
-              <span style={{fontSize:'0.65rem', color:'#888', fontFamily:'monospace', letterSpacing:'3px'}}>
-                bonus round
-              </span>
-              <span style={{fontSize:'0.65rem', color:'#888', fontFamily:'monospace'}}>
-                {bonusRows.length} · {bonusMin}m
-              </span>
-            </div>
-            {bonusRows.map(chore => (
-              <ChoreRow key={chore.id} chore={chore}
-                checked={true}
-                status={statusByChore[chore.id] || 'pending'}
-                onToggle={()=>{}}/>
-            ))}
-          </div>
-        )}
-
-        {view.chores.some(c=>c.escalLevel>0) && (
-          <div style={{fontSize:'0.62rem', color:'#777', fontFamily:'monospace', letterSpacing:'1px', marginBottom:'16px'}}>
-            ! = neglected &nbsp; !! = long overdue
-          </div>
-        )}
-
-        {pending>0 && !view.submitted && (
-          <div style={{
-            padding:'10px 14px', border:'1px solid #F5A623',
-            fontSize:'0.72rem', color:'#F5A623', fontFamily:'monospace',
-            letterSpacing:'1px', marginBottom:'16px',
-          }}>
-            ! {pending} chore{pending>1?'s':''} pending approval
-          </div>
-        )}
-
-        <div style={{paddingBottom:'40px'}}>
-          {view.submitted ? (() => {
-            // Reflect what the parent has actually done, not just "submitted".
-            const allApproved = nApproved===nTotal;
-            const someApproved = nApproved>0 && nApproved<nTotal;
-            const bonusPts = bonusRows.filter(c=>statusByChore[c.id]==='approved').reduce((s,c)=>s+(c.pts||0),0);
-            const color = nRejected>0 ? '#EF4444' : allApproved ? '#16A34A' : ACCENT;
-            const label = nRejected>0
-              ? `${nRejected} REJECTED · ${nApproved}/${nTotal} APPROVED`
-              : allApproved
-                ? `ALL APPROVED ✓ · +${view.chores.reduce((s,c)=>s+(c.pts||0),0)+bonusPts} PTS`
-                : someApproved
-                  ? `${nApproved}/${nTotal} APPROVED · REST AWAITING`
-                  : 'SUBMITTED — AWAITING APPROVAL';
-            return (
-              <React.Fragment>
-                <div style={{
-                  padding:'16px', textAlign:'center',
-                  border:`1px solid ${color}`,
-                  fontSize:'0.72rem', color, fontFamily:'monospace', letterSpacing:'3px',
-                }}>
-                  {label}
-                </div>
-                {bonusLeft>0 && (
-                  <button onClick={()=>setBonusPicking(true)} style={{
-                    width:'100%', padding:'15px', marginTop:'10px', cursor:'pointer',
-                    background:'transparent', border:`1px solid ${ACCENT}`, color:ACCENT,
-                    fontSize:'0.72rem', fontWeight:800, letterSpacing:'3px', fontFamily:'monospace',
-                  }}>
-                    ➕ BONUS ROUND — LOG MORE
-                  </button>
-                )}
-              </React.Fragment>
-            );
-          })() : (
-            <button onClick={submit} disabled={!allChecked||submitting} style={{
-              width:'100%', padding:'17px', cursor:allChecked?'pointer':'default',
-              background: allChecked ? ACCENT : 'transparent',
-              border:`1px solid ${allChecked ? ACCENT : '#e0e0e0'}`,
-              color: allChecked ? '#fff' : '#aaa',
-              fontSize:'0.75rem', fontWeight:800, letterSpacing:'3px',
-              fontFamily:'monospace', transition:'all 0.15s',
-            }}>
-              {submitting ? 'SUBMITTING...' : allChecked ? 'SUBMIT CARD' : `CHECK OFF ALL ${card.chores.length} CHORES`}
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── DAILY LOG ───────────────────────────────────────────────────────────────
-// A HelloHabit-style "who cleared 25 minutes today" grid for the home page. One
-// row per player: a filled cell for every day they completed ≥25 minutes of
-// approved chores, faded for a partial day, blank for a day off.
-function DailyLog({ logs }) {
-  const days     = recentDays();
-  const anyLogs  = logs.some(l => l.status==='approved');
-
-  return (
-    <div style={{width:'100%', maxWidth:'300px', marginTop:'40px'}}>
-      <div style={{fontSize:'0.6rem', letterSpacing:'4px', color:'#666', fontFamily:'monospace', textAlign:'center', marginBottom:'4px'}}>
-        25-MINUTE DAILY LOG
-      </div>
-      <div style={{fontSize:'0.54rem', letterSpacing:'1px', color:'#aaa', fontFamily:'monospace', textAlign:'center', marginBottom:'18px'}}>
-        last {LOG_DAYS} days · a filled square = ≥25 min approved
-      </div>
-
-      {!anyLogs ? (
-        <div style={{fontSize:'0.62rem', color:'#999', fontFamily:'monospace', letterSpacing:'1px', textAlign:'center', lineHeight:1.7, padding:'4px 0'}}>
-          no approved chores yet —<br/>clear a 25-minute card to start the grid
-        </div>
-      ) : PLAYERS.map(p => {
-        const byDay = minutesByDay(p.id, logs);
-        const hits  = days.filter(d => (byDay[d]||0) >= DAILY_MINUTES).length;
-        const pct   = Math.round(hits / LOG_DAYS * 100);
-        return (
-          <div key={p.id} style={{marginBottom:'18px'}}>
-            <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:'7px'}}>
-              <div style={{fontSize:'0.72rem', fontWeight:700, color:'#111', fontFamily:'monospace', letterSpacing:'1px'}}>{p.name}</div>
-              <div style={{fontSize:'0.66rem', fontWeight:700, color:ACCENT, fontFamily:'monospace'}}>{hits}/{LOG_DAYS} · {pct}%</div>
-            </div>
-            <div style={{display:'grid', gridTemplateColumns:`repeat(${LOG_DAYS}, 1fr)`, gap:'2px'}}>
-              {days.map((d,i) => {
-                const mins    = byDay[d] || 0;
-                const frac    = Math.min(mins / DAILY_MINUTES, 1);
-                const isToday = i === days.length-1;
-                const bg      = mins === 0 ? '#ededed' : `rgba(242,56,97,${(0.30 + frac*0.70).toFixed(2)})`;
-                return (
-                  <div key={d}
-                    title={`${new Date(d).toLocaleDateString()} — ${mins} min${mins>=DAILY_MINUTES?' ✓':''}`}
-                    style={{
-                      aspectRatio:'1', borderRadius:'2px', background:bg,
-                      boxShadow: isToday ? `0 0 0 1px ${mins>=DAILY_MINUTES?ACCENT:'#bbb'}` : 'none',
-                    }}/>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-// ─── PLAYER SELECT ───────────────────────────────────────────────────────────
-function PlayerSelect({ onSelect, onAdmin, logs }) {
-  const [taps, setTaps] = useState(0);
-  const tapTimer        = useRef(null);
-
-  const handleTitle = () => {
-    const n = taps+1; setTaps(n);
-    clearTimeout(tapTimer.current);
-    if (n>=5) { onAdmin(); setTaps(0); return; }
-    tapTimer.current = setTimeout(()=>setTaps(0), 2000);
-  };
-
-  return (
-    <div className="fade-in" style={{
-      display:'flex', flexDirection:'column', alignItems:'center',
-      justifyContent:'center', height:'100%', padding:'40px 28px',
-    }}>
-      <div onClick={handleTitle} style={{marginBottom:'52px', cursor:'default', userSelect:'none', textAlign:'center'}}>
-        <div style={{
-          fontSize:'1.3rem', fontWeight:900, letterSpacing:'6px',
-          color:'#F23861', fontFamily:'monospace',
-        }}>GYATTCHORES</div>
-        <div style={{fontSize:'0.6rem', letterSpacing:'4px', color:'#666', fontFamily:'monospace', marginTop:'6px'}}>
-          select player
-        </div>
-      </div>
-
-      <div style={{width:'100%', maxWidth:'300px'}}>
-        {PLAYERS.map(p => (
-          <button key={p.id} onClick={()=>onSelect(p)} style={{
-            display:'block', width:'100%',
-            padding:'18px 20px', marginBottom:'8px',
-            background:'transparent',
-            border:'1px solid #e0e0e0',
-            color:'#111', fontSize:'0.88rem', fontWeight:700,
-            letterSpacing:'4px', fontFamily:'monospace',
-            textAlign:'left', cursor:'pointer',
-            transition:'border-color 0.1s, color 0.1s',
-          }}
-          onPointerEnter={e=>{e.currentTarget.style.borderColor=ACCENT; e.currentTarget.style.color=ACCENT;}}
-          onPointerLeave={e=>{e.currentTarget.style.borderColor='#e0e0e0'; e.currentTarget.style.color='#111';}}>
-            {'> '}{p.name}
-          </button>
-        ))}
-      </div>
-
-      <DailyLog logs={logs}/>
-
-      <div style={{width:'100%', maxWidth:'300px', marginTop:'40px'}}>
-        {[
-          ['ABOUT', '/about.html',              'What GyattChores is and why a family turned chores into a game. The two-minute version.'],
-          ['GUIDE', '/ebook.html',              'Daily cards, XP, streaks, approvals — the full playbook for running the game at home.'],
-          ['STORY', '/development-story.html',  'A dad and two kids, one weekend, one HTML file. The bugs and features that shaped it.'],
-        ].map(([label,href,desc])=>(
-          <a key={label} href={href} style={{
-            display:'block', width:'100%', padding:'15px 18px', marginBottom:'10px',
-            background:'transparent', border:'1px solid #e0e0e0', textDecoration:'none',
-            transition:'border-color 0.1s',
-          }}
-          onPointerEnter={e=>{e.currentTarget.style.borderColor=ACCENT;}}
-          onPointerLeave={e=>{e.currentTarget.style.borderColor='#e0e0e0';}}>
-            <div style={{fontSize:'0.8rem', fontWeight:700, letterSpacing:'3px', color:ACCENT, fontFamily:'monospace'}}>
-              {'> '}{label}
-            </div>
-            <div style={{fontSize:'0.66rem', color:'#777', fontFamily:'monospace', letterSpacing:'0.5px', marginTop:'6px', lineHeight:1.55}}>
-              {desc}
-            </div>
-          </a>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ─── ADMIN MODAL ─────────────────────────────────────────────────────────────
-function AdminModal({ logs, onClose, onUpdate }) {
-  const [code, setCode]   = useState('');
-  const [authed, setAuth] = useState(false);
-  const [filter, setFilt] = useState('pending');
-  const [armed, setArmed] = useState(false);   // approve-all needs a second tap
-  const pendingAll = logs.filter(l=>l.status==='pending');
-
-  const verify = () => { if (hashCode(code)===ADMIN_CODE_HASH) setAuth(true); };
-  const shown  = logs.filter(l=>filter==='all'||l.status===filter).slice(0,60);
-
-  if (!authed) return (
-    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.97)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,padding:'24px'}}>
-      <div style={{background:'#fff',border:'1px solid #e0e0e0',padding:'32px',width:'100%',maxWidth:'300px',textAlign:'center'}}>
-        <div style={{fontSize:'0.65rem',letterSpacing:'5px',color:'#888',fontFamily:'monospace',marginBottom:'24px'}}>ADMIN ACCESS</div>
-        <input type="password" value={code} onChange={e=>setCode(e.target.value)}
-          onKeyDown={e=>e.key==='Enter'&&verify()} placeholder="——" autoFocus
-          style={{width:'100%',padding:'14px',background:'#f5f5f5',border:'1px solid #e0e0e0',color:'#111',fontSize:'1.4rem',textAlign:'center',fontFamily:'monospace',outline:'none',letterSpacing:'8px',marginBottom:'16px'}}/>
-        <button onClick={verify} style={{width:'100%',padding:'13px',background:ACCENT,border:'none',color:'#fff',fontWeight:800,fontSize:'0.75rem',letterSpacing:'3px',fontFamily:'monospace',cursor:'pointer'}}>ENTER</button>
-        <button onClick={onClose} style={{width:'100%',padding:'13px',background:'none',border:'none',color:'#888',fontSize:'0.72rem',cursor:'pointer',fontFamily:'monospace',marginTop:'6px'}}>cancel</button>
-      </div>
-    </div>
-  );
-
-  return (
-    <div style={{position:'fixed',inset:0,background:'#fff',display:'flex',flexDirection:'column',zIndex:200}}>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 20px',borderBottom:'1px solid #e5e5e5',flexShrink:0}}>
-        <div style={{fontSize:'0.65rem',letterSpacing:'4px',color:ACCENT,fontFamily:'monospace'}}>ADMIN</div>
-        <button onClick={onClose} aria-label="Close admin panel" style={{background:'none',border:'none',color:'#999',fontSize:'0.78rem',cursor:'pointer',fontFamily:'monospace'}}>✕ close</button>
-      </div>
-
-      <div style={{display:'flex',gap:'8px',padding:'12px 20px',borderBottom:'1px solid #e5e5e5',flexShrink:0,flexWrap:'wrap'}}>
-        {['pending','approved','rejected','all'].map(f=>(
-          <button key={f} onClick={()=>setFilt(f)} style={{
-            padding:'5px 12px', cursor:'pointer',
-            background: filter===f ? ACCENT : 'transparent',
-            border:`1px solid ${filter===f ? ACCENT : '#e0e0e0'}`,
-            color: filter===f ? '#000' : '#999',
-            fontSize:'0.68rem', fontWeight:700, letterSpacing:'1px', fontFamily:'monospace',
-          }}>{f}</button>
-        ))}
-      </div>
-
-      {filter==='pending' && pendingAll.length>1 && (
-        <div style={{padding:'12px 20px 0',flexShrink:0}}>
-          <button
-            onClick={()=>{
-              if (!armed) { setArmed(true); setTimeout(()=>setArmed(false), 4000); return; }
-              pendingAll.forEach(l=>onUpdate(l.id,'approved')); setArmed(false);
-            }}
-            style={{width:'100%',padding:'11px',cursor:'pointer',
-              background: armed ? '#22C55E' : 'transparent', border:'1px solid #22C55E',
-              color: armed ? '#fff' : '#22C55E',
-              fontSize:'0.7rem',fontWeight:800,letterSpacing:'2px',fontFamily:'monospace'}}>
-            {armed ? `TAP AGAIN TO APPROVE ALL ${pendingAll.length}` : `✓ APPROVE ALL (${pendingAll.length})`}
-          </button>
-        </div>
-      )}
-
-      <div className="scroll" style={{flex:1,padding:'16px 20px'}}>
-        {shown.length===0 && (
-          <div style={{textAlign:'center',color:'#666',fontFamily:'monospace',fontSize:'0.78rem',marginTop:'48px',letterSpacing:'2px'}}>
-            no {filter} logs
-          </div>
-        )}
-        {shown.map(log => (
-          <div key={log.id} style={{border:'1px solid #e5e5e5',padding:'14px 16px',marginBottom:'8px'}}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'10px'}}>
-              <div>
-                <div style={{fontSize:'0.87rem',fontWeight:600,color:'#111',fontFamily:'monospace'}}>{log.choreName}</div>
-                <div style={{fontSize:'0.68rem',color:'#888',fontFamily:'monospace',marginTop:'3px'}}>
-                  {log.playerName} · {new Date(log.timestamp).toLocaleString()}
-                </div>
-              </div>
-              <div style={{fontSize:'0.75rem',fontWeight:700,color:ACCENT,fontFamily:'monospace',flexShrink:0,marginLeft:'12px'}}>
-                {log.points}pts
-              </div>
-            </div>
-            {log.status==='pending' ? (
-              <div style={{display:'flex',gap:'8px'}}>
-                <button onClick={()=>onUpdate(log.id,'approved')} style={{flex:1,padding:'9px',background:'transparent',border:'1px solid #22C55E',color:'#22C55E',fontSize:'0.7rem',fontWeight:700,cursor:'pointer',fontFamily:'monospace',letterSpacing:'1px'}}>APPROVE</button>
-                <button onClick={()=>onUpdate(log.id,'rejected')} style={{flex:1,padding:'9px',background:'transparent',border:'1px solid #EF4444',color:'#EF4444',fontSize:'0.7rem',fontWeight:700,cursor:'pointer',fontFamily:'monospace',letterSpacing:'1px'}}>REJECT</button>
-              </div>
-            ) : (
-              <div style={{fontSize:'0.68rem',color:log.status==='approved'?'#22C55E':'#EF4444',fontFamily:'monospace',letterSpacing:'1px'}}>{log.status}</div>
-            )}
-          </div>
-        ))}
-        <div style={{height:'40px'}}/>
-      </div>
-    </div>
-  );
-}
-
-// ─── APP ─────────────────────────────────────────────────────────────────────
-function App() {
-  const [player,    setPlayer]  = useState(null);
-  // #admin deep-links straight to the approval panel (the Discord messages
-  // link here). It only skips the 5-tap gesture — the admin code still gates.
-  const [showAdmin, setAdmin]   = useState(() => window.location.hash === '#admin');
-  const [logs,      setLogs]    = useState(loadLogs);
-  const [syncStatus,setSyncSt]  = useState(supabase?'idle':'offline');
-  const [buildStatus,setBuild]  = useState('unknown');   // 'latest' | 'stale' | 'unknown'
-
-  // One sync at a time. The 5s poll, visibility/online events, and a fresh
-  // submission can all fire while a sync is mid-insert; a second pass would
-  // re-read localStorage, still see the rows without a remoteId, and insert
-  // them again — that is how duplicate chores reached the server. Overlapping
-  // requests are coalesced into a single follow-up run instead.
-  const syncing   = useRef(false);
-  const syncAgain = useRef(false);
-  const sync = useCallback(async () => {
-    if (!supabase) { setSyncSt('offline'); return; }
-    if (syncing.current) { syncAgain.current = true; return; }
-    syncing.current = true;
-    setSyncSt('syncing');
-    let work = loadLogs();
-    try {
-      for (const l of work.filter(x=>x.remoteId==null)) {
-        const {data,error} = await supabase.from('simple_logs').insert(toRow(l)).select().single();
-        if (error) throw error;
-        l.remoteId=data.id; l.synced=true; l.statusDirty=false;
-        if (data.created_at) l.timestamp=data.created_at;
-      }
-      // Push status changes (approve/reject). Confirm with .select() and clear
-      // the dirty flag only when a row was actually updated — a silently dropped
-      // update (0 rows, no error) is left dirty so it retries instead of vanishing.
-      for (const l of work.filter(x=>x.remoteId!=null&&x.statusDirty)) {
-        const {data,error} = await supabase.from('simple_logs').update({status:l.status}).eq('id',l.remoteId).select();
-        if (error) throw error;
-        if (data && data.length) l.statusDirty=false;
-      }
-      const {data:rows,error:selErr} = await supabase.from('simple_logs').select('*').order('created_at',{ascending:false});
-      if (selErr) throw selErr;
-      const remoteIds=new Set((rows||[]).map(r=>String(r.id)));
-      // Self-heal orphaned rows: if a dirty log points at a remote row that no
-      // longer exists (e.g. the table was reset), the update can never land —
-      // recreate the row so the approval actually propagates.
-      for (const l of work) {
-        if (l.statusDirty && l.remoteId!=null && !remoteIds.has(String(l.remoteId))) {
-          const {data,error} = await supabase.from('simple_logs').insert(toRow(l)).select().single();
-          if (error) throw error;
-          l.remoteId=data.id; l.synced=true; l.statusDirty=false;
-          if (data.created_at) l.timestamp=data.created_at;
-          remoteIds.add(String(data.id));
-        }
-      }
-      const byRemote={};
-      work.forEach(l=>{if(l.remoteId!=null) byRemote[String(l.remoteId)]=l;});
-      (rows||[]).forEach(r=>{
-        const ex=byRemote[String(r.id)];
-        if(ex){if(!ex.statusDirty) ex.status=r.status;} else work.push(rowToLocal(r));
-      });
-      // Re-apply changes made locally while this sync was in flight. Only when
-      // the status genuinely differs, so we never re-dirty (and re-push forever)
-      // a change we just confirmed.
-      const latest=loadLogs(), workById={};
-      work.forEach(l=>{workById[l.id]=l;});
-      latest.forEach(l=>{
-        if(!workById[l.id]) work.push(l);
-        else if(l.statusDirty && workById[l.id].status!==l.status){workById[l.id].status=l.status; workById[l.id].statusDirty=true;}
-      });
-      work.sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
-      saveLogs(work); setLogs(work.slice()); setSyncSt('synced');
-    } catch(e) {
-      console.warn('sync deferred:', e?.message||e); setSyncSt('offline');
-    } finally {
-      syncing.current = false;
-      if (syncAgain.current) { syncAgain.current = false; sync(); }
-    }
-  }, []);
-
-  useEffect(()=>{sync();},[sync]);
-
-  // Compare this running build against the live one. Fetch index.html fresh
-  // (cache-busted, no-store) and read its BUILD constant — if it differs, this
-  // copy is stale (a newer build is deployed but we're running a cached one).
-  useEffect(()=>{
-    let cancelled=false;
-    const check=()=>{
-      fetch(`/index.html?cb=${Date.now()}`, {cache:'no-store'})
-        .then(r=> r.ok ? r.text() : Promise.reject())
-        .then(txt=>{
-          if (cancelled) return;
-          const m = txt.match(/const BUILD\s*=\s*'([^']+)'/);
-          if (m) setBuild(m[1]===BUILD ? 'latest' : 'stale');
-        })
-        .catch(()=>{ if(!cancelled) setBuild('unknown'); });
-    };
-    check();
-    const t=setInterval(check, 60000);
-    return ()=>{ cancelled=true; clearInterval(t); };
-  },[]);
-
-  useEffect(()=>{
-    const t=setInterval(sync,5000);
-    const onVis=()=>{if(!document.hidden) sync();};
-    const onOnl=()=>sync();
-    const onSto=e=>{if(e.key===STORAGE_KEY) setLogs(loadLogs());};
-    document.addEventListener('visibilitychange',onVis);
-    window.addEventListener('online',onOnl);
-    window.addEventListener('storage',onSto);
-    return ()=>{clearInterval(t); document.removeEventListener('visibilitychange',onVis); window.removeEventListener('online',onOnl); window.removeEventListener('storage',onSto);};
-  },[sync]);
-
-  const submitCard = useCallback(async (chores) => {
-    const now = Date.now();
-    const newLogs = chores.map((c,i) => ({
-      id:makeId(), remoteId:null, synced:false, statusDirty:false,
-      playerId:player.id, playerName:player.name,
-      choreId:c.id, choreName:c.name, choreIcon:'',
-      points:c.pts, minutes:c.currentMinutes, timestamp:new Date(now+i).toISOString(), status:'pending',
-    }));
-    const next = [...newLogs, ...loadLogs()].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
-    saveLogs(next); setLogs(next); sync();
-  }, [player, sync]);
-
-  const updateLog = useCallback((localId, status) => {
-    const work = loadLogs().map(l=>l.id===localId?{...l,status,statusDirty:true}:l);
-    saveLogs(work); setLogs(work.slice()); sync();
-  }, [sync]);
-
-  // Tapping the approval link while the app is already open lands here as a
-  // hash change on the existing tab — open the panel then too.
-  useEffect(() => {
-    const onHash = () => { if (window.location.hash === '#admin') setAdmin(true); };
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
-  }, []);
-  const closeAdmin = () => {
-    setAdmin(false);
-    if (window.location.hash === '#admin') history.replaceState(null, '', window.location.pathname);
-  };
-
-  return (
-    <div style={{height:'100%'}}>
-      {showAdmin && <AdminModal logs={logs} onClose={closeAdmin} onUpdate={updateLog}/>}
-      {!showAdmin && !player && <PlayerSelect onSelect={setPlayer} onAdmin={()=>setAdmin(true)} logs={logs}/>}
-      {!showAdmin && player && (
-        <PlayerCardView
-          player={player} logs={logs}
-          onBack={()=>{setPlayer(null); sync();}}
-          onSubmitCard={submitCard}
-          syncStatus={syncStatus}
-          buildStatus={buildStatus}
-        />
-      )}
-    </div>
-  );
-}
-
-ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
-</script>
 <script>
-// Register the service worker so the app shell is cached for offline use and
-// fast repeat loads. Kept out of the Babel script so it runs even if JSX
-// transform is slow, and failures are non-fatal (the app works without it).
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(err =>
-      console.warn('Service worker registration failed:', err)
-    );
+// Beta requests go by email: nothing is stored by this site.
+(function () {
+  var address = ['matt', 'gissentanna.com'].join('@');
+  var link = document.getElementById('beta-address');
+  link.textContent = address;
+  link.href = 'mailto:' + address + '?subject=' + encodeURIComponent('DOYOURWORK beta');
+
+  document.getElementById('beta-form').addEventListener('submit', function (event) {
+    event.preventDefault();
+    var name = document.getElementById('f-name').value.trim();
+    var device = document.getElementById('f-device').value;
+    var size = document.getElementById('f-size').value.trim();
+    var lines = ["Hi, I'd like to join the DOYOURWORK beta.", '', 'Device: ' + device];
+    if (size) lines.push('People doing chores at home: ' + size);
+    if (name) lines.push('', name);
+    window.location.href = 'mailto:' + address + '?subject=' + encodeURIComponent('DOYOURWORK beta') +
+      '&body=' + encodeURIComponent(lines.join('\n'));
   });
-}
+
+  var copy = document.getElementById('copy-address');
+  copy.addEventListener('click', function () {
+    var done = function () { copy.textContent = 'copied'; setTimeout(function () { copy.textContent = 'copy'; }, 1600); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(address).then(done, function () {});
+  });
+})();
 </script>
+<noscript><p style="text-align:center;padding:16px">To join the beta, email us from the <a href="/app.html">support page</a>.</p></noscript>
 </body>
 </html>

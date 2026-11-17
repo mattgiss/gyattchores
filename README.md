@@ -1,8 +1,16 @@
-# GyattChores
+# DOYOURWORK
 
-A gamified family chore tracker. Each day a kid builds a **~25-minute card** of chores — picking what they want, with the app suggesting more to fill the time — then submits it for a parent to approve. Approved chores earn **XP**, a **daily streak** multiplies it, and the kid levels up like they're shipping a better version of themselves.
+Formerly GyattChores; the repository, the website address and the code keep the old name.
 
-**Live site:** [gyattchores.com](https://gyattchores.com)
+A chore scoreboard for a household: everyone picks about **25 minutes** of chores a day, an admin approves what got done, and points, streaks and a weekly winner follow.
+
+**[gyattchores.com](https://gyattchores.com)** is the public page about the app: what it is, that it's coming soon to iPhone and iPad, and how to join the beta. It is a plain static site (this branch, served by GitHub Pages) with no app and no database behind it.
+
+- **The apps** live on the [`native-android`](../../tree/native-android) branch: `ios/` (iPhone and iPad) and `android/`.
+- **The website** is `index.html`, plus `app.html` (support) and `app-privacy.html` (the app's privacy policy). `scripts/validate-build.mjs` checks it before a merge.
+- **The web app that used to live at gyattchores.com is retired.** It was this repository's `index.html` up to commit `ba9c6f8`; `git show ba9c6f8:index.html` brings it back for reference. `sw.js` remains only to clear that app's offline cache from browsers that installed it, and `recover.html` can still export chores a browser saved locally.
+
+Everything below describes that retired web app and the family set-up it ran on. It is kept as a record.
 
 ## How it works
 
@@ -35,7 +43,8 @@ If the table is missing or the project is paused, the app simply stays in local-
 
 - **Pick-your-own daily card** — choose chores up to a 25-minute budget; the app auto-suggests more (same-area and most-neglected first) to reach 25 minutes, so every day is a full, short session.
 - **Escalation** — the longer a chore goes undone, the more minutes it costs and the higher it's suggested (`!` neglected, `!!` long overdue).
-- **Parent approval workflow** — chores stay pending until approved with the admin code, so XP can't be self-awarded.
+- **Parent approval workflow** — chores stay pending until approved with the admin code, so XP can't be self-awarded. A rejected chore can be done again the same day, and if everything a player logged today was rejected they start over with a fresh card.
+- **One chore, one person, per day** — once a player has a chore in (awaiting approval or approved), it isn't offered to anyone else until tomorrow.
 - **XP, momentum & version-number levels** — approved chores earn XP; a daily streak multiplies it up to 2×; your level is shown as a version of yourself (v1.0 → v1.1 → …), and XP only ever grows.
 - **Streaks** — consecutive days with an approved chore keep your momentum alive.
 - **Cross-device sync** — an optional Supabase backend keeps each kid's phone and the parent's admin view in sync.
@@ -109,7 +118,7 @@ gyattchores/
 ├── simple-logs-schema.sql  # Supabase table + RLS for optional cross-device sync
 ├── CNAME                   # Custom domain for GitHub Pages
 ├── apple-touch-icon.png    # iOS home-screen icon
-├── gyattchores-logo*.svg   # Logo variants
+├── dyw-icon.svg            # The "dyw" icon (browser tab and page header)
 ├── about.html / ebook.html / development-story.html   # Public about, guide, and story pages
 ├── SECURITY.md             # Security model & disclosure
 └── docs/governance/        # Lightweight service-management docs
