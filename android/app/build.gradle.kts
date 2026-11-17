@@ -7,6 +7,11 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
+// The Play Store screenshots are drawn by StoreScreenshotsTest (see PlayStore/take-screenshots.sh),
+// which needs libraries nothing else here uses. They only join the build when it's asked for
+// with -PstoreScreenshots, so releases and the everyday tests are untouched.
+val storeScreenshots = providers.gradleProperty("storeScreenshots").isPresent
+
 android {
     namespace = "com.gyattchores.app"
     compileSdk = 36
@@ -73,6 +78,22 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true; buildConfig = true }
+    if (storeScreenshots) testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+            all {
+                it.systemProperty("robolectric.graphicsMode", "NATIVE")
+                it.systemProperty("roborazzi.test.record", "true")
+                it.systemProperty("storeScreenshots", "true")
+                it.maxHeapSize = "3g"
+            }
+        }
+    }
+}
+
+// Ordinary builds and test runs don't compile the screenshot test, so they need none of its libraries.
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    if (!storeScreenshots) exclude("**/StoreScreenshotsTest.kt")
 }
 
 // The family edition's debug build installs beside the real family app (com.gyattchores.app.debug,
@@ -100,4 +121,12 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
 
     testImplementation("junit:junit:4.13.2")
+    if (storeScreenshots) {
+        testImplementation("org.robolectric:robolectric:4.14.1")
+        testImplementation("io.github.takahirom.roborazzi:roborazzi:1.36.0")
+        testImplementation("io.github.takahirom.roborazzi:roborazzi-compose:1.36.0")
+        testImplementation("androidx.compose.ui:ui-test-junit4")
+        testImplementation("androidx.test.ext:junit:1.2.1")
+        debugImplementation("androidx.compose.ui:ui-test-manifest")
+    }
 }

@@ -4,14 +4,18 @@ Everything App Store Connect asks for before the **Add for Review** button turns
 order it asks. Where there is text to enter, it is here ready to paste. Where only you can
 answer, it says so and says what to weigh.
 
-Checked against Apple's pages on 12 November 2026; links are at the bottom.
+Checked against Apple's pages on 12 November 2026 (links at the bottom); the texts were brought up to date with the app on 17 November 2026. The whole launch kit, Google Play included, is indexed in [`launch/README.md`](../../launch/README.md).
 
 ## Read this first
 
-**The app no longer has a database.** Each install keeps its own family's players, chores and
-points on that device and nowhere else, so a stranger who installs it sees an empty app and
-sets up their own family. That removes the reason the earlier version of this page advised
-against a public listing. [REVIEW-RISKS.md](REVIEW-RISKS.md) lists what is left.
+**Submit the public build, not the family one.** The project builds two apps from one codebase
+(`ios/README.md`, "Two builds"). The scheme **GyattChores** is the App Store app: everything stays
+on the device and it contains no network code. **GyattChores Family** syncs with your own
+family's database and is only for your household's TestFlight. Everything on this page describes
+the public build; a family build sent to App Review would contradict every privacy answer here.
+
+The iPhone and iPad app launches the same day as the Android one. Choose **manual release**
+(section 11) so the two can be lined up.
 
 ## Before you open App Store Connect
 
@@ -73,32 +77,37 @@ PRIVATE BY DESIGN
 • No accounts and no sign-up. Open it and start.
 • Everything stays on your iPhone or iPad. The app has no servers and never goes online.
 • No ads, no tracking, no in-app purchases.
-• Delete the app, or tap "erase everything", and it's all gone.
+• Delete the app, or tap "Erase everything", and it's all gone.
 
 YOUR CHORES, IN YOUR WORDS
 • Start from 27 everyday chores, or just describe your home. Type or dictate "do the dishes, take out the trash, feed the dog for 5 minutes" and the app sorts it into a list you can tidy up.
 • Add, rename, re-time and remove chores whenever you like.
 
 HOW A DAY WORKS
-• Pick what you want, or tap "suggest" and the app fills your card to 25 minutes.
-• Check each chore off as you go, then submit the card.
-• An admin approves or rejects each chore, behind their own code.
+• Pick what you want, or let the app suggest a 25-minute card.
+• Check each chore off as you go, then send the card.
+• An admin says yes or no to each chore, behind their own code.
 • One chore, one person, per day: no arguments over who did the dishes.
 
 WHAT KEEPS IT GOING
 • Chores that get skipped take longer next time and move up the list, so they stop being ignored.
-• Approved chores earn XP. Levels are shown as version numbers: v1.0, v1.1 and up.
-• A daily streak multiplies the XP you earn.
+• Approved chores earn points. Levels are shown as version numbers: v1.0, v1.1 and up.
+• A daily streak multiplies what you earn.
 • A weekly leaderboard and a 30-day log show how everyone is doing.
+• Send your card and a puzzle opens, with up to an hour of play a day.
 • Finished early? A bonus round lets you log extra chores.
-• Everyone can give themselves a display name.
+• Fifteen colour themes, and everyone can give themselves a display name.
+
+YOURS TO KEEP
+• Save a backup of the whole scoreboard to a file you control, and restore it on a new device.
 
 ONE DEVICE, ONE SCOREBOARD
 GyattChores runs on a single iPhone or iPad that the household shares, like the scoreboard at a bowling alley. On iPad, the scoreboard and the day's card sit side by side.
 ```
 
-Every line describes something the app does today. It deliberately does not promise sharing
-between devices: that comes later, through the family's own iCloud.
+Every line describes something the app does today. Two things are deliberately left out: sharing
+between devices, which the public app doesn't do, and any mention of Android, since Apple doesn't
+allow other platforms to be named in a listing (guideline 2.3.10).
 
 ### 4. Keywords (100 bytes at most; this is 91)
 
@@ -159,21 +168,21 @@ No encryption question should appear; the app already answers it ("no").
 GyattChores is a household chore scoreboard for one shared iPhone or iPad. There is no account or sign-in, and the app has no network code: everything stays on the device.
 
 SETTING UP (first launch)
-1. Tap "SET UP THIS DEVICE".
-2. Type any name and an admin code of 4 or more characters, twice (for example 2468). Tap NEXT.
-3. Add one or two player names. Tap NEXT.
-4. Tap "USE THE STARTER LIST". (Or tap "write or say your own", type "dishes, take out the trash, feed the dog 5 minutes", then SORT INTO CHORES and ADD.)
+1. Tap "Set up this device".
+2. Type any name and an admin code of 4 or more characters, twice (for example 2468). Tap "Next".
+3. Add one or two player names. Tap "Next".
+4. Tap "Use the starter list". (Or tap "Write or say your own", type "dishes, take out the trash, feed the dog 5 minutes", then "Sort into chores" and add them.)
 
 A DAY IN THE APP
-1. On the scoreboard, tap a name under "who's playing".
-2. Tap "suggest a 25-min card", then "LOCK IN CARD".
-3. Tap each chore to check it off, then "SUBMIT FOR APPROVAL". Go back.
+1. On the scoreboard, tap a player's name.
+2. Tap "Suggest a 25-minute card", then "Lock in my card".
+3. Tap each chore to check it off, then "Send it off for approval". Go back.
 
 ADMIN AREA
-1. Tap "admin" at the top right and enter the code you chose in step 2.
-2. "approve": approve or reject the waiting chores. "players": add people or make someone an admin. "chores": add, edit or remove chores. "device": the privacy policy, and erase everything.
+1. Tap "Admin" at the top and enter the code you chose in step 2.
+2. "Approve": say yes or no to the waiting chores. "Players": add people or make someone an admin. "Chores": add, edit or remove chores. "Device": save or restore a backup, the privacy policy, and erase everything.
 
-There are no ads, analytics, tracking or purchases. Face ID / Touch ID is optional, off by default, and used only to open the admin area. Dictation is the system keyboard's own; the app does not use the microphone.
+There are no ads, analytics, tracking or purchases. Face ID / Touch ID is optional, off by default, and used only to open the admin area. Dictation is the system keyboard's own; the app does not use the microphone. A backup is a file the user saves through the system's save panel to a place they choose.
 ```
 
 - **Attachment:** none.
@@ -270,6 +279,8 @@ Two things worth knowing, neither of which changes the answer:
   see it, so it is not collection.
 - Dictating chores uses the keyboard's microphone key, which is Apple's dictation, not this
   app. The app never touches the microphone.
+- Saving a backup writes a file through the system's save panel to wherever the person chooses
+  (Files, iCloud Drive, AirDrop). The app sends it nowhere itself.
 
 ## E. Submit
 
@@ -277,6 +288,54 @@ Two things worth knowing, neither of which changes the answer:
    with a list of missing items, something above is unfinished: most often the build,
    the screenshots, the age rating or App Privacy.
 2. **Submit for Review** on the next screen.
+
+## F. TestFlight (the beta)
+
+TestFlight asks for its own short set of answers, under **TestFlight → Test Information** in the
+sidebar. They are needed before anyone outside your App Store Connect team can test.
+
+| Field | Enter |
+|---|---|
+| Beta App Description | the text below |
+| Feedback Email | **Only you can fill this in.** Testers' feedback goes here. |
+| Marketing URL | `https://gyattchores.com` |
+| Privacy Policy URL | `https://gyattchores.com/app-privacy.html` |
+| Beta App Review: contact name, phone, email | **Only you can fill this in.** |
+| Beta App Review: sign-in required | Untick |
+| Beta App Review: notes | the same notes as section 10 |
+
+Beta App Description:
+
+```
+GyattChores is a chore scoreboard for one household on one iPhone or iPad. Everyone picks about 25 minutes of chores a day, an admin approves what got done, and points, streaks and a weekly winner follow. There are no accounts and nothing leaves your device.
+```
+
+**What to Test**, entered on each build (4,000 at most):
+
+```
+Thanks for trying GyattChores early.
+
+Please set it up for your own household: an admin, a few players, and your chores (try describing them in a sentence). Then run it for a few days.
+
+We'd most like to hear:
+• Was anything in setup confusing?
+• Did sorting your chores from a sentence get them right?
+• Did 25 minutes a day feel like the right amount?
+• Anything that looked wrong on your device, and which device it was.
+
+To send feedback, take a screenshot in the app and choose "Share Beta Feedback", or reply to the invite email.
+```
+
+Who can test:
+
+- **Internal testers** are people on your App Store Connect team (up to 100). They get builds
+  straight away with no review.
+- **External testers** are everyone else: the people who ask through gyattchores.com. Create a
+  group under **External Testing**, add the build, and Apple reviews the first build before
+  anyone can install it. After that, add each person by the email on their Apple account, or
+  switch on the group's **public link** and send that instead; a public link can be capped at a
+  number of testers.
+- Send only **public** builds to external testers. The family build is for your own household.
 
 ## What I could not check
 

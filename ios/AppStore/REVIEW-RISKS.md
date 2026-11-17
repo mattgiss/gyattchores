@@ -1,7 +1,7 @@
 # What could go wrong at App Review
 
 Most serious first. Each item says what the problem is and what to do about it. Written
-13 November 2026 against Apple's
+13 November 2026 and brought up to date on 17 November 2026, against Apple's
 [App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/)
 (last updated 16 October 2026), after the app was rebuilt to keep everything on the device.
 
@@ -69,20 +69,25 @@ practical safeguard, and the app allows it.
 ## 4. One device only, for now
 
 The listing says so ("One device, one scoreboard"). Apple won't object, but families with a
-phone each will ask for sharing. That is the planned next version, through the family's own
-iCloud, which keeps "Data Not Collected" true. Do not describe it in the listing until it
-exists: describing features the app doesn't have is a rejection reason (guideline 2.3.1).
+phone each will ask for sharing. Do not describe sharing in the listing until the public app
+does it: describing features an app doesn't have is a rejection reason (guideline 2.3.1). A
+backup file can move a scoreboard to a new device, and the listing says only that.
 
-Dares are gone from this version for the same reason: a secret guess needs each person on
-their own device. They can come back with sharing.
+Dares are in the family build only, for the same reason: a secret guess needs each person on
+their own device.
 
-## 5. Your own family's devices
+## 5. Two builds from one project
 
-A phone that already has the TestFlight build keeps its players and history when it updates,
-asks whoever opens it first for an admin name and code, and from then on is a scoreboard of
-its own. It no longer shares with the other phones, the website or Android. So decide which
-device is the family scoreboard before installing this version on your children's phones,
-or leave their phones on the current build until sharing arrives.
+The public app and your family's synced build share a bundle id. That is what lets the family
+build update your household's phones in place, and it is also the way to get this wrong:
+
+- **Only the public scheme goes to App Review and to outside testers.** A family build submitted
+  by mistake talks to a database, which contradicts "Data Not Collected" and every privacy
+  answer in SUBMISSION.md.
+- Both builds upload to the same app record. In TestFlight, check which one a build is before
+  adding it to a group: the version line at the bottom of the scoreboard ends in "· family" on a
+  family build.
+- CI archives both and checks that the public one carries no server address.
 
 ## 6. Smaller things
 
@@ -93,6 +98,8 @@ or leave their phones on the current build until sharing arrives.
   website. None are in the app or on the new store pages.
 - **The name.** "Gyatt" is slang. Store text has to suit all ages (guideline 2.3.8). I think
   a rejection over the name is unlikely, but have a one-line answer ready.
+- **Don't name other platforms.** The app launches alongside an Android version, but the App
+  Store listing, screenshots and review notes must not mention it (guideline 2.3.10).
 - **Sorting spoken chores is simple word-sorting,** not AI, and it will sometimes split or
   join chores wrongly. The app shows the result as a list to fix before anything is added,
   and the listing says "sorts it into a list you can tidy up". Keep the claim that modest.
