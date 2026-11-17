@@ -1,0 +1,824 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		044BFEB97E4071B9EC36B7B8 /* BackupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3586296EE565482DC2C3729D /* BackupView.swift */; };
+		0E0DC795D8BB72CE8D359815 /* SchibstedGrotesk-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4771E51A15CF9AEA20D52803 /* SchibstedGrotesk-Bold.ttf */; };
+		119A3672AD8787ADC74C613B /* PlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB22028F8301385EF58C79DE /* PlayerView.swift */; };
+		119A6151A3B3BEE96F14F13C /* DaresView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D096B95D3190ED58C9D5CEA7 /* DaresView.swift */; };
+		1A9C627FBFB9084C372F44B4 /* Palette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62B65A76A66B53134EF79DFF /* Palette.swift */; };
+		2A7ABDE26286C1DAF3A382ED /* puzzles.json in Resources */ = {isa = PBXBuildFile; fileRef = F3A5421D0874ADF5517A9979 /* puzzles.json */; };
+		2D1229719B7182769514C458 /* SchibstedGrotesk-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0047F64BBDB5A15BD507B24E /* SchibstedGrotesk-Regular.ttf */; };
+		2E032658D2557E5FB845C1DC /* GyattChoresApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46FDBB957624185A85BA0061 /* GyattChoresApp.swift */; };
+		2F7375E6A72363482F52CB66 /* Supabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2856999DD0F558CCEB895897 /* Supabase.swift */; };
+		40CB841B6113A9E41606900B /* SchibstedGrotesk-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C3BE9EFE4605E34DA58153E6 /* SchibstedGrotesk-Black.ttf */; };
+		443A320072CEE803339DA733 /* SchibstedGrotesk-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B702638EB01A201DCC1EFB50 /* SchibstedGrotesk-SemiBold.ttf */; };
+		45CEBC3536B866B34A7A4806 /* FamilySync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 039B149E89F0E77F200C94AE /* FamilySync.swift */; };
+		49AB36F0DC1C70923F894ECA /* AdminView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88B421E0D81623C58D00E31C /* AdminView.swift */; };
+		4AEAF7A73B7B929C12295533 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5713C489E0FED8ACE31202AF /* Components.swift */; };
+		5D0DBCEA64EBEAD0FE8720B6 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 147CAD24C71D72F3E322CABA /* PrivacyInfo.xcprivacy */; };
+		5F1F395619FAD4DA41D774A8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 51E25F92C2A2E95EA8800ED0 /* Assets.xcassets */; };
+		860B2F5DA0F42A045C292891 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E05411D9D6D89454354D6504 /* RootView.swift */; };
+		916FD9E47347E1253B010B01 /* GyattChoresUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F41F120FFA15EAABE3146658 /* GyattChoresUITests.swift */; };
+		9AAA5EB7566D8F8664316A80 /* chores.json in Resources */ = {isa = PBXBuildFile; fileRef = 44339DF38F0B41428DED1FA0 /* chores.json */; };
+		9B45257610B8CBC6E1472B98 /* PuzzleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1546F72E810EE14A38EEA3E /* PuzzleView.swift */; };
+		9FDBA5BF4A17A0156A9260C8 /* GyattCore in Frameworks */ = {isa = PBXBuildFile; productRef = 082E13C94D4E9AAC05E89A26 /* GyattCore */; };
+		A010EF76DAC311B90FEA0C3F /* Feedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD615C04B74E794B9204B97B /* Feedback.swift */; };
+		A828A79D9FB56E67813DEF64 /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4971E3BEE78F1A82504A5490 /* AppStore.swift */; };
+		BB97D5802E276F750ED728C3 /* Backup+Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A816062A9FD976D43C9FD9A /* Backup+Store.swift */; };
+		C3C8E844E8AAF2DEBC58A92B /* SetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7EE3EB6E2624053E7D467FC /* SetupView.swift */; };
+		CC2DA1AA093DF7D28E9E86A4 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3272DA0935BA832663FC915B /* HomeView.swift */; };
+		D9D61CC5B28C43AB8C5F970C /* ChoreIntakeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE96A0A80C56CD579D06D53D /* ChoreIntakeView.swift */; };
+		DC6BCC290A01A4251A401851 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A3CD50235F612923A1E5C5C /* Typography.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		BCDC15C6C68F734AAD81BD98 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D1987C51FC9235D67157863B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7548716DF2012415D0443C9B;
+			remoteInfo = GyattChores;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		0047F64BBDB5A15BD507B24E /* SchibstedGrotesk-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SchibstedGrotesk-Regular.ttf"; sourceTree = "<group>"; };
+		039B149E89F0E77F200C94AE /* FamilySync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilySync.swift; sourceTree = "<group>"; };
+		14360DD67502C08B0BB5668E /* GyattChores.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = GyattChores.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		147CAD24C71D72F3E322CABA /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		2856999DD0F558CCEB895897 /* Supabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Supabase.swift; sourceTree = "<group>"; };
+		3272DA0935BA832663FC915B /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		3586296EE565482DC2C3729D /* BackupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupView.swift; sourceTree = "<group>"; };
+		44339DF38F0B41428DED1FA0 /* chores.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = chores.json; sourceTree = "<group>"; };
+		46FDBB957624185A85BA0061 /* GyattChoresApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GyattChoresApp.swift; sourceTree = "<group>"; };
+		4771E51A15CF9AEA20D52803 /* SchibstedGrotesk-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SchibstedGrotesk-Bold.ttf"; sourceTree = "<group>"; };
+		4971E3BEE78F1A82504A5490 /* AppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStore.swift; sourceTree = "<group>"; };
+		4A3CD50235F612923A1E5C5C /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
+		51E25F92C2A2E95EA8800ED0 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		5713C489E0FED8ACE31202AF /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
+		5D9BE8C4B00AA3D1C1CFCD63 /* GyattChoresUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = GyattChoresUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		62B65A76A66B53134EF79DFF /* Palette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Palette.swift; sourceTree = "<group>"; };
+		88B421E0D81623C58D00E31C /* AdminView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminView.swift; sourceTree = "<group>"; };
+		9A816062A9FD976D43C9FD9A /* Backup+Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Backup+Store.swift"; sourceTree = "<group>"; };
+		AD615C04B74E794B9204B97B /* Feedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Feedback.swift; sourceTree = "<group>"; };
+		B1546F72E810EE14A38EEA3E /* PuzzleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PuzzleView.swift; sourceTree = "<group>"; };
+		B702638EB01A201DCC1EFB50 /* SchibstedGrotesk-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SchibstedGrotesk-SemiBold.ttf"; sourceTree = "<group>"; };
+		C3BE9EFE4605E34DA58153E6 /* SchibstedGrotesk-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SchibstedGrotesk-Black.ttf"; sourceTree = "<group>"; };
+		D096B95D3190ED58C9D5CEA7 /* DaresView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaresView.swift; sourceTree = "<group>"; };
+		E05411D9D6D89454354D6504 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		E7EE3EB6E2624053E7D467FC /* SetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupView.swift; sourceTree = "<group>"; };
+		F3A5421D0874ADF5517A9979 /* puzzles.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = puzzles.json; sourceTree = "<group>"; };
+		F41F120FFA15EAABE3146658 /* GyattChoresUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GyattChoresUITests.swift; sourceTree = "<group>"; };
+		FADAACA5C517EC47FDA95485 /* GyattCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = GyattCore; path = GyattCore; sourceTree = SOURCE_ROOT; };
+		FB22028F8301385EF58C79DE /* PlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerView.swift; sourceTree = "<group>"; };
+		FE96A0A80C56CD579D06D53D /* ChoreIntakeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChoreIntakeView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		38B031434BB54112C4739443 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9FDBA5BF4A17A0156A9260C8 /* GyattCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		07AF51CD8985294E6444E019 /* native */ = {
+			isa = PBXGroup;
+			children = (
+				44339DF38F0B41428DED1FA0 /* chores.json */,
+				F3A5421D0874ADF5517A9979 /* puzzles.json */,
+			);
+			path = native;
+			sourceTree = "<group>";
+		};
+		0D6D417FDFB4B80637094427 /* gyattchores */ = {
+			isa = PBXGroup;
+			children = (
+				07AF51CD8985294E6444E019 /* native */,
+			);
+			name = gyattchores;
+			path = ..;
+			sourceTree = "<group>";
+		};
+		70535BCFA2D37ADC85CC5073 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				14360DD67502C08B0BB5668E /* GyattChores.app */,
+				5D9BE8C4B00AA3D1C1CFCD63 /* GyattChoresUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		786BBD256A09BDE4304411A9 = {
+			isa = PBXGroup;
+			children = (
+				F171BE575C3CC7912AB5A64F /* GyattChores */,
+				0D6D417FDFB4B80637094427 /* gyattchores */,
+				F02CC4544EA8AE0525188C2A /* GyattChoresUITests */,
+				D785E7BDBF4977B0F6F50E63 /* Packages */,
+				70535BCFA2D37ADC85CC5073 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		8CB9B947A9FA4B4444C0CFB3 /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				C3BE9EFE4605E34DA58153E6 /* SchibstedGrotesk-Black.ttf */,
+				4771E51A15CF9AEA20D52803 /* SchibstedGrotesk-Bold.ttf */,
+				0047F64BBDB5A15BD507B24E /* SchibstedGrotesk-Regular.ttf */,
+				B702638EB01A201DCC1EFB50 /* SchibstedGrotesk-SemiBold.ttf */,
+			);
+			path = Fonts;
+			sourceTree = "<group>";
+		};
+		B278290B65B7829B31BF1804 /* Family */ = {
+			isa = PBXGroup;
+			children = (
+				D096B95D3190ED58C9D5CEA7 /* DaresView.swift */,
+				039B149E89F0E77F200C94AE /* FamilySync.swift */,
+				2856999DD0F558CCEB895897 /* Supabase.swift */,
+			);
+			path = Family;
+			sourceTree = "<group>";
+		};
+		D785E7BDBF4977B0F6F50E63 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				FADAACA5C517EC47FDA95485 /* GyattCore */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		F02CC4544EA8AE0525188C2A /* GyattChoresUITests */ = {
+			isa = PBXGroup;
+			children = (
+				F41F120FFA15EAABE3146658 /* GyattChoresUITests.swift */,
+			);
+			path = GyattChoresUITests;
+			sourceTree = "<group>";
+		};
+		F171BE575C3CC7912AB5A64F /* GyattChores */ = {
+			isa = PBXGroup;
+			children = (
+				88B421E0D81623C58D00E31C /* AdminView.swift */,
+				4971E3BEE78F1A82504A5490 /* AppStore.swift */,
+				51E25F92C2A2E95EA8800ED0 /* Assets.xcassets */,
+				9A816062A9FD976D43C9FD9A /* Backup+Store.swift */,
+				3586296EE565482DC2C3729D /* BackupView.swift */,
+				FE96A0A80C56CD579D06D53D /* ChoreIntakeView.swift */,
+				5713C489E0FED8ACE31202AF /* Components.swift */,
+				AD615C04B74E794B9204B97B /* Feedback.swift */,
+				46FDBB957624185A85BA0061 /* GyattChoresApp.swift */,
+				3272DA0935BA832663FC915B /* HomeView.swift */,
+				62B65A76A66B53134EF79DFF /* Palette.swift */,
+				FB22028F8301385EF58C79DE /* PlayerView.swift */,
+				147CAD24C71D72F3E322CABA /* PrivacyInfo.xcprivacy */,
+				B1546F72E810EE14A38EEA3E /* PuzzleView.swift */,
+				E05411D9D6D89454354D6504 /* RootView.swift */,
+				E7EE3EB6E2624053E7D467FC /* SetupView.swift */,
+				4A3CD50235F612923A1E5C5C /* Typography.swift */,
+				B278290B65B7829B31BF1804 /* Family */,
+				8CB9B947A9FA4B4444C0CFB3 /* Fonts */,
+			);
+			path = GyattChores;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		4DF6E052392C8E7FF4F9D561 /* GyattChoresUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 90ED24C74648BF1C53EABCF6 /* Build configuration list for PBXNativeTarget "GyattChoresUITests" */;
+			buildPhases = (
+				86C8EDA07AC6AE377699D989 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AB4F0EAD2344D49FB0599741 /* PBXTargetDependency */,
+			);
+			name = GyattChoresUITests;
+			packageProductDependencies = (
+			);
+			productName = GyattChoresUITests;
+			productReference = 5D9BE8C4B00AA3D1C1CFCD63 /* GyattChoresUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		7548716DF2012415D0443C9B /* GyattChores */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2603955CDBA4184903057F09 /* Build configuration list for PBXNativeTarget "GyattChores" */;
+			buildPhases = (
+				B9571B287B61182575A55128 /* Sources */,
+				BC243DA4AF2E4396A4AA3CBE /* Resources */,
+				38B031434BB54112C4739443 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = GyattChores;
+			packageProductDependencies = (
+				082E13C94D4E9AAC05E89A26 /* GyattCore */,
+			);
+			productName = GyattChores;
+			productReference = 14360DD67502C08B0BB5668E /* GyattChores.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D1987C51FC9235D67157863B /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					4DF6E052392C8E7FF4F9D561 = {
+						ProvisioningStyle = Automatic;
+						TestTargetID = 7548716DF2012415D0443C9B;
+					};
+					7548716DF2012415D0443C9B = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = B8D558127BBA52D56797EDB8 /* Build configuration list for PBXProject "GyattChores" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 786BBD256A09BDE4304411A9;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				05EBF109FADFF89903FD227C /* XCLocalSwiftPackageReference "GyattCore" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 70535BCFA2D37ADC85CC5073 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				7548716DF2012415D0443C9B /* GyattChores */,
+				4DF6E052392C8E7FF4F9D561 /* GyattChoresUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		BC243DA4AF2E4396A4AA3CBE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5F1F395619FAD4DA41D774A8 /* Assets.xcassets in Resources */,
+				5D0DBCEA64EBEAD0FE8720B6 /* PrivacyInfo.xcprivacy in Resources */,
+				40CB841B6113A9E41606900B /* SchibstedGrotesk-Black.ttf in Resources */,
+				0E0DC795D8BB72CE8D359815 /* SchibstedGrotesk-Bold.ttf in Resources */,
+				2D1229719B7182769514C458 /* SchibstedGrotesk-Regular.ttf in Resources */,
+				443A320072CEE803339DA733 /* SchibstedGrotesk-SemiBold.ttf in Resources */,
+				9AAA5EB7566D8F8664316A80 /* chores.json in Resources */,
+				2A7ABDE26286C1DAF3A382ED /* puzzles.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		86C8EDA07AC6AE377699D989 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				916FD9E47347E1253B010B01 /* GyattChoresUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B9571B287B61182575A55128 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				49AB36F0DC1C70923F894ECA /* AdminView.swift in Sources */,
+				A828A79D9FB56E67813DEF64 /* AppStore.swift in Sources */,
+				BB97D5802E276F750ED728C3 /* Backup+Store.swift in Sources */,
+				044BFEB97E4071B9EC36B7B8 /* BackupView.swift in Sources */,
+				D9D61CC5B28C43AB8C5F970C /* ChoreIntakeView.swift in Sources */,
+				4AEAF7A73B7B929C12295533 /* Components.swift in Sources */,
+				119A6151A3B3BEE96F14F13C /* DaresView.swift in Sources */,
+				45CEBC3536B866B34A7A4806 /* FamilySync.swift in Sources */,
+				A010EF76DAC311B90FEA0C3F /* Feedback.swift in Sources */,
+				2E032658D2557E5FB845C1DC /* GyattChoresApp.swift in Sources */,
+				CC2DA1AA093DF7D28E9E86A4 /* HomeView.swift in Sources */,
+				1A9C627FBFB9084C372F44B4 /* Palette.swift in Sources */,
+				119A3672AD8787ADC74C613B /* PlayerView.swift in Sources */,
+				9B45257610B8CBC6E1472B98 /* PuzzleView.swift in Sources */,
+				860B2F5DA0F42A045C292891 /* RootView.swift in Sources */,
+				C3C8E844E8AAF2DEBC58A92B /* SetupView.swift in Sources */,
+				2F7375E6A72363482F52CB66 /* Supabase.swift in Sources */,
+				DC6BCC290A01A4251A401851 /* Typography.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		AB4F0EAD2344D49FB0599741 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7548716DF2012415D0443C9B /* GyattChores */;
+			targetProxy = BCDC15C6C68F734AAD81BD98 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		124CE81A6F1CB794D8F5A337 /* Release-Family */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.gyattchores.app.uitests;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) FAMILY_SYNC";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = GyattChores;
+			};
+			name = "Release-Family";
+		};
+		2E274E3982BC0FD5B1A41FF9 /* Release-Family */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = DOYOURWORK;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Open the admin area to approve chores.";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gyattchores.app;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) FAMILY_SYNC";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = "Release-Family";
+		};
+		4851D8CA149473E60590B15A /* Debug-Family */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = "Debug-Family";
+		};
+		544F75C53D8558FE1815F318 /* Release-Family */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = "Release-Family";
+		};
+		54727BAA9E13AC5564162914 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		5A128A5CC3B69BD8A3A88EE3 /* Debug-Family */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = DOYOURWORK;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Open the admin area to approve chores.";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gyattchores.app;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) FAMILY_SYNC";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = "Debug-Family";
+		};
+		69790EFD8CD4980FC13D08A5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		6C581090B0647FF38ACD734E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = DOYOURWORK;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Open the admin area to approve chores.";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gyattchores.app;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		B8737FFB45E2930C7951679C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = DOYOURWORK;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Open the admin area to approve chores.";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gyattchores.app;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		BE4792F986D463972985006E /* Debug-Family */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.gyattchores.app.uitests;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) FAMILY_SYNC";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = GyattChores;
+			};
+			name = "Debug-Family";
+		};
+		D7362F5318893CD7BC7B199E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.gyattchores.app.uitests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = GyattChores;
+			};
+			name = Debug;
+		};
+		FA8A05BE181214A84453B982 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.gyattchores.app.uitests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = GyattChores;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		2603955CDBA4184903057F09 /* Build configuration list for PBXNativeTarget "GyattChores" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B8737FFB45E2930C7951679C /* Debug */,
+				5A128A5CC3B69BD8A3A88EE3 /* Debug-Family */,
+				6C581090B0647FF38ACD734E /* Release */,
+				2E274E3982BC0FD5B1A41FF9 /* Release-Family */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		90ED24C74648BF1C53EABCF6 /* Build configuration list for PBXNativeTarget "GyattChoresUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D7362F5318893CD7BC7B199E /* Debug */,
+				BE4792F986D463972985006E /* Debug-Family */,
+				FA8A05BE181214A84453B982 /* Release */,
+				124CE81A6F1CB794D8F5A337 /* Release-Family */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B8D558127BBA52D56797EDB8 /* Build configuration list for PBXProject "GyattChores" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				69790EFD8CD4980FC13D08A5 /* Debug */,
+				4851D8CA149473E60590B15A /* Debug-Family */,
+				54727BAA9E13AC5564162914 /* Release */,
+				544F75C53D8558FE1815F318 /* Release-Family */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		05EBF109FADFF89903FD227C /* XCLocalSwiftPackageReference "GyattCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = GyattCore;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		082E13C94D4E9AAC05E89A26 /* GyattCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = GyattCore;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = D1987C51FC9235D67157863B /* Project object */;
+}
