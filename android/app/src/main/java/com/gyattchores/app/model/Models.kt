@@ -14,6 +14,8 @@ data class Player(
     val displayName: String? = null,
     val isAdmin: Boolean = false,
     val plays: Boolean = true,
+    /** The id of the character they picked for their scoreboard tile; null until they pick (see Characters.assign). */
+    val character: String? = null,
 ) {
     /** What to show for this person: the display name if it holds anything visible, else the username. */
     val shownName: String get() = displayName?.let { com.gyattchores.app.engine.DisplayName.clean(it) } ?: name

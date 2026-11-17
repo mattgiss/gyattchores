@@ -166,7 +166,7 @@ object Backup {
             } else {
                 id = (next++).toString()
                 // Someone coming in without being an admin has to play, or they'd have no part in the game.
-                members += Player(id, m.name, m.displayName, isAdmin = bringAdmin, plays = m.plays || !bringAdmin)
+                members += Player(id, m.name, m.displayName, isAdmin = bringAdmin, plays = m.plays || !bringAdmin, character = m.character)
                 joined[id] = b.memberJoined[m.id] ?: now
                 if (m.plays || !bringAdmin) playersAdded++
             }

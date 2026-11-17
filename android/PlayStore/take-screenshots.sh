@@ -11,6 +11,7 @@ export JAVA_HOME="${JAVA_HOME:-/opt/homebrew/opt/openjdk@17}"
 [ -x "$JAVA_HOME/bin/java" ] || unset JAVA_HOME
 rm -rf PlayStore/screenshots
 for device in phone tablet7 tablet10; do
-  ./gradlew -q -PstoreScreenshots :app:testPublicDebugUnitTest --tests "*StoreScreenshotsTest.$device"
+  # --rerun: Gradle would otherwise skip a device whose pictures it thinks it already took.
+  ./gradlew -q -PstoreScreenshots :app:testPublicDebugUnitTest --tests "*StoreScreenshotsTest.$device" --rerun
 done
 find PlayStore/screenshots -name '*.png' | sort

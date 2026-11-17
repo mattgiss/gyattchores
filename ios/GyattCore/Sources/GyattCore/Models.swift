@@ -10,9 +10,11 @@ public struct Player: Codable, Identifiable, Hashable {
     public var isAdmin: Bool
     /// False for someone who only runs the scoreboard (say, a parent who doesn't do chores).
     public var plays: Bool
+    /// The id of the character they picked for their scoreboard tile; nil until they pick (see `Characters.assign`).
+    public var character: String?
 
-    public init(id: String, name: String, displayName: String? = nil, isAdmin: Bool = false, plays: Bool = true) {
-        self.id = id; self.name = name; self.displayName = displayName; self.isAdmin = isAdmin; self.plays = plays
+    public init(id: String, name: String, displayName: String? = nil, isAdmin: Bool = false, plays: Bool = true, character: String? = nil) {
+        self.id = id; self.name = name; self.displayName = displayName; self.isAdmin = isAdmin; self.plays = plays; self.character = character
     }
 
     // Older saves hold only an id and a name.
@@ -23,6 +25,7 @@ public struct Player: Codable, Identifiable, Hashable {
         displayName = try c.decodeIfPresent(String.self, forKey: .displayName)
         isAdmin = try c.decodeIfPresent(Bool.self, forKey: .isAdmin) ?? false
         plays = try c.decodeIfPresent(Bool.self, forKey: .plays) ?? true
+        character = try c.decodeIfPresent(String.self, forKey: .character)
     }
 
     /// What to show for this person: the display name if it holds anything visible, else the username.

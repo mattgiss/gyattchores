@@ -768,6 +768,43 @@ final class GyattChoresUITests: XCTestCase {
         XCTAssertFalse(playerRow(nickname, in: relaunched).exists)
     }
 
+    /// Everyone has a character on their tile. A player picks their own from their own screen, it
+    /// survives a relaunch, and nobody else can take it while it's theirs.
+    func testAPlayerPicksTheirOwnCharacter() {
+        let app = launch(["-resetData", "-demoFamily"])
+        func mine(_ name: String, in app: XCUIApplication) -> XCUIElement {
+            app.buttons.matching(NSPredicate(format: "identifier == 'character' AND label CONTAINS %@", name)).firstMatch
+        }
+
+        // Sam starts with one given from their username, and swaps it for the robot.
+        open("sam", in: app)
+        XCTAssertTrue(app.buttons["character"].waitForExistence(timeout: wait))
+        XCTAssertFalse(mine("Robot", in: app).exists)
+        app.buttons["character"].tap()
+        let robot = app.buttons["character-robot"]
+        XCTAssertTrue(robot.waitForExistence(timeout: wait))
+        XCTAssertTrue(robot.isEnabled)
+        screenshot("20-pick-a-character", of: app)
+        robot.tap()
+        XCTAssertTrue(mine("Robot", in: app).waitForExistence(timeout: wait))
+
+        // Riley sees the robot is Sam's and can't have it.
+        goBack(in: app)
+        open("riley", in: app)
+        XCTAssertTrue(app.buttons["character"].waitForExistence(timeout: wait))
+        app.buttons["character"].tap()
+        XCTAssertTrue(app.buttons["character-robot"].waitForExistence(timeout: wait))
+        XCTAssertFalse(app.buttons["character-robot"].isEnabled, "the robot is sam's")
+        app.buttons["Done"].tap()
+        XCTAssertFalse(mine("Robot", in: app).exists)
+
+        // Still Sam's after the app restarts.
+        app.terminate()
+        let relaunched = launch()
+        open("sam", in: relaunched)
+        XCTAssertTrue(mine("Robot", in: relaunched).waitForExistence(timeout: wait))
+    }
+
     /// One chore, one person, per day — including when two players go for the same chores at once.
     func testAChoreCanOnlyBeOnePersonsEachDay() {
         let app = launch(["-resetData", "-demoFamily"])

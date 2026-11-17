@@ -44,6 +44,7 @@ import com.gyattchores.app.AppViewModel
 import com.gyattchores.app.engine.DisplayName
 import com.gyattchores.app.engine.Engine
 import com.gyattchores.app.engine.Phrase
+import com.gyattchores.app.engine.PlayerCharacter
 import com.gyattchores.app.model.Card
 import com.gyattchores.app.model.ChoreLog
 import com.gyattchores.app.model.EnrichedChore
@@ -79,11 +80,16 @@ fun TwoZone(hinge: Hinge?, top: @Composable () -> Unit, bottom: @Composable () -
  * red, running up under the status bar.
  */
 @Composable
-private fun TopBar(title: String, onBack: (() -> Unit)?, onName: (() -> Unit)? = null, stats: (@Composable () -> Unit)? = null) {
+private fun TopBar(title: String, onBack: (() -> Unit)?, onName: (() -> Unit)? = null, character: PlayerCharacter? = null,
+                   onCharacter: (() -> Unit)? = null, stats: (@Composable () -> Unit)? = null) {
     val ink = Palette.HEAT.ink
     Column(Modifier.fillMaxWidth().background(Palette.HEAT.stops[0]).statusBarsPadding().padding(start = 4.dp, end = 4.dp, bottom = 12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (onBack != null) TextButton(onClick = onBack) { Text("Back", color = ink, fontWeight = FontWeight.Bold) }
+            // Their character; tapping it is how they change it.
+            if (character != null) CharacterIcon(character, 36.dp, Modifier.padding(start = 12.dp)
+                .then(if (onCharacter != null) Modifier.clickable(onClickLabel = "change your character", onClick = onCharacter) else Modifier)
+                .semantics { contentDescription = "Your character: ${character.name}" })
             Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = ink, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f).padding(horizontal = 12.dp, vertical = 8.dp))
             if (onName != null) TextButton(onClick = onName) { Text("Rename", color = ink, fontWeight = FontWeight.Bold) }
@@ -130,6 +136,15 @@ fun PlayerScreen(
     var naming by remember { mutableStateOf(false) }
     if (naming) DisplayNameDialog(player, onDismiss = { naming = false }) { vm.setDisplayName(player.id, it); naming = false }
     val fb = LocalFeedback.current
+    // Their character, and the picker for it. Everyone gets their own: the others' are shown as taken.
+    val characters = remember(family) { vm.characters(family.players) }
+    val character = characters[player.id]
+    var choosing by remember { mutableStateOf(false) }
+    if (choosing) CharacterPicker(
+        current = character,
+        takenBy = family.players.filter { it.id != player.id }.mapNotNull { o -> characters[o.id]?.let { it.id to o.shownName } }.toMap(),
+        onPick = { vm.setCharacter(player.id, it.id); choosing = false }, onDismiss = { choosing = false },
+    )
 
     val todays = vm.todaysLogs(player.id, logs)
     val statusToday = Engine.statusToday(todays)
@@ -146,7 +161,7 @@ fun PlayerScreen(
     Column(Modifier.fillMaxSize().background(Bg)) {
         when {
             card == null -> {
-                TopBar(player.shownName, onBack, { naming = true }, stats)
+                TopBar(player.shownName, onBack, { naming = true }, character, { fb.tap(); choosing = true }, stats)
                 val notes = listOfNotNull(
                     "Today's earlier chores were turned down, so let's build a new card.".takeIf { vm.rejectedToday(player.id, logs) },
                     "Someone else already has ${if (others.size == 1) "one" else "${others.size}"} of today's chores.".takeIf { others.isNotEmpty() },
@@ -154,13 +169,13 @@ fun PlayerScreen(
                 Picker(player.id, pool.filter { it.id !in others }, bonus = false, hinge = hinge, notes = notes) { vm.lockIn(player, it); fb.lockIn() }
             }
             bonusPicking -> {
-                TopBar("${player.shownName} · bonus round", onBack = { bonusPicking = false })
+                TopBar("${player.shownName} · bonus round", onBack = { bonusPicking = false }, character = character)
                 Picker(player.id, pool.filter { it.id !in taken }, bonus = true, hinge = hinge) {
                     vm.logBonus(player, it); fb.submit(); bonusPicking = false
                 }
             }
             else -> {
-                TopBar(player.shownName, onBack, { naming = true }, stats)
+                TopBar(player.shownName, onBack, { naming = true }, character, { fb.tap(); choosing = true }, stats)
                 CardRun(vm, player, card, logs, todays, others, hinge, bonusLeft = vm.store.pool.count { it.id !in taken },
                     onPuzzle = onPuzzle) { bonusPicking = true }
             }

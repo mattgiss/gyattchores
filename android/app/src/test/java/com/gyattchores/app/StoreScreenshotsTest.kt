@@ -5,7 +5,9 @@ import android.content.Intent
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
@@ -99,6 +101,21 @@ class StoreScreenshotsTest {
 
             // 3. Picking today's chores, with a suggested card.
             tap("broomrider")
+            if (!wide) {
+                // Not a store picture, but while we're here: a player swaps their character and swaps it back.
+                // Someone else's is offered faded and can't be taken.
+                fun mine(name: String) = rule.onAllNodes(hasContentDescription("Your character: $name")).fetchSemanticsNodes().isNotEmpty()
+                fun pickerOpen() { rule.onAllNodes(hasContentDescription("Your character", substring = true)).onFirst().performClick(); rule.waitForIdle() }
+                check(mine("Cat")) { "broomrider starts with the cat they picked" }
+                pickerOpen()
+                captureScreenRoboImage("build/pictures/pick-a-character.png")
+                rule.onAllNodes(hasContentDescription("Ninja") and hasClickAction()).onFirst().assertIsNotEnabled()
+                rule.onAllNodes(hasContentDescription("Frog") and hasClickAction()).onFirst().performClick(); rule.waitForIdle()
+                check(mine("Frog")) { "picking the frog makes it theirs" }
+                pickerOpen()
+                rule.onAllNodes(hasContentDescription("Cat") and hasClickAction()).onFirst().performClick(); rule.waitForIdle()
+                check(mine("Cat")) { "and the cat can be picked back" }
+            }
             tap("Suggest a 25-minute card")
             shot("03-pick-chores")
 
@@ -155,7 +172,7 @@ class StoreScreenshotsTest {
     /** A made-up family with a month behind it: one steady player, one hit-and-miss, one who hasn't picked today. */
     private fun family(): BackupFile {
         val pool: List<Chore> = Json { ignoreUnknownKeys = true }.decodeFromString(app.assets.open("chores.json").bufferedReader().readText())
-        val members = listOf(Player("1", "pat", isAdmin = true, plays = false), Player("2", "sockninja"), Player("3", "dishwizard"), Player("4", "broomrider"))
+        val members = listOf(Player("1", "pat", isAdmin = true, plays = false), Player("2", "sockninja"), Player("3", "dishwizard"), Player("4", "broomrider", character = "cat"))
         val code = AdminCode.make("2468", salt = "STORE-SCREENSHOTS")!!
         // The chores went on the list yesterday, so the picker isn't a wall of overdue marks.
         val added = today.minusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()

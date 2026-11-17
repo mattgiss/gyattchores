@@ -21,7 +21,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -48,7 +50,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.gyattchores.app.AppViewModel
+import com.gyattchores.app.engine.Characters
 import com.gyattchores.app.engine.Engine
+import com.gyattchores.app.engine.PlayerCharacter
 import com.gyattchores.app.model.ChoreLog
 import com.gyattchores.app.model.Dare
 import com.gyattchores.app.model.Player
@@ -83,12 +87,14 @@ fun HomeScreen(
     val dares = vm.dares(shared)
     val names = players.associate { it.id to it.shownName }
 
-    // One list, like a Clear list: the title on the first band, then each player on the next, red down
-    // the heat gradient in this week's order. Few players? Their rows grow to fill the screen.
+    // The title on the first band, then the players as small tiles, each a step down the heat
+    // gradient in this week's order, with the character they picked.
+    val characters = vm.characters(players)
     val board = players.map { it to Engine.weekPoints(it.id, logs, dares, today, zone) }.sortedByDescending { it.second }
     val bands = board.size + 1
     BoxWithConstraints(modifier.fillMaxSize().background(Bg)) {
-        val rowHeight = 64.dp
+        // Three tiles across on a phone; more where there's room, so a tablet's tiles stay small too.
+        val perRow = (maxWidth / 124.dp).toInt().coerceIn(3, 6)
         val ink = Palette.HEAT.ink
         var picking by remember { mutableStateOf(false) }
         if (picking) ThemePicker { picking = false }
@@ -112,24 +118,17 @@ fun HomeScreen(
 
             if (players.isEmpty()) Text("Nobody's playing yet. An admin can add players in Admin.",
                 color = Done, modifier = Modifier.padding(20.dp))
-            board.forEachIndexed { i, (p, pts) ->
-                val rank = Engine.rank(vm.totalXp(p.id, logs, shared))
-                val streak = Engine.streak(p.id, logs, now, zone)
-                val selected = p.id == selectedId
-                Box {
-                    Band(i + 1, bands, Modifier.clickable(onClickLabel = "open ${p.shownName}") { fb.tap(); onPick(p) }, minHeight = rowHeight) {
-                        Text("${i + 1}", fontWeight = FontWeight.Black, color = ink.copy(alpha = 0.6f))
-                        Text(p.shownName, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f),
-                            maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text("$pts pts", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black)
-                            Text(if (streak == 0) rank.version else "${rank.version} · $streak-day streak", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold,
-                                color = ink.copy(alpha = 0.8f))
-                        }
-                    }
-                    if (selected) Box(Modifier.width(6.dp).matchParentSize().background(Color.Transparent)) {
-                        Box(Modifier.width(6.dp).fillMaxHeight().background(ink))
-                    }
+            var place = 0
+            for (size in Characters.tileRows(board.size, perRow)) Row(Modifier.fillMaxWidth()) {
+                repeat(size) {
+                    val i = place++
+                    val (p, pts) = board[i]
+                    PlayerTile(
+                        place = i + 1, name = p.shownName, character = characters[p.id], points = pts,
+                        version = Engine.rank(vm.totalXp(p.id, logs, shared)).version, streak = Engine.streak(p.id, logs, now, zone),
+                        color = Palette.HEAT.band(i + 1, bands), ink = ink, selected = p.id == selectedId,
+                        modifier = Modifier.weight(1f).clickable(onClickLabel = "open ${p.shownName}") { fb.tap(); onPick(p) },
+                    )
                 }
             }
 
@@ -176,6 +175,35 @@ fun HomeScreen(
             val version = remember { runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrNull() ?: "?" }
             Text("Version $version", style = MaterialTheme.typography.labelSmall, color = Done,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
+        }
+    }
+}
+
+/**
+ * One player on the scoreboard: their place, their character, their name, this week's points, and
+ * their version with their streak beside it. Small on purpose, so a whole household fits above the fold.
+ */
+@Composable
+private fun PlayerTile(place: Int, name: String, character: PlayerCharacter?, points: Int, version: String, streak: Int,
+                       color: Color, ink: Color, selected: Boolean, modifier: Modifier = Modifier) {
+    Box(modifier.background(color).then(if (selected) Modifier.border(3.dp, ink) else Modifier)) {
+        Text("$place", fontWeight = FontWeight.Black, color = ink.copy(alpha = 0.6f), style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.padding(start = 8.dp, top = 6.dp))
+        Column(Modifier.fillMaxWidth().padding(start = 6.dp, end = 6.dp, top = 12.dp, bottom = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            if (character != null) CharacterIcon(character, 46.dp)
+            // A fixed height, so a long name that had to shrink doesn't leave its tile shorter than the others.
+            Box(Modifier.height(26.dp).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                FitText(name, style = MaterialTheme.typography.titleSmall.copy(fontSize = 15.sp), fontWeight = FontWeight.Bold, color = ink,
+                    modifier = Modifier.wrapContentWidth())
+            }
+            Text("$points pts", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Black, color = ink, maxLines = 1)
+            Row(Modifier.semantics(mergeDescendants = true) { contentDescription = if (streak == 0) version else "$version, $streak-day streak" },
+                verticalAlignment = Alignment.CenterVertically) {
+                val quiet = ink.copy(alpha = 0.85f)
+                Text(if (streak == 0) version else "$version · $streak", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold,
+                    color = quiet, maxLines = 1)
+                if (streak > 0) StreakFlame(12.dp, quiet, Modifier.padding(start = 1.dp))
+            }
         }
     }
 }

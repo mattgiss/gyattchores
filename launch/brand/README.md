@@ -16,3 +16,14 @@ Where the icon lives in the apps:
 
 The lettering is the font Pacifico, used under the SIL Open Font License, drawn as outlines so
 nothing needs the font installed. The colours run from `#FF3B2F` through `#E2751C` to `#EDB82A`.
+
+## The player characters
+
+`characters.svg` is a sheet of the sixteen characters players choose from for their scoreboard
+tile: Ninja, Cat, Wizard, Robot, Bear, Bunny, Alien, Monster, Frog, Owl, Octopus, Star, King,
+Astronaut, Mushroom and Flame. They are drawn for this app, in two colours, so they take on
+whichever theme the phone is using.
+
+The drawings live in one place, `tools/characters/art.mjs`, and `node tools/characters/build.mjs`
+writes them out for both apps and redraws the sheet. To add or change a character, edit the
+drawing there and run that; don't edit the files it writes.

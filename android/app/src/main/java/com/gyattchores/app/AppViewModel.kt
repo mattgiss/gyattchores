@@ -12,6 +12,8 @@ import com.gyattchores.app.engine.BackupFile
 import com.gyattchores.app.engine.RestoreCounts
 import com.gyattchores.app.engine.ChoreIntake
 import com.gyattchores.app.engine.DisplayName
+import com.gyattchores.app.engine.Characters
+import com.gyattchores.app.engine.PlayerCharacter
 import com.gyattchores.app.model.Card
 import com.gyattchores.app.model.Chore
 import com.gyattchores.app.model.ChoreLog
@@ -422,6 +424,17 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun setDisplayName(playerId: String, raw: String) {
         val f = store.family.value
         store.setFamily(f.copy(members = f.members.map { if (it.id == playerId) it.copy(displayName = DisplayName.clean(raw)) else it }), now())
+        requestSync()
+    }
+
+    /** Who has which character on the scoreboard: the one they picked, or one given from their username. */
+    fun characters(players: List<Player>): Map<String, PlayerCharacter> = Characters.assign(players)
+
+    /** A player's character is their own call too. An id this version doesn't know is ignored. */
+    fun setCharacter(playerId: String, characterId: String) {
+        if (Characters.named(characterId) == null) return
+        val f = store.family.value
+        store.setFamily(f.copy(members = f.members.map { if (it.id == playerId) it.copy(character = characterId) else it }), now())
         requestSync()
     }
 

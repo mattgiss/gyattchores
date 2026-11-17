@@ -139,3 +139,103 @@ struct StatsHeader: View {
         .foregroundStyle(Palette.heat.ink)
     }
 }
+
+// MARK: Characters
+
+/// One layer of a character's drawing, scaled to whatever square it's given.
+struct CharacterShape: Shape {
+    let path: String
+
+    func path(in rect: CGRect) -> Path {
+        let s = Double(min(rect.width, rect.height)) / Characters.size
+        let left = Double(rect.minX), top = Double(rect.minY)
+        func at(_ x: Double, _ y: Double) -> CGPoint { CGPoint(x: left + x * s, y: top + y * s) }
+        var p = Path()
+        for step in Characters.steps(path) {
+            switch step {
+            case let .move(x, y): p.move(to: at(x, y))
+            case let .line(x, y): p.addLine(to: at(x, y))
+            case let .quad(cx, cy, x, y): p.addQuadCurve(to: at(x, y), control: at(cx, cy))
+            case let .cubic(ax, ay, bx, by, x, y): p.addCurve(to: at(x, y), control1: at(ax, ay), control2: at(bx, by))
+            case .close: p.closeSubpath()
+            }
+        }
+        return p
+    }
+}
+
+/// A player's character, drawn in two colours: the theme's background for the body and its text
+/// colour for the eyes and other details, so it stands out on any band of any theme.
+struct CharacterIcon: View {
+    let character: PlayerCharacter
+    let size: CGFloat
+
+    var body: some View {
+        ZStack {
+            ForEach(Array(character.layers.enumerated()), id: \.offset) { _, layer in
+                CharacterShape(path: layer.path).fill(layer.detail ? Color.appText : Color.appBackground)
+            }
+        }
+        .frame(width: size, height: size)
+    }
+}
+
+/// The little flame beside a streak count: the Flame character's outline, in the text's colour.
+struct StreakFlame: View {
+    let size: CGFloat
+    var body: some View {
+        CharacterShape(path: Characters.named("flame")?.layers.first?.path ?? "").frame(width: size, height: size)
+    }
+}
+
+/// Pick a character. Each is shown on a band of the theme, as it will be on the scoreboard. One
+/// another player already has is faded and says whose it is: everyone gets their own.
+struct CharacterPicker: View {
+    let current: PlayerCharacter?
+    /// Character id to the name of the other player who has it.
+    let takenBy: [String: String]
+    let onPick: (PlayerCharacter) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        let all = Characters.all
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Text("Pick your character").font(.app(fixedSize: 26, weight: .black)).lineLimit(1).minimumScaleFactor(0.6)
+                Spacer()
+                Button("Done") { dismiss() }.font(.app(.callout)).fontWeight(.bold).frame(minHeight: 44)
+            }
+            .foregroundStyle(Color.appText).tint(Color.appText)
+            .padding(.horizontal, 16).padding(.top, 16).padding(.bottom, 8)
+            ScrollView {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 4), spacing: 4) {
+                    ForEach(Array(all.enumerated()), id: \.element.id) { i, c in
+                        let owner = takenBy[c.id]
+                        let mine = c.id == current?.id
+                        Button { onPick(c); dismiss() } label: {
+                            Palette.heat.band(i % 8, of: 8)
+                                .aspectRatio(1, contentMode: .fit)
+                                .overlay { CharacterIcon(character: c, size: 48) }
+                                .overlay { if mine { Rectangle().strokeBorder(Palette.heat.ink, lineWidth: 3) } }
+                                .opacity(owner == nil ? 1 : 0.35)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(owner != nil)
+                        .accessibilityLabel(c.name)
+                        .accessibilityValue(owner.map { "\($0) has this one" } ?? "")
+                        .accessibilityAddTraits(mine ? .isSelected : [])
+                        .accessibilityIdentifier("character-\(c.id)")
+                    }
+                }
+                if !takenBy.isEmpty {
+                    Text("The faded ones are already someone else's.").font(.app(.footnote)).foregroundStyle(Color.done)
+                        .frame(maxWidth: .infinity, alignment: .leading).padding(.top, 10)
+                }
+            }
+            .padding(.horizontal, 16).padding(.bottom, 16)
+        }
+        .background(Color.appBackground.ignoresSafeArea())
+        .presentationDetents([.medium, .large])
+    }
+}

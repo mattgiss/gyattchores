@@ -453,6 +453,18 @@ final class AppStore: ObservableObject {
         familyChanged()
     }
 
+    // MARK: Characters
+
+    /// Who has which character on the scoreboard: the one they picked, or one given from their username.
+    var characters: [String: PlayerCharacter] { Characters.assign(players) }
+
+    /// A player's character is their own call too. An id this version doesn't know is ignored.
+    func setCharacter(_ playerId: String, _ characterId: String) {
+        guard Characters.named(characterId) != nil, let i = members.firstIndex(where: { $0.id == playerId }) else { return }
+        members[i].character = characterId
+        familyChanged()
+    }
+
     /// What to show for a player: their display name, or their username if they haven't set one.
     func shownName(_ player: Player) -> String { player.shownName }
 

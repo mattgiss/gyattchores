@@ -10,19 +10,19 @@ struct HomeView: View {
     var selectedId: String? = nil
     let onPick: (Player) -> Void
     let onAdmin: () -> Void
-    /// At the largest text sizes a row's name and numbers don't fit side by side: stack them.
-    @Environment(\.dynamicTypeSize) private var typeSize
     #if FAMILY_SYNC
     var onDares: () -> Void = {}
     #endif
 
     var body: some View {
-        // One list, like a Clear list: the title on the first band, then each player on the next,
-        // red down to yellow, in this week's order. Few players? Their rows grow to fill the screen.
+        // The title on the first band, then the players as small tiles, each a step down the heat
+        // gradient in this week's order, with the character they picked.
         let board = store.players.map { ($0, store.weekPoints($0.id)) }.sorted { $0.1 > $1.1 }
         let bands = board.count + 1
+        let characters = store.characters
         GeometryReader { geo in
-            let rowHeight: CGFloat = 64
+            // Three tiles across on a phone; more where there's room, so an iPad's tiles stay small too.
+            let perRow = min(6, max(3, Int(geo.size.width / 124)))
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     header
@@ -33,8 +33,13 @@ struct HomeView: View {
                         Text("Nobody's playing yet. An admin can add players in Admin.")
                             .foregroundStyle(Color.done).padding(20)
                     }
-                    ForEach(Array(board.enumerated()), id: \.element.0.id) { i, row in
-                        playerRow(row.0, place: i, points: row.1, band: i + 1, of: bands, height: rowHeight)
+                    ForEach(tileRows(board.count, perRow: perRow), id: \.lowerBound) { row in
+                        HStack(spacing: 0) {
+                            ForEach(Array(row), id: \.self) { i in
+                                playerTile(board[i].0, place: i, points: board[i].1, band: i + 1, of: bands, character: characters[board[i].0.id])
+                            }
+                        }
+                        .fixedSize(horizontal: false, vertical: true)
                     }
 
                     #if FAMILY_SYNC
@@ -92,29 +97,49 @@ struct HomeView: View {
         .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 10)
     }
 
-    /// A player's band: place and name on the left, this week's points and their version and
-    /// streak on the right. The whole band is the button.
-    private func playerRow(_ p: Player, place: Int, points: Int, band: Int, of bands: Int, height: CGFloat) -> some View {
+    /// Which places share each row of tiles: `Characters.tileRows` says how many, this says which.
+    private func tileRows(_ count: Int, perRow: Int) -> [Range<Int>] {
+        var start = 0
+        return Characters.tileRows(count, perRow: perRow).map { size in
+            defer { start += size }
+            return start..<(start + size)
+        }
+    }
+
+    /// One player on the scoreboard: their place, their character, their name, this week's points,
+    /// and their version with their streak beside it. Small on purpose, so a whole household fits
+    /// above the fold. The whole tile is the button.
+    private func playerTile(_ p: Player, place: Int, points: Int, band: Int, of bands: Int, character: PlayerCharacter?) -> some View {
         let isSelected = p.id == selectedId
-        let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4)) : AnyLayout(HStackLayout(spacing: 12))
+        let ink = Palette.heat.ink
+        let version = store.rank(p.id).version
+        let streak = store.streak(p.id)
         return Button { fb.tap(); onPick(p) } label: {
-            Band(index: band, count: bands, minHeight: height) {
-                layout {
-                    HStack(alignment: .firstTextBaseline, spacing: 10) {
-                        Text("\(place + 1)").font(.app(.callout)).fontWeight(.black).opacity(0.6)
-                        // One line, shrinking a little before it cuts off: a wrapped, hyphenated
-                        // name looks broken in the narrow left pane of the two-pane layout.
-                        Text(store.shownName(p)).font(.app(.title3)).fontWeight(.bold).lineLimit(1).minimumScaleFactor(0.6)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    VStack(alignment: typeSize.isAccessibilitySize ? .leading : .trailing, spacing: 2) {
-                        Text("\(points) pts").font(.app(.headline)).fontWeight(.black)
-                        Text(store.streak(p.id) == 0 ? store.rank(p.id).version : "\(store.rank(p.id).version) · \(store.streak(p.id))-day streak").font(.app(.footnote)).fontWeight(.semibold).opacity(0.8)
-                    }
-                    .lineLimit(1)
+            VStack(spacing: 1) {
+                if let character { CharacterIcon(character: character, size: 46) }
+                // One line, shrinking before it cuts off, in a fixed height so every tile matches.
+                Text(store.shownName(p)).font(.app(.subheadline)).fontWeight(.bold).lineLimit(1).minimumScaleFactor(0.6)
+                    .frame(height: 26)
+                Text("\(points) pts").font(.app(.subheadline)).fontWeight(.black).lineLimit(1).minimumScaleFactor(0.7)
+                HStack(spacing: 1) {
+                    Text(streak == 0 ? version : "\(version) · \(streak)").font(.app(.caption)).fontWeight(.semibold).lineLimit(1)
+                    if streak > 0 { StreakFlame(size: 12) }
                 }
+                .opacity(0.85)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(streak == 0 ? version : "\(version), \(streak)-day streak")
             }
-            .overlay(alignment: .leading) { if isSelected { Rectangle().fill(Palette.heat.ink).frame(width: 6) } }
+            .foregroundStyle(ink)
+            // Three across leaves no room for the largest text sizes; the player's own screen has them in full.
+            .dynamicTypeSize(...DynamicTypeSize.xLarge)
+            .padding(.top, 12).padding(.bottom, 10).padding(.horizontal, 6)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Palette.heat.band(band, of: bands))
+            .overlay(alignment: .topLeading) {
+                Text("\(place + 1)").font(.app(fixedSize: 14, weight: .black)).foregroundStyle(ink.opacity(0.6)).padding(.leading, 8).padding(.top, 6)
+            }
+            .overlay { if isSelected { Rectangle().strokeBorder(ink, lineWidth: 3) } }
+            .contentShape(Rectangle())
         }
         .buttonStyle(BandPress())
         .accessibilityElement(children: .combine)

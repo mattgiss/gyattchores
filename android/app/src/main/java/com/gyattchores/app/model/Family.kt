@@ -42,6 +42,8 @@ data class Family(
  *  - "players": "id:username" for each member who plays
  *  - "removed_players": ids
  *  - "display|<id>": one item, the display name (empty list: none)
+ * Added with player characters (older versions leave it alone):
+ *  - "character|<id>": one item, the id of the character they picked (empty list: none picked)
  * Added with setup and admin codes:
  *  - "staff": "id:username" for members who don't play
  *  - "admins": ids
@@ -62,12 +64,13 @@ object FamilyState {
     const val NEXT_ID = "next_player_id"
     const val DISPLAY = "display|"
     const val ADMIN_CODE = "admin_code|"
+    const val CHARACTER = "character|"
 
     private val json = Json { ignoreUnknownKeys = true }
 
     /** True for keys this object owns; anything else (dares) is left alone. */
     fun owns(key: String) = key in setOf(PLAYERS, STAFF, ADMINS, REMOVED, CHORES, CHORE_ADDED, MEMBER_JOINED, NEXT_ID) ||
-        key.startsWith(DISPLAY) || key.startsWith(ADMIN_CODE)
+        key.startsWith(DISPLAY) || key.startsWith(ADMIN_CODE) || key.startsWith(CHARACTER)
 
     fun encode(f: Family): Map<String, List<String>> {
         val out = linkedMapOf<String, List<String>>()
@@ -80,6 +83,7 @@ object FamilyState {
         out[MEMBER_JOINED] = f.memberJoined.entries.sortedBy { it.key }.map { "${it.key}:${it.value}" }
         out[NEXT_ID] = listOf(f.nextPlayerId.toString())
         for (m in f.members) out[DISPLAY + m.id] = listOfNotNull(m.displayName)
+        for (m in f.members) out[CHARACTER + m.id] = listOfNotNull(m.character)
         for ((id, code) in f.adminCodes) if (f.members.any { it.id == id && it.isAdmin }) out[ADMIN_CODE + id] = listOf(code.encode())
         return out
     }
@@ -109,11 +113,13 @@ object FamilyState {
             listed.distinctBy { it.first.first }.map { (p, plays) ->
                 val (id, name) = p
                 val was = baseById[id]
-                Player(id, name, was?.displayName, admins?.contains(id) ?: was?.isAdmin ?: false, plays)
+                Player(id, name, was?.displayName, admins?.contains(id) ?: was?.isAdmin ?: false, plays, was?.character)
             }
         } else base.members.map { m -> admins?.let { m.copy(isAdmin = m.id in it) } ?: m }
         val withNames = members.map { m ->
             state[DISPLAY + m.id]?.let { m.copy(displayName = it.firstOrNull()?.ifBlank { null }) } ?: m
+        }.map { m ->
+            state[CHARACTER + m.id]?.let { m.copy(character = it.firstOrNull()?.ifBlank { null }) } ?: m
         }
         val codes = base.adminCodes.toMutableMap()
         for (m in withNames) state[ADMIN_CODE + m.id]?.let { items ->

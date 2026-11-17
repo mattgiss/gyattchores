@@ -11,6 +11,7 @@ struct PlayerView: View {
     var showsBack = true
     @State private var bonusPicking = false
     @State private var editingDisplayName = false
+    @State private var choosingCharacter = false
     @State private var displayNameDraft = ""
 
     var body: some View {
@@ -31,6 +32,13 @@ struct PlayerView: View {
                 if showsBack || bonusPicking {
                     Button("Back") { fb.tap(); if bonusPicking { bonusPicking = false } else { dismiss() } }
                         .font(.app(.callout)).fontWeight(.bold).frame(minWidth: 44, minHeight: 44, alignment: .leading).padding(.trailing, 8)
+                }
+                // Their character; tapping it is how they change it.
+                if let character = store.characters[player.id] {
+                    Button { fb.tap(); choosingCharacter = true } label: { CharacterIcon(character: character, size: 36) }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Your character: \(character.name)").accessibilityHint("Changes your character")
+                        .accessibilityIdentifier("character")
                 }
                 Text(bonusPicking ? "\(store.shownName(player)) · bonus" : store.shownName(player)).font(.app(.title3)).fontWeight(.black).lineLimit(1).minimumScaleFactor(0.6)
                 Spacer(minLength: 8)
@@ -70,6 +78,10 @@ struct PlayerView: View {
         }
         .background(Color.appBackground)
         .toolbar(.hidden, for: .navigationBar)
+        .sheet(isPresented: $choosingCharacter) {
+            // Everyone gets their own: the other players' characters are shown as taken.
+            CharacterPicker(current: store.characters[player.id], takenBy: charactersTaken) { store.setCharacter(player.id, $0.id) }
+        }
         .alert("Display name", isPresented: $editingDisplayName) {
             TextField("Anything you like", text: $displayNameDraft)
                 .textInputAutocapitalization(.never).autocorrectionDisabled()
@@ -79,6 +91,18 @@ struct PlayerView: View {
         } message: {
             Text("Shown in place of your username, \(player.name). Your chores and points stay exactly as they are. Up to \(DisplayName.maxLength) characters.")
         }
+    }
+}
+
+private extension PlayerView {
+    /// The other players' characters, each with whose it is.
+    var charactersTaken: [String: String] {
+        let characters = store.characters
+        var out: [String: String] = [:]
+        for other in store.players where other.id != player.id {
+            if let c = characters[other.id] { out[c.id] = store.shownName(other) }
+        }
+        return out
     }
 }
 
