@@ -39,7 +39,7 @@ targets:
         TARGETED_DEVICE_FAMILY: "1,2"   # iPhone and iPad
         CODE_SIGN_STYLE: Automatic
         GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_CFBundleDisplayName: GyattChores
+        INFOPLIST_KEY_CFBundleDisplayName: DOYOURWORK
         INFOPLIST_KEY_NSFaceIDUsageDescription: Open the admin area to approve chores.
         INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
         INFOPLIST_KEY_UILaunchScreen_Generation: YES

@@ -83,7 +83,7 @@ fun SetupScreen(vm: AppViewModel) {
         Column(Modifier.widthIn(max = 560.dp).fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                FitText("GYATTCHORES", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold,
+                FitText("DOYOURWORK", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold,
                     letterSpacing = 4.sp, color = Accent, modifier = Modifier.weight(1f))
                 if (step > 0) Text("Step $step of 3", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -162,7 +162,7 @@ fun SetupScreen(vm: AppViewModel) {
 fun WaitingForFamily(vm: AppViewModel, status: String) {
     Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("GYATTCHORES", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, letterSpacing = 4.sp, color = Accent)
+        Text("DOYOURWORK", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, letterSpacing = 4.sp, color = Accent)
         Text(if (status == "offline") "Can't reach the family's scoreboard. Check the connection and try again."
             else "Fetching your family's scoreboard…", color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (status == "offline") TermButton("Try again", modifier = Modifier.widthIn(max = 320.dp)) { vm.requestSync() }

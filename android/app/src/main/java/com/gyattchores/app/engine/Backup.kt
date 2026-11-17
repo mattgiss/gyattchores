@@ -14,7 +14,7 @@ import java.util.UUID
 /**
  * A backup of a family's game: who's in it, their codes, the chore list and every chore logged.
  * One format for both apps, so a backup made on an iPhone restores on Android and back again.
- * JSON, saved as "gyattchores-backup-YYYY-MM-DD.json" (phones preview .json and pickers accept it
+ * JSON, saved as "doyourwork-backup-YYYY-MM-DD.json" (phones preview .json and pickers accept it
  * without a custom type). Times are epoch millis.
  */
 @Serializable
@@ -51,6 +51,7 @@ data class BackupFile(
     val players get() = members.count { it.plays }
 
     companion object {
+        /** The app's first name. It stays, so backups made before the rename, and by either platform, still restore. */
         const val TYPE = "gyattchores-backup"
         const val VERSION = 1
         const val EXTENSION = "json"
@@ -81,16 +82,16 @@ data class RestoreCounts(val players: Int, val chores: Int, val logs: Int,
 object Backup {
     private val json = Json { ignoreUnknownKeys = true; explicitNulls = false; encodeDefaults = true }
 
-    fun fileName(date: java.time.LocalDate) = "gyattchores-backup-$date.${BackupFile.EXTENSION}"
+    fun fileName(date: java.time.LocalDate) = "doyourwork-backup-$date.${BackupFile.EXTENSION}"
 
     fun encode(b: BackupFile): String = json.encodeToString(b)
 
     /** Reads a backup, or throws [BackupException] saying what's wrong with it. */
     fun decode(text: String): BackupFile {
         val b = try { json.decodeFromString<BackupFile>(text) } catch (e: Exception) {
-            throw BackupException("this file isn't a GyattChores backup")
+            throw BackupException("this file isn't a DOYOURWORK backup")
         }
-        if (b.type != BackupFile.TYPE) throw BackupException("this file isn't a GyattChores backup")
+        if (b.type != BackupFile.TYPE) throw BackupException("this file isn't a DOYOURWORK backup")
         if (b.version > BackupFile.VERSION) throw BackupException("this backup is from a newer version of the app. update the app and try again")
         return b
     }

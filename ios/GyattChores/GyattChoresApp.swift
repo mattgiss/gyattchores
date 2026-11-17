@@ -15,7 +15,7 @@ struct GyattChoresApp: App {
                 .id(themes.current.id)
                 .foregroundStyle(Color.appText)
                 .background(Color.appBackground.ignoresSafeArea())
-                .alert("GyattChores", isPresented: Binding(get: { store.notice != nil }, set: { if !$0 { store.notice = nil } })) {
+                .alert("DOYOURWORK", isPresented: Binding(get: { store.notice != nil }, set: { if !$0 { store.notice = nil } })) {
                     Button("OK", role: .cancel) { store.notice = nil }
                 } message: { Text(store.notice ?? "") }
                 .environmentObject(store)

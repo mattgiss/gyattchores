@@ -43,7 +43,7 @@ public struct Backup: Codable, Equatable {
         case newerVersion
         public var message: String {
             switch self {
-            case .notABackup: "that file isn't a GyattChores backup."
+            case .notABackup: "that file isn't a DOYOURWORK backup."
             case .newerVersion: "this backup is from a newer version of the app. update the app, then try again."
             }
         }
@@ -75,9 +75,10 @@ public struct Backup: Codable, Equatable {
         return try e.encode(self)
     }
 
-    /// "gyattchores-backup-2026-11-14.json"
+    /// "doyourwork-backup-2026-11-14.json". (The `typeName` inside the file keeps the app's first
+    /// name, so backups made before the rename, and by either platform, still restore.)
     public static func fileName(_ date: Date = Date(), calendar: Calendar = .current) -> String {
-        "gyattchores-backup-\(Engine.dayKey(date, calendar: calendar)).\(fileExtension)"
+        "doyourwork-backup-\(Engine.dayKey(date, calendar: calendar)).\(fileExtension)"
     }
 
     // MARK: Reading one

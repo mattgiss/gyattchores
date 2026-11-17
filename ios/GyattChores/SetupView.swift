@@ -26,7 +26,7 @@ struct SetupView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .firstTextBaseline) {
-                Text("GyattChores").font(.app(fixedSize: 34, weight: .black)).foregroundStyle(Palette.heat.stops[0])
+                Text("DOYOURWORK").font(.app(fixedSize: 34, weight: .black)).lineLimit(1).minimumScaleFactor(0.6).foregroundStyle(Palette.heat.stops[0])
                     .lineLimit(1).minimumScaleFactor(0.6)
                 Spacer(minLength: 8)
                 if step != .welcome { Text("Step \(step.rawValue) of 3").font(.app(.footnote)).foregroundStyle(.secondary) }

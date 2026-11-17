@@ -70,7 +70,7 @@ struct HomeView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline) {
-                Text("GyattChores").font(.app(fixedSize: 28, weight: .black)).lineLimit(1).minimumScaleFactor(0.5)
+                Text("DOYOURWORK").font(.app(fixedSize: 28, weight: .black)).lineLimit(1).minimumScaleFactor(0.5)
                 Spacer(minLength: 8)
                 // Approving chores and changing players or chores: behind an admin's code.
                 // A look of your own, for this phone.

@@ -56,7 +56,7 @@ import com.gyattchores.app.model.Rank
 
 /**
  * One line of text that shrinks to fit the room it has, instead of wrapping or being cut off:
- * "GYATTCHORES" broken across two lines in a narrow pane reads as a bug. Below [minScale] it
+ * "DOYOURWORK" broken across two lines in a narrow pane reads as a bug. Below [minScale] it
  * stops shrinking and trims with an ellipsis. Given a [shorter] text, that's used instead whenever
  * [text] doesn't fit at full size, and shrinks the same way.
  */

@@ -26,7 +26,7 @@ final class GyattChoresUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-uiTesting"] + extra
         app.launch()
-        XCTAssertTrue(app.staticTexts["GyattChores"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["DOYOURWORK"].waitForExistence(timeout: wait))
         return app
     }
 
@@ -135,7 +135,7 @@ final class GyattChoresUITests: XCTestCase {
     private func goBack(in app: XCUIApplication) {
         let back = app.buttons["Back"]
         if back.exists { back.tap() }
-        XCTAssertTrue(app.staticTexts["GyattChores"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["DOYOURWORK"].waitForExistence(timeout: wait))
     }
 
     // MARK: Tests
@@ -286,7 +286,7 @@ final class GyattChoresUITests: XCTestCase {
         restore.tap()
         // Today's file by name: a simulator can still hold backups from earlier runs, with older demo history.
         let day = DateFormatter(); day.locale = Locale(identifier: "en_US_POSIX"); day.dateFormat = "yyyy-MM-dd"
-        let file = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", "gyattchores-backup-\(day.string(from: Date()))")).firstMatch
+        let file = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", "doyourwork-backup-\(day.string(from: Date()))")).firstMatch
         // Older iOS opens the picker on Recents, which may not list the file yet: go to where it was saved.
         if !file.waitForExistence(timeout: 5) {
             for place in ["Browse", "On My iPhone", "On My iPad"] {
@@ -299,7 +299,7 @@ final class GyattChoresUITests: XCTestCase {
         }
         XCTAssertTrue(file.waitForExistence(timeout: wait), "the saved backup should be in the picker")
         // Tap the file itself: on older iOS a tap on its name label (in the grid view) doesn't open it.
-        let cell = app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", "gyattchores-backup-\(day.string(from: Date()))")).firstMatch
+        let cell = app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", "doyourwork-backup-\(day.string(from: Date()))")).firstMatch
         if cell.exists { cell.tap() } else { file.tap() }
         let confirm = app.buttons["Replace everything here"]
         // Older iOS can select the file without opening it: open it.
@@ -370,7 +370,7 @@ final class GyattChoresUITests: XCTestCase {
         restore.tap()
         // Today's file by name: a simulator can still hold backups from earlier runs, with older demo history.
         let day = DateFormatter(); day.locale = Locale(identifier: "en_US_POSIX"); day.dateFormat = "yyyy-MM-dd"
-        let file = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", "gyattchores-backup-\(day.string(from: Date()))")).firstMatch
+        let file = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", "doyourwork-backup-\(day.string(from: Date()))")).firstMatch
         // Older iOS opens the picker on Recents, which may not list the file yet: go to where it was saved.
         if !file.waitForExistence(timeout: 5) {
             for place in ["Browse", "On My iPhone", "On My iPad"] {
@@ -383,7 +383,7 @@ final class GyattChoresUITests: XCTestCase {
         }
         XCTAssertTrue(file.waitForExistence(timeout: wait), "the saved backup should be in the picker")
         // Tap the file itself: on older iOS a tap on its name label (in the grid view) doesn't open it.
-        let cell = app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", "gyattchores-backup-\(day.string(from: Date()))")).firstMatch
+        let cell = app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", "doyourwork-backup-\(day.string(from: Date()))")).firstMatch
         if cell.exists { cell.tap() } else { file.tap() }
         let add = app.buttons["Add it to the family"]
         XCTAssertTrue(add.waitForExistence(timeout: wait), "restoring asks first")
@@ -598,7 +598,7 @@ final class GyattChoresUITests: XCTestCase {
 
         goBack(in: app)
         // However far the list is pushed, the title stays where it is.
-        let title = app.staticTexts["GyattChores"]
+        let title = app.staticTexts["DOYOURWORK"]
         let before = title.frame
         app.staticTexts["27/30 · 90%"].swipeUp()
         XCTAssertEqual(title.frame, before, "the title shouldn't scroll away")

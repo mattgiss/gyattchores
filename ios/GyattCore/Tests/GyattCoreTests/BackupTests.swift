@@ -179,6 +179,6 @@ final class BackupTests: XCTestCase {
     }
 
     func testFileName() {
-        XCTAssertEqual(Backup.fileName(day1, calendar: cal), "gyattchores-backup-2026-11-06.json")
+        XCTAssertEqual(Backup.fileName(day1, calendar: cal), "doyourwork-backup-2026-11-06.json")
     }
 }

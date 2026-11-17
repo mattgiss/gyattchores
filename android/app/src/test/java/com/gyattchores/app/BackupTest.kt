@@ -62,11 +62,11 @@ class BackupTest {
         for (key in listOf("\"type\"", "\"version\"", "\"exportedAt\"", "\"source\"", "\"appVersion\"", "\"members\"", "\"adminCodes\"",
             "\"chores\"", "\"choreAdded\"", "\"memberJoined\"", "\"nextPlayerId\"", "\"logs\"", "\"dares\"", "\"puzzleLevels\"",
             "\"isAdmin\"", "\"plays\"", "\"displayName\"", "\"tierDays\"", "\"parentPick\"", "\"remoteId\"")) assertTrue(key, key in text)
-        assertEquals("gyattchores-backup-2026-11-14.json", Backup.fileName(java.time.LocalDate.of(2026, 11, 14)))
+        assertEquals("doyourwork-backup-2026-11-14.json", Backup.fileName(java.time.LocalDate.of(2026, 11, 14)))
     }
 
     @Test fun filesThatArentBackupsAreTurnedAway() {
-        assertEquals("this file isn't a GyattChores backup", assertThrows(BackupException::class.java) { Backup.decode("not json") }.message)
+        assertEquals("this file isn't a DOYOURWORK backup", assertThrows(BackupException::class.java) { Backup.decode("not json") }.message)
         assertThrows(BackupException::class.java) { Backup.decode("""{"type":"something-else","members":[{"id":"1","name":"a","isAdmin":true}]}""") }
         val newer = assertThrows(BackupException::class.java) {
             Backup.decode("""{"type":"gyattchores-backup","version":2,"members":[{"id":"1","name":"a","isAdmin":true}]}""")

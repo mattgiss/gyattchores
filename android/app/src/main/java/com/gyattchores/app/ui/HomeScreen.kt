@@ -95,7 +95,7 @@ fun HomeScreen(
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp)) {
             Column(Modifier.fillMaxWidth().background(Palette.HEAT.band(0, bands)).statusBarsPadding().padding(start = 16.dp, end = 4.dp, bottom = 10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    FitText("GyattChores", style = MaterialTheme.typography.headlineLarge.copy(fontSize = 28.sp), fontWeight = FontWeight.Black,
+                    FitText("DOYOURWORK", style = MaterialTheme.typography.headlineLarge.copy(fontSize = 28.sp), fontWeight = FontWeight.Black,
                         color = ink, modifier = Modifier.weight(1f))
                     // A look of your own, for this phone.
                     TextButton(onClick = { fb.tap(); picking = true }) { Text("Theme", color = ink, fontWeight = FontWeight.Bold) }

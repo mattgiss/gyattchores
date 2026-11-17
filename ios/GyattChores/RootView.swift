@@ -141,7 +141,7 @@ private struct FamilyLoadingView: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            Text("GyattChores").font(.app(fixedSize: 34, weight: .black)).foregroundStyle(Palette.heat.stops[0])
+            Text("DOYOURWORK").font(.app(fixedSize: 34, weight: .black)).lineLimit(1).minimumScaleFactor(0.6).foregroundStyle(Palette.heat.stops[0])
             if store.syncStatus == "offline" {
                 Text("Can't reach the family's scoreboard. Check the connection and try again.").foregroundStyle(.secondary).multilineTextAlignment(.center)
                 Button("Try again") { store.requestSync() }.buttonStyle(.bordered)
