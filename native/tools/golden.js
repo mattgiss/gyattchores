@@ -1,4 +1,4 @@
-// Usage: TZ=UTC node native/tools/golden.js index.html android/app/src/test/resources/golden.json
+// Usage: TZ=UTC node native/tools/golden.js native/tools/web-engine.html android/app/src/test/resources/golden.json
 // Runs the web app's own engine functions (extracted from index.html) on random logs and records the results.
 const fs=require('fs');
 const html=fs.readFileSync(process.argv[2],'utf8');

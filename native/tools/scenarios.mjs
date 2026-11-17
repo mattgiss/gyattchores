@@ -19,7 +19,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');   // repo root
-const html = readFileSync(resolve(root, 'index.html'), 'utf8');
+const html = readFileSync(resolve(root, 'native/tools/web-engine.html'), 'utf8');
 
 // ── Lift the engine out of index.html ────────────────────────────────────────
 const between = (startMarker, endMarker) => {
@@ -157,7 +157,7 @@ for (const seed of [1, 7, 42]) {   // long random histories: every rule interact
 const newestFirst = logs => [...logs].sort((a, b) => b.timestamp - a.timestamp);   // loadLogs() order
 
 const out = {
-  generatedFrom: 'index.html',
+  generatedFrom: 'native/tools/web-engine.html',
   now: NOW,
   timeZone: 'UTC',
   dailyMinutes: E.DAILY_MINUTES,

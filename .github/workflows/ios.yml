@@ -7,15 +7,15 @@ name: iOS
 #   release  — the app archives in Release with the newest Xcode, as TestFlight needs, and so
 #              does the family build ("GyattChores Family", which syncs); only it has a server address
 #   store-screenshots — takes the App Store listing's screenshots at the sizes Apple asks for
-# index.html is in the path list because it's the source of truth for the game
-# rules: change a rule there and this says whether the native ports still agree.
+# native/tools/web-engine.html is the retired web app, kept as the source of truth for the
+# game rules: change a rule there and this says whether the native ports still agree.
 
 on:
   push:
     paths:
       - 'ios/**'
       - 'native/**'
-      - 'index.html'
+      - 'native/tools/web-engine.html'
       - 'android/app/src/test/resources/golden.json'
       - 'android/app/src/main/assets/puzzles.json'
       - '.github/workflows/ios.yml'
@@ -27,7 +27,7 @@ concurrency:
 
 jobs:
   fixtures:
-    name: Test data matches index.html
+    name: Test data matches the web engine
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,7 +36,7 @@ jobs:
           node-version: '20'
       - name: Regenerate from the web engine
         run: |
-          TZ=UTC node native/tools/golden.js index.html android/app/src/test/resources/golden.json
+          TZ=UTC node native/tools/golden.js native/tools/web-engine.html android/app/src/test/resources/golden.json
           node native/tools/scenarios.mjs
           node native/tools/puzzles.mjs
       - name: Fail if the committed test data is stale
