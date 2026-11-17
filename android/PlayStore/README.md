@@ -1,4 +1,4 @@
-# GyattChores on Google Play
+# DOYOURWORK on Google Play
 
 Everything the Play Console asks for before an app can go to production, in roughly the order
 it asks, with text ready to paste. Where only you can answer, it says so.
@@ -35,10 +35,10 @@ prints the path of the signed `.aab` to upload. It needs the upload key describe
 
 ## Store listing (Grow → Store presence → Main store listing)
 
-**App name** (30 at most; this is 29)
+**App name** (30 at most; this is 28)
 
 ```
-GyattChores: Chore Scoreboard
+DOYOURWORK: Chore Scoreboard
 ```
 
 **Short description** (80 at most; this is 80)
@@ -50,7 +50,7 @@ GyattChores: Chore Scoreboard
 **Full description** (4,000 at most)
 
 ```
-GyattChores is a scoreboard for housework. Everyone picks about 25 minutes of chores a day and checks them off, an admin (usually a parent) approves, and points, streaks and a weekly winner follow.
+DOYOURWORK is a scoreboard for housework. Everyone picks about 25 minutes of chores a day and checks them off, an admin (usually a parent) approves, and points, streaks and a weekly winner follow.
 
 PRIVATE BY DESIGN
 • No accounts and no sign-up. Open it and start.
@@ -81,7 +81,7 @@ YOURS TO KEEP
 • Save a backup of the whole scoreboard to a file you control, and restore it on a new phone.
 
 ONE DEVICE, ONE SCOREBOARD
-GyattChores runs on a single phone or tablet that the household shares, like the scoreboard at a bowling alley. On a tablet or an unfolded foldable, the scoreboard and the day's card sit side by side.
+DOYOURWORK runs on a single phone or tablet that the household shares, like the scoreboard at a bowling alley. On a tablet or an unfolded foldable, the scoreboard and the day's card sit side by side.
 ```
 
 Don't mention iPhone, Apple or the App Store in any of this: Google's metadata policy doesn't
@@ -132,7 +132,7 @@ cd android && ./PlayStore/take-screenshots.sh
 | Advertising ID | No, the app does not use an advertising ID |
 
 **Target audience.** This is the one answer that changes what rules apply. If any age group
-under 13 is ticked, Google's Families Policy applies to the whole app. GyattChores would meet it
+under 13 is ticked, Google's Families Policy applies to the whole app. DOYOURWORK would meet it
 (no ads, no data collected, no network), but it adds declarations and review. The app is set up
 and run by an adult and the listing is written for a household, so my recommendation is to tick
 **13–15, 16–17 and 18 and over**, and when asked whether the listing could unintentionally
@@ -161,7 +161,7 @@ themself, through the system's own save screen, to a place they choose.
 Release notes for the first closed test (500 at most):
 
 ```
-The first test release of GyattChores: a chore scoreboard for one household on one phone or tablet. Set up your family, pick 25 minutes of chores, and have an admin approve them. Everything stays on your device. Tell us what confused you and what broke.
+The first test release of DOYOURWORK: a chore scoreboard for one household on one phone or tablet. Set up your family, pick 25 minutes of chores, and have an admin approve them. Everything stays on your device. Tell us what confused you and what broke.
 ```
 
 ## Launch

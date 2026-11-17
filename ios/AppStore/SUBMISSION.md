@@ -1,4 +1,4 @@
-# Submitting GyattChores 1.0 to the App Store
+# Submitting DOYOURWORK 1.0 to the App Store
 
 Everything App Store Connect asks for before the **Add for Review** button turns on, in the
 order it asks. Where there is text to enter, it is here ready to paste. Where only you can
@@ -71,7 +71,7 @@ A chore scoreboard for your household: 25 minutes a day each, approved by an adm
 ### 3. Description (4,000 at most)
 
 ```
-GyattChores is a scoreboard for housework. Everyone picks about 25 minutes of chores a day and checks them off, an admin (usually a parent) approves, and points, streaks and a weekly winner follow.
+DOYOURWORK is a scoreboard for housework. Everyone picks about 25 minutes of chores a day and checks them off, an admin (usually a parent) approves, and points, streaks and a weekly winner follow.
 
 PRIVATE BY DESIGN
 • No accounts and no sign-up. Open it and start.
@@ -102,7 +102,7 @@ YOURS TO KEEP
 • Save a backup of the whole scoreboard to a file you control, and restore it on a new device.
 
 ONE DEVICE, ONE SCOREBOARD
-GyattChores runs on a single iPhone or iPad that the household shares, like the scoreboard at a bowling alley. On iPad, the scoreboard and the day's card sit side by side.
+DOYOURWORK runs on a single iPhone or iPad that the household shares, like the scoreboard at a bowling alley. On iPad, the scoreboard and the day's card sit side by side.
 ```
 
 Every line describes something the app does today. Two things are deliberately left out: sharing
@@ -165,7 +165,7 @@ No encryption question should appear; the app already answers it ("no").
   they choose their own when they set the app up.
 
 ```
-GyattChores is a household chore scoreboard for one shared iPhone or iPad. There is no account or sign-in, and the app has no network code: everything stays on the device.
+DOYOURWORK is a household chore scoreboard for one shared iPhone or iPad. There is no account or sign-in, and the app has no network code: everything stays on the device.
 
 SETTING UP (first launch)
 1. Tap "Set up this device".
@@ -195,7 +195,7 @@ Choose **Manually release this version**, so nothing goes live until you say so.
 
 | Field | Enter |
 |---|---|
-| Name | `GyattChores` (already there) |
+| Name | `DOYOURWORK`. The record still says GyattChores: change it here. App names must be unique on the App Store, so if Apple says this one is taken, use `DOYOURWORK: Chore Scoreboard` (28 of 30). |
 | Subtitle (30 at most; this is 28) | `The private chore scoreboard` |
 | Primary category | Productivity |
 | Secondary category | Lifestyle |
@@ -307,13 +307,13 @@ sidebar. They are needed before anyone outside your App Store Connect team can t
 Beta App Description:
 
 ```
-GyattChores is a chore scoreboard for one household on one iPhone or iPad. Everyone picks about 25 minutes of chores a day, an admin approves what got done, and points, streaks and a weekly winner follow. There are no accounts and nothing leaves your device.
+DOYOURWORK is a chore scoreboard for one household on one iPhone or iPad. Everyone picks about 25 minutes of chores a day, an admin approves what got done, and points, streaks and a weekly winner follow. There are no accounts and nothing leaves your device.
 ```
 
 **What to Test**, entered on each build (4,000 at most):
 
 ```
-Thanks for trying GyattChores early.
+Thanks for trying DOYOURWORK early.
 
 Please set it up for your own household: an admin, a few players, and your chores (try describing them in a sentence). Then run it for a few days.
 
