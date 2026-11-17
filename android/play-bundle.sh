@@ -24,6 +24,6 @@ case "$OWNER" in *"Android Debug"*) echo "Signed with the debug key, not the upl
 
 VERSION=$(grep -oE 'versionName = "[^"]+"' app/build.gradle.kts | cut -d'"' -f2)
 CODE=$(grep -oE 'versionCode = [0-9]+' app/build.gradle.kts | grep -oE '[0-9]+')
-OUT="build/GyattChores-play-$VERSION-$CODE.aab"
+OUT="build/DOYOURWORK-play-$VERSION-$CODE.aab"
 mkdir -p build && cp "$AAB" "$OUT"
 echo "$OUT  (version $VERSION, versionCode $CODE, $OWNER)"

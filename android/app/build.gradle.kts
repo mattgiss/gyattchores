@@ -97,7 +97,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
 }
 
 // The family edition's debug build installs beside the real family app (com.gyattchores.app.debug,
-// labelled "GyattChores (test)"), so testing it on a family phone never touches the real app's data.
+// labelled "DOYOURWORK (test)"), so testing it on a family phone never touches the real app's data.
 androidComponents {
     onVariants(selector().withBuildType("debug").withFlavor("edition" to "family")) { v ->
         v.applicationId.set("com.gyattchores.app.debug")

@@ -1,4 +1,6 @@
-# GyattChores for iOS
+# DOYOURWORK for iOS
+
+The app was called GyattChores; the project, schemes, targets and bundle id keep that name.
 
 The native SwiftUI app: a chore scoreboard for one family on one iPhone or
 iPad. `GyattCore/` is the UI-free package (game rules, data model, the chore
@@ -68,7 +70,7 @@ To archive the family build for TestFlight, use the archive steps below with
 ## Backups
 
 Admin → device → **save a backup…** writes the whole scoreboard to a file the family keeps
-(`gyattchores-backup-YYYY-MM-DD.json`, saved through the system's save panel: Files, iCloud Drive,
+(`doyourwork-backup-YYYY-MM-DD.json`, saved through the system's save panel: Files, iCloud Drive,
 AirDrop…). **restore from a backup…** is on the same screen and on setup's first screen, for a new
 phone. The format is `GyattCore/Sources/GyattCore/Backup.swift`; the Android app reads and writes the
 same files, so a backup from either platform restores on the other.

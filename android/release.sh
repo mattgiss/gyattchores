@@ -20,11 +20,11 @@ export JAVA_HOME="${JAVA_HOME:-/opt/homebrew/opt/openjdk@17}"
 # The family edition (syncs with the family's phones) is what Obtainium installs. Both editions'
 # tests run, so the public, on-device edition can't quietly break.
 ./gradlew -q testFamilyDebugUnitTest testPublicDebugUnitTest assembleFamilyRelease
-APK="build/GyattChores-$VERSION.apk"
+APK="build/DOYOURWORK-$VERSION.apk"
 mkdir -p build && cp app/build/outputs/apk/family/release/app-family-release.apk "$APK"
 
 git add app/build.gradle.kts
 git commit -q -m "Android $VERSION (versionCode $CODE)"
 git push -q origin HEAD
-gh release create "$TAG" "$APK" --title "GyattChores Android $VERSION" --notes "$NOTES" --target "$(git rev-parse HEAD)"
+gh release create "$TAG" "$APK" --title "DOYOURWORK Android $VERSION" --notes "$NOTES" --target "$(git rev-parse HEAD)"
 echo "Released $TAG (versionCode $CODE)"
