@@ -3,66 +3,82 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#ffffff">
-<meta name="description" content="GyattChores for iPhone and iPad: a private chore scoreboard for your household. Support and common questions.">
-<title>The app — GyattChores</title>
-<style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: #fff; color: #111; font-family: 'Courier New', Courier, monospace; line-height: 1.75; }
-a { color: #F23861; text-decoration: none; }
-a:hover { text-decoration: underline; }
-nav { border-bottom: 1px solid #e5e5e5; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: #fff; z-index: 10; }
-.nav-brand { font-size: 0.85rem; font-weight: 700; letter-spacing: 4px; color: #F23861; text-decoration: none; }
-.nav-links { display: flex; gap: 24px; font-size: 0.72rem; letter-spacing: 1px; }
-.nav-links a { color: #888; }
-.nav-links a:hover { color: #F23861; }
-.container { max-width: 680px; margin: 0 auto; padding: 52px 24px 80px; }
-h1 { font-size: 1.2rem; font-weight: 900; letter-spacing: 2px; margin-bottom: 6px; }
-h2 { font-size: 0.72rem; font-weight: 700; letter-spacing: 3px; color: #F23861; text-transform: uppercase; margin: 36px 0 10px; }
-p { margin-bottom: 14px; font-size: 0.88rem; color: #444; }
-ul { margin: 0 0 14px 0; list-style: none; }
-li { padding-left: 16px; position: relative; margin-bottom: 6px; font-size: 0.88rem; color: #444; }
-li::before { content: '—'; position: absolute; left: 0; color: #bbb; }
-strong { color: #111; }
-.meta { font-size: 0.7rem; color: #888; letter-spacing: 2px; margin-bottom: 44px; }
-hr { border: none; border-top: 1px solid #e5e5e5; margin: 12px 0; }
-</style>
+<meta name="theme-color" content="#D90015">
+<meta name="description" content="Help with DOYOURWORK, the private chore scoreboard for iPhone, iPad and Android: getting started, common questions, and how to reach us.">
+<title>Support — DOYOURWORK</title>
+<link rel="icon" type="image/svg+xml" href="/dyw-icon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/pages.css">
 </head>
 <body>
+
 <nav>
-  <a href="/app.html" class="nav-brand">GYATTCHORES</a>
-  <div class="nav-links">
-    <a href="/app.html">the app</a>
-    <a href="/app-privacy.html">privacy</a>
+  <div class="wrap">
+    <a class="brand" href="/" aria-label="DOYOURWORK home"><img src="/dyw-icon.svg" width="30" height="30" alt="">DOYOURWORK</a>
+    <div class="links">
+      <a class="home" href="/">Home</a>
+      <a href="/app.html" aria-current="page">Support</a>
+      <a href="/app-privacy.html">Privacy</a>
+      <a class="cta" href="/#beta">Join the beta</a>
+    </div>
   </div>
 </nav>
-<div class="container">
-  <h1>GyattChores for iPhone and iPad</h1>
-  <p class="meta">SUPPORT</p>
-  <hr>
 
+<header class="top">
+  <div class="wrap">
+    <div class="eyebrow">Support</div>
+    <h1>Help with DOYOURWORK</h1>
+    <p>For iPhone, iPad and Android. The app works the same way on all three.</p>
+  </div>
+</header>
+
+<main>
   <h2>What it is</h2>
   <p>A chore scoreboard for your household. Everyone picks about 25 minutes of chores a day and checks them off, an admin (usually a parent) approves, and points, streaks and a weekly winner follow.</p>
-  <p><strong>Private by design:</strong> no accounts, no sign-up, and nothing ever leaves your device. See the <a href="/app-privacy.html">privacy policy</a>.</p>
+  <p><strong>Private by design:</strong> no accounts, no sign-up, and nothing ever leaves your device. The <a href="/app-privacy.html">privacy policy</a> has the detail.</p>
+  <p>The app is coming soon to the App Store and Google Play. To try it early, <a href="/#beta">join the beta</a>.</p>
 
   <h2>Getting started</h2>
-  <ul>
-    <li>Open the app and tap <strong>set up this device</strong></li>
-    <li>Type your name and choose an admin code: this is what approves chores</li>
-    <li>Add the people who'll be doing chores</li>
-    <li>Use the starter list of chores, or write or say your own and the app sorts them into a list</li>
-  </ul>
+  <ol>
+    <li>Open the app and tap <strong>Set up this device</strong>.</li>
+    <li>Type your name and choose an admin code. The code is what approves chores, so keep it from the players.</li>
+    <li>Add the people who'll be doing chores.</li>
+    <li>Tap <strong>Use the starter list</strong>, or write or say your own chores and the app sorts them into a list.</li>
+  </ol>
+  <p>After that, each player taps their name, picks chores up to 25 minutes, checks them off and sends the card for approval. An admin opens <strong>Admin</strong> with their code and says yes or no to each one.</p>
 
   <h2>Common questions</h2>
-  <p><strong>I forgot my admin code.</strong> The code is kept only on your device, so nobody, including us, can look it up or reset it. If another person in your household is an admin, they can open the admin area and give you a new code under players → edit. If you turned on Face ID or Touch ID for the admin area, that opens it too. Otherwise the way back in is to delete the app and set up a new scoreboard, which loses the points so far. Making a second person an admin now is the best protection.</p>
-  <p><strong>Can we each use our own phone?</strong> Not yet. This version is one shared scoreboard on one iPhone or iPad. Sharing between a household's devices is planned.</p>
-  <p><strong>How do I change the chores?</strong> Admin → chores. You can add chores by writing or saying them, and edit or remove any chore.</p>
-  <p><strong>Why does a chore take longer than it did?</strong> A chore that goes undone for a few days takes longer the next time it's picked, and moves up the list. Doing it resets it.</p>
-  <p><strong>Someone else took the chore I wanted.</strong> Each chore can be done by one person a day. It's back tomorrow.</p>
-  <p><strong>How do I start again from nothing?</strong> Admin → device → erase everything.</p>
+
+  <h3>I forgot my admin code.</h3>
+  <p>The code is kept only on your device, so nobody, including us, can look it up or reset it. If another person in your household is an admin, they can open Admin, tap <strong>Edit</strong> next to your name and give you a new code. If you turned on face or fingerprint unlock for Admin, that opens it too. Otherwise the way back in is to delete the app and set up a new scoreboard, which loses the points so far. Making a second person an admin now is the best protection.</p>
+
+  <h3>Can we each use our own phone?</h3>
+  <p>Not yet. This version is one shared scoreboard on one phone or tablet. Sharing a scoreboard between a household's devices is planned.</p>
+
+  <h3>We got a new phone. How do we move the scoreboard?</h3>
+  <p>On the old one, open Admin and tap <strong>Save a backup</strong>. It makes a file that you keep wherever you like. On the new one, set up the app, open Admin and restore from that file. It works between iPhone and Android in either direction.</p>
+
+  <h3>How do I change the chores?</h3>
+  <p>Open Admin and look under chores. <strong>Add chores</strong> takes them written or spoken, and <strong>Edit</strong> next to a chore changes its name or minutes, or removes it.</p>
+
+  <h3>Why does a chore take longer than it did?</h3>
+  <p>A chore that goes undone for a few days takes longer the next time it's picked, and moves up the list. Doing it resets it.</p>
+
+  <h3>Someone else took the chore I wanted.</h3>
+  <p>Each chore can be done by one person a day. It's back tomorrow.</p>
+
+  <h3>How do I start again from nothing?</h3>
+  <p>Open Admin and tap <strong>Erase everything</strong>. Save a backup first if you might want the scores back.</p>
 
   <h2>Contact</h2>
   <p>Questions, problems or ideas: <a href="mailto:matt@gissentanna.com">matt@gissentanna.com</a></p>
-</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 DOYOURWORK. 25 minutes a day. That's it.</span>
+    <span><a href="/">Home</a> &nbsp;·&nbsp; <a href="/app-privacy.html">Privacy policy</a> &nbsp;·&nbsp; <a href="/#beta">Join the beta</a></span>
+  </div>
+</footer>
 </body>
 </html>
