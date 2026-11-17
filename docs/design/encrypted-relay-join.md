@@ -138,9 +138,12 @@ switches the old sync off. That change goes to `main`, which deploys the website
 
 ## Build order
 
-1. **Server.** A new Supabase project made for DOYOURWORK (decided 2026-11-16). The old project
-   keeps serving today's family sync until the move. The tables, row-level security and functions
-   are in `supabase/doyourwork/001_relay.sql`, and anonymous sign-ins are turned on.
+1. **Server.** Done 2026-11-17. Supabase project `doyourwork` (ref `omemognwvcnonnzjmcxm`,
+   `https://omemognwvcnonnzjmcxm.supabase.co`, organization Liquid Sun Creative, West US) runs
+   `supabase/doyourwork/001_relay.sql`, with anonymous sign-ins on and "automatically expose new
+   tables" off. The apps use its publishable key. The old project keeps serving today's family
+   sync until the move. Checked end to end with three anonymous devices: create a family, write,
+   join with a one-time code, outsiders and signed-out callers see nothing, delete the family.
 2. **Crypto and transport** in GyattCore and Kotlin, with the shared test vectors and an encrypted
    in-memory test server for the UI tests (like today's `-syncURL`).
 3. **Join flow.** QR display (CoreImage / ZXing core for drawing), scanning (VisionKit
