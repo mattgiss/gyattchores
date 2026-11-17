@@ -1,4 +1,6 @@
-# GyattChores
+# DOYOURWORK
+
+Formerly GyattChores; the repository, the website address and the code keep the old name.
 
 A chore scoreboard for a household: everyone picks about **25 minutes** of chores a day, an admin approves what got done, and points, streaks and a weekly winner follow.
 

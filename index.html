@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GyattChores — the private chore scoreboard. Coming soon to iPhone, iPad and Android.</title>
+<title>DOYOURWORK — the private chore scoreboard. Coming soon to iPhone, iPad and Android.</title>
 <meta name="description" content="A chore scoreboard for your household: 25 minutes a day each, approved by an admin. No accounts, no sign-up, and nothing ever leaves your device. Coming soon to iPhone, iPad and Android. Join the beta.">
 <meta name="theme-color" content="#D90015">
-<meta property="og:title" content="GyattChores — the private chore scoreboard">
+<meta property="og:title" content="DOYOURWORK — the private chore scoreboard">
 <meta property="og:description" content="25 minutes a day. That's it. No accounts, and nothing ever leaves your device. Coming soon to iPhone, iPad and Android.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://gyattchores.com/">
@@ -37,7 +37,7 @@ a:hover { text-decoration: underline; }
 
 nav { position: sticky; top: 0; z-index: 10; background: var(--h1); }
 nav .wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 58px; }
-.brand { color: #fff; font-weight: 900; font-size: 1.3rem; letter-spacing: -0.3px; }
+.brand { color: #fff; font-weight: 900; font-size: 1.25rem; letter-spacing: 0.2px; }
 .brand:hover { text-decoration: none; }
 .links { display: flex; align-items: center; gap: 24px; font-weight: 600; font-size: 0.95rem; }
 .links a { color: #fff; }
@@ -142,7 +142,7 @@ footer a:hover { color: #fff; }
 
 <nav>
   <div class="wrap">
-    <a class="brand" href="/" aria-label="GyattChores home">GyattChores</a>
+    <a class="brand" href="/" aria-label="DOYOURWORK home">DOYOURWORK</a>
     <div class="links">
       <a href="#how">How it works</a>
       <a href="#private">Privacy</a>
@@ -159,7 +159,7 @@ footer a:hover { color: #fff; }
     <div class="copy">
       <span class="pill">Coming soon to iPhone, iPad and Android</span>
       <h1>25 minutes a day. That's it.</h1>
-      <p class="lead">GyattChores is a chore scoreboard for your household. Everyone picks a few chores, an admin approves what got done, and points, streaks and a weekly winner follow.</p>
+      <p class="lead">DOYOURWORK is a chore scoreboard for your household. Everyone picks a few chores, an admin approves what got done, and points, streaks and a weekly winner follow.</p>
       <p class="lead" style="margin-top:12px"><b>No accounts. No sign-up. Nothing ever leaves your device.</b></p>
       <div class="row">
         <a class="btn white" href="#beta">Join the beta</a>
@@ -167,7 +167,7 @@ footer a:hover { color: #fff; }
       </div>
       <p class="fine">In testing now. The beta is free and has no ads.</p>
     </div>
-    <img class="shot" src="/img/scoreboard.jpg" width="540" height="960" alt="The GyattChores scoreboard: this week's standings for three players, sockninja in the lead, and a 30-day log showing who hit 25 minutes each day.">
+    <img class="shot" src="/img/scoreboard.jpg" width="540" height="960" alt="The DOYOURWORK scoreboard: this week's standings for three players, sockninja in the lead, and a 30-day log showing who hit 25 minutes each day.">
   </div>
 </section>
 
@@ -175,7 +175,7 @@ footer a:hover { color: #fff; }
   <div class="wrap">
     <div class="eyebrow">Why it exists</div>
     <p class="quote" style="margin-top:12px">A bowling alley doesn't ask who you are before it lets you play. It puts your name on a screen and keeps score. That's all a house full of chores needs too.</p>
-    <p class="after">GyattChores started as one family's scoreboard, and that's still what it is: names, chores, points and a weekly winner, on a phone or tablet the household shares. There's no account to make, no email to hand over, and no database on our side holding your family's names.</p>
+    <p class="after">DOYOURWORK started as one family's scoreboard, and that's still what it is: names, chores, points and a weekly winner, on a phone or tablet the household shares. There's no account to make, no email to hand over, and no database on our side holding your family's names.</p>
   </div>
 </section>
 
@@ -242,7 +242,7 @@ footer a:hover { color: #fff; }
     <div>
       <div class="eyebrow muted">One device, one scoreboard</div>
       <h2>Put it where the household can see it.</h2>
-      <p class="muted">GyattChores runs on a single phone or tablet that everyone shares: the tablet in the kitchen, or a parent's phone. On a tablet or an unfolded foldable, the scoreboard and the day's card sit side by side.</p>
+      <p class="muted">DOYOURWORK runs on a single phone or tablet that everyone shares: the tablet in the kitchen, or a parent's phone. On a tablet or an unfolded foldable, the scoreboard and the day's card sit side by side.</p>
       <ul class="ticks">
         <li><b>Admins run it.</b> Make anyone an admin, each with their own code. Admins approve chores and manage players and the chore list.</li>
         <li><b>Players make it theirs.</b> Fifteen colour themes, and everyone can give themselves a display name. The sillier the better.</li>
@@ -311,7 +311,7 @@ footer a:hover { color: #fff; }
 
 <footer>
   <div class="wrap">
-    <span>© 2026 GyattChores. 25 minutes a day. That's it.</span>
+    <span>© 2026 DOYOURWORK. 25 minutes a day. That's it.</span>
     <span><a href="/app.html">Support</a> &nbsp;·&nbsp; <a href="/app-privacy.html">Privacy policy</a> &nbsp;·&nbsp; <a href="#beta">Join the beta</a></span>
   </div>
 </footer>
@@ -322,17 +322,17 @@ footer a:hover { color: #fff; }
   var address = ['matt', 'gissentanna.com'].join('@');
   var link = document.getElementById('beta-address');
   link.textContent = address;
-  link.href = 'mailto:' + address + '?subject=' + encodeURIComponent('GyattChores beta');
+  link.href = 'mailto:' + address + '?subject=' + encodeURIComponent('DOYOURWORK beta');
 
   document.getElementById('beta-form').addEventListener('submit', function (event) {
     event.preventDefault();
     var name = document.getElementById('f-name').value.trim();
     var device = document.getElementById('f-device').value;
     var size = document.getElementById('f-size').value.trim();
-    var lines = ["Hi, I'd like to join the GyattChores beta.", '', 'Device: ' + device];
+    var lines = ["Hi, I'd like to join the DOYOURWORK beta.", '', 'Device: ' + device];
     if (size) lines.push('People doing chores at home: ' + size);
     if (name) lines.push('', name);
-    window.location.href = 'mailto:' + address + '?subject=' + encodeURIComponent('GyattChores beta') +
+    window.location.href = 'mailto:' + address + '?subject=' + encodeURIComponent('DOYOURWORK beta') +
       '&body=' + encodeURIComponent(lines.join('\n'));
   });
 
