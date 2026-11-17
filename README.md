@@ -118,7 +118,7 @@ gyattchores/
 ├── simple-logs-schema.sql  # Supabase table + RLS for optional cross-device sync
 ├── CNAME                   # Custom domain for GitHub Pages
 ├── apple-touch-icon.png    # iOS home-screen icon
-├── gyattchores-logo*.svg   # Logo variants
+├── dyw-icon.svg            # The "dyw" icon (browser tab and page header)
 ├── about.html / ebook.html / development-story.html   # Public about, guide, and story pages
 ├── SECURITY.md             # Security model & disclosure
 └── docs/governance/        # Lightweight service-management docs
