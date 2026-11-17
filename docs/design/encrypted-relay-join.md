@@ -30,10 +30,13 @@ Joining works between iPhone, iPad and Android in any mix.
 - **The QR code** carries `dyw1:` + base64url(household id ‖ family key ‖ join token), about 90
   characters. It passes from screen to camera and is never sent to the server.
 - **Encryption.**
-  - Every record is encrypted on the phone with AES-256-GCM under the family key, with a fresh
-    random 12-byte nonce.
-  - The associated data is household id ‖ record kind ‖ row id, so the server can't swap rows
-    between families or kinds without decryption failing.
+  - Two subkeys come from the family key with HKDF-SHA256 (salt = household id, info "dyw1 enc"
+    and "dyw1 row"), so encryption and row-id hashing never share a key.
+  - Every record is encrypted on the phone with AES-256-GCM under the enc subkey, with a fresh
+    random 12-byte nonce, and stored as base64(0x01 ‖ nonce ‖ ciphertext ‖ tag).
+  - The associated data is household id ‖ record kind ‖ 0x00 ‖ row id, so the server can't swap
+    rows between families, kinds or rows without decryption failing.
+  - The exact format, byte for byte, is spelled out in `native/tools/relay-crypto.mjs`.
   - The library on each platform: CryptoKit `AES.GCM` on iOS, and `Cipher("AES/GCM/NoPadding")`
     on Android (built in, no new dependency).
 - **Where phones keep the key.** On iOS, the Keychain, marked this-device-only so it doesn't
@@ -144,8 +147,23 @@ switches the old sync off. That change goes to `main`, which deploys the website
    tables" off. The apps use its publishable key. The old project keeps serving today's family
    sync until the move. Checked end to end with three anonymous devices: create a family, write,
    join with a one-time code, outsiders and signed-out callers see nothing, delete the family.
-2. **Crypto and transport** in GyattCore and Kotlin, with the shared test vectors and an encrypted
-   in-memory test server for the UI tests (like today's `-syncURL`).
+2. **Crypto and transport** in GyattCore and Kotlin, with the shared test vectors. Built
+   2026-11-17:
+   - **Crypto:** `RelayCrypto.swift` / `RelayCrypto.kt` hold the family keys, sealing and opening
+     records, state row ids and the join code. Both match `native/fixtures/relay-crypto.json` byte
+     for byte.
+   - **Transport:** `RelayClient.swift` / `Relay.kt` are the relay versions of today's `LogAPI`
+     and `StateAPI`, so `LogSync` and `StateSync` run unchanged on top. They also handle
+     anonymous sign-in and refresh, creating a household, join codes, listing and removing phones,
+     and deleting the household.
+   - **Interface change:** `updateStatus` now takes the whole log, because a record is sealed as
+     one piece, and `RemoteLog` carries `minutes`.
+   - **Tests:** both suites test against an in-memory relay with the SQL's rules. A live test runs
+     against the real project when `RELAY_LIVE=1` is set; it deletes its household but leaves its
+     anonymous users behind.
+   - **Still to do:** the app still uses the old tables. Keeping the session and keys on the
+     device (Keychain / Keystore) and switching the apps over come with the join flow, along with
+     an in-memory relay for the UI tests (like today's `-syncURL`).
 3. **Join flow.** QR display (CoreImage / ZXing core for drawing), scanning (VisionKit
    `DataScannerViewController` / CameraX + ML Kit, or ZXing), camera permission text,
    Admin → Phones.

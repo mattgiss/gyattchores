@@ -54,8 +54,9 @@ struct Supabase: LogAPI, StateAPI {
         return first.remote
     }
 
-    func updateStatus(remoteId: String, status: String) async throws -> Bool {
-        let out: [LogRow] = try await call("PATCH", "simple_logs?id=eq.\(remoteId)", body: ["status": status])
+    func updateStatus(_ log: ChoreLog) async throws -> Bool {
+        guard let remoteId = log.remoteId else { return false }
+        let out: [LogRow] = try await call("PATCH", "simple_logs?id=eq.\(remoteId)", body: ["status": log.status])
         return !out.isEmpty
     }
 

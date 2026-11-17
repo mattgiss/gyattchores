@@ -12,9 +12,9 @@ final class SyncTests: XCTestCase {
                               points: log.points, status: log.status, createdAt: Date(timeIntervalSince1970: 5000))
             next += 1; rows[r.id] = r; return r
         }
-        func updateStatus(remoteId: String, status: String) async throws -> Bool {
-            guard !dropUpdates, let r = rows[remoteId] else { return false }
-            rows[remoteId] = RemoteLog(id: r.id, playerId: r.playerId, playerName: r.playerName, choreId: r.choreId, choreName: r.choreName, points: r.points, status: status, createdAt: r.createdAt)
+        func updateStatus(_ log: ChoreLog) async throws -> Bool {
+            guard !dropUpdates, let remoteId = log.remoteId, let r = rows[remoteId] else { return false }
+            rows[remoteId] = RemoteLog(id: r.id, playerId: r.playerId, playerName: r.playerName, choreId: r.choreId, choreName: r.choreName, points: r.points, status: log.status, createdAt: r.createdAt)
             return true
         }
         func selectAll() async throws -> [RemoteLog] { Array(rows.values) }

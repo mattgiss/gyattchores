@@ -2,7 +2,7 @@ package com.gyattchores.app.sync
 
 import com.gyattchores.app.model.ChoreLog
 
-/** A row of the shared `simple_logs` table. */
+/** A chore log as the server has it: a row of the old `simple_logs` table, or a relay record. */
 data class RemoteLog(
     val id: String,
     val playerId: String,
@@ -13,13 +13,18 @@ data class RemoteLog(
     val status: String,
     /** Epoch millis. */
     val createdAt: Long,
+    /** Relay records carry it; `simple_logs` rows don't. */
+    val minutes: Int? = null,
 )
 
 interface LogApi {
     /** Inserts a row and returns it as stored. */
     fun insert(log: ChoreLog): RemoteLog
-    /** Returns false if no row has that id (nothing was updated). */
-    fun updateStatus(remoteId: String, status: String): Boolean
+    /**
+     * Sends `log.status` for the row `log.remoteId`. The whole log is passed because a relay record
+     * is sealed as one piece. Returns false if no row has that id (nothing was updated).
+     */
+    fun updateStatus(log: ChoreLog): Boolean
     fun selectAll(): List<RemoteLog>
 }
 
@@ -44,7 +49,7 @@ object LogSync {
         // 2. Push status changes. Stay dirty if no row was updated, so it retries rather than vanishing.
         for (i in work.indices) {
             val l = work[i]
-            if (l.remoteId != null && l.statusDirty && api.updateStatus(l.remoteId, l.status)) {
+            if (l.remoteId != null && l.statusDirty && api.updateStatus(l)) {
                 work[i] = l.copy(statusDirty = false)
             }
         }
@@ -66,7 +71,7 @@ object LogSync {
         for (r in rows) {
             val i = indexByRemote[r.id]
             if (i == null) {
-                work += ChoreLog("r_${r.id}", r.id, r.playerId, r.playerName, r.choreId, r.choreName, r.points, null, r.status, r.createdAt)
+                work += ChoreLog("r_${r.id}", r.id, r.playerId, r.playerName, r.choreId, r.choreName, r.points, r.minutes, r.status, r.createdAt)
             } else if (!work[i].statusDirty && work[i].status != r.status) {
                 work[i] = work[i].copy(status = r.status)
             }

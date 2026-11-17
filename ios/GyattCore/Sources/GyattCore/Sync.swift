@@ -1,20 +1,23 @@
 import Foundation
 
-/// A row of the shared `simple_logs` table.
+/// A chore log as the server has it: a row of the old `simple_logs` table, or a relay record.
 public struct RemoteLog: Sendable {
     public let id: String, playerId: String, playerName: String, choreId: String, choreName: String
     public let points: Int, status: String, createdAt: Date
-    public init(id: String, playerId: String, playerName: String, choreId: String, choreName: String, points: Int, status: String, createdAt: Date) {
+    /// Relay records carry it; `simple_logs` rows don't.
+    public let minutes: Int?
+    public init(id: String, playerId: String, playerName: String, choreId: String, choreName: String, points: Int, status: String, createdAt: Date, minutes: Int? = nil) {
         self.id = id; self.playerId = playerId; self.playerName = playerName; self.choreId = choreId
-        self.choreName = choreName; self.points = points; self.status = status; self.createdAt = createdAt
+        self.choreName = choreName; self.points = points; self.status = status; self.createdAt = createdAt; self.minutes = minutes
     }
 }
 
 public protocol LogAPI: Sendable {
     /// Inserts a row and returns it as stored.
     func insert(_ log: ChoreLog) async throws -> RemoteLog
-    /// Returns false if no row has that id (nothing was updated).
-    func updateStatus(remoteId: String, status: String) async throws -> Bool
+    /// Sends `log.status` for the row `log.remoteId`. The whole log is passed because a relay record
+    /// is sealed as one piece. Returns false if no row has that id (nothing was updated).
+    func updateStatus(_ log: ChoreLog) async throws -> Bool
     func selectAll() async throws -> [RemoteLog]
 }
 
@@ -29,7 +32,7 @@ public enum LogSync {
         }
         // 2. Push status changes. Stay dirty if no row was updated, so it retries.
         for i in work.indices {
-            if let rid = work[i].remoteId, work[i].statusDirty, try await api.updateStatus(remoteId: rid, status: work[i].status) {
+            if work[i].remoteId != nil, work[i].statusDirty, try await api.updateStatus(work[i]) {
                 work[i].statusDirty = false
             }
         }
@@ -52,7 +55,7 @@ public enum LogSync {
                 if !work[i].statusDirty && work[i].status != r.status { work[i].status = r.status }
             } else {
                 work.append(ChoreLog(id: "r_\(r.id)", remoteId: r.id, playerId: r.playerId, playerName: r.playerName, choreId: r.choreId,
-                                     choreName: r.choreName, points: r.points, minutes: nil, status: r.status, timestamp: r.createdAt))
+                                     choreName: r.choreName, points: r.points, minutes: r.minutes, status: r.status, timestamp: r.createdAt))
             }
         }
         return work

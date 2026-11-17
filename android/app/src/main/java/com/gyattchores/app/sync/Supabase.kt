@@ -59,8 +59,9 @@ class Supabase(private val baseUrl: String = SyncConfig.URL, private val key: St
         return json.decodeFromString<List<LogRow>>(call("POST", "simple_logs", body)).first().toRemote()
     }
 
-    override fun updateStatus(remoteId: String, status: String): Boolean {
-        val out = call("PATCH", "simple_logs?id=eq.${enc(remoteId)}", json.encodeToString(StatusPatch(status)))
+    override fun updateStatus(log: ChoreLog): Boolean {
+        val remoteId = log.remoteId ?: return false
+        val out = call("PATCH", "simple_logs?id=eq.${enc(remoteId)}", json.encodeToString(StatusPatch(log.status)))
         return json.decodeFromString<List<LogRow>>(out).isNotEmpty()
     }
 
