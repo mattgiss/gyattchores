@@ -115,6 +115,14 @@ public actor RelayClient: LogAPI, StateAPI {
         _ = try await rpc("remove_device", ["p_household": household, "p_user": userId])
     }
 
+    /// False once this phone was removed, or the family was deleted from the server. Reads then
+    /// come back empty rather than failing, so a sync pass asks this first.
+    public func isMember() async throws -> Bool {
+        let out = try await rpc("is_member", ["h": household])
+        guard let ok = try JSONSerialization.jsonObject(with: out, options: .fragmentsAllowed) as? Bool else { throw RelayError.badResponse }
+        return ok
+    }
+
     /// Admin → "Delete this family from the server": the household and every record go.
     public func deleteHousehold() async throws {
         _ = try await rpc("delete_household", ["p_household": household])

@@ -1011,5 +1011,42 @@ final class GyattChoresUITests: XCTestCase {
         app.buttons["Cancel"].tap()
         XCTAssertTrue(app.buttons["Join with a code"].waitForExistence(timeout: wait), "nothing changed")
     }
+
+    /// Deleting the family from the server stops sync for good on this phone and keeps the family.
+    func testDeletingTheFamilyFromTheServerKeepsItHere() {
+        let app = launch(["-resetData", "-demoFamily"])
+        phonesSection(in: app)
+        app.buttons["Add a phone"].tap()
+        XCTAssertTrue(app.otherElements["joinQR"].waitForExistence(timeout: wait))
+        app.buttons["Done"].tap()
+        app.buttons["Delete this family from the server…"].tap()
+        app.buttons["Delete from the server"].tap()
+        XCTAssertTrue(app.staticTexts["Sync is off. The family is only on this phone."].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.buttons["Join with a code"].exists)
+        screenshot("42-deleted-from-server", of: app)
+        goBack(in: app)
+        XCTAssertTrue(playerRow("riley", in: app).waitForExistence(timeout: wait), "the family stays on this phone")
+
+        // Still off after a restart: it doesn't go back to the old tables.
+        app.terminate()
+        let again = launch()
+        XCTAssertTrue(playerRow("riley", in: again).waitForExistence(timeout: wait))
+        XCTAssertTrue(again.staticTexts["Sound on · Off"].waitForExistence(timeout: wait) || again.staticTexts["Sound off · Off"].exists)
+    }
+
+    /// Another phone deletes the family: this one notices on its next pass and keeps what it has.
+    func testAPhoneLeftOutOfTheFamilyIsToldAndKeepsItsData() {
+        let app = launch(["-resetData", "-demoFamily", "-scanResult", "seeded", "-seededDeletes"])
+        phonesSection(in: app)
+        app.buttons["Join with a code"].tap()
+        app.buttons["Scan the code"].tap()
+        XCTAssertTrue(playerRow("jules", in: app).waitForExistence(timeout: wait))
+        // Sync runs every 10 seconds.
+        XCTAssertTrue(app.staticTexts["This phone is no longer in the family's sync. Everything on it stays here."].waitForExistence(timeout: 30))
+        app.buttons["OK"].tap()
+        XCTAssertTrue(playerRow("jules", in: app).exists, "what it had stays")
+        phonesSection(in: app)
+        XCTAssertTrue(app.staticTexts["Sync is off. The family is only on this phone."].waitForExistence(timeout: wait))
+    }
     #endif
 }

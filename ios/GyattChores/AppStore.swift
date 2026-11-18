@@ -56,8 +56,12 @@ final class AppStore: ObservableObject {
     /// The encrypted relay, once this phone has added or joined a phone (`RelayLink.swift`). Until
     /// then sync goes through the old tables (`api`).
     var relay: RelayClient?
-    /// Bumped when sync switches to the relay, so a pass begun on the old tables is thrown away.
+    /// Bumped when sync switches to or from the relay, so a pass begun on the old one is thrown away.
     var transport = 0
+    /// The family was deleted from the server, or this phone was taken out of it: it keeps the
+    /// family to itself and doesn't fall back to the old tables. Adding or joining a phone ends it.
+    @Published var syncOff: Bool { didSet { UserDefaults.standard.set(syncOff, forKey: Self.syncOffKey) } }
+    static let syncOffKey = uiTesting ? "ui-testing.sync_off" : "sync_off"
     var syncing = false, syncAgain = false
     static let meKey = uiTesting ? "ui-testing.me" : "me"
     static let syncedKey = uiTesting ? "ui-testing.has_synced" : "has_synced"
@@ -139,6 +143,7 @@ final class AppStore: ObservableObject {
         me = UserDefaults.standard.string(forKey: Self.meKey)
         if Self.uiTesting && Self.launchArguments.contains("-resetData") { RelayVault.clear() }
         relay = RelayVault.client()
+        syncOff = UserDefaults.standard.bool(forKey: Self.syncOffKey)
         hasSynced = (Self.uiTesting && SyncConfig.testURL == nil && relay == nil) || UserDefaults.standard.bool(forKey: Self.syncedKey)
         #else
         dares = legacy.flatMap { key, entry -> [Dare] in

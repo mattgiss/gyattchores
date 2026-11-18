@@ -129,15 +129,21 @@ final class RelayClientTests: XCTestCase {
         let bId = try await b.userId()
         var devices = try await a.devices()
         XCTAssertEqual(devices.count, 2)
+        var bIn = try await b.isMember()
+        XCTAssertTrue(bIn)
         try await a.removeDevice(userId: bId)
         devices = try await a.devices()
         XCTAssertEqual(devices.count, 1)
+        bIn = try await b.isMember()
+        XCTAssertFalse(bIn, "a removed phone can tell")
         _ = try await LogSync.run(api: a, local: [log("l1")])
         let onB = try await b.selectAll()
         XCTAssertTrue(onB.isEmpty, "a removed phone sees nothing new")
         try await a.deleteHousehold()
         let gone = try await a.selectAll()
         XCTAssertTrue(gone.isEmpty)
+        let aIn = try await a.isMember()
+        XCTAssertFalse(aIn, "nobody is in a deleted family")
     }
 
     func testRefreshesAnExpiredSessionAndKeepsTheSameDevice() async throws {
@@ -182,7 +188,12 @@ final class RelayClientTests: XCTestCase {
             let stranger = RelayClient(keys: keys, config: .live, sessions: MemorySessionStore())
             let seen = try await stranger.selectAll()
             XCTAssertTrue(seen.isEmpty)
+            let strangerIn = try await stranger.isMember(), bIn = try await b.isMember()
+            XCTAssertFalse(strangerIn)
+            XCTAssertTrue(bIn)
         } catch { try? await a.deleteHousehold(); throw error }
         try await a.deleteHousehold()
+        let aIn = try await a.isMember()
+        XCTAssertFalse(aIn, "nobody is in a deleted family")
     }
 }

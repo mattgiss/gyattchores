@@ -16,14 +16,23 @@ extension AppStore {
     func requestSync() {
         // UI tests never reach the family's data: sync is off, unless pointed at a test server.
         // (Under -uiTesting the relay is always the in-memory one, so it may run.)
+        if relay == nil && syncOff { syncStatus = "off"; return }
         if Self.uiTesting && SyncConfig.testURL == nil && relay == nil { syncStatus = "off (ui testing)"; return }
         if syncing { syncAgain = true; return }
         syncing = true
         syncStatus = "syncing"
         let logSnapshot = logs, stateSnapshot = shared
-        let logAPI: LogAPI = relay ?? api, stateAPI: StateAPI = relay ?? api, started = transport
+        let logAPI: LogAPI = relay ?? api, stateAPI: StateAPI = relay ?? api, started = transport, onRelay = relay
         Task {
             do {
+                // Removed from the family, or the family was deleted: reads would just come back
+                // empty, so ask before syncing anything.
+                if let onRelay, try await !onRelay.isMember() {
+                    if started == transport { leaveRelay(); notice = "This phone is no longer in the family's sync. Everything on it stays here." }
+                    syncing = false
+                    if syncAgain { syncAgain = false; requestSync() }
+                    return
+                }
                 let synced = try await LogSync.run(api: logAPI, local: logSnapshot)
                 // Sync moved to the relay mid-pass: what came from the old tables doesn't belong here now.
                 guard started == transport else { throw CancellationError() }

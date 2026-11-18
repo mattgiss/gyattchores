@@ -64,6 +64,7 @@ class MemoryRelay : RelayHttp {
             "POST" to "/rest/v1/rpc/create_household" -> {
                 val h = arg("p_household"); if (devices.containsKey(h)) 409 to "{}" else { devices[h] = linkedMapOf(uid to Instant.now().toString()); 204 to "" }
             }
+            "POST" to "/rest/v1/rpc/is_member" -> 200 to member(arg("h")).toString()
             "POST" to "/rest/v1/rpc/create_join_token" -> {
                 val h = arg("p_household"); if (!member(h)) return 403 to "{}"
                 val exp = if (expireNextToken) System.currentTimeMillis() - 1000 else System.currentTimeMillis() + 600_000; expireNextToken = false

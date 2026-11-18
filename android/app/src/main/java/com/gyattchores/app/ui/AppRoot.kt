@@ -61,6 +61,7 @@ fun AppRoot(vm: AppViewModel, fold: FoldingFeature?) {
     val logs by vm.store.logs.collectAsState()
     val family by vm.store.family.collectAsState()
     val syncedOnce by vm.syncedOnce.collectAsState()
+    val syncOff by vm.syncOff.collectAsState()
     val notice by vm.notice.collectAsState()
     notice?.let { m ->
         androidx.compose.material3.AlertDialog(onDismissRequest = { vm.notice.value = null }, text = { Text(m) },
@@ -96,7 +97,8 @@ fun AppRoot(vm: AppViewModel, fold: FoldingFeature?) {
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         if (!family.isSetUp) {
             Box(Modifier.fillMaxSize().safeDrawingPadding()) {
-                if (syncedOnce) SetupScreen(vm) else WaitingForFamily(vm, syncStatus)
+                // With sync off there's nothing to wait for (a phone dropped before its first load).
+                if (syncedOnce || syncOff) SetupScreen(vm) else WaitingForFamily(vm, syncStatus)
             }
             return@Surface
         }

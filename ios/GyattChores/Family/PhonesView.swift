@@ -15,6 +15,7 @@ struct PhonesSection: View {
     @State private var phones: (mine: String, all: [RelayDevice])?
     @State private var removing: RelayDevice?
     @State private var problem: String?
+    @State private var confirmingDelete = false
 
     var body: some View {
         SectionLabel("phones")
@@ -33,6 +34,8 @@ struct PhonesSection: View {
                     .accessibilityElement(children: .combine)
                 }
             }
+        } else if store.syncOff {
+            Text("Sync is off. The family is only on this phone.").font(.app(.callout)).foregroundStyle(.secondary)
         } else {
             Text("This phone syncs through the family's old tables. Add a phone moves the family to encrypted sync: everything is encrypted on this phone before it's sent, and only phones that scan the code can read it.")
                 .font(.app(.callout)).foregroundStyle(.secondary)
@@ -41,6 +44,9 @@ struct PhonesSection: View {
         OutlineButton(label: "Add a phone") { fb.tap(); problem = nil; adding = true }.padding(.horizontal, -20)
         if !store.isLinked {
             OutlineButton(label: "Join with a code") { fb.tap(); confirmingJoin = true }.padding(.horizontal, -20)
+        } else {
+            Button("Delete this family from the server…", role: .destructive) { confirmingDelete = true }
+                .buttonStyle(.bordered).padding(.vertical, 12)
         }
         Color.clear.frame(height: 0)
             .task(id: store.isLinked) { await loadPhones() }
@@ -50,6 +56,15 @@ struct PhonesSection: View {
                 Button("Scan the code") { joining = true }
                 Button("Cancel", role: .cancel) {}
             } message: { Text("This phone will load the family from the phone that showed the code. Changes here that haven't synced yet are lost.") }
+            .confirmationDialog("Delete the family from the server?", isPresented: $confirmingDelete, titleVisibility: .visible) {
+                Button("Delete from the server", role: .destructive) {
+                    Task {
+                        problem = nil
+                        do { try await store.deleteFromServer(); fb.reject() } catch { problem = JoinOutcome.offline.message; fb.error() }
+                    }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: { Text("Every phone stops syncing, and everything sent is deleted from the server. The family stays on this phone. This can't be undone.") }
             .confirmationDialog("Remove this phone?", isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }), titleVisibility: .visible) {
                 Button("Remove", role: .destructive) {
                     guard let p = removing else { return }

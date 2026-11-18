@@ -35,6 +35,7 @@ interface RelaySessionStore {
 class MemorySessionStore(@Volatile private var session: RelaySession? = null) : RelaySessionStore {
     override fun load() = session
     override fun save(session: RelaySession) { this.session = session }
+    fun clear() { session = null }
 }
 
 /** The network, so tests can put an in-memory relay behind the client. Returns the status and body. */
@@ -110,6 +111,15 @@ class Relay(
 
     /** Admin → Phones → Remove. That phone can't fetch anything new afterwards. */
     fun removeDevice(userId: String) { rpc("remove_device", mapOf("p_household" to household, "p_user" to userId)) }
+
+    /**
+     * False once this phone was removed, or the family was deleted from the server. Reads then come
+     * back empty rather than failing, so a sync pass asks this first.
+     */
+    fun isMember(): Boolean {
+        val out = rpc("is_member", mapOf("h" to household))
+        return json.parseToJsonElement(out).jsonPrimitive.booleanOrNull ?: throw HttpStatusException(0, "bad response")
+    }
 
     /** Admin → "Delete this family from the server": the household and every record go. */
     fun deleteHousehold() { rpc("delete_household", mapOf("p_household" to household)) }

@@ -54,11 +54,13 @@ fun PhonesSection(vm: AppViewModel) {
     val fb = LocalFeedback.current
     val scope = rememberCoroutineScope()
     val linked by vm.relayLinked.collectAsState()
+    val syncOff by vm.syncOff.collectAsState()
     var phones by remember { mutableStateOf<List<Pair<RelayDevice, Boolean>>?>(null) }
     var reload by remember { mutableIntStateOf(0) }
     var adding by remember { mutableStateOf(false) }
     val join = rememberJoinFlow(vm)
     var removing by remember { mutableStateOf<RelayDevice?>(null) }
+    var deleting by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
     val dates = remember { DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withZone(vm.zone) }
 
@@ -67,6 +69,7 @@ fun PhonesSection(vm: AppViewModel) {
     Column(Modifier.padding(top = 8.dp)) {
         SectionLabel("phones", padded = false)
         Text(if (linked) "Encrypted sync. Only this family's phones can read what's sent."
+            else if (syncOff) "Sync is off. The family is only on this phone."
             else "This phone syncs through the family's old tables. Add a phone moves the family to encrypted sync: everything is encrypted on this phone before it's sent, and only phones that scan the code can read it.",
             style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (linked) {
@@ -81,7 +84,19 @@ fun PhonesSection(vm: AppViewModel) {
             OutlinedButton(onClick = { fb.tap(); adding = true }) { Text("Add a phone") }
             if (!linked) OutlinedButton(onClick = { fb.tap(); join() }) { Text("Join with a code") }
         }
+        if (linked) TextButton(onClick = { fb.tap(); deleting = true }) { Text("Delete this family from the server…", color = Bad) }
     }
+
+    if (deleting) AlertDialog(
+        onDismissRequest = { deleting = false },
+        title = { Text("Delete the family from the server?") },
+        text = { Text("Every phone stops syncing, and everything sent is deleted from the server. The family stays on this phone. This can't be undone.") },
+        confirmButton = { TextButton(onClick = {
+            deleting = false
+            scope.launch { vm.deleteFromServer()?.let { fb.error(); message = it } ?: fb.reject() }
+        }) { Text("Delete from the server", color = Bad) } },
+        dismissButton = { TextButton(onClick = { deleting = false }) { Text("Cancel") } },
+    )
 
     if (adding) AddPhoneDialog(vm, onDone = { adding = false })
     removing?.let { d -> AlertDialog(

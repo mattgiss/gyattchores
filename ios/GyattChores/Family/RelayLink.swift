@@ -124,9 +124,28 @@ extension AppStore {
 
     func removePhone(_ userId: String) async throws { try await relay?.removeDevice(userId: userId) }
 
+    /// Admin → "Delete this family from the server": the household and everything sent go, for
+    /// every phone. The family stays on this phone, with sync off.
+    func deleteFromServer() async throws {
+        guard let relay else { return }
+        try await relay.deleteHousehold()
+        leaveRelay()
+    }
+
+    /// Forgets the relay (its keys and sign-in) and keeps everything else. Sync stays off rather
+    /// than going back to the old tables.
+    func leaveRelay() {
+        RelayVault.clear()
+        relay = nil
+        transport += 1
+        syncOff = true
+        syncStatus = "off"
+    }
+
     private func switchTransport(to client: RelayClient) {
         relay = client
         transport += 1
+        syncOff = false
         objectWillChange.send()
     }
 
@@ -136,6 +155,11 @@ extension AppStore {
     func seededJoinCode() async -> String {
         // Its own sign-in: it's a different phone from this one.
         let first = RelayClient(keys: FamilyKeys.generate(), config: MemoryRelay.config, sessions: MemorySessionStore(), http: RelayVault.memory)
+        // `-seededDeletes`: a few seconds after this phone joins, the other phone deletes the
+        // family from the server, so a test sees this one find out on its next pass.
+        if Self.launchArguments.contains("-seededDeletes") {
+            Task { try? await Task.sleep(for: .seconds(4)); try? await first.deleteHousehold() }
+        }
         let now = Int64(Date().timeIntervalSince1970 * 1000)
         let family = FamilyState.Family(
             members: [Player(id: "1", name: "pat", isAdmin: true, plays: false), Player(id: "2", name: "jules"), Player(id: "3", name: "kai")],

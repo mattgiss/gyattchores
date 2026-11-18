@@ -29,6 +29,8 @@ class KeystoreRelayVault(context: Context) : RelayVault {
 
     override fun saveKeys(keys: FamilyKeys) = write(KEYS, keys.household + keys.familyKey)
 
+    override fun clear() { prefs.edit().remove(KEYS).remove(SESSION).commit() }
+
     override val sessions = object : RelaySessionStore {
         override fun load(): RelaySession? = read(SESSION)?.let { runCatching { json.decodeFromString<RelaySession>(String(it, Charsets.UTF_8)) }.getOrNull() }
         override fun save(session: RelaySession) = write(SESSION, json.encodeToString(session).toByteArray(Charsets.UTF_8))

@@ -1,6 +1,6 @@
 # Families on more than one phone: encrypted relay, joined by QR code
 
-Status: being built (steps 1 to 3 below). Decided 2026-11-16: an encrypted relay with a QR-code join. Not
+Status: being built (steps 1 to 4 below). Decided 2026-11-16: an encrypted relay with a QR-code join. Not
 local-only sync, and not a server that can read family data.
 
 ## What a family sees
@@ -197,7 +197,26 @@ switches the old sync off. That change goes to `main`, which deploys the website
      - Trying it with two real phones and a real camera, against the real server.
      - Android debug builds only ever use the in-memory relay, so its Keystore storage is first
        exercised by a release family build. iOS uses the in-memory relay under UI tests only.
-4. **Server deletion** (Admin → "Delete this family from the server").
+4. **Server deletion.** Built 2026-11-17, in the family build on both apps.
+   - **Deleting.** Admin → Device → Phones → "Delete this family from the server…" asks first,
+     then calls `delete_household`. The household and every record go, for every phone. This
+     phone forgets its keys and sign-in, keeps the whole family, and turns sync off: it doesn't
+     fall back to the old tables. Phones then says "Sync is off. The family is only on this
+     phone.", still offering Add a phone (a new household and key) and Join with a code.
+   - **Phones that are left out.** Reads from a household a phone isn't in come back empty rather
+     than failing, so every relay sync pass first asks the server's `is_member`. A phone that was
+     removed, or whose family was deleted, then does the same as above and says once: "This phone
+     is no longer in the family's sync. Everything on it stays here." A phone left out before its
+     first load goes to setup instead of waiting.
+   - **Tests.**
+     - Unit tests cover `isMember` after a removal and after a delete, and the live test checks
+       it against the real server.
+     - iOS UI tests delete a family, and drop a phone using `-seededDeletes`: the seeded other
+       phone deletes the family 4 seconds after the join.
+     - On Android, the delete was checked on the emulator. The view-model logic has no unit
+       tests, because Robolectric is only on the classpath for store-screenshot builds.
+   - **Still to do:** the Play data-safety answer that points at this button, and the same
+     button in the one-app build.
 5. **Move your family over**, then retire `FAMILY_SYNC`.
 6. **Store forms and privacy policy**, then submit.
 

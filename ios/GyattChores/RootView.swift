@@ -35,7 +35,8 @@ struct RootView: View {
     @ViewBuilder private var layout: some View {
         #if FAMILY_SYNC
         // Until the family's lists have loaded once, no players doesn't mean a new family.
-        if !store.isSetUp && !store.hasSynced { FamilyLoadingView() }
+        // With sync off there's nothing to wait for (a phone dropped before its first load).
+        if !store.isSetUp && !store.hasSynced && !store.syncOff { FamilyLoadingView() }
         else if !store.isSetUp { SetupView().onAppear(perform: reset) }
         else if sizeClass == .regular { twoPane } else { onePane }
         #else

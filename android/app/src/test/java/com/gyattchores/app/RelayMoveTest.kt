@@ -75,6 +75,33 @@ class RelayMoveTest {
         assertTrue(f.isSetUp)
     }
 
+    @Test fun aPhoneCanTellItWasRemovedOrTheFamilyDeleted() {
+        val server = MemoryRelay()
+        val a = Relay(FamilyKeys.generate(), MemoryRelayVault().sessions, MemoryRelay.CONFIG, http = server)
+        a.createHousehold()
+        val code = JoinCode.parse(a.makeJoinCode().first.text)
+        val b = Relay(code.keys, MemoryRelayVault().sessions, MemoryRelay.CONFIG, http = server)
+        assertTrue(b.join(code))
+        assertTrue(b.isMember())
+        a.removeDevice(b.userId())
+        assertFalse("a removed phone can tell", b.isMember())
+        assertTrue(a.isMember())
+        a.deleteHousehold()
+        assertFalse("nobody is in a deleted family", a.isMember())
+        val stranger = Relay(code.keys, MemoryRelayVault().sessions, MemoryRelay.CONFIG, http = server)
+        assertFalse(stranger.isMember())
+    }
+
+    @Test fun clearingTheVaultForgetsKeysAndSignIn() {
+        val v = MemoryRelayVault()
+        val r = Relay(FamilyKeys.generate(), v.sessions, MemoryRelay.CONFIG, http = MemoryRelay())
+        v.saveKeys(r.keys); r.createHousehold()
+        assertTrue(v.sessions.load() != null)
+        v.clear()
+        assertNull(v.loadKeys())
+        assertNull(v.sessions.load())
+    }
+
     @Test fun theVaultKeepsKeysAndSession() {
         val v = MemoryRelayVault()
         assertNull(v.loadKeys())

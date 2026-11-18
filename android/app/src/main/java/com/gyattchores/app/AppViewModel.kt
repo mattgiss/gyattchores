@@ -218,6 +218,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     /** One pass at a time; a request that arrives mid-pass runs one follow-up pass instead of overlapping. */
     fun requestSync() {
         if (!familySync) return
+        // The family was deleted from the server, or this phone taken out of its sync: it keeps the
+        // family to itself, and never goes back to the old tables.
+        if (relay == null && syncOff.value) { syncStatus.value = "off"; return }
         if (!syncing.compareAndSet(false, true)) { syncAgain.set(true); return }
         // The encrypted relay once this phone has joined one; the family's old tables until then.
         val relay = relay
@@ -228,6 +231,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch(Dispatchers.IO) {
             syncStatus.value = "syncing"
             try {
+                // Reads from a family this phone is no longer in come back empty, not as an error, so ask first.
+                if (relay != null && !relay.isMember()) {
+                    if (transport.get() == epoch) dropRelay("This phone is no longer in the family's sync. Everything on it stays here.")
+                    return@launch
+                }
                 val logs = LogSync.run(logApi, store.logs.value)
                 // This phone moved to another server mid-pass: what this pass found belongs to the old one.
                 if (transport.get() != epoch) return@launch
@@ -306,6 +314,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 store.prepareForNewServer(now())
                 transport.incrementAndGet()
                 relay = r; relayLinked.value = true
+                setSyncOff(false)
                 requestSync()
             }
             try { r.makeJoinCode() } catch (e: Exception) { throw RelayProblem(OFFLINE) }
@@ -329,6 +338,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         prefs.edit().remove(KEY_SYNCED).apply()
         syncedOnce.value = false
         relay = r; relayLinked.value = true
+        setSyncOff(false)
         requestSync()
         null
     }
@@ -346,6 +356,31 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     suspend fun removePhone(userId: String): Boolean = withContext(Dispatchers.IO) {
         runCatching { relay?.removeDevice(userId) }.isSuccess
     }
+
+    /**
+     * Admin → "Delete this family from the server": the household and everything sent go, every
+     * phone stops syncing, and the family stays on this one. Returns why not, or null once done.
+     */
+    suspend fun deleteFromServer(): String? = withContext(Dispatchers.IO) {
+        val r = relay ?: return@withContext null
+        try { r.deleteHousehold() } catch (e: Exception) { return@withContext OFFLINE }
+        dropRelay(null)
+        null
+    }
+
+    /** Leaves the relay on this phone: keys and sign-in forgotten, sync off, everything here kept. */
+    private fun dropRelay(notice: String?) {
+        vault.clear()
+        transport.incrementAndGet()
+        relay = null; relayLinked.value = false
+        setSyncOff(true)
+        syncStatus.value = "off"
+        notice?.let { this.notice.value = it }
+    }
+
+    /** True once this phone left the relay: it syncs with nothing until it adds or joins a phone again. */
+    val syncOff by lazy { MutableStateFlow(prefs.getBoolean(KEY_SYNC_OFF, false)) }
+    private fun setSyncOff(on: Boolean) { prefs.edit().putBoolean(KEY_SYNC_OFF, on).apply(); syncOff.value = on }
 
     private class RelayProblem(message: String) : Exception(message)
 
@@ -659,6 +694,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     private companion object {
         const val KEY_SYNCED = "synced_once"
+        const val KEY_SYNC_OFF = "relay_sync_off"
         const val KEY_BIOMETRIC = "biometric_unlock"
         const val KEY_SYNC_URL = "test_sync_url"
         /** Shared: ids of backups already merged into the family, so a repeat does nothing. */

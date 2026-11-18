@@ -60,6 +60,8 @@ public final class MemoryRelay: RelayHTTP, @unchecked Sendable {
             let h = (body as! [String: String])["p_household"]!
             guard devices[h] == nil else { return json(["message": "duplicate"], 409) }
             devices[h] = [uid: ISO8601DateFormatter().string(from: Date())]; return (Data(), 204)
+        case ("POST", "/rest/v1/rpc/is_member"):
+            return json(member((body as! [String: String])["h"]!))
         case ("POST", "/rest/v1/rpc/create_join_token"):
             let a = body as! [String: String], h = a["p_household"]!
             guard member(h) else { return json(["message": "not a member"], 403) }
