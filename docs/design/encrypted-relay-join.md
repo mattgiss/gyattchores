@@ -111,13 +111,37 @@ the engines in step. An iPhone and an Android phone must produce and open the sa
 
 ## Moving your family over
 
-1. Ship the relay in a TestFlight / Obtainium build.
-2. On your phone (it already has the whole family through today's sync), tap Admin → "Add a
-   phone". The family uploads encrypted under a new household.
-3. Each other phone updates and scans the code. It keeps its own settings (whose phone it is,
-   theme) and swaps its data source.
-4. Once every phone is moved, the old sync is switched off. `simple_logs` and `family_state` are
-   kept read-only for a while, then deleted.
+Do it in one sitting, with every phone in the room. Until a phone has moved, it keeps syncing
+through the old tables, and changes don't cross between moved and unmoved phones.
+
+**Before**
+1. Update every phone. iPhones and iPads update from TestFlight, Android phones from Obtainium.
+   The version line on the home screen shows the build.
+2. On each phone, check the home screen says "Synced". Joining drops anything a phone hasn't
+   sent yet.
+3. On the parent's phone, save a backup: Admin → Device → "Save a backup…".
+
+**Moving**
+1. On the parent's phone: Admin → Device → Phones → **Add a phone**. The first time, it encrypts
+   the family and sends it (a few seconds), then shows a QR code.
+2. On the next phone: Admin → Device → Phones → **Join with a code** → Scan the code, and point
+   it at the QR code. A phone that was just installed has the same button on its "Loading the
+   family" screen. The family loads; check the players and points look right. Whose phone it is
+   stays as it was.
+3. A code works once. On the parent's phone tap Done, then Add a phone again for the next phone.
+4. When every phone is done, the parent's phone lists them all under Phones, and each phone's
+   home screen says "Synced".
+
+**If something goes wrong**
+- If a phone shows "That code has expired or was already used", make a new code on the parent's
+  phone.
+- If the family on the relay looks wrong: Admin → Device → Phones → Delete this family from the
+  server on the parent's phone. Then restore the backup there if needed, and start again from
+  Add a phone.
+
+**After:** once every phone is moved, the old sync is switched off. `simple_logs` and
+`family_state` are kept read-only for a while, then deleted. That's the code change that retires
+`FAMILY_SYNC`.
 
 **The web app at gyattchores.com/index.html is retired** (decided 2026-11-16). It reads and
 writes `simple_logs`, so it keeps working until step 4, then goes away in the same change that
