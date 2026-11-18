@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#D90015">
-<meta name="description" content="Privacy policy for DOYOURWORK on iPhone, iPad and Android. The app collects nothing: everything stays on your device.">
+<meta name="description" content="Privacy policy for DOYOURWORK on iPhone, iPad and Android. Everything stays on your phones. A family on more than one phone syncs end-to-end encrypted, so we can't read it.">
 <title>Privacy policy — DOYOURWORK</title>
 <link rel="icon" type="image/svg+xml" href="/dyw-icon.svg">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -34,7 +34,7 @@
 
 <main>
   <div class="box">
-    <p><strong>DOYOURWORK collects nothing.</strong> Everything you put into it stays on the device you put it into. There is no account, no sign-in, and no server of ours for it to be sent to. We can't see your family's names, chores or points, and neither can anyone else.</p>
+    <p><strong>We can't see your family's names, chores or points.</strong> On one phone or tablet, nothing leaves it. If you add a second phone, everything is encrypted on your phone before it's sent, with a key only your family's phones have. Our server passes along and stores scrambled data it can't read. There is no account, no email and no password.</p>
   </div>
 
   <h2>What the app keeps, and where</h2>
@@ -47,18 +47,29 @@
     <li>Settings such as sound and colour theme, and progress in the built-in puzzle</li>
   </ul>
   <p>These are files in the app's own storage on your phone or tablet. Other apps can't read them.</p>
+  <p>A phone that's in a family on more than one phone also keeps the family's encryption key and its own anonymous sign-in, in the iPhone Keychain or Android Keystore, marked so they never leave that phone in a backup.</p>
 
   <h2>What leaves your device</h2>
-  <p><strong>Nothing, unless you send it yourself.</strong> The app contains no code that connects to the internet, and on Android it doesn't hold the permission to. It has no analytics, no advertising, no tracking, and no outside services of any kind.</p>
-  <p>Three things happen only under your control, not ours:</p>
+  <p><strong>On one device: nothing, unless you send it yourself.</strong> Until someone adds a phone, the app never goes online. It has no analytics, no advertising, no tracking, and no outside services of any kind.</p>
+
+  <h2>A family on more than one phone</h2>
+  <p>In <strong>Admin</strong>, <strong>Add a phone</strong> shows a QR code, and the other phone scans it inside the app to join. From then on the family's phones keep each other up to date through our server. This is how it works:</p>
+  <ul>
+    <li><strong>The key stays with your family.</strong> The first phone makes a random encryption key. It travels to another phone only inside the QR code, which is scanned in person and works once, for ten minutes. We never receive the key.</li>
+    <li><strong>Everything is sealed before it's sent.</strong> Names, chores, logs, approvals, admin codes and dares are encrypted on the phone (AES-256-GCM) before they're sent. Even the names of the lists they belong to are scrambled.</li>
+    <li><strong>What our server can see:</strong> a random ID for your family, an anonymous ID for each phone and when it joined, and the encrypted records themselves, with their sizes and when they changed. Like any internet service, it also sees the IP address a phone connects from. It can't see who you are or what's in your scoreboard.</li>
+    <li><strong>Who runs it.</strong> The server is a database hosted by Supabase, in the United States. Supabase stores the encrypted records for us and can't read them either.</li>
+    <li><strong>The camera</strong> is used only to read the QR code while you're scanning. Nothing it sees is saved or sent.</li>
+  </ul>
+  <p>Some things happen only under your control, not ours:</p>
   <ul>
     <li><strong>Backups you save.</strong> An admin can save a backup: one file holding everything in the list above. The app hands that file to your device, and you choose where it goes. Wherever you put it, it's yours to look after. We never receive it.</li>
-    <li><strong>Your device's own backups.</strong> On iPhone and iPad, if you have iCloud Backup or computer backups turned on, Apple includes this app's files in your backup, as it does for your other apps. On Android, the app opts out of the phone's automatic backup, so its files are not included. We have no access to either.</li>
+    <li><strong>Your device's own backups.</strong> On iPhone and iPad, if you have iCloud Backup or computer backups turned on, Apple includes this app's files in your backup, as it does for your other apps (but not the family's key). On Android, the app opts out of the phone's automatic backup, so its files are not included. We have no access to either.</li>
     <li><strong>Dictation.</strong> If you say your chores using the microphone key on the keyboard, that is your keyboard's voice typing (Apple's on iPhone and iPad, usually Google's on Android), handled under that company's privacy policy. The app itself never uses the microphone and only receives the resulting text.</li>
   </ul>
 
   <h2>Children</h2>
-  <p>Households with children use DOYOURWORK, usually on a device a parent sets up. Because the app collects no information from anyone, it collects none from children. Nicknames work as well as real names, and we suggest using them.</p>
+  <p>Households with children use DOYOURWORK, usually on a device a parent sets up. We can't read anything a family puts into it, children's names included, and we don't ask anyone for contact details. Nicknames work as well as real names, and we suggest using them.</p>
 
   <h2>Face and fingerprint unlock</h2>
   <p>An admin can choose to open the admin area with Face ID or Touch ID on iPhone and iPad, or with fingerprint or face unlock on Android. This is off unless you turn it on. Your device does the check and tells the app only yes or no; the app never sees your face or fingerprint.</p>
@@ -66,21 +77,22 @@
   <h2>Deleting your data</h2>
   <p>You hold all of it, so you can delete all of it, at any time, without asking us:</p>
   <ul>
-    <li>In the app, open <strong>Admin</strong> and tap <strong>Erase everything</strong></li>
+    <li>In the app, open <strong>Admin</strong> and tap <strong>Erase everything</strong> (on a phone that isn't in a family on more than one phone)</li>
+    <li>For a family on more than one phone, an admin can tap <strong>Delete this family from the server</strong> in <strong>Admin</strong>. That deletes the family and every record sent for it, at once, for every phone. Each phone keeps its own copy. To take just one phone out, tap <strong>Remove</strong> next to it under Phones: it gets no more updates.</li>
     <li>Or delete the app from your device</li>
     <li>To remove one person and their history, open <strong>Admin</strong>, tap <strong>Edit</strong> next to their name, then remove them</li>
   </ul>
-  <p>If you saved backup files, delete those wherever you kept them. There is nothing for us to delete, because nothing was sent to us.</p>
+  <p>If you saved backup files, delete those wherever you kept them. We can't tell whose family is whose on the server, so the button in Admin is the way to delete one.</p>
 
   <h2>This website</h2>
-  <p>gyattchores.com is a set of plain pages about the app. It uses no analytics, no cookies and no trackers, and loads nothing from other companies. Like any website, the company that hosts it (GitHub) sees the ordinary technical details of a visit, such as an IP address.</p>
+  <p>doyourwork.today is a set of plain pages about the app. It uses no analytics, no cookies and no trackers, and loads nothing from other companies. Like any website, the company that hosts it (GitHub) sees the ordinary technical details of a visit, such as an IP address.</p>
   <p>If you email us, for example to join the beta, we use your address to reply and to send your invite, and for nothing else. Ask and we'll delete it.</p>
 
   <h2>Earlier test versions</h2>
-  <p>Before this version, test builds for one family kept their chores in step between devices using an online database. Those builds have <a href="/privacy.html">their own policy</a>. Nothing on this page describes them.</p>
+  <p>Before encrypted sync, test builds for one family kept their chores in step between devices using an online database that wasn't encrypted. Those builds have <a href="/privacy.html">their own policy</a>. That database is being switched off.</p>
 
   <h2>Changes</h2>
-  <p>If a future version changes any of this, for example by letting a household share one scoreboard between its devices, this page will be updated before that version is released, and the date at the top will change.</p>
+  <p>If a future version changes any of this, this page will be updated before that version is released, and the date at the top will change.</p>
 
   <h2>Contact</h2>
   <p>Questions: <a href="mailto:matt@gissentanna.com">matt@gissentanna.com</a></p>
