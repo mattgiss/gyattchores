@@ -1,0 +1,10 @@
+{
+  "name": "doyourwork-brand-tools",
+  "private": true,
+  "description": "Redraws the DOYOURWORK icon, the Play banner and the website's pictures of the app.",
+  "dependencies": {
+    "@fontsource/pacifico": "^5.3.0",
+    "opentype.js": "^2.0.0",
+    "playwright": "^1.50.0"
+  }
+}

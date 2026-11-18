@@ -3,7 +3,7 @@
 Everything the two stores and the website need, in one place. iPhone, iPad and Android launch on
 the same day.
 
-Status as of 17 November 2026: **ready** means it exists and matches the app as it is today;
+Status as of 18 November 2026: **ready** means it exists and matches the app as it is today;
 **yours** means only the owner can do it.
 
 ## Where things are
@@ -14,6 +14,7 @@ Status as of 17 November 2026: **ready** means it exists and matches the app as 
 | What a reviewer might object to | [`ios/AppStore/REVIEW-RISKS.md`](../ios/AppStore/REVIEW-RISKS.md) | in the Play guide, under "Decide these before the first upload" |
 | Screenshots | made by CI on every push: the `app-store-screenshots` download on the newest green [iOS run](https://github.com/mattgiss/gyattchores/actions/workflows/ios.yml) | [`android/PlayStore/screenshots/`](../android/PlayStore/screenshots/) |
 | Icon and graphics | in the app (`ios/GyattChores/Assets.xcassets`) | [`android/PlayStore/graphics/`](../android/PlayStore/graphics/) |
+| Redrawing the icon, banner or characters | [`tools/brand/`](../tools/brand/) and [`tools/characters/`](../tools/characters/) | the same |
 | The build | the public scheme, uploaded from the Mac (`ios/README.md`) | `android/play-bundle.sh` |
 
 Shared: the website (`main` branch) carries the support page (`app.html`), the privacy policy
@@ -25,9 +26,9 @@ Shared: the website (`main` branch) carries the support page (`app.html`), the p
 
 | Item | Status |
 |---|---|
-| Privacy policy page, live | ready: `https://gyattchores.com/app-privacy.html` (it still says "iPhone and iPad" in places and needs widening to Android before launch) |
-| Support page, live | ready: `https://gyattchores.com/app.html` (same note) |
-| Marketing site with beta sign-up | drafted on the branch `claude/marketing-site`, not published |
+| Privacy policy page, live | ready: `https://gyattchores.com/app-privacy.html`, covering iPhone, iPad and Android |
+| Support page, live | ready: `https://gyattchores.com/app.html` |
+| Marketing site with beta sign-up | ready: published 17 November 2026 (pull request #73) |
 | One version number on both | **yours**: iPhone says 1.0, Android says 0.7.1 |
 | Launch date and countries | **yours** |
 

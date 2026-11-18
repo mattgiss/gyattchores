@@ -1,0 +1,22 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+/* The Play Store feature graphic, 1024 x 500. banner.js takes a picture of this page. */
+@font-face { font-family: SG; font-weight: 900; src: url(../../android/app/src/main/res/font/schibsted_grotesk_black.ttf); }
+@font-face { font-family: SG; font-weight: 600; src: url(../../android/app/src/main/res/font/schibsted_grotesk_semibold.ttf); }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { width: 1024px; height: 500px; overflow: hidden; background: #000; font-family: SG, sans-serif; color: #fff; position: relative; }
+.bands { position: absolute; inset: 0; display: grid; grid-template-rows: repeat(5, 1fr); }
+.bands i:nth-child(1) { background: #D90015; } .bands i:nth-child(2) { background: #DB2A15; } .bands i:nth-child(3) { background: #E04A19; }
+.bands i:nth-child(4) { background: #E2751C; } .bands i:nth-child(5) { background: #E99A22; }
+.copy { position: absolute; left: 56px; top: 0; bottom: 0; width: 430px; display: flex; flex-direction: column; justify-content: center; }
+h1 { font-weight: 900; font-size: 52px; line-height: 1; letter-spacing: -0.5px; }
+p { font-weight: 600; font-size: 32px; line-height: 1.25; margin-top: 18px; }
+small { display: block; font-weight: 600; font-size: 21px; margin-top: 22px; opacity: 0.92; }
+.phone { position: absolute; top: 46px; width: 250px; border-radius: 26px; border: 7px solid #000; overflow: hidden; box-shadow: 0 22px 50px rgba(0,0,0,0.45); background: #000; }
+.phone img { display: block; width: 100%; }
+.p1 { right: 246px; transform: rotate(-4deg); } .p2 { right: 32px; top: 86px; transform: rotate(3deg); }
+</style></head><body>
+<div class="bands"><i></i><i></i><i></i><i></i><i></i></div>
+<div class="copy"><h1>DOYOURWORK</h1><p>25 minutes a day.<br>That's it.</p><small>The private chore scoreboard for your household.</small></div>
+<div class="phone p1"><img src="../../android/PlayStore/screenshots/phone/01-scoreboard.png"></div>
+<div class="phone p2"><img src="../../android/PlayStore/screenshots/phone/04-todays-card.png"></div>
+</body></html>
