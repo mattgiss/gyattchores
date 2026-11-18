@@ -58,24 +58,24 @@ final class DOYOURWORKUITests: XCTestCase {
     }
 
     /// Saves the backup in the system's save panel under a name of its own and waits for the app to
-    /// say it was saved. Returns the name, to find the file again. A backup from earlier in the run
-    /// would otherwise have the same name, and replacing a file can hang the simulator's Files.
+    /// say it was saved. Returns how the file's name starts, to find it again. Replacing an earlier
+    /// file with the same name can hang the simulator's Files.
     @discardableResult
     private func confirmBackupSave(in app: XCUIApplication) -> String {
         let saveButton = app.buttons["Save"]
         XCTAssertTrue(saveButton.waitForExistence(timeout: wait), "the save panel should open")
         let day = DateFormatter(); day.locale = Locale(identifier: "en_US_POSIX"); day.dateFormat = "yyyy-MM-dd"
-        var name = "doyourwork-backup-\(day.string(from: Date()))"
+        // Today's backups all start with this; the field gets a random ending on top so this save
+        // doesn't replace an earlier one. On a slow simulator the typing can lag or be lost, so the
+        // file is found again by this start, not the full name.
+        let name = "doyourwork-backup-\(day.string(from: Date()))"
         let field = app.textFields["DOCPicker.filenameTextField"]
         if field.waitForExistence(timeout: 5) {
             field.tap()
             let current = (field.value as? String) ?? ""
             field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: current.count + 5)
                            + name + "-" + UUID().uuidString.prefix(6).lowercased())
-            // Typing doesn't always reach the field on a slow simulator: go by what it holds now.
-            if let now = field.value as? String, now.hasPrefix("doyourwork-backup-") { name = now }
         }
-        if !name.hasSuffix(".json") { name += ".json" }
         saveButton.tap()
         let saved = app.staticTexts["Backup saved. Keep it somewhere safe, like Files or iCloud Drive."]
         let replace = app.buttons["Replace"]
