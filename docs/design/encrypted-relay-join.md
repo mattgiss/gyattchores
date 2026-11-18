@@ -80,7 +80,7 @@ The server can't read records, so all merging stays on the phones. It already ha
 
 `LogSync`, `StateSync` and `FamilyState` stay. Only the transport underneath them changes, from
 plain rows in `simple_logs` / `family_state` to encrypted rows in `records`. This applies to both
-GyattCore and the Kotlin `sync` package.
+DoYourWorkCore and the Kotlin `sync` package.
 
 ### Shared test vectors
 
@@ -104,7 +104,7 @@ the engines in step. An iPhone and an Android phone must produce and open the sa
 
 - The App Store / Play app becomes the only edition. It works offline until someone taps "Add a
   phone".
-- The "GyattChores Family" scheme, the `FAMILY_SYNC` flag and the plaintext tables retire after
+- The "DOYOURWORK Family" scheme, the `FAMILY_SYNC` flag and the plaintext tables retire after
   your family moves over (see "Moving your family over").
 - **Built on the `one-app` branch** (not released):
   - **One code path.** Every install keeps the family's shared lists, and syncs only through the
@@ -123,11 +123,11 @@ the engines in step. An iPhone and an Android phone must produce and open the sa
     ran the App Store build only keeps the dares from any old shared file (a stale leftover from
     an earlier version), and its shared lists are rebuilt from its own players and chores, so a
     later "Add a phone" sends everything.
-  - **iOS:** one scheme, "GyattChores", with the camera prompt in every build.
+  - **iOS:** one scheme, "DOYOURWORK", with the camera prompt in every build.
   - **Android:** the `family` and `public` flavors become `github` (com.gyattchores.app, the
     debug key, what Obtainium installs) and `play` (com.gyattchores.app.public, the upload key).
     They differ only in id and signing; INTERNET, CAMERA and the QR scanner are in every build.
-  - **The web app** (native/tools/web-engine.html, still served at gyattchores.com) no longer
+  - **The web app** (native/tools/web-engine.html, still served at doyourwork.today) no longer
     syncs; it stays as the source of truth for the game rules. The Discord bots that read the
     old tables (Card Notify, already switched off, and Points Recovery) are removed: with the
     relay, the server can't read chores, so a bot can't either.
@@ -168,13 +168,13 @@ through the old tables, and changes don't cross between moved and unmoved phones
 **After**
 1. Check every phone is on the relay: the parent's phone lists them all under Phones, and the old
    tables have stopped changing (`supabase/retire-old-tables.sql` has the two queries).
-2. Merge the `one-app` branch and release it: TestFlight (scheme "GyattChores") and
+2. Merge the `one-app` branch and release it: TestFlight (scheme "DOYOURWORK") and
    `android/release.sh` (the `github` flavor). A phone that hadn't moved would be left on its own,
    with its data, until it joins with a code.
 3. Make `simple_logs` and `family_state` read-only (step 1 of `supabase/retire-old-tables.sql`).
    Delete them later (step 2).
 
-**The web app at gyattchores.com/index.html is retired** (decided 2026-11-16). The copy left at
+**The web app at doyourwork.today/index.html is retired** (decided 2026-11-16). The copy left at
 native/tools/web-engine.html stops syncing in the one-app change. That change goes to `main`,
 which deploys the website.
 
@@ -205,7 +205,7 @@ which deploys the website.
    tables" off. The apps use its publishable key. The old project keeps serving today's family
    sync until the move. Checked end to end with three anonymous devices: create a family, write,
    join with a one-time code, outsiders and signed-out callers see nothing, delete the family.
-2. **Crypto and transport** in GyattCore and Kotlin, with the shared test vectors. Built
+2. **Crypto and transport** in DoYourWorkCore and Kotlin, with the shared test vectors. Built
    2026-11-17:
    - **Crypto:** `RelayCrypto.swift` / `RelayCrypto.kt` hold the family keys, sealing and opening
      records, state row ids and the join code. Both match `native/fixtures/relay-crypto.json` byte
@@ -222,7 +222,7 @@ which deploys the website.
    - **Still to do:** the app still uses the old tables. Keeping the session and keys on the
      device (Keychain / Keystore) and switching the apps over come with the join flow, along with
      an in-memory relay for the UI tests (like today's `-syncURL`).
-3. **Join flow.** Started 2026-11-17, in the **family build only** (the iOS "GyattChores Family"
+3. **Join flow.** Started 2026-11-17, in the **family build only** (the iOS "DOYOURWORK Family"
    scheme and Android's family flavor, the builds the family's phones run). The App Store / Play
    build gets no network code, camera permission or server address until step 5, and CI checks
    the iOS App Store build has no server address in it.
@@ -242,7 +242,7 @@ which deploys the website.
    - **Drawing and scanning.** CoreImage draws the QR code on iOS and VisionKit's
      `DataScannerViewController` reads it. On Android, ZXing does both.
    - **Address.** The relay's address, and on Android the old tables' address too, is kept in
-     family-only code, not in GyattCore or Kotlin `main`. Neither store build contains
+     family-only code, not in DoYourWorkCore or Kotlin `main`. Neither store build contains
      "supabase.co". Before this, the Play build carried the old tables' address unused.
    - **Tests.** UI tests use an in-memory relay (`MemoryRelay`, the same one the unit tests use).
      `-scanResult seeded` makes a second phone with a family in it and hands over its code, so the
@@ -275,7 +275,7 @@ which deploys the website.
 5. **Move your family over**, then retire `FAMILY_SYNC`.
    - **Shipped** 2026-11-17: the relay in the family builds (TestFlight build 202611171913, Android
      0.8.0).
-   - **Checked:** an iPhone and an Android phone share a family on the real relay. GyattCore's
+   - **Checked:** an iPhone and an Android phone share a family on the real relay. DoYourWorkCore's
      `testInteropWithAndroid` and the Android `RelayTest.interopWithIos` run side by side and hand
      join codes to each other through a folder: each side makes a family, the other joins it, and
      both read, approve and add logs and lists (`INTEROP_DIR=<dir>`; see the tests).

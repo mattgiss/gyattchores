@@ -31,7 +31,7 @@ privacy page (guideline 5.1.1(i) requires both a policy in App Store Connect and
 the app).
 
 - **The two pages are published:** `app-privacy.html` and `app.html` were added to the
-  website on 13 November 2026. Open both on gyattchores.com once before submitting; a link
+  website on 13 November 2026. Open both on doyourwork.today once before submitting; a link
   that leads to a missing page is a likely rejection.
 - **Don't point Apple at the existing pages.** `privacy.html` and `privacy/index.html`
   describe the older website version (optional cloud sync) and disagree with each other;
@@ -98,9 +98,8 @@ build update your household's phones in place, and it is also the way to get thi
   website. None are in the app or on the new store pages.
 - **The name.** The app was renamed DOYOURWORK on 17 November 2026. Apple requires app names to
   be unique, and I could not check from here whether this one is free; have
-  `DOYOURWORK: Chore Scoreboard` ready as the fallback. The bundle id, the website address and
-  the project's internal names still say "gyattchores", which no user sees and Apple doesn't
-  mind.
+  `DOYOURWORK: Chore Scoreboard` ready as the fallback. Only the bundle id keeps the app's first
+  name, which no user sees and Apple doesn't mind.
 - **Don't name other platforms.** The app launches alongside an Android version, but the App
   Store listing, screenshots and review notes must not mention it (guideline 2.3.10).
 - **Sorting spoken chores is simple word-sorting,** not AI, and it will sometimes split or

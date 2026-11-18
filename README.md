@@ -1,14 +1,12 @@
 # DOYOURWORK
 
-Formerly GyattChores; the repository, the website address and the code keep the old name.
-
 A chore scoreboard for a household: everyone picks about **25 minutes** of chores a day, an admin approves what got done, and points, streaks and a weekly winner follow.
 
-**[gyattchores.com](https://gyattchores.com)** is the public page about the app: what it is, that it's coming soon to iPhone and iPad, and how to join the beta. It is a plain static site (this branch, served by GitHub Pages) with no app and no database behind it.
+**[doyourwork.today](https://doyourwork.today)** is the public page about the app: what it is, that it's coming soon to iPhone and iPad, and how to join the beta. It is a plain static site (this branch, served by GitHub Pages) with no app and no database behind it.
 
 - **The apps** live on the [`native-android`](../../tree/native-android) branch: `ios/` (iPhone and iPad) and `android/`.
 - **The website** is `index.html`, plus `app.html` (support) and `app-privacy.html` (the app's privacy policy). `scripts/validate-build.mjs` checks it before a merge.
-- **The web app that used to live at gyattchores.com is retired.** It was this repository's `index.html` up to commit `ba9c6f8`; `git show ba9c6f8:index.html` brings it back for reference. `sw.js` remains only to clear that app's offline cache from browsers that installed it, and `recover.html` can still export chores a browser saved locally.
+- **The web app that used to live on this site is retired.** It was this repository's `index.html` up to commit `ba9c6f8`; `git show ba9c6f8:index.html` brings it back for reference. `sw.js` remains only to clear that app's offline cache from browsers that installed it, and `recover.html` can still export chores a browser saved locally.
 
 Everything below describes that retired web app and the family set-up it ran on. It is kept as a record.
 
@@ -17,14 +15,14 @@ Everything below describes that retired web app and the family set-up it ran on.
 1. **Pick a player** — tap a name (bekindhearted or megadinolava).
 2. **Build today's card** — pick the chores you want up to a **25-minute budget**, then tap **fill to 25m** to top it up with smart suggestions (most-neglected chores first). Lock it in.
 3. **Do the work & submit** — check off each chore as you finish; the submit button activates once they're all checked.
-4. **Parent approves** — tap the **GYATTCHORES** title 5× on the player-select screen, enter the family admin code, then approve or reject each pending chore.
+4. **Parent approves** — tap the **DOYOURWORK** title 5× on the player-select screen, enter the family admin code, then approve or reject each pending chore.
 5. **Earn XP & level up** — approved chores add XP. Keep a daily streak and a **momentum multiplier** boosts the XP you earn (up to **2× at a 10-day streak**). Your level shows as a **version number** (v1.0 → v1.1 → …). Neglected chores **escalate** — they cost more minutes and get suggested first.
 
 ## Data & storage
 
-GyattChores is **local-first with optional cloud sync**:
+DOYOURWORK is **local-first with optional cloud sync**:
 
-- **Always saves locally first.** Every chore log is written to the browser's `localStorage` (key: `gyattchores_logs`) instantly. Submitting never blocks on the network and **can never fail because a server is down**.
+- **Always saves locally first.** Every chore log is written to the browser's `localStorage` (key: `doyourwork_logs`) instantly. Submitting never blocks on the network and **can never fail because a server is down**.
 - **Syncs across devices when it can.** If the shared Supabase backend is reachable, logs sync in the background so each kid's phone and the parent's admin screen see the same data. New local entries are pushed; shared rows are pulled and merged. (Approvals self-heal if a row was lost server-side — they're re-created rather than silently dropped.)
 - **Degrades gracefully.** If the backend is unreachable (e.g. a paused free-tier project), the app keeps working offline, shows an "offline" hint in the header, and syncs automatically once the backend is back.
 
@@ -53,7 +51,7 @@ If the table is missing or the project is paused, the app simply stays in local-
 
 ## Chores
 
-GyattChores ships with **27 chores** across the house. Each has a **base time in minutes** (≈3–25 min) that **escalates** the longer it goes undone, so neglected chores cost more and surface first when building the next card. The daily card targets **25 minutes** of work.
+DOYOURWORK ships with **27 chores** across the house. Each has a **base time in minutes** (≈3–25 min) that **escalates** the longer it goes undone, so neglected chores cost more and surface first when building the next card. The daily card targets **25 minutes** of work.
 
 | Area | Examples |
 |------|----------|
@@ -100,7 +98,7 @@ The site is hosted on **GitHub Pages** from `main`, with the custom domain set i
 ```bash
 # bump the BUILD constant in index.html first, then:
 git add .
-git commit -m "Update GyattChores"
+git commit -m "Update DOYOURWORK"
 git push origin main
 ```
 
@@ -108,12 +106,12 @@ Bumping `BUILD` on each deploy is what lets the in-app indicator tell a freshly-
 
 ## Native apps
 
-Native iOS and Android apps are in development on the `native-android` branch ([#65](https://github.com/mattgiss/gyattchores/pull/65)) and are not on `main` yet. The Swift sources for an earlier tap-to-log design (iPhone + Apple Watch, `GyattChoresApp/`) and its App Store notes (`app-store-metadata/`) were removed in November 2026; they described a different app and are still in the git history.
+Native iOS and Android apps are in development on the `native-android` branch ([#65](https://github.com/mattgiss/doyourwork/pull/65)) and are not on `main` yet. The Swift sources for an earlier tap-to-log design (iPhone + Apple Watch, `DOYOURWORKApp/`) and its App Store notes (`app-store-metadata/`) were removed in November 2026; they described a different app and are still in the git history.
 
 ## Project structure
 
 ```
-gyattchores/
+doyourwork/
 ├── index.html              # The entire web app (self-contained SPA)
 ├── simple-logs-schema.sql  # Supabase table + RLS for optional cross-device sync
 ├── CNAME                   # Custom domain for GitHub Pages

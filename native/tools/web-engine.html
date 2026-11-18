@@ -7,8 +7,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#ffffff">
-<title>GyattChores</title>
-<link rel="icon" type="image/svg+xml" href="gyattchores-logo-transparent.svg">
+<title>DOYOURWORK</title>
+<link rel="icon" type="image/svg+xml" href="doyourwork-logo-transparent.svg">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="/manifest.json">
 <script crossorigin="anonymous" integrity="sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z" src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
@@ -51,7 +51,7 @@ const { useState, useEffect, useCallback, useRef } = React;
 // client-side app — but it keeps the code out of casual view.)
 const hashCode = s => { let h=2166136261>>>0; for (let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619)>>>0; } return h; };
 const ADMIN_CODE_HASH   = 3856382990;
-const STORAGE_KEY       = 'gyattchores_logs';
+const STORAGE_KEY       = 'doyourwork_logs';
 const ACCENT            = '#F23861';
 const BUILD             = '2026.11.13.1'; // bump on every deploy — drives the build-freshness indicator
 // Retired (2026-11): the old plaintext tables are gone, so this page no longer syncs. It's kept
@@ -108,7 +108,7 @@ const toRow      = l => ({ player_id:l.playerId, player_name:l.playerName, chore
 const rowToLocal = r => ({ id:'r_'+r.id, remoteId:r.id, synced:true, statusDirty:false, playerId:r.player_id, playerName:r.player_name, choreId:r.chore_id, choreName:r.chore_name, choreIcon:'', points:r.points, timestamp:r.created_at, status:r.status });
 
 // ─── CARD ENGINE ─────────────────────────────────────────────────────────────
-const cardKey = id => `gyattchores_card_${id}_${new Date().toDateString()}`;
+const cardKey = id => `doyourwork_card_${id}_${new Date().toDateString()}`;
 
 const neglectDays = (choreId, playerId, logs) => {
   const last = logs
@@ -890,7 +890,7 @@ function PlayerSelect({ onSelect, onAdmin, logs }) {
         <div style={{
           fontSize:'1.3rem', fontWeight:900, letterSpacing:'6px',
           color:'#F23861', fontFamily:'monospace',
-        }}>GYATTCHORES</div>
+        }}>DOYOURWORK</div>
         <div style={{fontSize:'0.6rem', letterSpacing:'4px', color:'#666', fontFamily:'monospace', marginTop:'6px'}}>
           select player
         </div>
@@ -919,7 +919,7 @@ function PlayerSelect({ onSelect, onAdmin, logs }) {
 
       <div style={{width:'100%', maxWidth:'300px', marginTop:'40px'}}>
         {[
-          ['ABOUT', '/about.html',              'What GyattChores is and why a family turned chores into a game. The two-minute version.'],
+          ['ABOUT', '/about.html',              'What DOYOURWORK is and why a family turned chores into a game. The two-minute version.'],
           ['GUIDE', '/ebook.html',              'Daily cards, XP, streaks, approvals — the full playbook for running the game at home.'],
           ['STORY', '/development-story.html',  'A dad and two kids, one weekend, one HTML file. The bugs and features that shaped it.'],
         ].map(([label,href,desc])=>(

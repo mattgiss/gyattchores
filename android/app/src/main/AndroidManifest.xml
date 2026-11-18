@@ -14,7 +14,7 @@
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"
         android:enableOnBackInvokedCallback="true"
-        android:theme="@style/Theme.GyattChores">
+        android:theme="@style/Theme.DOYOURWORK">
         <activity
             android:name=".MainActivity"
             android:exported="true"

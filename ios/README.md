@@ -1,10 +1,11 @@
 # DOYOURWORK for iOS
 
-The app was called GyattChores; the project, schemes, targets and bundle id keep that name.
+The bundle id, `com.gyattchores.app`, is kept from the app's first name: changing it would make a
+new app, and installed phones would stop getting updates.
 
 The native SwiftUI app: a chore scoreboard for one family on one iPhone or
-iPad. `GyattCore/` is the UI-free package (game rules, data model, the chore
-sorter); `GyattChores/` is the app; `GyattChoresUITests/` drives the app in a
+iPad. `DoYourWorkCore/` is the UI-free package (game rules, data model, the chore
+sorter); `DOYOURWORK/` is the app; `DOYOURWORKUITests/` drives the app in a
 simulator.
 
 ## How it keeps a family's data
@@ -42,13 +43,13 @@ One codebase, two schemes:
 
 | scheme | configs | what it is |
 |---|---|---|
-| **GyattChores** | Debug, Release | The App Store app. Everything stays on the device; the binary has no network code. |
-| **GyattChores Family** | Debug-Family, Release-Family | The family's own build, compiled with `FAMILY_SYNC`. It syncs with the family's Supabase tables (`simple_logs`, `family_state`) and has dares, like the Android family flavor. The version line at the bottom of Home ends in "· family". |
+| **DOYOURWORK** | Debug, Release | The App Store app. Everything stays on the device; the binary has no network code. |
+| **DOYOURWORK Family** | Debug-Family, Release-Family | The family's own build, compiled with `FAMILY_SYNC`. It syncs with the family's Supabase tables (`simple_logs`, `family_state`) and has dares, like the Android family flavor. The version line at the bottom of Home ends in "· family". |
 
 Both use the bundle id `com.gyattchores.app`, so a family build sent through TestFlight upgrades the
 family's phones in place. Only public builds go to App Store review.
 
-What the family build shares, and how, is in `GyattCore/Sources/GyattCore/FamilyState.swift`; the
+What the family build shares, and how, is in `DoYourWorkCore/Sources/DoYourWorkCore/FamilyState.swift`; the
 sync passes are `Sync.swift` and the app's `Family/` folder. In the family build:
 
 - players, display names, admin codes and the chore list live in the shared state, so a change on
@@ -65,14 +66,14 @@ sync passes are `Sync.swift` and the app's `Family/` folder. In the family build
 Under `-uiTesting` sync is off, as before, so a test run never reads or writes the family's data.
 
 To archive the family build for TestFlight, use the archive steps below with
-`-scheme "GyattChores Family"` in place of `-scheme GyattChores`.
+`-scheme "DOYOURWORK Family"` in place of `-scheme DOYOURWORK`.
 
 ## Backups
 
 Admin → device → **save a backup…** writes the whole scoreboard to a file the family keeps
 (`doyourwork-backup-YYYY-MM-DD.json`, saved through the system's save panel: Files, iCloud Drive,
 AirDrop…). **restore from a backup…** is on the same screen and on setup's first screen, for a new
-phone. The format is `GyattCore/Sources/GyattCore/Backup.swift`; the Android app reads and writes the
+phone. The format is `DoYourWorkCore/Sources/DoYourWorkCore/Backup.swift`; the Android app reads and writes the
 same files, so a backup from either platform restores on the other.
 
 - **Public app:** restoring replaces everything on the device, after a confirmation that says what
@@ -100,7 +101,7 @@ keeps sync off entirely.
 brew install xcodegen      # once
 cd ios
 xcodegen                   # after adding or removing files, or editing project.yml
-open GyattChores.xcodeproj
+open DOYOURWORK.xcodeproj
 ```
 
 Pick your team under **Signing & Capabilities**, choose a device, and run.
@@ -110,7 +111,7 @@ Pick your team under **Signing & Capabilities**, choose a device, and run.
 **Rules** — no Xcode needed, runs on macOS or Linux:
 
 ```bash
-cd ios/GyattCore && swift test
+cd ios/DoYourWorkCore && swift test
 ```
 
 These check the Swift engine against answers produced by the web app's own
@@ -149,7 +150,7 @@ and open the puzzle from a submitted card and clear level 1.
 
 ```bash
 cd ios && xcodegen
-xcodebuild test -project GyattChores.xcodeproj -scheme GyattChores \
+xcodebuild test -project DOYOURWORK.xcodeproj -scheme DOYOURWORK \
   -destination 'platform=iOS Simulator,name=iPhone 16e'
 ```
 
@@ -240,9 +241,9 @@ Archive, with a timestamp build number:
 
 ```bash
 cd ios
-xcodebuild archive -project GyattChores.xcodeproj -scheme GyattChores \
+xcodebuild archive -project DOYOURWORK.xcodeproj -scheme DOYOURWORK \
   -configuration Release -destination 'generic/platform=iOS' \
-  -archivePath build/GyattChores.xcarchive -allowProvisioningUpdates \
+  -archivePath build/DOYOURWORK.xcarchive -allowProvisioningUpdates \
   DEVELOPMENT_TEAM=<team id> CURRENT_PROJECT_VERSION=$(date -u +%Y%m%d%H%M)
 ```
 
@@ -263,7 +264,7 @@ don't have it:
 ```
 
 ```bash
-xcodebuild -exportArchive -archivePath build/GyattChores.xcarchive \
+xcodebuild -exportArchive -archivePath build/DOYOURWORK.xcarchive \
   -exportPath build/export -exportOptionsPlist ExportOptions.plist \
   -allowProvisioningUpdates
 ```

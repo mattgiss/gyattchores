@@ -1,5 +1,5 @@
-# Generates GyattChores.xcodeproj. Run `xcodegen` in this folder after adding or removing files.
-name: GyattChores
+# Generates DOYOURWORK.xcodeproj. Run `xcodegen` in this folder after adding or removing files.
+name: DOYOURWORK
 # One app, for the App Store and TestFlight alike. Everything stays on the device until someone
 # adds a phone; then it syncs through the encrypted relay (docs/design/encrypted-relay-join.md).
 configs:
@@ -10,22 +10,26 @@ options:
     iOS: "18.0"
   createIntermediateGroups: true
 packages:
-  GyattCore:
-    path: GyattCore
+  DoYourWorkCore:
+    path: DoYourWorkCore
 targets:
-  GyattChores:
+  DOYOURWORK:
     type: application
     platform: iOS
     sources:
-      - path: GyattChores
+      - path: DOYOURWORK
       - path: ../native/chores.json
         buildPhase: resources
+        group: Shared
       - path: ../native/puzzles.json
         buildPhase: resources
+        group: Shared
     dependencies:
-      - package: GyattCore
+      - package: DoYourWorkCore
     settings:
       base:
+        # Kept from the app's first name: changing it would make a new app, and installed phones
+        # would stop getting updates.
         PRODUCT_BUNDLE_IDENTIFIER: com.gyattchores.app
         MARKETING_VERSION: "1.0"
         CURRENT_PROJECT_VERSION: "1"
@@ -45,17 +49,17 @@ targets:
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
-  GyattChoresUITests:
+  DOYOURWORKUITests:
     type: bundle.ui-testing
     platform: iOS
     sources:
-      - path: GyattChoresUITests
+      - path: DOYOURWORKUITests
     dependencies:
-      - target: GyattChores
+      - target: DOYOURWORK
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.gyattchores.app.uitests
-        TEST_TARGET_NAME: GyattChores
+        PRODUCT_BUNDLE_IDENTIFIER: com.doyourwork.app.uitests
+        TEST_TARGET_NAME: DOYOURWORK
         SWIFT_VERSION: "5.0"
         TARGETED_DEVICE_FAMILY: "1,2"   # iPhone and iPad
         CODE_SIGN_STYLE: Automatic
@@ -63,17 +67,17 @@ targets:
 
 # A shared scheme, so `xcodebuild` (CI) and Xcode use the same build and test setup.
 schemes:
-  GyattChores:
+  DOYOURWORK:
     build:
       targets:
-        GyattChores: all
-        GyattChoresUITests: [test]
+        DOYOURWORK: all
+        DOYOURWORKUITests: [test]
     run:
       config: Debug
     test:
       config: Debug
       targets:
-        - GyattChoresUITests
+        - DOYOURWORKUITests
     profile:
       config: Release
     analyze:

@@ -9,8 +9,8 @@ Checked against Apple's pages on 12 November 2026 (links at the bottom); the tex
 ## Read this first
 
 **Submit the public build, not the family one.** The project builds two apps from one codebase
-(`ios/README.md`, "Two builds"). The scheme **GyattChores** is the App Store app: everything stays
-on the device and it contains no network code. **GyattChores Family** syncs with your own
+(`ios/README.md`, "Two builds"). The scheme **DOYOURWORK** is the App Store app: everything stays
+on the device and it contains no network code. **DOYOURWORK Family** syncs with your own
 family's database and is only for your household's TestFlight. Everything on this page describes
 the public build; a family build sent to App Review would contradict every privacy answer here.
 
@@ -27,7 +27,7 @@ The iPhone and iPad app launches the same day as the Android one. Choose **manua
    processing.
 2. **Download the screenshots** from GitHub ([Screenshots](#1-screenshots) below says
    where). The download unzips to three folders.
-3. **Open the app's privacy and support pages** on gyattchores.com (`app-privacy.html` and
+3. **Open the app's privacy and support pages** on doyourwork.today (`app-privacy.html` and
    `app.html`) and check they load. The app links to the privacy page, and Apple opens both.
 
 ## A. The version page ("1.0 Prepare for Submission" in the sidebar)
@@ -43,7 +43,7 @@ folder into the matching slot.
 | `iphone-medium-1206x2622` | 1206 × 2622 | The next iPhone size down (taken on an iPhone 17 Pro, a 6.3-inch screen) |
 | `ipad-13-inch-2064x2752` | 2064 × 2752 | iPad 13-inch (taken on an iPad Pro 13-inch) |
 
-- Where they are: <https://github.com/mattgiss/gyattchores/actions/workflows/ios.yml>. Open the
+- Where they are: <https://github.com/mattgiss/doyourwork/actions/workflows/ios.yml>. Open the
   newest run with a green tick, scroll to the bottom of its page to **Artifacts**, and
   download **app-store-screenshots**. You need to be signed in to GitHub. GitHub deletes
   artifacts after about 90 days; a new run makes new ones.
@@ -118,7 +118,7 @@ chores,chore chart,family,housework,cleaning,tasks,streak,routine,household,pare
 ### 5. Support URL
 
 ```
-https://gyattchores.com/app.html
+https://doyourwork.today/app.html
 ```
 
 Apple requires this page to show a way to reach you; it has your email. Don't use
@@ -195,7 +195,7 @@ Choose **Manually release this version**, so nothing goes live until you say so.
 
 | Field | Enter |
 |---|---|
-| Name | `DOYOURWORK`. The record still says GyattChores: change it here. App names must be unique on the App Store, so if Apple says this one is taken, use `DOYOURWORK: Chore Scoreboard` (28 of 30). |
+| Name | `DOYOURWORK`. The record still says DOYOURWORK: change it here. App names must be unique on the App Store, so if Apple says this one is taken, use `DOYOURWORK: Chore Scoreboard` (28 of 30). |
 | Subtitle (30 at most; this is 28) | `The private chore scoreboard` |
 | Primary category | Productivity |
 | Secondary category | Lifestyle |
@@ -255,7 +255,7 @@ is offered only in the United States.
 **Privacy Policy URL**
 
 ```
-https://gyattchores.com/app-privacy.html
+https://doyourwork.today/app-privacy.html
 ```
 
 Apple requires a policy even for an app that collects nothing, and requires the app to link
@@ -298,8 +298,8 @@ sidebar. They are needed before anyone outside your App Store Connect team can t
 |---|---|
 | Beta App Description | the text below |
 | Feedback Email | **Only you can fill this in.** Testers' feedback goes here. |
-| Marketing URL | `https://gyattchores.com` |
-| Privacy Policy URL | `https://gyattchores.com/app-privacy.html` |
+| Marketing URL | `https://doyourwork.today` |
+| Privacy Policy URL | `https://doyourwork.today/app-privacy.html` |
 | Beta App Review: contact name, phone, email | **Only you can fill this in.** |
 | Beta App Review: sign-in required | Untick |
 | Beta App Review: notes | the same notes as section 10 |
@@ -330,7 +330,7 @@ Who can test:
 
 - **Internal testers** are people on your App Store Connect team (up to 100). They get builds
   straight away with no review.
-- **External testers** are everyone else: the people who ask through gyattchores.com. Create a
+- **External testers** are everyone else: the people who ask through doyourwork.today. Create a
   group under **External Testing**, add the build, and Apple reviews the first build before
   anyone can install it. After that, add each person by the email on their Apple account, or
   switch on the group's **public link** and send that instead; a public link can be capped at a

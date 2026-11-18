@@ -18,7 +18,7 @@ name: Customer Announcement
 #         arrow that shows whether you're doing better or worse than you
 #         were last month. Most apps you use every day (Spotify, YouTube,
 #         even your school dashboard) use trends to help you see progress.
-#         Now GyattChores does too. Keep those arrows pointing up 🎮
+#         Now DOYOURWORK does too. Keep those arrows pointing up 🎮
 
 on:
   workflow_dispatch:

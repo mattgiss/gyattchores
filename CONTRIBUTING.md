@@ -1,13 +1,13 @@
-# Contributing to GyattChores
+# Contributing to DOYOURWORK
 
-Thanks for helping improve GyattChores. This project is governed by a
+Thanks for helping improve DOYOURWORK. This project is governed by a
 lightweight, ITIL 4-aligned Service Management System in
 [`docs/governance/`](docs/governance/README.md) — these are the short version
 of those rules.
 
 ## Before you start
 
-- A merge to `main` deploys **straight to production** ([gyattchores.com](https://gyattchores.com))
+- A merge to `main` deploys **straight to production** ([doyourwork.today](https://doyourwork.today))
   via GitHub Pages. Treat every change accordingly.
 - There is **no build step** — the web app is a single self-contained
   `index.html`.

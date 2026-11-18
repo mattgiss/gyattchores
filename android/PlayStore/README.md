@@ -4,8 +4,10 @@ Everything the Play Console asks for before an app can go to production, in roug
 it asks, with text ready to paste. Where only you can answer, it says so.
 
 This is for the **play** flavor (`com.gyattchores.app.public`). It's the same app as the
-**github** flavor (`com.gyattchores.app`) that goes out through `release.sh` and Obtainium; the
-two differ only in id, signing and distribution. Everything stays on the phone until someone
+**github** flavor (`com.gyattchores.app`) that goes out through `release.sh` and Obtainium
+(pointed at https://github.com/mattgiss/doyourwork); the two differ only in id, signing and
+distribution. Both ids keep the app's first name on purpose: changing them would stop installed
+phones from updating. Everything stays on the phone until someone
 taps Admin → Phones → "Add a phone", and then it travels to the family's other phones through
 the encrypted relay (docs/design/encrypted-relay-join.md).
 
@@ -14,17 +16,16 @@ from here, so treat field names and limits as a guide and trust the Console wher
 
 ## Decide these before the first upload
 
-1. **The package name is permanent.** The play flavor is `com.gyattchores.app.public`. Once a
-   bundle with that name is uploaded it can never be changed, and it shows in the app's Play
-   Store address. If you would rather have something like `com.gyattchores.scoreboard`, change
-   `applicationIdSuffix` in `app/build.gradle.kts` first.
+1. **The package name is permanent.** The play flavor is `com.gyattchores.app.public`, kept from
+   the app's first name on purpose (decided at the rename to DOYOURWORK). Once a bundle with that
+   name is uploaded it can never be changed, and it shows in the app's Play Store address.
 2. **The version.** The project says 0.7.1 while the iPhone app says 1.0. For a joint launch the
    Play build should say 1.0 as well; a 0.x number reads as unfinished on a store page.
 3. **A closed test comes first.** New personal developer accounts have to run a closed test with
    at least 12 testers who stay opted in for 14 days before Google allows a production release.
    I believe that is still the rule; the Console's dashboard says exactly what your account
    needs. Start the closed test as early as you can, because it sets the earliest date Android
-   can launch. The beta requests from gyattchores.com are where those testers come from.
+   can launch. The beta requests from doyourwork.today are where those testers come from.
 
 ## The build
 
@@ -114,14 +115,14 @@ cd android && ./PlayStore/take-screenshots.sh
 | Category | Productivity |
 | Tags | Your choice from Google's list; "Productivity" and "Parenting" fit |
 | Email | **Only you can fill this in.** It is shown publicly on the listing. |
-| Website | `https://gyattchores.com` |
+| Website | `https://doyourwork.today` |
 | Phone | Optional. Leave empty. |
 
 ## App content (Policy → App content)
 
 | Declaration | Answer |
 |---|---|
-| Privacy policy | `https://gyattchores.com/app-privacy.html` |
+| Privacy policy | `https://doyourwork.today/app-privacy.html` |
 | Ads | No, the app does not contain ads |
 | App access | All functionality is available without special access. (The admin code is one the tester sets themself during setup.) |
 | Content rating | Questionnaire category: Utility, Productivity, Communication or Other. Answer No to every content question. The result should be Everyone / PEGI 3. |

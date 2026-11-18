@@ -1,18 +1,23 @@
 #!/bin/bash
 # Build the Play Store bundle: the play flavor (the same app as the github one, with the
-# com.gyattchores.app.public id), signed with the upload key. Upload the .aab it prints in the Play Console; Play re-signs it for phones.
+# com.gyattchores.app.public id, kept from the first name so installed phones keep updating), signed with the upload key. Upload the .aab it prints in the Play Console; Play re-signs it for phones.
 #
 #   ./play-bundle.sh
 #
-# Needs ~/.android/gyattchores-upload.properties (or GYATTCHORES_UPLOAD_PROPERTIES) pointing at
-# the upload keystore. Keep that keystore and its password backed up somewhere other than this
+# Needs ~/.android/doyourwork-upload.properties (or DOYOURWORK_UPLOAD_PROPERTIES) pointing at
+# the upload keystore; the file name and variable from before the rename still work if those are missing. Keep that keystore and its password backed up somewhere other than this
 # Mac: if it's lost, Play can reset the upload key, but only after a support request.
 #
 # The github flavor is not for Play: it keeps going out through ./release.sh and Obtainium.
 set -euo pipefail
 cd "$(dirname "$0")"
-PROPS="${GYATTCHORES_UPLOAD_PROPERTIES:-$HOME/.android/gyattchores-upload.properties}"
-[ -f "$PROPS" ] || { echo "No upload key: $PROPS is missing." >&2; exit 1; }
+# Same order as app/build.gradle.kts: the new name first, then the legacy one from before the rename.
+PROPS=""
+for p in "${DOYOURWORK_UPLOAD_PROPERTIES:-}" "$HOME/.android/doyourwork-upload.properties" \
+         "${GYATTCHORES_UPLOAD_PROPERTIES:-}" "$HOME/.android/gyattchores-upload.properties"; do
+  if [ -n "$p" ] && [ -f "$p" ]; then PROPS="$p"; break; fi
+done
+[ -n "$PROPS" ] || { echo "No upload key: $HOME/.android/doyourwork-upload.properties is missing." >&2; exit 1; }
 
 export JAVA_HOME="${JAVA_HOME:-/opt/homebrew/opt/openjdk@17}"
 ./gradlew -q testPlayDebugUnitTest bundlePlayRelease

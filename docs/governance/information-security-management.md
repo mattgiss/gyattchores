@@ -4,7 +4,7 @@
 |---|---|
 | **Document ID** | GOV-SEC-001 |
 | **Practice** | Information Security Management (ITIL 4) |
-| **Service** | GyattChores |
+| **Service** | DOYOURWORK |
 | **Owner** | Repository owner (`mattgiss`) |
 | **Status** | Defined |
 | **Related** | [`SECURITY.md`](../../SECURITY.md) (threat model & disclosure) |
@@ -26,7 +26,7 @@ model (local-first data, the non-boundary admin PIN, the anon-key/RLS posture).
 
 ## 2. Security objectives (CIA, scaled to context)
 
-GyattChores is a private family app with **non-sensitive data and no user
+DOYOURWORK is a private family app with **non-sensitive data and no user
 accounts**. Objectives are scaled accordingly:
 
 | Objective | Stance |

@@ -1,5 +1,5 @@
 <!--
-  Change record for GyattChores. See docs/governance/change-enablement.md.
+  Change record for DOYOURWORK. See docs/governance/change-enablement.md.
   A merge to `main` is a PRODUCTION change (auto-deploys to GitHub Pages).
 -->
 

@@ -1,7 +1,7 @@
 // Usage: node native/tools/relay-crypto.mjs
 // Writes native/fixtures/relay-crypto.json: fixed inputs and the bytes both apps must produce for
 // the encrypted relay (docs/design/encrypted-relay-join.md). Node's own crypto makes the answers, so
-// neither app is the reference; GyattCore's RelayCryptoTests and Android's RelayCryptoTest read it.
+// neither app is the reference; DoYourWorkCore's RelayCryptoTests and Android's RelayCryptoTest read it.
 //
 // The format, version 1:
 //   family key   32 random bytes, made on the first phone; household id 16 random bytes.

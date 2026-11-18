@@ -12,8 +12,8 @@ Status as of 17 November 2026: **ready** means it exists and matches the app as 
 |---|---|---|
 | Field-by-field guide with text to paste | [`ios/AppStore/SUBMISSION.md`](../ios/AppStore/SUBMISSION.md) | [`android/PlayStore/README.md`](../android/PlayStore/README.md) |
 | What a reviewer might object to | [`ios/AppStore/REVIEW-RISKS.md`](../ios/AppStore/REVIEW-RISKS.md) | in the Play guide, under "Decide these before the first upload" |
-| Screenshots | made by CI on every push: the `app-store-screenshots` download on the newest green [iOS run](https://github.com/mattgiss/gyattchores/actions/workflows/ios.yml) | [`android/PlayStore/screenshots/`](../android/PlayStore/screenshots/) |
-| Icon and graphics | in the app (`ios/GyattChores/Assets.xcassets`) | [`android/PlayStore/graphics/`](../android/PlayStore/graphics/) |
+| Screenshots | made by CI on every push: the `app-store-screenshots` download on the newest green [iOS run](https://github.com/mattgiss/doyourwork/actions/workflows/ios.yml) | [`android/PlayStore/screenshots/`](../android/PlayStore/screenshots/) |
+| Icon and graphics | in the app (`ios/DOYOURWORK/Assets.xcassets`) | [`android/PlayStore/graphics/`](../android/PlayStore/graphics/) |
 | The build | the public scheme, uploaded from the Mac (`ios/README.md`) | `android/play-bundle.sh` |
 
 Shared: the website (`main` branch) carries the support page (`app.html`), the privacy policy
@@ -25,8 +25,8 @@ Shared: the website (`main` branch) carries the support page (`app.html`), the p
 
 | Item | Status |
 |---|---|
-| Privacy policy page, live | ready: `https://gyattchores.com/app-privacy.html` (it still says "iPhone and iPad" in places and needs widening to Android before launch) |
-| Support page, live | ready: `https://gyattchores.com/app.html` (same note) |
+| Privacy policy page, live | ready: `https://doyourwork.today/app-privacy.html` (it still says "iPhone and iPad" in places and needs widening to Android before launch) |
+| Support page, live | ready: `https://doyourwork.today/app.html` (same note) |
 | Marketing site with beta sign-up | drafted on the branch `claude/marketing-site`, not published |
 | One version number on both | **yours**: iPhone says 1.0, Android says 0.7.1 |
 | Launch date and countries | **yours** |

@@ -1,4 +1,4 @@
--- GyattChores — small lists shared between the family's phones (native apps).
+-- DOYOURWORK — small lists shared between the family's phones (native apps).
 --
 -- Run this once in your Supabase project's SQL Editor
 -- (Dashboard -> SQL Editor -> New query -> paste -> Run).

@@ -1,7 +1,8 @@
 name: Android
 
 # Checks the native Android app (android/): both flavors' unit tests pass and both release APKs
-# build. The flavors are the same app, differing only in id, signing and distribution:
+# build. The flavors are the same app, differing only in id, signing and distribution (both ids
+# keep the app's first name on purpose, so installed phones keep updating):
 #   github — com.gyattchores.app, what Obtainium installs from GitHub releases (android/release.sh)
 #   play   — com.gyattchores.app.public, the Play Store build (android/play-bundle.sh)
 # Here the play build falls back to the debug key, since the upload key never leaves the Mac.

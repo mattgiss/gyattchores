@@ -30,7 +30,7 @@ jobs:
           if [ -n "$ID_MEGADINOLAVA" ];  then WHO_M="<@${ID_MEGADINOLAVA}>";  else WHO_M="@dreadeddragon_"; fi
 
           # $'…' so the \n are real newlines — a plain string shows "\n" literally.
-          DESC=$'bekindhearted · megadinolava\n\npick your chores, fill to 25 minutes, check them off, submit. big day? the bonus round opens after your card is in — no cap.\n\ngyattchores.com'
+          DESC=$'bekindhearted · megadinolava\n\npick your chores, fill to 25 minutes, check them off, submit. big day? the bonus round opens after your card is in — no cap.\n\ndoyourwork.today'
           PAYLOAD=$(jq -n \
             --arg content "${WHO_B} ${WHO_M} — today's cards are open!" \
             --arg title "cards are ready — ${DOW}, ${DATE}" \
@@ -42,7 +42,7 @@ jobs:
                 title: $title,
                 description: $desc,
                 color: 65,
-                footer: { text: "gyattchores" }
+                footer: { text: "doyourwork" }
               }]
             }')
 

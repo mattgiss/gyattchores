@@ -78,11 +78,11 @@ jobs:
         run: |
           set -o pipefail
           xcodebuild archive \
-            -project GyattChores.xcodeproj \
-            -scheme GyattChores \
+            -project DOYOURWORK.xcodeproj \
+            -scheme DOYOURWORK \
             -configuration Release \
             -destination 'generic/platform=iOS' \
-            -archivePath "$RUNNER_TEMP/GyattChores.xcarchive" \
+            -archivePath "$RUNNER_TEMP/DOYOURWORK.xcarchive" \
             -allowProvisioningUpdates \
             -authenticationKeyPath "$KEY_PATH" \
             -authenticationKeyID "$KEY_ID" \
@@ -112,7 +112,7 @@ jobs:
           </plist>
           PLIST
           xcodebuild -exportArchive \
-            -archivePath "$RUNNER_TEMP/GyattChores.xcarchive" \
+            -archivePath "$RUNNER_TEMP/DOYOURWORK.xcarchive" \
             -exportPath "$RUNNER_TEMP/export" \
             -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
             -allowProvisioningUpdates \

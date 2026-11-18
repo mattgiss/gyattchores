@@ -37,7 +37,7 @@ jobs:
                   {name: "commit", value: $sha,    inline: true},
                   {name: "by",     value: $author, inline: true}
                 ],
-                footer: {text: "push // gyattchores"}
+                footer: {text: "push // doyourwork"}
               }]
             }')
 

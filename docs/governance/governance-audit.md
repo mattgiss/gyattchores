@@ -1,10 +1,10 @@
-# GitHub Governance Audit — GyattChores
+# GitHub Governance Audit — DOYOURWORK
 
 | | |
 |---|---|
 | **Document ID** | GOV-AUD-001 |
-| **Service** | GyattChores (Family Chore Tracker) |
-| **Repository** | `mattgiss/gyattchores` |
+| **Service** | DOYOURWORK (Family Chore Tracker) |
+| **Repository** | `mattgiss/doyourwork` |
 | **Audit date** | 2026-06-06 |
 | **Auditor** | Platform engineering (automated assessment) |
 | **Framework** | ITIL 4 + GitHub Well-Architected governance baseline |
@@ -15,7 +15,7 @@
 
 ## 1. Purpose & scope
 
-This audit assesses how the GyattChores GitHub repository is **governed** — how
+This audit assesses how the DOYOURWORK GitHub repository is **governed** — how
 changes are controlled, how production is protected, how incidents are detected,
 and how accountability is recorded. It establishes a baseline against which the
 Service Management System (SMS) in this directory can drive **continual
@@ -32,7 +32,7 @@ governance artifacts.
 
 ## 2. Executive summary
 
-GyattChores is a low-complexity, single-maintainer static web application
+DOYOURWORK is a low-complexity, single-maintainer static web application
 deployed continuously to GitHub Pages from `main`. The engineering hygiene of
 individual changes is **good** (clear pull requests, recorded verification
 steps, an explicit security model). However, the **control environment is

@@ -1,0 +1,677 @@
+package com.doyourwork.app
+
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import com.doyourwork.app.data.Store
+import com.doyourwork.app.engine.Engine
+import com.doyourwork.app.engine.PuzzlePack
+import com.doyourwork.app.engine.PuzzleTime
+import com.doyourwork.app.engine.AdminCode
+import com.doyourwork.app.engine.Backup
+import com.doyourwork.app.engine.BackupFile
+import com.doyourwork.app.engine.RestoreCounts
+import com.doyourwork.app.engine.ChoreIntake
+import com.doyourwork.app.engine.DisplayName
+import com.doyourwork.app.engine.Characters
+import com.doyourwork.app.engine.PlayerCharacter
+import com.doyourwork.app.model.Card
+import com.doyourwork.app.model.Chore
+import com.doyourwork.app.model.ChoreLog
+import com.doyourwork.app.model.EnrichedChore
+import com.doyourwork.app.model.Player
+import com.doyourwork.app.model.Status
+import java.time.LocalDate
+import java.time.ZoneId
+import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
+import androidx.lifecycle.viewModelScope
+import com.doyourwork.app.sync.LogSync
+import com.doyourwork.app.sync.StateSync
+import com.doyourwork.app.sync.LocalEntry
+import com.doyourwork.app.model.Dare
+import com.doyourwork.app.sync.DemoRelayFamily
+import com.doyourwork.app.sync.FamilyKeys
+import com.doyourwork.app.sync.JoinCode
+import com.doyourwork.app.sync.MemoryRelay
+import com.doyourwork.app.sync.MemoryRelayVault
+import com.doyourwork.app.sync.Relay
+import com.doyourwork.app.sync.Servers
+import com.doyourwork.app.sync.RelayDevice
+import com.doyourwork.app.sync.RelayVault
+import com.doyourwork.app.sync.UrlConnectionHttp
+import com.doyourwork.app.data.KeystoreRelayVault
+import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
+
+/**
+ * All app state lives here so it survives folding/unfolding (a configuration change).
+ * Screens read the store's flows and call these actions.
+ */
+class AppViewModel(app: Application) : AndroidViewModel(app) {
+    val store = Store(app)
+    val zone: ZoneId get() = ZoneId.systemDefault()
+    fun now() = System.currentTimeMillis()
+    fun today(): LocalDate = Engine.dayOf(now(), zone)
+
+    // ─── Card ───────────────────────────────────────────────────────────────
+
+    fun pickable(playerId: String, logs: List<ChoreLog>): List<EnrichedChore> {
+        val f = store.family.value
+        val joined = f.memberJoined[playerId]
+        val since = store.pool.mapNotNull { c -> listOfNotNull(f.choreAdded[c.id], joined).maxOrNull()?.let { c.id to it } }.toMap()
+        return Engine.pickableChores(store.pool, playerId, logs, now(), since)
+    }
+
+    fun todaysLogs(playerId: String, logs: List<ChoreLog>): List<ChoreLog> =
+        logs.filter { it.playerId == playerId && Engine.dayOf(it.timestamp, zone) == today() }
+
+    /** Chores someone else has in today, as chore id → their name. One chore, one person, per day. */
+    fun takenByOthers(playerId: String, logs: List<ChoreLog>): Map<String, String> {
+        val shown = store.family.value.members.associate { it.name to it.shownName }
+        return Engine.takenByOthersToday(playerId, logs.filter { Engine.dayOf(it.timestamp, zone) == today() })
+            .mapValues { (_, name) -> shown[name] ?: name }
+    }
+
+    /** True when the player logged chores today and every one was rejected: they start over. */
+    fun rejectedToday(playerId: String, logs: List<ChoreLog>): Boolean =
+        todaysLogs(playerId, logs).isNotEmpty() && !submittedToday(playerId, logs)
+
+    /**
+     * Today's card, or null when the player picks one — including when everything they logged
+     * today was rejected: a rejected day isn't a finished day, so they get the picker back
+     * instead of a card of ✗s they can't change.
+     */
+    fun cardFor(playerId: String, cards: Map<String, Card>, logs: List<ChoreLog>): Card? {
+        val startOver = rejectedToday(playerId, logs)
+        cards["$playerId|${today()}"]?.let { return if (it.submitted && startOver) null else it }
+        return if (startOver) null else cardFromLogs(playerId, logs)
+    }
+
+    /**
+     * Rebuild today's submitted card from logs, for a device that didn't build it (like the web
+     * app's cardFromLogs). Bonus-round chores are not part of this; they show separately.
+     */
+    private fun cardFromLogs(playerId: String, logs: List<ChoreLog>): Card? {
+        val todays = logs.filter { it.playerId == playerId && Engine.dayOf(it.timestamp, zone) == today() }
+            .sortedBy { it.timestamp }.distinctBy { it.choreId }
+        if (todays.isEmpty()) return null
+        return Card(today().toString(), todays.map { it.choreId }, todays.map { Engine.choreMinutes(it, store.poolById) },
+            todays.map { true }, submitted = true)
+    }
+
+    fun lockIn(player: Player, chosen: List<EnrichedChore>) {
+        store.saveCard(player.id, Card(today().toString(), chosen.map { it.id }, chosen.map { it.currentMinutes }, chosen.map { false }, chosen.map { it.escalLevel }))
+    }
+
+    fun toggle(player: Player, card: Card, index: Int) {
+        if (card.submitted) return
+        store.saveCard(player.id, card.copy(checked = card.checked.mapIndexed { i, v -> if (i == index) !v else v }))
+    }
+
+    fun clearCard(player: Player) = store.clearCard(player.id, today().toString())
+
+    /**
+     * One pending log per chore, with the minutes the card budgeted. A chore someone else got in
+     * while this card was being checked off is left out, and dropped from the card, so it's never
+     * logged twice in a day.
+     */
+    fun submit(player: Player, card: Card) {
+        if (card.submitted) return
+        val lost = takenByOthers(player.id, store.logs.value)
+        val keep = card.choreIds.indices.filter { card.choreIds[it] !in lost }
+        if (keep.isEmpty() || !keep.all { card.checked[it] }) return
+        store.addLogs(keep.mapNotNull { newLog(player, card.choreIds[it], card.minutes[it]) })
+        store.saveCard(player.id, card.copy(choreIds = keep.map { card.choreIds[it] }, minutes = keep.map { card.minutes[it] },
+            checked = keep.map { true }, escal = keep.map { card.escal.getOrElse(it) { 0 } }, submitted = true))
+        requestSync()
+    }
+
+    /** Bonus round: extra chores logged straight away, no minute cap, normal points. */
+    fun logBonus(player: Player, chosen: List<EnrichedChore>) {
+        store.addLogs(chosen.mapNotNull { newLog(player, it.id, it.currentMinutes) })
+        requestSync()
+    }
+
+    private fun newLog(player: Player, choreId: String, minutes: Int): ChoreLog? {
+        val c = store.poolById[choreId] ?: return null
+        return ChoreLog(UUID.randomUUID().toString(), null, player.id, player.name, c.id, c.name, c.pts, minutes, Status.PENDING, now())
+    }
+
+    // ─── Dares ──────────────────────────────────────────────────────────────
+
+    /** Every dare known to this phone, decoded from the shared state. */
+    fun dares(state: Map<String, LocalEntry>): List<Dare> = state.flatMap { (key, e) ->
+        val parts = key.split('|')
+        if (parts.size != 3 || parts[0] != "dare") emptyList()
+        else e.items.map { Dare(parts[1], it.substringBefore(':'), it.substringAfter(':'), parts[2]) }
+    }
+
+    /** Chore XP plus XP from settled dares. Use this everywhere a level is shown. */
+    fun totalXp(playerId: String, logs: List<ChoreLog>, state: Map<String, LocalEntry>): Int =
+        Engine.xp(playerId, logs, zone) + Engine.dareXp(playerId, dares(state), logs, today(), zone)
+
+    /**
+     * True when the player has something in today that's awaiting a parent or approved. A day
+     * where everything was rejected doesn't count as submitted.
+     */
+    fun submittedToday(playerId: String, logs: List<ChoreLog>): Boolean =
+        Engine.standingToday(Engine.statusToday(todaysLogs(playerId, logs))).isNotEmpty()
+
+    /** Adds or removes one of my dares for today. Returns why not, or null if it changed. */
+    fun toggleDare(target: Player, choreId: String): String? {
+        val me = store.me.value ?: return "Set whose phone this is first."
+        val key = "dare|$me|${today()}"
+        val items = store.state.value[key]?.items.orEmpty()
+        val item = "${target.id}:$choreId"
+        val locked = submittedToday(target.id, store.logs.value)
+        if (item in items) {
+            if (locked) return "Locked. They already sent today's card in."
+            store.setState(key, items - item, now())
+        } else {
+            val mine = items.map { Dare(me, it.substringBefore(':'), it.substringAfter(':'), today().toString()) }
+            Engine.dareBlocked(me, target.id, mine, locked)?.let { return it }
+            store.setState(key, items + item, now())
+        }
+        requestSync()
+        return null
+    }
+
+    fun setMe(player: Player) = store.setMe(player.id)
+
+    // ─── Sync ───────────────────────────────────────────────────────────────
+
+    /**
+     * "syncing", "synced" or "offline" while this phone is linked to the family's other phones;
+     * "idle" otherwise. Only shown when linked.
+     */
+    val syncStatus = MutableStateFlow("idle")
+    private val syncing = AtomicBoolean(false)
+    private val syncAgain = AtomicBoolean(false)
+
+    /**
+     * One pass at a time; a request that arrives mid-pass runs one follow-up pass instead of
+     * overlapping. Only a linked phone syncs, and only through the encrypted relay: an unlinked
+     * one keeps everything to itself.
+     */
+    fun requestSync() {
+        val relay = relay ?: run { syncStatus.value = "idle"; return }
+        if (!syncing.compareAndSet(false, true)) { syncAgain.set(true); return }
+        val epoch = transport.get()
+        viewModelScope.launch(Dispatchers.IO) {
+            syncStatus.value = "syncing"
+            try {
+                // Reads from a family this phone is no longer in come back empty, not as an error, so ask first.
+                if (!relay.isMember()) {
+                    if (transport.get() == epoch) dropRelay("This phone is no longer in the family's sync. Everything on it stays here.")
+                    return@launch
+                }
+                val logs = LogSync.run(relay, store.logs.value)
+                // This phone left the family or joined another mid-pass: what this pass found belongs to the old one.
+                if (transport.get() != epoch) return@launch
+                store.applySyncedLogs(logs)
+                val state = StateSync.run(relay, store.state.value)
+                if (transport.get() != epoch) return@launch
+                store.applySyncedState(state)
+                syncStatus.value = "synced"
+                // After the family rows, so someone removed on another phone isn't added back from old logs.
+                store.adoptPlayersFromLogs(now())
+                if (!prefs.getBoolean(KEY_SYNCED, false)) { prefs.edit().putBoolean(KEY_SYNCED, true).apply(); syncedOnce.value = true }
+            } catch (e: Exception) {
+                syncStatus.value = "offline"
+            } finally {
+                syncing.set(false)
+                if (syncAgain.compareAndSet(true, false)) requestSync()
+            }
+        }
+    }
+
+    // ─── Encrypted relay ────────────────────────────────────────────────────
+    // docs/design/encrypted-relay-join.md. A phone is "linked" once it has the family's keys
+    // (from "Add a phone" or a scanned code); until then nothing leaves it.
+
+    private val prefs = app.getSharedPreferences("device", android.content.Context.MODE_PRIVATE)
+    /** Debug builds only: an in-memory relay for trying the join flow (`--ez memoryRelay true`). */
+    private var memoryRelay: MemoryRelay? = null
+    /** Debug builds only: what the next scan "reads" (`--es scanResult <code>`, or `seeded`). */
+    private var testScanResult: String? = null
+    private var vault: RelayVault = KeystoreRelayVault(app)
+    /** Bumped whenever this phone switches server, so a pass still running for the old one is ignored. */
+    private val transport = AtomicInteger(0)
+    @Volatile private var relay: Relay? = vault.loadKeys()?.let { Relay(it, vault.sessions, relayConfig(), http = relayHttp()) }
+    /** True once this phone syncs through the encrypted relay with the family's other phones. */
+    val relayLinked = MutableStateFlow(relay != null)
+
+    init {
+        // Before one app, a phone that left the relay was marked "sync off". Now it's just unlinked.
+        prefs.edit().remove("relay_sync_off").remove("test_sync_url").apply()
+        // Unlinked, this phone's own family is the truth: the shared rows are made to match it.
+        // This is how an install of the old on-device edition gets shared state (see FamilyState.reseed).
+        if (relay == null) store.shareFamilyFromDevice(now())
+    }
+
+    /** The real relay (sync/Servers.kt) for every build, or a debug build's in-memory one. See build.gradle.kts. */
+    private fun relayHttp() = memoryRelay ?: UrlConnectionHttp
+    private fun relayConfig() = if (memoryRelay != null) MemoryRelay.CONFIG else Servers.RELAY
+
+    /** Debug builds: switches to a fresh in-memory relay, and a vault that's forgotten with it. Once per process. */
+    fun useMemoryRelay() {
+        if (!BuildConfig.DEBUG || memoryRelay != null) return
+        memoryRelay = MemoryRelay(); vault = MemoryRelayVault(); relay = null; relayLinked.value = false
+        transport.incrementAndGet()
+        syncStatus.value = "idle"
+    }
+
+    fun setTestScanResult(text: String) { if (BuildConfig.DEBUG) testScanResult = text }
+
+    /** Debug builds: the scan result a test asked for, instead of the camera. Null means use the camera. */
+    suspend fun testScan(): String? = withContext(Dispatchers.IO) {
+        val t = testScanResult ?: return@withContext null
+        val server = memoryRelay
+        if (t == "seeded" && server != null) runCatching { DemoRelayFamily.seed(server) }.getOrElse { "" } else t
+    }
+
+    /**
+     * Admin → "Add a phone". The first time, this phone makes the family's keys, puts the household
+     * on the relay and sends the whole family there, encrypted. Then it asks for a one-time code
+     * for the other phone to scan. Returns the code and when it expires (epoch millis).
+     */
+    suspend fun addPhone(): Result<Pair<JoinCode, Long>> = withContext(Dispatchers.IO) {
+        runCatching {
+            val r = relay ?: Relay(FamilyKeys.generate(), vault.sessions, relayConfig(), http = relayHttp()).also { r ->
+                try { r.createHousehold() } catch (e: Exception) { throw RelayProblem(OFFLINE) }
+                vault.saveKeys(r.keys)
+                store.prepareForNewServer(now())
+                transport.incrementAndGet()
+                relay = r; relayLinked.value = true
+                // It has the family already: no "Loading the family" for this one.
+                prefs.edit().putBoolean(KEY_SYNCED, true).apply(); syncedOnce.value = true
+                requestSync()
+            }
+            try { r.makeJoinCode() } catch (e: Exception) { throw RelayProblem(OFFLINE) }
+        }
+    }
+
+    /**
+     * The other phone scanned [text]. Returns why it didn't work, or null once this phone is in the
+     * family: what it had is cleared and the family loads from the relay.
+     */
+    suspend fun joinWith(text: String?): String? = withContext(Dispatchers.IO) {
+        if (text == null) return@withContext null
+        val code = try { JoinCode.parse(text) } catch (e: Exception) { return@withContext "That isn't a DOYOURWORK code." }
+        val r = Relay(code.keys, vault.sessions, relayConfig(), http = relayHttp())
+        val ok = try { r.join(code) } catch (e: Exception) { return@withContext OFFLINE }
+        if (!ok) return@withContext "That code has expired or was already used. Ask for a new one."
+        vault.saveKeys(code.keys)
+        transport.incrementAndGet()
+        store.clearForJoin()
+        // "Loading the family" until the first pass is done.
+        prefs.edit().remove(KEY_SYNCED).apply()
+        syncedOnce.value = false
+        relay = r; relayLinked.value = true
+        requestSync()
+        null
+    }
+
+    /** The family's phones, oldest first, with this one marked. */
+    suspend fun phones(): Result<List<Pair<RelayDevice, Boolean>>> = withContext(Dispatchers.IO) {
+        runCatching {
+            val r = relay ?: return@runCatching emptyList()
+            val mine = r.userId()
+            r.devices().map { it to (it.userId == mine) }
+        }
+    }
+
+    /** Admin → Phones → Remove: that phone stops getting updates. */
+    suspend fun removePhone(userId: String): Boolean = withContext(Dispatchers.IO) {
+        runCatching { relay?.removeDevice(userId) }.isSuccess
+    }
+
+    /**
+     * Admin → "Delete this family from the server": the household and everything sent go, every
+     * phone stops syncing, and the family stays on this one. Returns why not, or null once done.
+     */
+    suspend fun deleteFromServer(): String? = withContext(Dispatchers.IO) {
+        val r = relay ?: return@withContext null
+        try { r.deleteHousehold() } catch (e: Exception) { return@withContext OFFLINE }
+        dropRelay(null)
+        null
+    }
+
+    /**
+     * Leaves the relay on this phone: keys and sign-in forgotten, everything here kept. It's then
+     * unlinked like any other phone, its family the truth again, until it adds or joins a phone.
+     */
+    private fun dropRelay(notice: String?) {
+        vault.clear()
+        transport.incrementAndGet()
+        relay = null; relayLinked.value = false
+        syncStatus.value = "idle"
+        store.shareFamilyFromDevice(now())
+        // A phone dropped before its first load has nothing to wait for: it goes to setup.
+        prefs.edit().putBoolean(KEY_SYNCED, true).apply(); syncedOnce.value = true
+        notice?.let { this.notice.value = it }
+    }
+
+    private class RelayProblem(message: String) : Exception(message)
+
+    // ─── Admin ──────────────────────────────────────────────────────────────
+
+    fun setStatus(log: ChoreLog, status: String) { store.setStatus(log.id, status); requestSync() }
+
+    private fun level(playerId: String) = Engine.rank(totalXp(playerId, store.logs.value, store.state.value)).level
+
+    /** Approves a log. Returns true if that approval took the player up a level. */
+    fun approve(log: ChoreLog): Boolean {
+        val before = level(log.playerId)
+        store.setStatus(log.id, Status.APPROVED)
+        requestSync()
+        return level(log.playerId) > before
+    }
+
+    /** Approves several logs at once. Returns true if any of it took someone up a level. */
+    fun approveAll(logs: List<ChoreLog>): Boolean {
+        val before = logs.map { it.playerId }.distinct().associateWith { level(it) }
+        for (l in logs) store.setStatus(l.id, Status.APPROVED)
+        requestSync()
+        return before.any { (id, lvl) -> level(id) > lvl }
+    }
+
+    private val seen = app.getSharedPreferences("seen_levels", android.content.Context.MODE_PRIVATE)
+
+    /** True the first time a player's screen shows a level higher than the last one it showed. */
+    fun isNewLevel(playerId: String, level: Int): Boolean {
+        val last = seen.getInt(playerId, 1)
+        if (level != last) seen.edit().putInt(playerId, level).apply()
+        return level > last
+    }
+
+    // ─── Puzzle ─────────────────────────────────────────────────────────────
+
+    val puzzlePack: PuzzlePack by lazy { PuzzlePack.parse(app.assets.open("puzzles.json").bufferedReader().readText()) }
+    private val puzzleProgress = app.getSharedPreferences("puzzle", android.content.Context.MODE_PRIVATE)
+
+    /** The puzzle level a player plays next (1 until they clear one). Kept on this phone. */
+    fun puzzleLevel(playerId: String): Int = puzzleProgress.getInt(playerId, 1)
+
+    /** A player cleared [level]: the next one is unlocked. Replaying an old level changes nothing. */
+    fun puzzleCleared(playerId: String, level: Int) {
+        if (level >= puzzleLevel(playerId)) puzzleProgress.edit().putInt(playerId, level + 1).apply()
+    }
+
+    private val puzzleTime = app.getSharedPreferences("puzzle_time", android.content.Context.MODE_PRIVATE)
+    private fun timeKey(playerId: String) = "$playerId|${today()}"
+
+    /** Puzzle time this player has used today, on this phone. */
+    fun puzzleUsedMs(playerId: String): Long = puzzleTime.getLong(timeKey(playerId), 0L)
+
+    fun puzzleMsLeft(playerId: String): Long = PuzzleTime.msLeft(puzzleUsedMs(playerId))
+
+    /** Adds time spent on the puzzle. Days before today are dropped as it goes. */
+    fun addPuzzleTime(playerId: String, ms: Long) {
+        if (ms <= 0) return
+        val key = timeKey(playerId)
+        val e = puzzleTime.edit()
+        for (k in puzzleTime.all.keys) if (!k.endsWith("|${today()}")) e.remove(k)
+        e.putLong(key, puzzleTime.getLong(key, 0L) + ms).apply()
+    }
+
+    /** True the first time yesterday's dare results are shown on this phone. */
+    fun firstReveal(day: String): Boolean {
+        if (seen.getString("reveal", null) == day) return false
+        seen.edit().putString("reveal", day).apply()
+        return true
+    }
+
+    // ─── Setup ──────────────────────────────────────────────────────────────
+
+    /**
+     * For a linked phone: true once it has finished one pass. A phone that just joined can't tell
+     * a new family from one it hasn't fetched yet, so it shows "Loading the family" rather than
+     * setup. Unlinked phones never wait (see AppRoot).
+     */
+    val syncedOnce by lazy { MutableStateFlow(prefs.getBoolean(KEY_SYNCED, false)) }
+
+    /** Off unless an admin turns it on: a fingerprint belongs to whoever owns the phone, which on a player's own phone is the player. */
+    val biometricUnlock = MutableStateFlow(prefs.getBoolean(KEY_BIOMETRIC, false))
+
+    fun setBiometricUnlock(on: Boolean) { prefs.edit().putBoolean(KEY_BIOMETRIC, on).apply(); biometricUnlock.value = on }
+
+    /** Finishes the first-run setup: who's in charge, who's playing and what needs doing. */
+    fun finishSetup(adminName: String, adminPlays: Boolean, code: String, bio: Boolean, playerNames: List<String>, chores: List<Chore>) {
+        val f = store.family.value
+        if (f.isSetUp) return
+        val adminCode = AdminCode.make(code) ?: return
+        val admin = tidy(adminName) ?: return
+        val t = now()
+        val list = f.members.toMutableList()
+        var next = f.nextPlayerId
+        val joined = f.memberJoined.toMutableMap()
+        fun find(n: String) = list.indexOfFirst { it.name.equals(n, ignoreCase = true) }
+        for (n in playerNames.mapNotNull(::tidy)) if (find(n) < 0) {
+            joined[next.toString()] = t; list += Player(next.toString(), n); next++
+        }
+        val codes = f.adminCodes.toMutableMap()
+        // Someone who was already playing keeps playing when they turn out to be the admin too.
+        val i = find(admin)
+        if (i >= 0) { list[i] = list[i].copy(isAdmin = true); codes[list[i].id] = adminCode }
+        else {
+            val id = next.toString(); next++
+            list.add(0, Player(id, admin, isAdmin = true, plays = adminPlays)); codes[id] = adminCode; joined[id] = t
+        }
+        val pool = chores.ifEmpty { store.starterChores }
+        // A family with history keeps counting from it; a new one starts with nothing overdue.
+        val added = if (store.logs.value.isEmpty()) pool.associate { it.id to t } else f.choreAdded
+        setBiometricUnlock(bio)
+        store.setFamily(f.copy(members = list, adminCodes = codes, chores = pool.takeIf { it != store.starterChores } ?: f.chores,
+            choreAdded = added, memberJoined = joined, nextPlayerId = next), t)
+        requestSync()
+    }
+
+    /**
+     * Wipes this phone. Unlinked ("Erase everything"): back to first-run setup. Linked ("Reset
+     * this phone"): it keeps its keys and fetches the family again.
+     */
+    fun eraseEverything() {
+        store.eraseAll()
+        seen.edit().clear().apply()
+        puzzleProgress.edit().clear().apply()
+        puzzleTime.edit().clear().apply()
+        prefs.edit().clear().apply()
+        biometricUnlock.value = false
+        syncedOnce.value = false
+        requestSync()
+    }
+
+    // ─── Admin: unlocking ───────────────────────────────────────────────────
+
+    /** True if [code] is any admin's code. */
+    fun checkAdminCode(code: String): Boolean {
+        val f = store.family.value
+        return f.admins.any { f.adminCodes[it.id]?.matches(code) == true }
+    }
+
+    // ─── Admin: people ──────────────────────────────────────────────────────
+
+    /** What an admin can change about a person. [newCode] is only read when [isAdmin]: empty keeps the code they have. */
+    data class MemberDraft(val name: String = "", val displayName: String = "", val plays: Boolean = true,
+                           val isAdmin: Boolean = false, val newCode: String = "")
+
+    fun draft(m: Player) = MemberDraft(m.name, m.displayName ?: "", m.plays, m.isAdmin)
+
+    /** Why this change can't be saved, or null if it can. [id] is null for someone new. */
+    fun problem(d: MemberDraft, id: String?): String? {
+        val f = store.family.value
+        val name = tidy(d.name) ?: return "They need a name."
+        if (f.members.any { it.id != id && it.name.equals(name, ignoreCase = true) }) return "Someone already has that name."
+        if (d.isAdmin) {
+            val hasCode = id?.let { f.adminCodes[it] != null } ?: false
+            if (if (d.newCode.isEmpty()) !hasCode else !AdminCode.isLongEnough(d.newCode))
+                return "An admin needs a code of ${AdminCode.MIN_LENGTH} or more characters."
+        } else if (id != null && f.admins.map { it.id } == listOf(id)) return "Someone has to stay an admin."
+        if (!d.plays && !d.isAdmin) return "They need to do chores, be an admin, or both."
+        return null
+    }
+
+    /** Adds someone ([id] null) or changes them. Returns false, changing nothing, if [problem] objects. */
+    fun saveMember(d: MemberDraft, id: String?): Boolean {
+        if (problem(d, id) != null) return false
+        val name = tidy(d.name) ?: return false
+        val f = store.family.value
+        var next = f.nextPlayerId
+        val joined = f.memberJoined.toMutableMap()
+        val current = id?.let { i -> f.members.firstOrNull { it.id == i } }
+        val base = current ?: Player(next.toString(), name).also { joined[it.id] = now(); next++ }
+        val m = base.copy(name = name, displayName = DisplayName.clean(d.displayName), plays = d.plays, isAdmin = d.isAdmin)
+        val codes = f.adminCodes.toMutableMap()
+        if (!d.isAdmin) codes.remove(m.id) else AdminCode.make(d.newCode)?.let { codes[m.id] = it }
+        val members = if (current != null) f.members.map { if (it.id == m.id) m else it } else f.members + m
+        store.setFamily(f.copy(members = members, adminCodes = codes, memberJoined = joined, nextPlayerId = next), now())
+        requestSync()
+        return true
+    }
+
+    fun canRemove(m: Player): Boolean = !(m.isAdmin && store.family.value.admins.size == 1)
+
+    /** Removes someone and everything kept about them: their chores, points and code. */
+    fun removeMember(m: Player) {
+        if (!canRemove(m)) return
+        val f = store.family.value
+        store.setFamily(f.copy(members = f.members.filter { it.id != m.id }, adminCodes = f.adminCodes - m.id,
+            memberJoined = f.memberJoined - m.id, removed = f.removed + m.id), now())
+        seen.edit().remove(m.id).apply()
+        puzzleProgress.edit().remove(m.id).apply()
+        puzzleTime.edit().apply { puzzleTime.all.keys.filter { it.startsWith("${m.id}|") }.forEach { remove(it) } }.apply()
+        requestSync()
+    }
+
+    /**
+     * A player's nickname is their own call: no admin needed, and it can't change the username
+     * their points are kept under. Empty (or nothing visible) clears it.
+     */
+    fun setDisplayName(playerId: String, raw: String) {
+        val f = store.family.value
+        store.setFamily(f.copy(members = f.members.map { if (it.id == playerId) it.copy(displayName = DisplayName.clean(raw)) else it }), now())
+        requestSync()
+    }
+
+    /** Who has which character on the scoreboard: the one they picked, or one given from their username. */
+    fun characters(players: List<Player>): Map<String, PlayerCharacter> = Characters.assign(players)
+
+    /** A player's character is their own call too. An id this version doesn't know is ignored. */
+    fun setCharacter(playerId: String, characterId: String) {
+        if (Characters.named(characterId) == null) return
+        val f = store.family.value
+        store.setFamily(f.copy(members = f.members.map { if (it.id == playerId) it.copy(character = characterId) else it }), now())
+        requestSync()
+    }
+
+    // ─── Admin: chores ──────────────────────────────────────────────────────
+
+    /** Adds chores to the list, skipping any whose name is already on it. Returns how many went in. */
+    fun addChores(chores: List<Chore>): Int {
+        val f = store.family.value
+        val pool = store.pool
+        val names = pool.map { it.name.lowercase() }.toMutableSet()
+        val ids = pool.map { it.id }.toMutableSet()
+        val fresh = ArrayList<Chore>()
+        for (c in chores) {
+            if (!names.add(c.name.lowercase())) continue
+            val chore = if (c.id in ids) ChoreIntake.make(c.name, c.tiers.firstOrNull() ?: 5, ids) else c
+            ids += chore.id; fresh += chore
+        }
+        if (fresh.isNotEmpty()) {
+            val t = now()
+            store.setFamily(f.copy(chores = pool + fresh, choreAdded = f.choreAdded + fresh.associate { it.id to t }), t)
+            requestSync()
+        }
+        return fresh.size
+    }
+
+    /** Renames or re-times a chore. Its id, and so its history, stays the same. */
+    fun updateChore(chore: Chore, name: String, minutes: Int) {
+        val clean = ChoreIntake.tidyName(name) ?: return
+        val f = store.family.value
+        store.setFamily(f.copy(chores = store.pool.map { if (it.id == chore.id) ChoreIntake.make(clean, minutes, id = chore.id) else it }), now())
+        requestSync()
+    }
+
+    /** Takes a chore off the list. Points already earned are kept; a card still being checked off loses it. */
+    fun removeChore(chore: Chore) {
+        val pool = store.pool
+        if (pool.size <= 1) return
+        val f = store.family.value
+        store.setFamily(f.copy(chores = pool.filter { it.id != chore.id }, choreAdded = f.choreAdded - chore.id), now())
+        store.dropCardsWith(chore.id)
+        requestSync()
+    }
+
+    // ─── Backup ─────────────────────────────────────────────────────────────
+
+    private val appVersion: String by lazy {
+        runCatching { getApplication<Application>().packageManager.getPackageInfo(getApplication<Application>().packageName, 0).versionName }
+            .getOrNull() ?: "?"
+    }
+
+    /** Everything this phone knows about the game, as the text of a backup file. */
+    fun exportBackup(): String {
+        val f = store.family.value
+        val levels = f.members.associate { it.id to puzzleLevel(it.id) }.filterValues { it > 1 }
+        return Backup.encode(Backup.make(f, store.pool, store.logs.value, dares(store.state.value), levels,
+            "android", appVersion, now()))
+    }
+
+    fun backupFileName() = Backup.fileName(today())
+
+    /** A one-off message for whichever screen is showing (say, what a restore brought in). */
+    val notice = MutableStateFlow<String?>(null)
+
+    /** True when this exact backup has already been merged into the family. */
+    fun alreadyRestored(b: BackupFile) = relayLinked.value && b.id in store.state.value[KEY_RESTORED]?.items.orEmpty()
+
+    /**
+     * Restores a backup. Unlinked: it replaces everything on this phone. Linked: it's merged into
+     * the family (see [Backup.merge]) and goes out to the other phones on the next sync.
+     */
+    fun restore(b: BackupFile): RestoreCounts {
+        val t = now()
+        if (!relayLinked.value) {
+            val r = Backup.replace(b)
+            store.eraseAll()
+            seen.edit().clear().apply()
+            puzzleProgress.edit().clear().apply { r.puzzleLevels.forEach { (id, l) -> putInt(id, l) } }.apply()
+            store.setFamily(r.family, t)
+            store.addLogs(r.logs)
+            // Kept where dares always live ("dare|<from>|<day>"), so their points count as on iOS.
+            for ((key, ds) in r.dares.groupBy { "dare|${it.from}|${it.day}" }) store.setState(key, ds.map { "${it.target}:${it.choreId}" }, t)
+            store.shareFamilyFromDevice(t)
+            return r.counts
+        }
+        if (alreadyRestored(b)) return RestoreCounts(0, 0, 0)
+        val m = Backup.merge(store.family.value, store.pool, store.logs.value,
+            store.family.value.members.associate { it.id to puzzleLevel(it.id) }, b, zone, t)
+        store.setFamily(m.family, t)
+        store.addLogs(m.newLogs)
+        m.puzzleLevels.forEach { (id, l) -> if (l > puzzleLevel(id)) puzzleProgress.edit().putInt(id, l).apply() }
+        store.setState(KEY_RESTORED, store.state.value[KEY_RESTORED]?.items.orEmpty() + b.id, t)
+        requestSync()
+        return m.counts
+    }
+
+    /** A chore's name, even after it's been taken off the list: recent logs remember it. */
+    fun choreName(choreId: String): String =
+        store.poolById[choreId]?.name ?: store.logs.value.lastOrNull { it.choreId == choreId }?.choreName ?: choreId
+
+    private fun tidy(name: String): String? =
+        name.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }.joinToString(" ").takeIf { it.isNotEmpty() }?.take(DisplayName.MAX_LENGTH)
+
+    private companion object {
+        const val KEY_SYNCED = "synced_once"
+        const val KEY_BIOMETRIC = "biometric_unlock"
+        /** Shared: ids of backups already merged into the family, so a repeat does nothing. */
+        const val KEY_RESTORED = "restored_backups"
+        const val OFFLINE = "Can't reach the server. Check the connection and try again."
+    }
+}

@@ -13,10 +13,11 @@ plugins {
 val storeScreenshots = providers.gradleProperty("storeScreenshots").isPresent
 
 android {
-    namespace = "com.gyattchores.app"
+    namespace = "com.doyourwork.app"
     compileSdk = 36
 
     defaultConfig {
+        // Kept from the app's first name on purpose: a new id would stop installed phones from updating.
         applicationId = "com.gyattchores.app"
         minSdk = 29
         targetSdk = 36
@@ -25,11 +26,17 @@ android {
     }
 
     // The Play Store upload key. Its password lives outside the repo, in
-    // ~/.android/gyattchores-upload.properties (storeFile, storePassword, keyAlias, keyPassword);
-    // override the path with GYATTCHORES_UPLOAD_PROPERTIES. Without that file, the play release
-    // falls back to the debug key, so a fresh checkout still builds.
-    val uploadProps = File(System.getenv("GYATTCHORES_UPLOAD_PROPERTIES")
-        ?: "${System.getProperty("user.home")}/.android/gyattchores-upload.properties")
+    // ~/.android/doyourwork-upload.properties (storeFile, storePassword, keyAlias, keyPassword);
+    // override the path with DOYOURWORK_UPLOAD_PROPERTIES. If neither exists, the file and
+    // variable from before the rename are used. Without any of them, the play release falls back
+    // to the debug key, so a fresh checkout still builds.
+    val home = System.getProperty("user.home")
+    val uploadProps = listOfNotNull(
+        System.getenv("DOYOURWORK_UPLOAD_PROPERTIES"),
+        "$home/.android/doyourwork-upload.properties",
+        System.getenv("GYATTCHORES_UPLOAD_PROPERTIES"), // legacy, before the rename
+        "$home/.android/gyattchores-upload.properties", // legacy, before the rename
+    ).map(::File).firstOrNull { it.isFile } ?: File("$home/.android/doyourwork-upload.properties")
     val upload = if (uploadProps.isFile) {
         val p = Properties().apply { uploadProps.inputStream().use(::load) }
         signingConfigs.create("upload") {
@@ -54,7 +61,7 @@ android {
         }
         create("play") {
             dimension = "dist"
-            applicationIdSuffix = ".public"
+            applicationIdSuffix = ".public" // com.gyattchores.app.public, kept on purpose so installed phones keep updating
             signingConfig = upload ?: signingConfigs.getByName("debug")
         }
     }
@@ -98,6 +105,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
 // labelled "DOYOURWORK (test)"), so testing it on a family phone never touches the real app's data.
 androidComponents {
     onVariants(selector().withBuildType("debug").withFlavor("dist" to "github")) { v ->
+        // Kept from the app's first name on purpose, like the ids above, so installed test builds keep updating.
         v.applicationId.set("com.gyattchores.app.debug")
     }
 }

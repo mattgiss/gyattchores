@@ -1,6 +1,6 @@
-# Production Readiness Check — GyattChores
+# Production Readiness Check — DOYOURWORK
 
-You are running a production readiness audit for GyattChores, a family chore tracker targeting the Apple App of the Year 2027. This is a living production system — not a proof of concept. Treat every finding as a real risk to real users.
+You are running a production readiness audit for DOYOURWORK, a family chore tracker targeting the Apple App of the Year 2027. This is a living production system — not a proof of concept. Treat every finding as a real risk to real users.
 
 ## Your job
 
@@ -12,9 +12,9 @@ At the end, output a Production Score (0–100), a RAG (Red/Amber/Green) rating,
 
 ## Check 1 — Live site uptime
 
-Fetch https://gyattchores.com and confirm:
+Fetch https://doyourwork.today and confirm:
 - Returns HTTP 200
-- Page title contains "GyattChores"
+- Page title contains "DOYOURWORK"
 - The `<div id="root">` is present (app shell rendered)
 
 If the site is unreachable: ❌ FAIL — invoke the incident triage runbook in `docs/governance/incident-and-problem-management.md`.
@@ -47,7 +47,7 @@ Check:
 - No raw secrets present in `index.html` beyond the documented anon key and admin PIN
 - `SECURITY.md` accurately describes the current threat model
 
-Run: `grep -n "service_role\|password\|secret\|token" /home/user/gyattchores/index.html | grep -v "ADMIN_CODE\|ANON_KEY\|anon\|#"` to verify no accidental leaks.
+Run: `grep -n "service_role\|password\|secret\|token" /home/user/doyourwork/index.html | grep -v "ADMIN_CODE\|ANON_KEY\|anon\|#"` to verify no accidental leaks.
 
 ---
 
@@ -130,7 +130,7 @@ Grep `index.html` for:
 After all checks, produce:
 
 ```
-## Production Readiness Report — GyattChores
+## Production Readiness Report — DOYOURWORK
 Date: <today>
 Auditor: Claude Code (/prod-check)
 

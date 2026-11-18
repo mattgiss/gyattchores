@@ -1,4 +1,4 @@
-# Building GyattChores: A Development Journey
+# Building DOYOURWORK: A Development Journey
 
 **From Concept to Production in 2 Days**
 
@@ -17,7 +17,7 @@ I needed something different. Something that would:
 - Require minimal parent intervention
 - Actually engage my two kids: bekindhearted and titan
 
-This is the story of how GyattChores was built in 2 days with my kids, the problems we encountered, and what we're still fixing together. It's a work in progress—our small product team (me and my 2 kids) building something for ourselves.
+This is the story of how DOYOURWORK was built in 2 days with my kids, the problems we encountered, and what we're still fixing together. It's a work in progress—our small product team (me and my 2 kids) building something for ourselves.
 
 ---
 
@@ -480,7 +480,7 @@ Not perfect, but acceptable for a family app. The exposed credentials no longer 
 
 ## The Final Product
 
-### What GyattChores Became
+### What DOYOURWORK Became
 
 After 5 phases of development:
 
@@ -555,7 +555,7 @@ Offloading GOAT calculation, weekly totals, and tie-breaking logic to PostgreSQL
 
 ### 5. Gamification Works (When Done Right)
 
-The kids genuinely enjoy using GyattChores. They check their stats, compete for GOAT, and chase achievements.
+The kids genuinely enjoy using DOYOURWORK. They check their stats, compete for GOAT, and chase achievements.
 
 **Why it works:**
 - Clear, immediate feedback (points awarded instantly)
@@ -630,7 +630,7 @@ Traditional startup metrics don't apply to a family tool. Here's what actually m
 
 ### If I Wanted to Scale This
 
-To turn GyattChores into a commercial product would require:
+To turn DOYOURWORK into a commercial product would require:
 
 **Architecture Changes ($40K):**
 - Multi-tenancy (family accounts)
@@ -664,7 +664,7 @@ To turn GyattChores into a commercial product would require:
 
 ## The Bottom Line
 
-GyattChores is exactly what it should be: a well-crafted solution to a specific family problem.
+DOYOURWORK is exactly what it should be: a well-crafted solution to a specific family problem.
 
 It's not going to be a startup. It's not going to get 100K users. It's not going to raise venture capital.
 
@@ -680,7 +680,7 @@ And in 20 hours of development spread across 5 phases, I learned more about Reac
 
 ### File Structure
 ```
-gyattchores/
+doyourwork/
 ├── index.html              (2,800 lines - entire app)
 ├── schema.sql              (243 lines - database setup)
 ├── ebook.md                (2,100+ lines - comprehensive docs)
@@ -724,7 +724,7 @@ gyattchores/
 
 **End of Narrative**
 
-*This document tells the story of GyattChores from conception to production. For technical details, see ebook.md. For security analysis, see security-evaluation.md.*
+*This document tells the story of DOYOURWORK from conception to production. For technical details, see ebook.md. For security analysis, see security-evaluation.md.*
 
 *Built with ❤️ for bekindhearted and titan*
 *December 2025*

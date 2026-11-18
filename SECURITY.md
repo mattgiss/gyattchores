@@ -2,7 +2,7 @@
 
 ## Architecture & threat model
 
-GyattChores is a **local-first client-side app** with an **optional** cloud sync layer:
+DOYOURWORK is a **local-first client-side app** with an **optional** cloud sync layer:
 
 - The source of truth is the browser's `localStorage` (web) or `UserDefaults` (iOS app), on the device.
 - If configured, chore logs also sync to a **Supabase** table (`simple_logs`) so multiple devices can share data. This is best-effort: the app works fully without it and never depends on it to save a chore.

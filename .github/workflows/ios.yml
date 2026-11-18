@@ -49,13 +49,13 @@ jobs:
           fi
 
   core:
-    name: GyattCore tests
+    name: DoYourWorkCore tests
     runs-on: ubuntu-latest
     container: swift:6.0-noble
     steps:
       - uses: actions/checkout@v4
       - name: swift test
-        working-directory: ios/GyattCore
+        working-directory: ios/DoYourWorkCore
         run: swift test
 
   app:
@@ -63,7 +63,7 @@ jobs:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
-      # Builds the committed GyattChores.xcodeproj — the one people open — so a
+      # Builds the committed DOYOURWORK.xcodeproj — the one people open — so a
       # file added without re-running `xcodegen` shows up here as a failure.
       - name: Pick simulators
         id: sims
@@ -104,10 +104,10 @@ jobs:
             for attempt in 1 2; do
               rm -rf "results/$slug.xcresult"
               xcodebuild test \
-                -project GyattChores.xcodeproj \
-                -scheme GyattChores \
+                -project DOYOURWORK.xcodeproj \
+                -scheme DOYOURWORK \
                 -destination "platform=iOS Simulator,name=$device,OS=latest" \
-                -skip-testing:GyattChoresUITests/GyattChoresUITests/testAppStoreScreenshots \
+                -skip-testing:DOYOURWORKUITests/DOYOURWORKUITests/testAppStoreScreenshots \
                 -resultBundlePath "results/$slug.xcresult" \
                 < /dev/null 2>&1 | tee "build-$slug.log" \
                 | grep -E "error:|Test Case|Test Suite|XCTAssert|failed|\*\* " || true
@@ -181,10 +181,10 @@ jobs:
             for attempt in 1 2; do
               rm -rf "results/$folder.xcresult"
               xcodebuild test \
-                -project GyattChores.xcodeproj \
-                -scheme GyattChores \
+                -project DOYOURWORK.xcodeproj \
+                -scheme DOYOURWORK \
                 -destination "platform=iOS Simulator,id=$udid" \
-                -only-testing:GyattChoresUITests/GyattChoresUITests/testAppStoreScreenshots \
+                -only-testing:DOYOURWORKUITests/DOYOURWORKUITests/testAppStoreScreenshots \
                 -resultBundlePath "results/$folder.xcresult" \
                 < /dev/null 2>&1 | tee "build-$folder.log" \
                 | grep -E "error:|Test Case|Test Suite|XCTAssert|failed|\*\* " || true
@@ -268,17 +268,17 @@ jobs:
         run: |
           set -o pipefail
           xcodebuild archive \
-            -project GyattChores.xcodeproj \
-            -scheme GyattChores \
+            -project DOYOURWORK.xcodeproj \
+            -scheme DOYOURWORK \
             -configuration Release \
             -destination 'generic/platform=iOS' \
-            -archivePath "$RUNNER_TEMP/GyattChores.xcarchive" \
+            -archivePath "$RUNNER_TEMP/DOYOURWORK.xcarchive" \
             CODE_SIGNING_ALLOWED=NO \
             < /dev/null 2>&1 | tee build-release.log | grep -E "error:|\*\* " || true
           grep -q "ARCHIVE SUCCEEDED" build-release.log
       - name: Check what's in the app
         run: |
-          APP="$RUNNER_TEMP/GyattChores.xcarchive/Products/Applications/GyattChores.app"
+          APP="$RUNNER_TEMP/DOYOURWORK.xcarchive/Products/Applications/DOYOURWORK.app"
           plist() { /usr/libexec/PlistBuddy -c "Print :$1" "$APP/Info.plist"; }
           echo "bundle id:     $(plist CFBundleIdentifier)"
           echo "version:       $(plist CFBundleShortVersionString) ($(plist CFBundleVersion))"
