@@ -1,0 +1,53 @@
+name: Android
+
+# Checks the native Android app (android/): both flavors' unit tests pass and both release APKs
+# build. The flavors are the same app, differing only in id, signing and distribution (both ids
+# keep the app's first name on purpose, so installed phones keep updating):
+#   github — com.gyattchores.app, what Obtainium installs from GitHub releases (android/release.sh)
+#   play   — com.gyattchores.app.public, the Play Store build (android/play-bundle.sh)
+# Here the play build falls back to the debug key, since the upload key never leaves the Mac.
+# Every APK must carry the encrypted relay's address and none the old plain tables' one.
+
+on:
+  push:
+    paths:
+      - 'android/**'
+      - '.github/workflows/android.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Tests and release APKs
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Unit tests and release builds
+        run: ./gradlew -q testGithubDebugUnitTest testPlayDebugUnitTest assembleGithubRelease assemblePlayRelease
+      - name: Check what's in the APKs
+        run: |
+          failed=0
+          for apk in app/build/outputs/apk/github/release/app-github-release.apk app/build/outputs/apk/play/release/app-play-release.apk; do
+            if unzip -p "$apk" 'classes*.dex' | grep -qa omemognwvcnonnzjmcxm; then echo "ok:      $apk has the relay address"
+            else echo "::error::$apk has no relay address in it"; failed=1; fi
+            if unzip -p "$apk" | grep -qa ukshxdoqgwoxobjdclpx; then echo "::error::$apk still has the old tables' address in it"; failed=1
+            else echo "ok:      $apk has no old tables' address"; fi
+          done
+          exit $failed
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-test-reports
+          path: android/app/build/reports/tests

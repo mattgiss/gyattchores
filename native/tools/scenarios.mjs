@@ -42,7 +42,7 @@ const store = new Map();
 const localStorage = { getItem: k => store.get(k) ?? null, setItem: (k, v) => store.set(k, v), removeItem: k => store.delete(k) };
 
 const E = new Function('Date', 'localStorage', `
-  const STORAGE_KEY = 'gyattchores_logs';
+  const STORAGE_KEY = 'doyourwork_logs';
   ${hashLine}
   ${adminLine}
   ${engineSrc}
@@ -165,7 +165,7 @@ const out = {
   adminCodeHash: E.ADMIN_CODE_HASH,
   players: E.PLAYERS,
   chorePool: E.CHORE_POOL,
-  hashVectors: ['', 'a', '1234', 'gyatt', 'GYATTCHORES', 'pässwörd ✓', '0000', 'correct horse battery staple']
+  hashVectors: ['', 'a', '1234', 'doyour', 'DOYOURWORK', 'pässwörd ✓', '0000', 'correct horse battery staple']
     .map(input => ({ input, hash: E.hashCode(input) })),
   versions: Array.from({ length: 35 }, (_, i) => ({ level: i + 1, version: E.toVersion(i + 1), xpToNext: E.xpToNext(i + 1) })),
   momentum: Array.from({ length: 14 }, (_, i) => ({ streak: i, mult: E.momentumMult(i) })),

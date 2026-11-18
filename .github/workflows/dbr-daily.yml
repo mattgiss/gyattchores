@@ -91,7 +91,7 @@ jobs:
                 title: $date,
                 description: $desc,
                 color: $color,
-                footer: {text: "push // gyattchores"}
+                footer: {text: "push // doyourwork"}
               }]
             }')
 

@@ -1,4 +1,4 @@
--- GyattChores — Supabase Data Audit
+-- DOYOURWORK — Supabase Data Audit
 -- Run these in the Supabase SQL Editor: https://supabase.com/dashboard/project/ukshxdoqgwoxobjdclpx/sql
 -- Run each section individually and share results with Claude to complete the data analysis.
 

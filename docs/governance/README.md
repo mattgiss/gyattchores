@@ -1,15 +1,15 @@
-# GyattChores — Service Management System (SMS)
+# DOYOURWORK — Service Management System (SMS)
 
 | | |
 |---|---|
 | **Document ID** | GOV-IDX-001 |
-| **Service** | GyattChores (Family Chore Tracker) |
+| **Service** | DOYOURWORK (Family Chore Tracker) |
 | **Framework** | ITIL 4 |
 | **Owner** | Repository owner (`mattgiss`) |
 | **Established** | 2026-06-06 |
 | **Review cadence** | Quarterly |
 
-This directory is the **Service Management System** for GyattChores: a set of
+This directory is the **Service Management System** for DOYOURWORK: a set of
 professional, ITIL 4-aligned runbooks that let the service **govern, operate,
 and improve itself** without relying on undocumented knowledge. It exists so
 that anyone — the owner returning after months away, or a new contributor — can
@@ -34,13 +34,13 @@ understand *how this service is run* and *how to keep it healthy*.
 
 ## 2. Service description
 
-GyattChores is a gamified family chore tracker. Children tap to log chores, a
+DOYOURWORK is a gamified family chore tracker. Children tap to log chores, a
 parent approves them with a PIN, and points roll up into a weekly competition.
 
 | Attribute | Value |
 |---|---|
 | **Service type** | Public-facing static web app (PWA) + native SwiftUI app |
-| **Live URL** | [gyattchores.com](https://gyattchores.com) |
+| **Live URL** | [doyourwork.today](https://doyourwork.today) |
 | **Criticality** | Low (family/personal); **availability protected by local-first design** |
 | **Users** | A single household |
 | **Hours of service** | 24/7, best-effort |
@@ -103,14 +103,14 @@ is the map used during incidents and changes.
 |---|---|---|---|
 | Web application | Software | `index.html` | Entire SPA; no build step. |
 | Hosting | Platform | GitHub Pages (from `main`) | Production deploy target. |
-| Custom domain | DNS | `CNAME` → gyattchores.com | DNS managed at the registrar (record in CA-02). |
-| Native apps | Software | `ios/`, `android/`, `native/` on the `native-android` branch | SwiftUI and Jetpack Compose; not on `main` yet. The earlier `GyattChoresApp/` sources were removed in November 2026. |
+| Custom domain | DNS | `CNAME` → doyourwork.today | DNS managed at the registrar (record in CA-02). |
+| Native apps | Software | `ios/`, `android/`, `native/` on the `native-android` branch | SwiftUI and Jetpack Compose; not on `main` yet. The earlier `DOYOURWORKApp/` sources were removed in November 2026. |
 | Optional sync backend | Service | Supabase (`simple_logs` table) | Best-effort; **anon** key in client. See KE-001. |
 | Monitoring | Automation | `.github/workflows/discord-notify.yml` | Event notifications. |
 | Notification destination | External | Discord **Forum** channel | Needs `thread_name` per post (KE-002). |
 | Secret | Credential | `DISCORD_WEBHOOK` (Actions secret) | Rotate if exposed (CA-06). |
 | Dependencies | Library | React 18.3.1, React-DOM 18.3.1, `@babel/standalone` 7.29.7 (unpkg, SRI-pinned); `@supabase/supabase-js` 2.108.0 (jsdelivr) | Pinned to exact versions; unpkg scripts carry `sha384` SRI. Review quarterly; recompute SRI on bump (CA-07). |
-| Source of truth (data) | Data store | Browser `localStorage` / iOS `UserDefaults`, key `gyattchores_logs` | Local-first; per-device. |
+| Source of truth (data) | Data store | Browser `localStorage` / iOS `UserDefaults`, key `doyourwork_logs` | Local-first; per-device. |
 
 ---
 

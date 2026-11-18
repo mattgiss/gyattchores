@@ -3,8 +3,8 @@
 //   node tools/characters/build.mjs
 //
 // It rewrites three files; change a drawing in art.mjs and run this again, never edit them by hand:
-//   android/app/src/main/java/com/gyattchores/app/engine/CharacterArt.kt
-//   ios/GyattCore/Sources/GyattCore/CharacterArt.swift
+//   android/app/src/main/java/com/doyourwork/app/engine/CharacterArt.kt
+//   ios/DoYourWorkCore/Sources/DoYourWorkCore/CharacterArt.swift
 //   launch/brand/characters.svg   (a sheet of all of them, for looking at)
 import { writeFileSync } from 'node:fs';
 import { characters } from './art.mjs';
@@ -17,8 +17,8 @@ for (const c of characters) for (const l of c.layers) {
   for (const v of l.d.match(/[0-9.]+/g)) if (+v < 0 || +v > 40) throw new Error(`${c.id}: ${v} is outside the 40 × 40 square`);
 }
 
-writeFileSync(new URL('android/app/src/main/java/com/gyattchores/app/engine/CharacterArt.kt', root), `// ${note}
-package com.gyattchores.app.engine
+writeFileSync(new URL('android/app/src/main/java/com/doyourwork/app/engine/CharacterArt.kt', root), `// ${note}
+package com.doyourwork.app.engine
 
 internal object CharacterArt {
     val ALL: List<PlayerCharacter> = listOf(
@@ -29,7 +29,7 @@ ${c.layers.map((l) => `            PlayerCharacter.Layer(${l.detail}, "${l.d}"),
 }
 `);
 
-writeFileSync(new URL('ios/GyattCore/Sources/GyattCore/CharacterArt.swift', root), `// ${note}
+writeFileSync(new URL('ios/DoYourWorkCore/Sources/DoYourWorkCore/CharacterArt.swift', root), `// ${note}
 
 enum CharacterArt {
     static let all: [PlayerCharacter] = [

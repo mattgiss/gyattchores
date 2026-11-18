@@ -4,8 +4,8 @@ name: iOS
 #   fixtures — the shared test data still matches the web app's engine
 #   core     — the Swift port of the game rules passes its tests
 #   app      — the SwiftUI app builds and its UI tests pass in an iOS simulator
-#   release  — the app archives in Release with the newest Xcode, as TestFlight needs, and so
-#              does the family build ("GyattChores Family", which syncs); only it has a server address
+#   release  — the app archives in Release with the newest Xcode, as TestFlight needs, and syncs
+#              only with the encrypted relay
 #   store-screenshots — takes the App Store listing's screenshots at the sizes Apple asks for
 # native/tools/web-engine.html is the retired web app, kept as the source of truth for the
 # game rules: change a rule there and this says whether the native ports still agree.
@@ -49,13 +49,13 @@ jobs:
           fi
 
   core:
-    name: GyattCore tests
+    name: DoYourWorkCore tests
     runs-on: ubuntu-latest
     container: swift:6.0-noble
     steps:
       - uses: actions/checkout@v4
       - name: swift test
-        working-directory: ios/GyattCore
+        working-directory: ios/DoYourWorkCore
         run: swift test
 
   app:
@@ -63,7 +63,7 @@ jobs:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
-      # Builds the committed GyattChores.xcodeproj — the one people open — so a
+      # Builds the committed DOYOURWORK.xcodeproj — the one people open — so a
       # file added without re-running `xcodegen` shows up here as a failure.
       - name: Pick simulators
         id: sims
@@ -104,10 +104,10 @@ jobs:
             for attempt in 1 2; do
               rm -rf "results/$slug.xcresult"
               xcodebuild test \
-                -project GyattChores.xcodeproj \
-                -scheme GyattChores \
+                -project DOYOURWORK.xcodeproj \
+                -scheme DOYOURWORK \
                 -destination "platform=iOS Simulator,name=$device,OS=latest" \
-                -skip-testing:GyattChoresUITests/GyattChoresUITests/testAppStoreScreenshots \
+                -skip-testing:DOYOURWORKUITests/DOYOURWORKUITests/testAppStoreScreenshots \
                 -resultBundlePath "results/$slug.xcresult" \
                 < /dev/null 2>&1 | tee "build-$slug.log" \
                 | grep -E "error:|Test Case|Test Suite|XCTAssert|failed|\*\* " || true
@@ -181,10 +181,10 @@ jobs:
             for attempt in 1 2; do
               rm -rf "results/$folder.xcresult"
               xcodebuild test \
-                -project GyattChores.xcodeproj \
-                -scheme GyattChores \
+                -project DOYOURWORK.xcodeproj \
+                -scheme DOYOURWORK \
                 -destination "platform=iOS Simulator,id=$udid" \
-                -only-testing:GyattChoresUITests/GyattChoresUITests/testAppStoreScreenshots \
+                -only-testing:DOYOURWORKUITests/DOYOURWORKUITests/testAppStoreScreenshots \
                 -resultBundlePath "results/$folder.xcresult" \
                 < /dev/null 2>&1 | tee "build-$folder.log" \
                 | grep -E "error:|Test Case|Test Suite|XCTAssert|failed|\*\* " || true
@@ -268,17 +268,17 @@ jobs:
         run: |
           set -o pipefail
           xcodebuild archive \
-            -project GyattChores.xcodeproj \
-            -scheme GyattChores \
+            -project DOYOURWORK.xcodeproj \
+            -scheme DOYOURWORK \
             -configuration Release \
             -destination 'generic/platform=iOS' \
-            -archivePath "$RUNNER_TEMP/GyattChores.xcarchive" \
+            -archivePath "$RUNNER_TEMP/DOYOURWORK.xcarchive" \
             CODE_SIGNING_ALLOWED=NO \
             < /dev/null 2>&1 | tee build-release.log | grep -E "error:|\*\* " || true
           grep -q "ARCHIVE SUCCEEDED" build-release.log
       - name: Check what's in the app
         run: |
-          APP="$RUNNER_TEMP/GyattChores.xcarchive/Products/Applications/GyattChores.app"
+          APP="$RUNNER_TEMP/DOYOURWORK.xcarchive/Products/Applications/DOYOURWORK.app"
           plist() { /usr/libexec/PlistBuddy -c "Print :$1" "$APP/Info.plist"; }
           echo "bundle id:     $(plist CFBundleIdentifier)"
           echo "version:       $(plist CFBundleShortVersionString) ($(plist CFBundleVersion))"
@@ -289,31 +289,16 @@ jobs:
           check() { if eval "$2" >/dev/null 2>&1; then echo "ok:      $1"; else echo "::error::Missing from the app: $1"; failed=1; fi; }
           check "encryption flag set to false"  '[ "$(plist ITSAppUsesNonExemptEncryption)" = "false" ]'
           check "Face ID usage text"            '[ -n "$(plist NSFaceIDUsageDescription)" ]'
+          check "camera usage text"             '[ -n "$(plist NSCameraUsageDescription)" ]'
           check "app icon name"                 '[ -n "$(plist CFBundleIcons:CFBundlePrimaryIcon:CFBundleIconName)" ]'
           check "compiled asset catalog"        'test -f "$APP/Assets.car"'
           check "privacy manifest"              'test -f "$APP/PrivacyInfo.xcprivacy"'
           check "chore list"                    'test -f "$APP/chores.json"'
           check "puzzle levels"                 'test -f "$APP/puzzles.json"'
-          # The App Store build keeps everything on the device: no server address may be in it.
-          check "no server address (public)"    '! grep -rqa "supabase.co" "$APP"'
+          # Its only server is the encrypted relay; the old plaintext tables are retired.
+          check "the relay's address"           'grep -rqa "omemognwvcnonnzjmcxm.supabase.co" "$APP"'
+          check "no old tables' address"        '! grep -rqa "ukshxdoqgwoxobjdclpx" "$APP"'
           exit $failed
-      - name: Archive the family build without signing
-        working-directory: ios
-        run: |
-          # The family's own build (FAMILY_SYNC), shared through TestFlight only. It must keep building too.
-          set -o pipefail
-          xcodebuild archive \
-            -project GyattChores.xcodeproj \
-            -scheme "GyattChores Family" \
-            -configuration Release-Family \
-            -destination 'generic/platform=iOS' \
-            -archivePath "$RUNNER_TEMP/GyattChoresFamily.xcarchive" \
-            CODE_SIGNING_ALLOWED=NO \
-            < /dev/null 2>&1 | tee build-release-family.log | grep -E "error:|\*\* " || true
-          grep -q "ARCHIVE SUCCEEDED" build-release-family.log
-          APP="$RUNNER_TEMP/GyattChoresFamily.xcarchive/Products/Applications/GyattChores.app"
-          grep -rqa "supabase.co" "$APP" || { echo "::error::The family build has no sync address in it"; exit 1; }
-          echo "ok:      family build syncs"
       - name: Upload log
         if: failure()
         uses: actions/upload-artifact@v4

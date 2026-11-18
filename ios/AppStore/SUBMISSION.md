@@ -8,11 +8,10 @@ Checked against Apple's pages on 12 November 2026 (links at the bottom); the tex
 
 ## Read this first
 
-**Submit the public build, not the family one.** The project builds two apps from one codebase
-(`ios/README.md`, "Two builds"). The scheme **GyattChores** is the App Store app: everything stays
-on the device and it contains no network code. **GyattChores Family** syncs with your own
-family's database and is only for your household's TestFlight. Everything on this page describes
-the public build; a family build sent to App Review would contradict every privacy answer here.
+**There is one app now.** The scheme **DOYOURWORK** is what goes to TestFlight and the App Store.
+Everything stays on the device until someone taps **Add a phone**; from then on the family's
+phones sync through the encrypted relay, which can't read what it stores
+(docs/design/encrypted-relay-join.md). Every answer below describes that.
 
 The iPhone and iPad app launches the same day as the Android one. Choose **manual release**
 (section 11) so the two can be lined up.
@@ -27,7 +26,7 @@ The iPhone and iPad app launches the same day as the Android one. Choose **manua
    processing.
 2. **Download the screenshots** from GitHub ([Screenshots](#1-screenshots) below says
    where). The download unzips to three folders.
-3. **Open the app's privacy and support pages** on gyattchores.com (`app-privacy.html` and
+3. **Open the app's privacy and support pages** on doyourwork.today (`app-privacy.html` and
    `app.html`) and check they load. The app links to the privacy page, and Apple opens both.
 
 ## A. The version page ("1.0 Prepare for Submission" in the sidebar)
@@ -43,7 +42,7 @@ folder into the matching slot.
 | `iphone-medium-1206x2622` | 1206 × 2622 | The next iPhone size down (taken on an iPhone 17 Pro, a 6.3-inch screen) |
 | `ipad-13-inch-2064x2752` | 2064 × 2752 | iPad 13-inch (taken on an iPad Pro 13-inch) |
 
-- Where they are: <https://github.com/mattgiss/gyattchores/actions/workflows/ios.yml>. Open the
+- Where they are: <https://github.com/mattgiss/doyourwork/actions/workflows/ios.yml>. Open the
   newest run with a green tick, scroll to the bottom of its page to **Artifacts**, and
   download **app-store-screenshots**. You need to be signed in to GitHub. GitHub deletes
   artifacts after about 90 days; a new run makes new ones.
@@ -65,7 +64,7 @@ the newest green run has a fresh set.
 ### 2. Promotional Text (170 characters at most; this is 145)
 
 ```
-A chore scoreboard for your household: 25 minutes a day each, approved by an admin. No accounts, no sign-up, and nothing ever leaves your device.
+A chore scoreboard for your household: 25 minutes a day each, approved by an admin. No accounts, no sign-up, and only your family can read it.
 ```
 
 ### 3. Description (4,000 at most)
@@ -75,9 +74,10 @@ DOYOURWORK is a scoreboard for housework. Everyone picks about 25 minutes of cho
 
 PRIVATE BY DESIGN
 • No accounts and no sign-up. Open it and start.
-• Everything stays on your iPhone or iPad. The app has no servers and never goes online.
+• On one iPhone or iPad, nothing ever leaves it.
+• Add a second device and everything is encrypted on the device before it's sent, with a key only your family's devices have. We can't read it.
 • No ads, no tracking, no in-app purchases.
-• Delete the app, or tap "Erase everything", and it's all gone.
+• Erase a device, or delete your family from the server, whenever you like.
 
 YOUR CHORES, IN YOUR WORDS
 • Start from 27 everyday chores, or just describe your home. Type or dictate "do the dishes, take out the trash, feed the dog for 5 minutes" and the app sorts it into a list you can tidy up.
@@ -101,24 +101,23 @@ WHAT KEEPS IT GOING
 YOURS TO KEEP
 • Save a backup of the whole scoreboard to a file you control, and restore it on a new device.
 
-ONE DEVICE, ONE SCOREBOARD
-DOYOURWORK runs on a single iPhone or iPad that the household shares, like the scoreboard at a bowling alley. On iPad, the scoreboard and the day's card sit side by side.
+ONE DEVICE, OR EVERYONE'S
+Share one iPhone or iPad, like the scoreboard at a bowling alley, or give everyone their own. In Admin, tap "Add a phone" and scan the code it shows with the other device: points, approvals and the chore list stay in step. With everyone on their own phone, you can dare each other to do a chore. On iPad, the scoreboard and the day's card sit side by side.
 ```
 
-Every line describes something the app does today. Two things are deliberately left out: sharing
-between devices, which the public app doesn't do, and any mention of Android, since Apple doesn't
-allow other platforms to be named in a listing (guideline 2.3.10).
+Every line describes something the app does today. Android is deliberately left out: Apple
+doesn't allow other platforms to be named in a listing (guideline 2.3.10).
 
 ### 4. Keywords (100 bytes at most; this is 91)
 
 ```
-chores,chore chart,family,housework,cleaning,tasks,streak,routine,household,parents,offline
+chores,chore chart,family,housework,cleaning,tasks,streak,routine,household,parents,private
 ```
 
 ### 5. Support URL
 
 ```
-https://gyattchores.com/app.html
+https://doyourwork.today/app.html
 ```
 
 Apple requires this page to show a way to reach you; it has your email. Don't use
@@ -165,7 +164,7 @@ No encryption question should appear; the app already answers it ("no").
   they choose their own when they set the app up.
 
 ```
-DOYOURWORK is a household chore scoreboard for one shared iPhone or iPad. There is no account or sign-in, and the app has no network code: everything stays on the device.
+DOYOURWORK is a household chore scoreboard. There is no account or sign-in. On one device it never goes online. A family can add more devices: in Admin → Device, "Add a phone" shows a QR code that another device scans ("Join with a code", or "Join a family" on a new device's first screen). From then on the devices sync through our server, end-to-end encrypted with a key that only travels inside that QR code; the server stores sealed records it can't read. The camera is used only to scan that code.
 
 SETTING UP (first launch)
 1. Tap "Set up this device".
@@ -180,7 +179,10 @@ A DAY IN THE APP
 
 ADMIN AREA
 1. Tap "Admin" at the top and enter the code you chose in step 2.
-2. "Approve": say yes or no to the waiting chores. "Players": add people or make someone an admin. "Chores": add, edit or remove chores. "Device": save or restore a backup, the privacy policy, and erase everything.
+2. "Approve": say yes or no to the waiting chores. "Players": add people or make someone an admin. "Chores": add, edit or remove chores. "Device": save or restore a backup, the privacy policy, add a phone, and erase everything.
+
+TWO DEVICES (optional)
+On the first device: Admin → Device → "Add a phone". On a second device with the app freshly installed: "Join a family", then scan the code. The second device loads the same players and chores; a chore approved on one shows on the other within about 10 seconds. "Delete this family from the server" (Admin → Device, on a linked device) deletes everything sent, for every device.
 
 There are no ads, analytics, tracking or purchases. Face ID / Touch ID is optional, off by default, and used only to open the admin area. Dictation is the system keyboard's own; the app does not use the microphone. A backup is a file the user saves through the system's save panel to a place they choose.
 ```
@@ -195,7 +197,7 @@ Choose **Manually release this version**, so nothing goes live until you say so.
 
 | Field | Enter |
 |---|---|
-| Name | `DOYOURWORK`. The record still says GyattChores: change it here. App names must be unique on the App Store, so if Apple says this one is taken, use `DOYOURWORK: Chore Scoreboard` (28 of 30). |
+| Name | `DOYOURWORK`. The record still says DOYOURWORK: change it here. App names must be unique on the App Store, so if Apple says this one is taken, use `DOYOURWORK: Chore Scoreboard` (28 of 30). |
 | Subtitle (30 at most; this is 28) | `The private chore scoreboard` |
 | Primary category | Productivity |
 | Secondary category | Lifestyle |
@@ -255,32 +257,41 @@ is offered only in the United States.
 **Privacy Policy URL**
 
 ```
-https://gyattchores.com/app-privacy.html
+https://doyourwork.today/app-privacy.html
 ```
 
-Apple requires a policy even for an app that collects nothing, and requires the app to link
-to it. The app does (on the welcome screen and under admin → device).
+**"Do you or your third-party partners collect data from this app?"** — **Yes.**
 
-**"Do you or your third-party partners collect data from this app?"** — **No.**
+Apple counts data as collected when it's sent off the device and stored in a readable form. A
+family's records are stored sealed with a key we never have, so arguably nothing readable is
+collected. Each linked phone does sign in anonymously, though, and its ID is stored, so declare
+these two, conservatively:
 
-Apple's definition: "collect" means sending data off the device in a way that lets you or
-anyone else access it. The app can't: it contains no network code at all (CI builds it, and
-`ios/README.md` says where everything is kept). Players, chores, points and admin codes are
-files in the app's own storage on the device. There is no analytics, advertising or other
-outside code.
+| Data type | Used for | Linked to the user? | Used for tracking? |
+|---|---|---|---|
+| Identifiers → **User ID** (each phone's anonymous sign-in ID, kept while the family is on the server) | App Functionality | No | No |
+| User Content → **Other User Content** (the family's encrypted records; we can't read them) | App Functionality | No | No |
 
-Choosing No finishes the section: the listing will show **Data Not Collected**. Click
-**Publish**.
+Not declared, and why:
+- **IP addresses:** the hosting provider (Supabase) sees them to serve each request; we don't
+  use or keep them for anything (Apple: "an IP address sent on a server call and not retained"
+  needn't be disclosed).
+- **Diagnostics, analytics, location, contacts, identifiers for advertising:** none.
+- **Camera:** it reads the QR code on the device; nothing it sees is sent.
 
-Two things worth knowing, neither of which changes the answer:
+The listing will show **Data Not Linked to You: Identifiers, User Content**, and nothing under
+tracking. Click **Publish**.
 
+Also worth knowing:
+- **Export compliance:** the build says it uses no non-exempt encryption
+  (`ITSAppUsesNonExemptEncryption = NO`). Its encryption is CryptoKit's, which is part of iOS,
+  and Apple's table says "encryption limited to that within the Apple operating system" needs no
+  documentation. Apple adds that exempt apps "might alternatively be required to submit a
+  year-end self-classification report" to the US government (BIS); check whether that applies
+  to you before the end of the year.
 - If the device owner has iCloud Backup or an encrypted computer backup turned on, the app's
-  files are in that backup like any other app's. That is the owner's own backup; you can't
-  see it, so it is not collection.
-- Dictating chores uses the keyboard's microphone key, which is Apple's dictation, not this
-  app. The app never touches the microphone.
-- Saving a backup writes a file through the system's save panel to wherever the person chooses
-  (Files, iCloud Drive, AirDrop). The app sends it nowhere itself.
+  files are in that backup like any other app's (not the family's key). That's the owner's own
+  backup, not collection.
 
 ## E. Submit
 
@@ -298,8 +309,8 @@ sidebar. They are needed before anyone outside your App Store Connect team can t
 |---|---|
 | Beta App Description | the text below |
 | Feedback Email | **Only you can fill this in.** Testers' feedback goes here. |
-| Marketing URL | `https://gyattchores.com` |
-| Privacy Policy URL | `https://gyattchores.com/app-privacy.html` |
+| Marketing URL | `https://doyourwork.today` |
+| Privacy Policy URL | `https://doyourwork.today/app-privacy.html` |
 | Beta App Review: contact name, phone, email | **Only you can fill this in.** |
 | Beta App Review: sign-in required | Untick |
 | Beta App Review: notes | the same notes as section 10 |
@@ -330,7 +341,7 @@ Who can test:
 
 - **Internal testers** are people on your App Store Connect team (up to 100). They get builds
   straight away with no review.
-- **External testers** are everyone else: the people who ask through gyattchores.com. Create a
+- **External testers** are everyone else: the people who ask through doyourwork.today. Create a
   group under **External Testing**, add the build, and Apple reviews the first build before
   anyone can install it. After that, add each person by the email on their Apple account, or
   switch on the group's **public link** and send that instead; a public link can be capped at a

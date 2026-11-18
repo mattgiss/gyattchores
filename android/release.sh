@@ -1,6 +1,6 @@
 #!/bin/bash
 # Build the Android app and publish it as a GitHub release, so phones running
-# Obtainium (pointed at this repo) pick it up as an update.
+# Obtainium (pointed at https://github.com/mattgiss/doyourwork) pick it up as an update.
 #
 #   ./release.sh 0.4.0 "What changed, in a sentence or two."
 #
@@ -17,11 +17,11 @@ CODE=$(( $(grep -oE 'versionCode = [0-9]+' app/build.gradle.kts | grep -oE '[0-9
 sed -i '' -E "s/versionCode = [0-9]+/versionCode = $CODE/; s/versionName = \"[^\"]+\"/versionName = \"$VERSION\"/" app/build.gradle.kts
 
 export JAVA_HOME="${JAVA_HOME:-/opt/homebrew/opt/openjdk@17}"
-# The family edition (syncs with the family's phones) is what Obtainium installs. Both editions'
-# tests run, so the public, on-device edition can't quietly break.
-./gradlew -q testFamilyDebugUnitTest testPublicDebugUnitTest assembleFamilyRelease
+# The github flavor (com.gyattchores.app, kept from the first name so phones keep updating; debug key) is what Obtainium installs. Both flavors'
+# tests run, so the Play one can't quietly break.
+./gradlew -q testGithubDebugUnitTest testPlayDebugUnitTest assembleGithubRelease
 APK="build/DOYOURWORK-$VERSION.apk"
-mkdir -p build && cp app/build/outputs/apk/family/release/app-family-release.apk "$APK"
+mkdir -p build && cp app/build/outputs/apk/github/release/app-github-release.apk "$APK"
 
 git add app/build.gradle.kts
 git commit -q -m "Android $VERSION (versionCode $CODE)"

@@ -26,11 +26,11 @@
       ],
       "highs": [
         "app store screenshots not yet produced — see app-store-metadata/screenshots-spec.md",
-        "gyattchores.com/privacy url not yet verified live (file deployed and merged to main — verify in browser)"
+        "doyourwork.today/privacy url not yet verified live (file deployed and merged to main — verify in browser)"
       ],
       "milestones": [
         {"id": "M2.1", "name": "apple developer account ($99)", "status": "red", "issues": [15], "notes": "unblocks all downstream app store milestones"},
-        {"id": "M2.2", "name": "xcode project created", "status": "red", "issues": [16], "notes": "wire existing gyattchoresapp/ sources; commit .xcodeproj"},
+        {"id": "M2.2", "name": "xcode project created", "status": "red", "issues": [16], "notes": "wire existing doyourworkapp/ sources; commit .xcodeproj"},
         {"id": "M2.3", "name": "privacy policy live at /privacy", "status": "yellow", "issues": [18], "notes": "file committed and merged. verify url in browser."},
         {"id": "M2.4", "name": "app store screenshots (6 shots)", "status": "red", "issues": [17], "notes": "requires simulator on mac with developer account"},
         {"id": "M2.5", "name": "app review submission", "status": "red", "issues": [], "notes": "blocked on m2.1–m2.4 all green"}

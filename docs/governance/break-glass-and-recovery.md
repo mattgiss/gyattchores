@@ -4,7 +4,7 @@
 |---|---|
 | **Document ID** | GOV-BCR-001 |
 | **Practices** | Service Continuity; Information Security (ITIL 4) |
-| **Service** | GyattChores |
+| **Service** | DOYOURWORK |
 | **Owner** | Repository owner (`mattgiss`) |
 | **Status** | Defined |
 | **Review cadence** | Quarterly, and after any access change or recovery event |
@@ -14,7 +14,7 @@
 
 ## 1. Purpose
 
-This is the **recovery runbook** for GyattChores. It exists to remove the
+This is the **recovery runbook** for DOYOURWORK. It exists to remove the
 single largest governance risk for the service: **bus factor = 1** — one person
 holds all access, knowledge, and merge authority, with no documented way back in
 if that access is lost.
@@ -43,7 +43,7 @@ working offline and re-syncs later. Recovery targets reflect that:
 | Live site (GitHub Pages) | App unreachable at the domain | Hours | None (code is in git) |
 | Supabase sync backend | Cross-device sync stops; each device still works | Days (best-effort) | Only un-synced cross-device deltas |
 | GitHub account/repo | Cannot deploy or change the app | Hours–days | None (clones exist locally) |
-| Domain / DNS | App unreachable at `gyattchores.com` | Hours–days | None |
+| Domain / DNS | App unreachable at `doyourwork.today` | Hours–days | None |
 | Per-device data | That device's local history | N/A | That device only |
 
 **Guiding principle:** never let a backend outage become a data-loss event. The
@@ -61,8 +61,8 @@ the vault (§4).
 | # | Asset | Identifier (non-secret) | Provider | Recovery method |
 |---|---|---|---|---|
 | A1 | GitHub account | `mattgiss` | GitHub | Account 2FA + backup codes; email recovery |
-| A2 | Repository | `mattgiss/gyattchores` | GitHub | Owned by A1; mirrored by local clones |
-| A3 | Custom domain | `gyattchores.com` (see `CNAME`) | Domain registrar | Registrar account login + 2FA |
+| A2 | Repository | `mattgiss/doyourwork` | GitHub | Owned by A1; mirrored by local clones |
+| A3 | Custom domain | `doyourwork.today` (see `CNAME`) | Domain registrar | Registrar account login + 2FA |
 | A4 | DNS records | `A`/`ALIAS` → GitHub Pages | Registrar / DNS host | Same as A3 |
 | A5 | Hosting | GitHub Pages, served from `main` | GitHub | Re-enable in repo Settings → Pages |
 | A6 | Sync backend | Supabase project `ukshxdoqgwoxobjdclpx` | Supabase | Supabase account login (A7) |
@@ -101,7 +101,7 @@ every item in §3 without asking the owner.
 
 Each scenario is self-contained. Start from the symptom.
 
-### 5.1 Live site is down (`gyattchores.com` not loading)
+### 5.1 Live site is down (`doyourwork.today` not loading)
 
 1. Triated per [Incident & Problem Management](incident-and-problem-management.md).
 2. Check **GitHub Pages**: repo → Settings → Pages. Confirm it builds from
@@ -129,7 +129,7 @@ Each scenario is self-contained. Start from the symptom.
 2. Confirm the domain has **not expired** (record the expiry; set a renewal
    reminder).
 3. Verify DNS points at GitHub Pages (the `A`/`ALIAS` records GitHub documents
-   for apex domains) and that the repo `CNAME` file contains `gyattchores.com`.
+   for apex domains) and that the repo `CNAME` file contains `doyourwork.today`.
 4. Allow for DNS propagation (up to a few hours).
 
 ### 5.4 Supabase project lost, reset, or data corrupted
@@ -177,9 +177,9 @@ The PIN is a convenience lock, not a security boundary
    ```
 3. Update the hash in both native apps, via PR, and record the new PIN in the
    vault (§4):
-   - `Engine.adminCodeHash` in `ios/GyattCore/Sources/GyattCore/Engine.swift`
+   - `Engine.adminCodeHash` in `ios/DoYourWorkCore/Sources/DoYourWorkCore/Engine.swift`
    - `Engine.ADMIN_CODE_HASH` in
-     `android/app/src/main/java/com/gyattchores/app/engine/Engine.kt`
+     `android/app/src/main/java/com/doyourwork/app/engine/Engine.kt`
    - `adminCodeHash` in `native/fixtures/engine-scenarios.json`, which both
      engine test suites check against
 4. Release new builds of both native apps together. Until a phone is updated

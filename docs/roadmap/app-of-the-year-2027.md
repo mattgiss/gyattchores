@@ -1,4 +1,4 @@
-# GyattChores — App of the Year 2027 Roadmap
+# DOYOURWORK — App of the Year 2027 Roadmap
 
 | | |
 |---|---|
@@ -8,7 +8,7 @@
 | **Owner** | Matthew Gissentanna |
 | **Last updated** | 2026-06-06 |
 
-Apple's App of the Year criteria (inferred from past winners): **exceptional design**, **meaningful use of platform features** (Siri, Widgets, Live Activities, Dynamic Island), **broad accessibility**, **delightful UX**, and a **story that resonates**. GyattChores already has the story — a dad building something real for his kids. The roadmap builds the product around it.
+Apple's App of the Year criteria (inferred from past winners): **exceptional design**, **meaningful use of platform features** (Siri, Widgets, Live Activities, Dynamic Island), **broad accessibility**, **delightful UX**, and a **story that resonates**. DOYOURWORK already has the story — a dad building something real for his kids. The roadmap builds the product around it.
 
 ---
 
@@ -26,7 +26,7 @@ Apple's App of the Year criteria (inferred from past winners): **exceptional des
 | No `Info.plist` in repo | App Store build impossible | Add with correct bundle ID, version, required keys |
 | No `PrivacyInfo.xcprivacy` | Required by Apple since iOS 17.4 — submission rejected without it | Add privacy manifest |
 | No App Store screenshots | Required for submission | Produce 6.7" and 5.5" sets |
-| No privacy policy URL | Required for apps involving children's data | Publish at gyattchores.com/privacy |
+| No privacy policy URL | Required for apps involving children's data | Publish at doyourwork.today/privacy |
 | Admin PIN in client source | Not a security boundary — document clearly for App Review | Already in SECURITY.md ✅ |
 | `ADMIN_CODE` hardcoded | Must not be in source for production | Move to a setting, or at minimum document in App Review notes |
 
@@ -34,7 +34,7 @@ Apple's App of the Year criteria (inferred from past winners): **exceptional des
 
 ```
 App Store Connect
-- [ ] App ID / bundle ID registered (e.g. com.gissentanna.gyattchores)
+- [ ] App ID / bundle ID registered (e.g. com.gissentanna.doyourwork)
 - [ ] App record created in App Store Connect
 - [ ] TestFlight internal build uploaded
 - [ ] Privacy policy published and linked
@@ -152,7 +152,7 @@ Replace or supplement Supabase with **CloudKit (iCloud)** for native Apple-ecosy
 
 ### What Apple looks for (based on past winners)
 
-1. **Meaningful real-world impact** — GyattChores teaches responsibility and makes family life easier. That's the story.
+1. **Meaningful real-world impact** — DOYOURWORK teaches responsibility and makes family life easier. That's the story.
 2. **Exceptional platform integration** — Live Activities, Dynamic Island, Widgets, Siri, Watch, iCloud. Hit all of them.
 3. **Design quality** — nominated apps feel like they could only exist on Apple hardware.
 4. **Momentum** — strong ratings (target 4.8+), regular updates, active App Store presence.

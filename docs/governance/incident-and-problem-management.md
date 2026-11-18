@@ -4,7 +4,7 @@
 |---|---|
 | **Document ID** | GOV-INC-001 |
 | **Practices** | Incident Management; Problem Management (ITIL 4) |
-| **Service** | GyattChores |
+| **Service** | DOYOURWORK |
 | **Owner** | Repository owner (`mattgiss`) |
 | **Status** | Defined |
 | **Review cadence** | Quarterly, and after every Priority-1 incident |

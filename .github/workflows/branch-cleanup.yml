@@ -146,7 +146,7 @@ jobs:
                     {name: "Deleted",                      value: $deleted, inline: false},
                     {name: "Kept (review if unexpected)",  value: $kept,    inline: false}
                   ],
-                  footer: {text: "gyattchores • branch-cleanup • runs every Monday"}
+                  footer: {text: "doyourwork • branch-cleanup • runs every Monday"}
                 }]
               }')
 

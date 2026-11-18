@@ -4,7 +4,7 @@
 |---|---|
 | **Document ID** | GOV-CSI-001 |
 | **Practice** | Continual Improvement (ITIL 4) |
-| **Service** | GyattChores |
+| **Service** | DOYOURWORK |
 | **Owner** | Repository owner (`mattgiss`) |
 | **Status** | Active |
 | **Baseline** | [Governance Audit GOV-AUD-001, 2026-06-06](governance-audit.md) |
@@ -14,7 +14,7 @@
 
 ## 1. Purpose
 
-This is the **single backlog of corrective actions** that move GyattChores from
+This is the **single backlog of corrective actions** that move DOYOURWORK from
 its audited baseline (governance maturity **Level 2**) to the target state
 (**Level 3 — "Defined"**). Every item is concrete, owned, and mapped to a goal,
 so the service can **improve itself over time** rather than depending on memory.
@@ -101,7 +101,7 @@ Keep the momentum        ── This register is reviewed every quarter.
 - **Action:** (a) Treat the deploy Discord event + merge commit as the
   deployment record; add a one-line entry per production release if a
   `CHANGELOG` is adopted. (b) Add a **scheduled** workflow that fetches
-  [gyattchores.com](https://gyattchores.com) and alerts on non-200 — detecting
+  [doyourwork.today](https://doyourwork.today) and alerts on non-200 — detecting
   live-site outages no repo event would reveal.
 - **Done:** `.github/workflows/uptime.yml` shipped in PR #52 (2026-06-09):
   probes the live site every 15 minutes and posts a 🔴 Discord alert on

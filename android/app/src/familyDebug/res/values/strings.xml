@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- The family test build sits beside the real family app; this tells them apart on the home screen. -->
-    <string name="app_name">DOYOURWORK (test)</string>
-</resources>

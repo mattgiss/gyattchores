@@ -4,7 +4,7 @@
 |---|---|
 | **Document ID** | GOV-MON-001 |
 | **Practice** | Monitoring & Event Management (ITIL 4) |
-| **Service** | GyattChores |
+| **Service** | DOYOURWORK |
 | **Owner** | Repository owner (`mattgiss`) |
 | **Status** | Operational |
 | **Implementation** | `.github/workflows/discord-notify.yml` |
@@ -116,7 +116,7 @@ Current coverage is **reactive to repository events**. Maturity improvements
 
 | Enhancement | Value | Reference |
 |---|---|---|
-| **Synthetic uptime check** of [gyattchores.com](https://gyattchores.com) on a schedule | Detects a *live-site* outage that no repo event would reveal (e.g. DNS/Pages failure). | CA-05 / CA-11 |
+| **Synthetic uptime check** of [doyourwork.today](https://doyourwork.today) on a schedule | Detects a *live-site* outage that no repo event would reveal (e.g. DNS/Pages failure). | CA-05 / CA-11 |
 | **CI status as an event** | Surfaces failing quality gates directly in the feed. | CA-04 |
 | **Scheduled secret-scanning summary** | Periodic assurance that no secret leaked. | CA-06 |
 

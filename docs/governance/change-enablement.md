@@ -4,7 +4,7 @@
 |---|---|
 | **Document ID** | GOV-CHG-001 |
 | **Practice** | Change Enablement; Release & Deployment Management (ITIL 4) |
-| **Service** | GyattChores |
+| **Service** | DOYOURWORK |
 | **Owner** | Repository owner (`mattgiss`) |
 | **Status** | Defined — adoption in progress (see [CSI register](continual-improvement.md)) |
 | **Review cadence** | Quarterly |
@@ -13,7 +13,7 @@
 
 ## 1. Purpose
 
-Ensure that **every change to the GyattChores production service is assessed,
+Ensure that **every change to the DOYOURWORK production service is assessed,
 recorded, and released in a controlled way** that maximises successful changes
 while protecting the live experience for the family using the app.
 
@@ -131,7 +131,7 @@ Self-attestation checklist (paste into the PR):
 | **Release unit** | A merge commit to `main`. |
 | **Environments** | Production only. *No staging today* (GAP-05) — see CA-05 for an optional preview environment. |
 | **Deployment window** | None enforced; merges deploy immediately. Avoid merging high-risk Normal changes when the family is actively using the app. |
-| **Verification of release** | (a) Discord deploy notification fires; (b) spot-check [gyattchores.com](https://gyattchores.com) loads and a chore can be logged. |
+| **Verification of release** | (a) Discord deploy notification fires; (b) spot-check [doyourwork.today](https://doyourwork.today) loads and a chore can be logged. |
 | **Deployment record** | The merge commit + PR + Discord event collectively form the deployment record (CA-05 formalises a one-line entry per production release). |
 
 ### 7.1 Post-deployment validation (smoke test)
