@@ -30,7 +30,7 @@ class MainActivity : FragmentActivity() {
             statusBarStyle = androidx.activity.SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
             navigationBarStyle = androidx.activity.SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
         )
-        takeTestSyncUrl(intent)
+        takeTestIntent(intent)
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -50,19 +50,18 @@ class MainActivity : FragmentActivity() {
 
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
-        takeTestSyncUrl(intent)
+        takeTestIntent(intent)
         vm.requestSync()
     }
 
     /**
-     * Debug builds: `adb shell am start ... --es syncURL http://<host>:8789` picks a test server, and
-     * `--es restoreFile <name>` restores a backup pushed to the app's external files folder (for
-     * previews on an emulator). `--ez memoryRelay true` syncs with an in-memory encrypted relay
-     * instead, and `--es scanResult <code>` (or `seeded`, a family made up on that relay) is what
-     * "Join with a code" reads instead of the camera. All ignored in release.
+     * Debug builds: `adb shell am start ... --es restoreFile <name>` restores a backup pushed to the
+     * app's external files folder (for previews on an emulator). `--ez memoryRelay true` syncs with
+     * an in-memory encrypted relay instead of the real one, and `--es scanResult <code>` (or
+     * `seeded`, a family made up on that relay) is what "Join with a code" reads instead of the
+     * camera. All ignored in release.
      */
-    private fun takeTestSyncUrl(intent: android.content.Intent?) {
-        intent?.getStringExtra("syncURL")?.let { vm.setTestSyncUrl(it) }
+    private fun takeTestIntent(intent: android.content.Intent?) {
         if (BuildConfig.DEBUG && intent?.getBooleanExtra("memoryRelay", false) == true) vm.useMemoryRelay()
         if (BuildConfig.DEBUG) intent?.getStringExtra("scanResult")?.let { vm.setTestScanResult(it) }
         if (BuildConfig.DEBUG) intent?.getStringExtra("restoreFile")?.let { name ->

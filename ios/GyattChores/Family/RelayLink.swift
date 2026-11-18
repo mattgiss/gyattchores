@@ -1,11 +1,9 @@
-#if FAMILY_SYNC
 import Foundation
 import Security
 import GyattCore
 
 extension RelayConfig {
-    /// The DOYOURWORK Supabase project. Here, in family-only code, so the App Store build never
-    /// contains a server address (CI checks).
+    /// The DOYOURWORK relay: its own Supabase project, holding only sealed records.
     static let doyourwork = RelayConfig(url: "https://omemognwvcnonnzjmcxm.supabase.co",
                                         publishableKey: "sb_publishable_prXq51_BMc8lnG4BY5vXmA_xJysoZxa")
 }
@@ -84,7 +82,7 @@ extension AppStore {
     var isLinked: Bool { relay != nil }
 
     /// Admin → "Add a phone". The first time, this phone puts the family on the relay: a new
-    /// household and family key, and everything here goes up again encrypted. Then, and every time
+    /// household and family key, and everything here goes up encrypted. Then, and every time
     /// after, a one-time code for the other phone to scan, good for 10 minutes.
     func addPhone() async throws -> (code: JoinCode, expires: Date) {
         if relay == nil {
@@ -99,8 +97,8 @@ extension AppStore {
         return try await relay!.makeJoinCode()
     }
 
-    /// The other phone scanned a code. On success this phone takes the family from the relay:
-    /// what it had from the old tables is dropped, and it loads afresh. Whose phone it is stays.
+    /// This phone scanned a code. On success it takes the family from the relay: what it had is
+    /// dropped, and it loads afresh. Whose phone it is stays.
     func joinFamily(scanned text: String) async -> JoinOutcome {
         guard let code = try? JoinCode(scanned: text) else { return .notACode }
         let client = RelayVault.client(code.keys)
@@ -111,6 +109,8 @@ extension AppStore {
         switchTransport(to: client)
         logs = []; shared = [:]; cards = [:]; removedIds = []
         members = []
+        // Set up or not is now the joined family's: it is once its admin arrives.
+        settings.setUp = false
         hasSynced = false
         requestSync()
         return .joined
@@ -125,27 +125,24 @@ extension AppStore {
     func removePhone(_ userId: String) async throws { try await relay?.removeDevice(userId: userId) }
 
     /// Admin → "Delete this family from the server": the household and everything sent go, for
-    /// every phone. The family stays on this phone, with sync off.
+    /// every phone. The family stays on this phone, which is no longer linked.
     func deleteFromServer() async throws {
         guard let relay else { return }
         try await relay.deleteHousehold()
         leaveRelay()
     }
 
-    /// Forgets the relay (its keys and sign-in) and keeps everything else. Sync stays off rather
-    /// than going back to the old tables.
+    /// Forgets the relay (its keys and sign-in) and keeps everything else on this phone.
     func leaveRelay() {
         RelayVault.clear()
         relay = nil
         transport += 1
-        syncOff = true
-        syncStatus = "off"
+        syncStatus = "local"
     }
 
     private func switchTransport(to client: RelayClient) {
         relay = client
         transport += 1
-        syncOff = false
         objectWillChange.send()
     }
 
@@ -176,4 +173,3 @@ extension AppStore {
     }
     #endif
 }
-#endif

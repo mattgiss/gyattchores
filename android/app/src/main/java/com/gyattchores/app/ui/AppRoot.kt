@@ -61,7 +61,7 @@ fun AppRoot(vm: AppViewModel, fold: FoldingFeature?) {
     val logs by vm.store.logs.collectAsState()
     val family by vm.store.family.collectAsState()
     val syncedOnce by vm.syncedOnce.collectAsState()
-    val syncOff by vm.syncOff.collectAsState()
+    val linked by vm.relayLinked.collectAsState()
     val notice by vm.notice.collectAsState()
     notice?.let { m ->
         androidx.compose.material3.AlertDialog(onDismissRequest = { vm.notice.value = null }, text = { Text(m) },
@@ -88,7 +88,7 @@ fun AppRoot(vm: AppViewModel, fold: FoldingFeature?) {
     val hingeX = if (fold != null && fold.orientation == FoldingFeature.Orientation.VERTICAL) fold.bounds.left else null
 
     val myId = me
-    val showDares = daresOpen && myId != null
+    val showDares = daresOpen && myId != null && linked
     BackHandler(enabled = puzzlePlayer != null || adminOpen || showDares || selected != null) {
         if (puzzlePlayer != null) puzzleId = null
         else if (adminOpen) adminOpen = false else if (showDares) daresOpen = false else selectedId = null
@@ -97,8 +97,8 @@ fun AppRoot(vm: AppViewModel, fold: FoldingFeature?) {
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         if (!family.isSetUp) {
             Box(Modifier.fillMaxSize().safeDrawingPadding()) {
-                // With sync off there's nothing to wait for (a phone dropped before its first load).
-                if (syncedOnce || syncOff) SetupScreen(vm) else WaitingForFamily(vm, syncStatus)
+                // Only a phone that just joined a family waits for it; an unlinked one has nothing to wait for.
+                if (linked && !syncedOnce) WaitingForFamily(vm, syncStatus) else SetupScreen(vm)
             }
             return@Surface
         }

@@ -60,7 +60,7 @@ struct BackupControls: View {
             switch p {
             case .confirm(let b):
                 Alert(title: Text("Restore this backup?"), message: Text(store.restorePreview(b)),
-                      primaryButton: Self.confirmIsDestructive ? .destructive(Text(Self.confirmLabel)) { restore(b) } : .default(Text(Self.confirmLabel)) { restore(b) },
+                      primaryButton: store.isLinked ? .default(Text("Add it to the family")) { restore(b) } : .destructive(Text("Replace everything here")) { restore(b) },
                       secondaryButton: .cancel())
             case .message(let m):
                 Alert(title: Text("Backup"), message: Text(m), dismissButton: .cancel(Text("OK")))
@@ -77,14 +77,6 @@ struct BackupControls: View {
         if fromSetup { store.notice = result }
         else { Task { try? await Task.sleep(for: .milliseconds(400)); prompt = .message(result) } }
     }
-
-    #if FAMILY_SYNC
-    static let confirmLabel = "Add it to the family"
-    static let confirmIsDestructive = false
-    #else
-    static let confirmLabel = "Replace everything here"
-    static let confirmIsDestructive = true
-    #endif
 }
 
 /// The backup as a file for the system's save panel.

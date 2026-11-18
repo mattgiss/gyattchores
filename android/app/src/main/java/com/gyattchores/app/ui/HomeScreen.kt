@@ -35,6 +35,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -60,7 +61,7 @@ import com.gyattchores.app.sync.LocalEntry
 import java.time.LocalDate
 
 /**
- * Home: players, dares (family edition), this week's leaderboard, and the 30-day log.
+ * Home: players, dares (once linked to the family's other phones), this week's leaderboard, and the 30-day log.
  * The admin button opens the admin area, behind an admin's code.
  */
 @OptIn(ExperimentalLayoutApi::class)
@@ -85,6 +86,7 @@ fun HomeScreen(
     val zone = vm.zone
     val today = vm.today()
     val dares = vm.dares(shared)
+    val linked by vm.relayLinked.collectAsState()
     val names = players.associate { it.id to it.shownName }
 
     // The title on the first band, then the players as small tiles, each a step down the heat
@@ -110,7 +112,7 @@ fun HomeScreen(
                 }
                 Text("${Engine.DAILY_MINUTES} minutes a day. That's it.", color = ink.copy(alpha = 0.85f), fontWeight = FontWeight.SemiBold)
                 Text(
-                    (if (soundOn) "Sound on" else "Sound off") + if (vm.familySync) " · ${syncStatus.replaceFirstChar { it.uppercase() }}" else "", style = MaterialTheme.typography.labelMedium,
+                    (if (soundOn) "Sound on" else "Sound off") + if (linked) " · ${syncStatus.replaceFirstChar { it.uppercase() }}" else "", style = MaterialTheme.typography.labelMedium,
                     color = ink.copy(alpha = 0.7f), fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.clickable(onClickLabel = "Turn sound on or off") { soundOn = !soundOn; fb.soundOn = soundOn; fb.tick(soundOn) }.padding(vertical = 4.dp),
                 )
@@ -132,9 +134,9 @@ fun HomeScreen(
                 }
             }
 
-            // Whose phone is this? Asked once; changing it later needs the admin unlock. Only the
-            // family edition has dares, since a secret guess needs each person on their own phone.
-            if (vm.familySync && players.isNotEmpty()) if (me == null || me !in names) {
+            // Whose phone is this? Asked once; changing it later needs the admin unlock. Only a phone
+            // linked to the family's others has dares, since a secret guess needs each person on their own phone.
+            if (linked && players.isNotEmpty()) if (me == null || me !in names) {
                 SectionLabel("Whose phone is this?")
                 FlowRow(Modifier.padding(horizontal = 20.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     for (p in players) Text(p.shownName, fontWeight = FontWeight.Bold, color = Ink,

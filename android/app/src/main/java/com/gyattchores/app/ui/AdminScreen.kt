@@ -92,6 +92,7 @@ fun AdminScreen(vm: AppViewModel, logs: List<ChoreLog>, onBack: (() -> Unit)?) {
     val activity = LocalContext.current as FragmentActivity
     val fb = LocalFeedback.current
     val bioOn by vm.biometricUnlock.collectAsState()
+    val linked by vm.relayLinked.collectAsState()
     LaunchedEffect(authed) { if (authed) fb.unlock() }
 
     // The admin area is in Clear's ocean theme, so it's plain at a glance which mode you're in.
@@ -121,7 +122,7 @@ fun AdminScreen(vm: AppViewModel, logs: List<ChoreLog>, onBack: (() -> Unit)?) {
                 )
                 TermButton("Unlock", enabled = code.isNotEmpty(), modifier = Modifier.bleed(20.dp)) { verify() }
                 if (canBio) QuietButton("Use my fingerprint or face", Modifier.bleed(20.dp)) { promptBiometric(activity) { authed = true } }
-                Text(if (vm.familySync) "Forgot your code? Another admin can set a new one for you."
+                Text(if (linked) "Forgot your code? Another admin can set a new one for you."
                     else "Forgot your code? It's only kept on this phone, so it can't be looked up. Clearing the app's data starts a new scoreboard.",
                     style = MaterialTheme.typography.bodyMedium, color = Done)
             }
@@ -147,6 +148,7 @@ private fun AdminContent(vm: AppViewModel, logs: List<ChoreLog>) {
     var addingChores by remember { mutableStateOf(false) }
     var confirmingErase by remember { mutableStateOf(false) }
     val me by vm.store.me.collectAsState()
+    val linked by vm.relayLinked.collectAsState()
     val activity = LocalContext.current as FragmentActivity
     val canBio = remember { biometricAvailable(activity) }
     val pool = family.chores ?: vm.store.starterChores
@@ -215,7 +217,7 @@ private fun AdminContent(vm: AppViewModel, logs: List<ChoreLog>) {
                 }
             }
         }
-        if (vm.familySync && family.players.isNotEmpty()) {
+        if (linked && family.players.isNotEmpty()) {
             item { SectionLabel("this phone belongs to", padded = false) }
             item {
                 Text("Dares are made as this person. Only an admin can change it.",
@@ -259,21 +261,21 @@ private fun AdminContent(vm: AppViewModel, logs: List<ChoreLog>) {
                 style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item {
-            Text(if (vm.familySync) "This edition keeps the family's players, chores and points in step across your family's phones. Resetting this phone clears what it keeps and fetches the family again. Nothing is deleted for anyone else."
+            Text(if (linked) "The family's players, chores and points are shared with your family's phones, encrypted on this phone before they're sent, so only those phones can read them. Resetting this phone clears what it keeps and fetches the family again. Nothing is deleted for anyone else."
                 else "Everything this app knows, from names to chores and points, is kept on this phone and nowhere else. There's no account and nothing is sent to anyone, including us. Uninstalling the app deletes it all.",
                 style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
                 OutlinedButton(onClick = { fb.tap(); saveBackup() }) { Text("Save a backup…") }
                 OutlinedButton(onClick = { fb.tap(); restoreBackup() }) { Text("Restore…") }
             }
-            Text(if (vm.familySync) "A backup holds the family's players, chores, history and admin codes (scrambled). Restoring adds a backup to the family. It never removes anyone."
+            Text(if (linked) "A backup holds the family's players, chores, history and admin codes (scrambled). Restoring adds a backup to the family. It never removes anyone."
                 else "A backup holds everything here, admin codes included (scrambled). Restoring one replaces what's on this phone.",
                 style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
             TextButton(onClick = { confirmingErase = true }, modifier = Modifier.padding(vertical = 8.dp)) {
-                Text(if (vm.familySync) "Reset this phone…" else "Erase everything…", color = Bad)
+                Text(if (linked) "Reset this phone…" else "Erase everything…", color = Bad)
             }
         }
-        if (vm.familySync) item { PhonesSection(vm) }
+        item { PhonesSection(vm) }
     }
 
     editing?.let { m -> MemberDialog(vm, m, onDismiss = { editing = null }) }
@@ -281,11 +283,11 @@ private fun AdminContent(vm: AppViewModel, logs: List<ChoreLog>) {
     editingChore?.let { c -> ChoreDialog(vm, c, pool, onDismiss = { editingChore = null }) }
     if (confirmingErase) AlertDialog(
         onDismissRequest = { confirmingErase = false },
-        title = { Text(if (vm.familySync) "Reset this phone?" else "Erase everything?") },
-        text = { Text(if (vm.familySync) "This phone forgets what it keeps and fetches the family again. Nobody else is affected."
+        title = { Text(if (linked) "Reset this phone?" else "Erase everything?") },
+        text = { Text(if (linked) "This phone forgets what it keeps and fetches the family again. Nobody else is affected."
             else "Players, chores and points are deleted from this phone and the app starts over. This can't be undone.") },
         confirmButton = { TextButton(onClick = { fb.reject(); confirmingErase = false; vm.eraseEverything() }) {
-            Text(if (vm.familySync) "Reset" else "Erase players, chores and points", color = Bad) } },
+            Text(if (linked) "Reset" else "Erase players, chores and points", color = Bad) } },
         dismissButton = { TextButton(onClick = { confirmingErase = false }) { Text("Cancel") } },
     )
 }
@@ -317,7 +319,7 @@ private fun MemberDialog(vm: AppViewModel, member: Player?, onDismiss: () -> Uni
     )
     if (confirmingRemove && member != null) AlertDialog(
         onDismissRequest = { confirmingRemove = false }, title = { Text("Remove ${member.name}?") },
-        text = { Text("Their chores and points are deleted${if (vm.familySync) " from the family's phones" else " from this phone"}. This can't be undone.") },
+        text = { Text("Their chores and points are deleted${if (vm.relayLinked.value) " from the family's phones" else " from this phone"}. This can't be undone.") },
         confirmButton = { TextButton(onClick = { vm.removeMember(member); fb.reject(); confirmingRemove = false; onDismiss() }) {
             Text("Remove and delete their history", color = Bad) } },
         dismissButton = { TextButton(onClick = { confirmingRemove = false }) { Text("Cancel") } },

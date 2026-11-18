@@ -59,11 +59,9 @@ struct AdminView: View {
     }
 
     private var forgotCodeNote: String {
-        #if FAMILY_SYNC
-        "Forgot your code? Another admin can set a new one for you from their phone."
-        #else
-        "Forgot your code? It's only kept on this device, so it can't be looked up. Deleting the app erases this scoreboard and lets you start a new one."
-        #endif
+        store.isLinked
+            ? "Forgot your code? Another admin can set a new one for you from their phone."
+            : "Forgot your code? It's only kept on this device, so it can't be looked up. Deleting the app erases this scoreboard and lets you start a new one."
     }
 
     private func verify() {
@@ -369,37 +367,34 @@ private struct Device: View {
             Toggle("Face ID or Touch ID opens Admin", isOn: Binding(get: { store.settings.biometricUnlock }, set: { store.setBiometricUnlock($0) }))
             Text("Only turn this on if this is your own device, not a player's.").font(.app(.footnote)).foregroundStyle(.secondary)
         }
-        #if FAMILY_SYNC
-        SectionLabel("this phone belongs to")
-        Text("Dares are made as this person.").font(.app(.footnote)).foregroundStyle(.secondary)
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(store.players) { p in
-                    if p.id == store.me { Button(store.shownName(p)) {}.buttonStyle(.borderedProminent) }
-                    else { Button(store.shownName(p)) { fb.tap(); store.setMe(p) }.buttonStyle(.bordered) }
+        // Dares need each phone to be someone's: only a family on more than one phone has them.
+        if store.isLinked {
+            SectionLabel("this phone belongs to")
+            Text("Dares are made as this person.").font(.app(.footnote)).foregroundStyle(.secondary)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(store.players) { p in
+                        if p.id == store.me { Button(store.shownName(p)) {}.buttonStyle(.borderedProminent) }
+                        else { Button(store.shownName(p)) { fb.tap(); store.setMe(p) }.buttonStyle(.bordered) }
+                    }
                 }
             }
         }
         SectionLabel("your data")
-        Text("This is the family build. Players, chores, codes and points are shared with the family's other phones. Sync: \(store.syncStatus).")
-            .font(.app(.callout)).foregroundStyle(.secondary)
-        PhonesSection()
-        SectionLabel("backup")
-        Text("Save the whole scoreboard as a file, or add one saved earlier (from this app or the public one, on iPhone or Android) to the family.")
-            .font(.app(.footnote)).foregroundStyle(.secondary)
-        BackupControls().padding(.top, 4)
-        Text("Version \(AppInfo.version)").font(.app(.footnote)).foregroundStyle(.secondary).padding(.top, 8)
-        #else
-        SectionLabel("your data")
-        Text("Everything this app knows, from names to chores and points, is kept on this device and nowhere else. There's no account and nothing is sent to anyone, including us. Deleting the app deletes it all.")
+        Text(store.isLinked
+             ? "Players, chores, codes and points are shared with the family's other phones. Everything is encrypted on this phone before it's sent, so the server can't read it. Sync: \(store.syncStatus)."
+             : "Everything this app knows, from names to chores and points, is kept on this device. There's no account. Nothing is sent anywhere unless you add a phone, and then it's encrypted first, so only your family's phones can read it.")
             .font(.app(.callout)).foregroundStyle(.secondary)
         Link("Privacy policy", destination: Links.privacy).font(.app(.callout)).frame(minHeight: 44)
+        PhonesSection()
         SectionLabel("backup")
-        Text("Save the whole scoreboard as a file you keep, in Files, iCloud Drive or anywhere you like. Restore it on a new phone, or bring it into a family account later.")
+        Text(store.isLinked
+             ? "Save the whole scoreboard as a file, or add one saved earlier (on iPhone or Android) to the family."
+             : "Save the whole scoreboard as a file you keep, in Files, iCloud Drive or anywhere you like. Restore it on a new phone.")
             .font(.app(.footnote)).foregroundStyle(.secondary)
         BackupControls().padding(.top, 4)
-        eraseButton
-        #endif
+        if !store.isLinked { eraseButton }
+        Text("Version \(AppInfo.version)").font(.app(.footnote)).foregroundStyle(.secondary).padding(.top, 8)
     }
 
     private var eraseButton: some View {

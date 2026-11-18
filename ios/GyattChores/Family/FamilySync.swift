@@ -1,44 +1,41 @@
-#if FAMILY_SYNC
 import Foundation
 import GyattCore
 
-/// The family build's sync: the same passes as the Android app's family flavor (and the web app).
+/// Sync between the family's phones, through the encrypted relay, once this phone is linked
+/// (`RelayLink.swift`). The same passes as the Android app.
 ///
-/// - Chore logs go to `simple_logs`; the server's status wins unless a change made here hasn't
-///   reached it yet.
-/// - Players, display names, admin codes, the chore list and dares go to `family_state`, keyed as
-///   `FamilyState` describes; the last device to change a key wins.
+/// - Chore logs: the server's status wins unless a change made here hasn't reached it yet.
+/// - Players, display names, admin codes, the chore list and dares are keyed as `FamilyState`
+///   describes; the last phone to change a key wins.
 ///
-/// Every change is saved here first and never waits on the network. Under `-uiTesting` sync is off,
-/// so a test run can't read or write the family's real chores.
+/// Every change is saved here first and never waits on the network. Under `-uiTesting` the relay is
+/// an in-memory one, so a test run can't reach the real server.
 extension AppStore {
     /// One pass at a time; a request that arrives mid-pass runs one follow-up pass instead of overlapping.
     func requestSync() {
-        // UI tests never reach the family's data: sync is off, unless pointed at a test server.
-        // (Under -uiTesting the relay is always the in-memory one, so it may run.)
-        if relay == nil && syncOff { syncStatus = "off"; return }
-        if Self.uiTesting && SyncConfig.testURL == nil && relay == nil { syncStatus = "off (ui testing)"; return }
+        // Not linked: everything stays on this phone.
+        guard let onRelay = relay else { syncStatus = "local"; return }
         if syncing { syncAgain = true; return }
         syncing = true
         syncStatus = "syncing"
         let logSnapshot = logs, stateSnapshot = shared
-        let logAPI: LogAPI = relay ?? api, stateAPI: StateAPI = relay ?? api, started = transport, onRelay = relay
+        let started = transport
         Task {
             do {
                 // Removed from the family, or the family was deleted: reads would just come back
                 // empty, so ask before syncing anything.
-                if let onRelay, try await !onRelay.isMember() {
+                if try await !onRelay.isMember() {
                     if started == transport { leaveRelay(); notice = "This phone is no longer in the family's sync. Everything on it stays here." }
                     syncing = false
                     if syncAgain { syncAgain = false; requestSync() }
                     return
                 }
-                let synced = try await LogSync.run(api: logAPI, local: logSnapshot)
-                // Sync moved to the relay mid-pass: what came from the old tables doesn't belong here now.
+                let synced = try await LogSync.run(api: onRelay, local: logSnapshot)
+                // This phone joined another family or left mid-pass: what came back doesn't belong here now.
                 guard started == transport else { throw CancellationError() }
                 // Taken off the list: their rows stay on the server but not on this device.
                 logs = LogSync.reconcile(synced: synced, latest: logs).filter { !removedIds.contains($0.playerId) }
-                let st = try await StateSync.run(api: stateAPI, local: stateSnapshot)
+                let st = try await StateSync.run(api: onRelay, local: stateSnapshot)
                 guard started == transport else { throw CancellationError() }
                 shared = StateSync.reconcile(synced: st, latest: shared)
                 applyShared()
@@ -165,4 +162,3 @@ extension AppStore {
         return true
     }
 }
-#endif

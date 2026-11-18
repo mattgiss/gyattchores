@@ -54,8 +54,9 @@ import java.time.ZoneId
  * android/PlayStore/take-screenshots.sh, which runs one device per run: drawn back to back in one
  * run, a picture can pick up the previous device's last screen.
  *
- * Public edition only. It restores the made-up family through the app's own debug "restoreFile"
- * switch, the same way an emulator preview does.
+ * The app as a new Play install sees it: not linked to any other phone, so nothing syncs. It
+ * restores the made-up family through the app's own debug "restoreFile" switch, the same way an
+ * emulator preview does.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -68,7 +69,6 @@ class StoreScreenshotsTest {
 
     @Before fun setUp() {
         assumeTrue("only when asked for, with -PstoreScreenshots", System.getProperty("storeScreenshots") == "true")
-        assumeTrue("the public edition only: the family edition syncs", !BuildConfig.FAMILY_SYNC)
         // Belt and braces: nothing here may reach the network.
         ProxySelector.setDefault(object : ProxySelector() {
             override fun select(uri: URI?) = listOf(Proxy(Proxy.Type.HTTP, InetSocketAddress("127.0.0.1", 9)))
@@ -195,7 +195,7 @@ class StoreScreenshotsTest {
                 }
             }
         }
-        return BackupFile(id = "store-screenshots", exportedAt = added, source = "android-public", appVersion = "1.0",
+        return BackupFile(id = "store-screenshots", exportedAt = added, source = "android", appVersion = "1.0",
             members = members, adminCodes = listOf(BackupFile.Code("1", code.salt, code.hash)), chores = pool,
             choreAdded = pool.associate { it.id to added }, memberJoined = members.associate { it.id to added }, nextPlayerId = 5, logs = logs)
     }

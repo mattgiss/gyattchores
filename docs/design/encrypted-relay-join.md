@@ -1,6 +1,7 @@
 # Families on more than one phone: encrypted relay, joined by QR code
 
-Status: being built (steps 1 to 4 below). Decided 2026-11-16: an encrypted relay with a QR-code join. Not
+Status: steps 1 to 4 are built and shipped in the family builds. Step 5's one-app change is built
+on the `one-app` branch and held until every phone has moved. Decided 2026-11-16: an encrypted relay with a QR-code join. Not
 local-only sync, and not a server that can read family data.
 
 ## What a family sees
@@ -105,6 +106,31 @@ the engines in step. An iPhone and an Android phone must produce and open the sa
   phone".
 - The "GyattChores Family" scheme, the `FAMILY_SYNC` flag and the plaintext tables retire after
   your family moves over (see "Moving your family over").
+- **Built on the `one-app` branch** (not released):
+  - **One code path.** Every install keeps the family's shared lists, and syncs only through the
+    relay, only once it's linked. The old tables' client and address are gone from both apps;
+    CI checks every build has the relay's address and not the old one.
+  - **A phone that isn't linked** looks like today's public app: no sync status, "Everything here
+    stays on this device", Erase everything, and a restored backup replaces what's there. Dares and
+    "whose phone is this" only appear once a phone is linked, since they need each phone to be
+    someone's.
+  - **A linked phone** shows the sync status, adds a restored backup to the family, and has no
+    Erase. If it's removed or the family is deleted, it keeps everything and is simply unlinked
+    (there's no "sync off" state any more).
+  - **"Join a family"** is on the first-run screen, for a new phone. "Loading the family" only shows
+    on a phone that has just joined.
+  - **Data carried over.** A phone that ran the family build keeps its shared lists. A phone that
+    ran the App Store build only keeps the dares from any old shared file (a stale leftover from
+    an earlier version), and its shared lists are rebuilt from its own players and chores, so a
+    later "Add a phone" sends everything.
+  - **iOS:** one scheme, "GyattChores", with the camera prompt in every build.
+  - **Android:** the `family` and `public` flavors become `github` (com.gyattchores.app, the
+    debug key, what Obtainium installs) and `play` (com.gyattchores.app.public, the upload key).
+    They differ only in id and signing; INTERNET, CAMERA and the QR scanner are in every build.
+  - **The web app** (native/tools/web-engine.html, still served at gyattchores.com) no longer
+    syncs; it stays as the source of truth for the game rules. The Discord bots that read the
+    old tables (Card Notify, already switched off, and Points Recovery) are removed: with the
+    relay, the server can't read chores, so a bot can't either.
 - The public edition's selling point today is "no network code at all". After this, the line
   becomes "everything stays on your phones; if you add a second phone, it travels encrypted, and
   we can't read it."
@@ -139,13 +165,18 @@ through the old tables, and changes don't cross between moved and unmoved phones
   server on the parent's phone. Then restore the backup there if needed, and start again from
   Add a phone.
 
-**After:** once every phone is moved, the old sync is switched off. `simple_logs` and
-`family_state` are kept read-only for a while, then deleted. That's the code change that retires
-`FAMILY_SYNC`.
+**After**
+1. Check every phone is on the relay: the parent's phone lists them all under Phones, and the old
+   tables have stopped changing (`supabase/retire-old-tables.sql` has the two queries).
+2. Merge the `one-app` branch and release it: TestFlight (scheme "GyattChores") and
+   `android/release.sh` (the `github` flavor). A phone that hadn't moved would be left on its own,
+   with its data, until it joins with a code.
+3. Make `simple_logs` and `family_state` read-only (step 1 of `supabase/retire-old-tables.sql`).
+   Delete them later (step 2).
 
-**The web app at gyattchores.com/index.html is retired** (decided 2026-11-16). It reads and
-writes `simple_logs`, so it keeps working until step 4, then goes away in the same change that
-switches the old sync off. That change goes to `main`, which deploys the website.
+**The web app at gyattchores.com/index.html is retired** (decided 2026-11-16). The copy left at
+native/tools/web-engine.html stops syncing in the one-app change. That change goes to `main`,
+which deploys the website.
 
 ## Store and privacy work
 
@@ -242,6 +273,14 @@ switches the old sync off. That change goes to `main`, which deploys the website
    - **Still to do:** the Play data-safety answer that points at this button, and the same
      button in the one-app build.
 5. **Move your family over**, then retire `FAMILY_SYNC`.
+   - **Shipped** 2026-11-17: the relay in the family builds (TestFlight build 202611171913, Android
+     0.8.0).
+   - **Checked:** an iPhone and an Android phone share a family on the real relay. GyattCore's
+     `testInteropWithAndroid` and the Android `RelayTest.interopWithIos` run side by side and hand
+     join codes to each other through a folder: each side makes a family, the other joins it, and
+     both read, approve and add logs and lists (`INTEROP_DIR=<dir>`; see the tests).
+   - **Built, held:** the one-app change on the `one-app` branch (see "One app instead of two
+     editions"). It ships only after every phone has moved ("Moving your family over", After).
 6. **Store forms and privacy policy**, then submit.
 
 ## Decisions

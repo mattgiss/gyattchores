@@ -1,4 +1,3 @@
-#if FAMILY_SYNC
 import SwiftUI
 import CoreImage.CIFilterBuiltins
 import VisionKit
@@ -34,10 +33,8 @@ struct PhonesSection: View {
                     .accessibilityElement(children: .combine)
                 }
             }
-        } else if store.syncOff {
-            Text("Sync is off. The family is only on this phone.").font(.app(.callout)).foregroundStyle(.secondary)
         } else {
-            Text("This phone syncs through the family's old tables. Add a phone moves the family to encrypted sync: everything is encrypted on this phone before it's sent, and only phones that scan the code can read it.")
+            Text("The family is only on this phone. Add a phone to share it with another one: everything is encrypted on this phone before it's sent, and only phones that scan the code can read it.")
                 .font(.app(.callout)).foregroundStyle(.secondary)
         }
         if let problem { Text(problem).font(.app(.footnote)).foregroundStyle(Theme.bad) }
@@ -55,7 +52,7 @@ struct PhonesSection: View {
             .confirmationDialog("Join this family?", isPresented: $confirmingJoin, titleVisibility: .visible) {
                 Button("Scan the code") { joining = true }
                 Button("Cancel", role: .cancel) {}
-            } message: { Text("This phone will load the family from the phone that showed the code. Changes here that haven't synced yet are lost.") }
+            } message: { Text("This phone loads the family from the phone that showed the code. What's on this phone now is replaced. Save a backup first if you want to keep it.") }
             .confirmationDialog("Delete the family from the server?", isPresented: $confirmingDelete, titleVisibility: .visible) {
                 Button("Delete from the server", role: .destructive) {
                     Task {
@@ -238,4 +235,3 @@ private struct CodeScanner: UIViewControllerRepresentable {
         }
     }
 }
-#endif

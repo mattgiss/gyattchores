@@ -42,7 +42,7 @@ object Status {
 }
 
 /**
- * A chore log. Mirrors the web app's log and the Supabase `simple_logs` row.
+ * A chore log. Mirrors the web app's log, and travels as a relay record.
  * [minutes] is local-only: rows pulled from sync have it null.
  */
 @Serializable

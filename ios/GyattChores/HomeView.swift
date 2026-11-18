@@ -10,9 +10,7 @@ struct HomeView: View {
     var selectedId: String? = nil
     let onPick: (Player) -> Void
     let onAdmin: () -> Void
-    #if FAMILY_SYNC
     var onDares: () -> Void = {}
-    #endif
 
     var body: some View {
         // The title on the first band, then the players as small tiles, each a step down the heat
@@ -42,9 +40,8 @@ struct HomeView: View {
                         .fixedSize(horizontal: false, vertical: true)
                     }
 
-                    #if FAMILY_SYNC
-                    FamilyHomeSection(onDares: onDares)
-                    #endif
+                    // Dares need each phone to be someone's: only a family on more than one phone has them.
+                    if store.isLinked { FamilyHomeSection(onDares: onDares) }
 
                     SectionLabel("The last \(Engine.logDays) days")
                     let days = Engine.recentDays(now: Date(), calendar: store.calendar)
@@ -55,9 +52,7 @@ struct HomeView: View {
                     .padding(.horizontal, 20)
 
                     Group {
-                        #if !FAMILY_SYNC
-                        Text("Everything here stays on this device. No accounts, nothing sent anywhere.")
-                        #endif
+                        if !store.isLinked { Text("Everything here stays on this device. No accounts, nothing sent anywhere.") }
                         // Which build a phone is running, as on Android: handy after a TestFlight update.
                         Text("Version \(AppInfo.version)")
                     }
@@ -159,30 +154,22 @@ struct BandPress: ButtonStyle {
 extension HomeView {
     private var soundLine: String {
         let sound = fb.soundOn ? "Sound on" : "Sound off"
-        #if FAMILY_SYNC
+        guard store.isLinked else { return sound }
         return sound + " · " + store.syncStatus.prefix(1).uppercased() + store.syncStatus.dropFirst()
-        #else
-        return sound
-        #endif
     }
 }
 
-/// The app's version and build, e.g. "1.0 (202611141817)", and which kind of build it is.
+/// The app's version and build, e.g. "1.0 (202611141817)".
 enum AppInfo {
     static var version: String {
         let info = Bundle.main.infoDictionary ?? [:]
         let v = info["CFBundleShortVersionString"] as? String ?? "?"
         let b = info["CFBundleVersion"] as? String ?? "?"
-        #if FAMILY_SYNC
-        return "\(v) (\(b)) · family"
-        #else
         return "\(v) (\(b))"
-        #endif
     }
 }
 
-#if FAMILY_SYNC
-/// Family build: whose phone this is, the dares button, and yesterday's dares revealed.
+/// A linked phone: whose phone this is, the dares button, and yesterday's dares revealed.
 private struct FamilyHomeSection: View {
     @EnvironmentObject var store: AppStore
     @EnvironmentObject var fb: Feedback
@@ -234,7 +221,6 @@ private struct FamilyHomeSection: View {
         }
     }
 }
-#endif
 
 private struct DailyLogRow: View {
     let name: String

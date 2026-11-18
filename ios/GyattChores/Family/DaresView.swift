@@ -1,4 +1,3 @@
-#if FAMILY_SYNC
 import SwiftUI
 import GyattCore
 
@@ -83,4 +82,3 @@ struct DaresView: View {
         .environment(\.palette, .plum)
     }
 }
-#endif

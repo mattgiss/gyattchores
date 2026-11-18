@@ -46,15 +46,14 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
 /**
- * Admin → this phone → phones (family edition): add a phone with a QR code, join a family by
- * scanning one, and see or remove the family's phones (docs/design/encrypted-relay-join.md).
+ * Admin → this phone → phones: add a phone with a QR code, join a family by scanning one, and see
+ * or remove the family's phones (docs/design/encrypted-relay-join.md).
  */
 @Composable
 fun PhonesSection(vm: AppViewModel) {
     val fb = LocalFeedback.current
     val scope = rememberCoroutineScope()
     val linked by vm.relayLinked.collectAsState()
-    val syncOff by vm.syncOff.collectAsState()
     var phones by remember { mutableStateOf<List<Pair<RelayDevice, Boolean>>?>(null) }
     var reload by remember { mutableIntStateOf(0) }
     var adding by remember { mutableStateOf(false) }
@@ -68,9 +67,8 @@ fun PhonesSection(vm: AppViewModel) {
 
     Column(Modifier.padding(top = 8.dp)) {
         SectionLabel("phones", padded = false)
-        Text(if (linked) "Encrypted sync. Only this family's phones can read what's sent."
-            else if (syncOff) "Sync is off. The family is only on this phone."
-            else "This phone syncs through the family's old tables. Add a phone moves the family to encrypted sync: everything is encrypted on this phone before it's sent, and only phones that scan the code can read it.",
+        Text(if (linked) "Shared with the family's phones, encrypted. Only this family's phones can read what's sent."
+            else "The family is only on this phone. Add a phone shares it: everything is encrypted on this phone before it's sent, and only phones that scan the code can read it.",
             style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (linked) {
             val list = phones
@@ -129,7 +127,9 @@ fun rememberJoinFlow(vm: AppViewModel): () -> Unit {
     if (confirming) AlertDialog(
         onDismissRequest = { confirming = false },
         title = { Text("Join this family?") },
-        text = { Text("This phone will load the family from the phone that showed the code. Changes here that haven't synced yet are lost.") },
+        text = { Text(if (vm.store.family.value.isSetUp || vm.store.logs.value.isNotEmpty())
+            "This phone will load the family from the phone that showed the code. Everything on this phone now is replaced by it, so save a backup first if you want to keep it."
+            else "This phone will load the family from the phone that showed the code.") },
         confirmButton = { TextButton(onClick = {
             confirming = false
             scope.launch { vm.testScan()?.let(onScanned) ?: scan() }

@@ -16,10 +16,9 @@ import java.net.URL
 import java.net.URLEncoder
 import java.time.OffsetDateTime
 
-/**
- * Where a relay lives. The real one (the DOYOURWORK Supabase project) is in the family edition's
- * `Servers`, so the public edition carries no server address at all.
- */
+class HttpStatusException(val code: Int, body: String) : java.io.IOException("HTTP $code: ${body.take(200)}")
+
+/** Where a relay lives. The real one (the DOYOURWORK Supabase project) is in [Servers]. */
 data class RelayConfig(val url: String, val publishableKey: String)
 
 /** This device's anonymous sign-in. No email or password: just a random user id the server made. */

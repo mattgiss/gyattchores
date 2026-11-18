@@ -2,7 +2,7 @@ package com.gyattchores.app.sync
 
 import com.gyattchores.app.model.ChoreLog
 
-/** A chore log as the server has it: a row of the old `simple_logs` table, or a relay record. */
+/** A chore log as the server has it: a relay record. */
 data class RemoteLog(
     val id: String,
     val playerId: String,
@@ -13,7 +13,7 @@ data class RemoteLog(
     val status: String,
     /** Epoch millis. */
     val createdAt: Long,
-    /** Relay records carry it; `simple_logs` rows don't. */
+    /** Relay records carry it; logs from the old plain tables didn't. */
     val minutes: Int? = null,
 )
 

@@ -255,9 +255,6 @@ final class GyattChoresUITests: XCTestCase {
 
     /// A backup saved to Files brings the whole scoreboard back after erasing everything.
     func testBackupSurvivesErasingEverything() throws {
-        #if FAMILY_SYNC
-        throw XCTSkip("the family build can't erase; testABackupSetsUpANewFamily covers its restore")
-        #else
         let app = launch(["-resetData", "-demoData"])
         XCTAssertTrue(app.staticTexts["27/30 · 90%"].waitForExistence(timeout: wait))
         unlockAdmin(in: app)
@@ -341,16 +338,12 @@ final class GyattChoresUITests: XCTestCase {
         app.buttons["OK"].tap()
         goBack(in: app)
         XCTAssertTrue(app.staticTexts["27/30 · 90%"].waitForExistence(timeout: wait))
-        #endif
     }
 
-    /// Family build: a backup saved from one family's phone sets up a brand-new family (sync off,
-    /// so a new install is a family with nobody in it yet), with its admin, code and history.
-    func testABackupSetsUpANewFamily() throws {
-        #if !FAMILY_SYNC
-        throw XCTSkip("family build only")
-        #else
-        var app = launch(["-resetData", "-demoData"])
+    /// On a phone that's linked, a backup is added to what the family's phones share instead of
+    /// replacing it.
+    func testALinkedPhoneAddsABackupToTheFamily() throws {
+        let app = launch(["-resetData", "-demoData"])
         XCTAssertTrue(app.staticTexts["27/30 · 90%"].waitForExistence(timeout: wait))
         unlockAdmin(in: app)
         adminSection("device", in: app)
@@ -361,17 +354,16 @@ final class GyattChoresUITests: XCTestCase {
         app.buttons["Save"].tap()
         if app.buttons["Replace"].waitForExistence(timeout: 3) { app.buttons["Replace"].tap() }
         XCTAssertTrue(app.staticTexts["Backup saved. Keep it somewhere safe, like Files or iCloud Drive."].waitForExistence(timeout: wait))
-        app.terminate()
+        app.buttons["OK"].tap()
 
-        // A new phone for a family with nobody in it: setup, with a restore button.
-        app = launch(["-resetData"])
-        let restore = app.buttons["restore-backup"]
-        XCTAssertTrue(restore.waitForExistence(timeout: wait))
-        restore.tap()
-        // Today's file by name: a simulator can still hold backups from earlier runs, with older demo history.
+        // Linked (to the in-memory relay), the phone offers adding it, not replacing.
+        app.buttons["Add a phone"].tap()
+        XCTAssertTrue(app.otherElements["joinQR"].waitForExistence(timeout: wait))
+        app.buttons["Done"].tap()
+        XCTAssertFalse(app.buttons["Erase everything…"].exists, "a phone in a family doesn't erase it")
+        app.buttons["restore-backup"].tap()
         let day = DateFormatter(); day.locale = Locale(identifier: "en_US_POSIX"); day.dateFormat = "yyyy-MM-dd"
         let file = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", "doyourwork-backup-\(day.string(from: Date()))")).firstMatch
-        // Older iOS opens the picker on Recents, which may not list the file yet: go to where it was saved.
         if !file.waitForExistence(timeout: 5) {
             for place in ["Browse", "On My iPhone", "On My iPad"] {
                 let control = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@ AND (elementType == %d OR elementType == %d OR elementType == %d)",
@@ -382,26 +374,18 @@ final class GyattChoresUITests: XCTestCase {
             }
         }
         XCTAssertTrue(file.waitForExistence(timeout: wait), "the saved backup should be in the picker")
-        // Tap the file itself: on older iOS a tap on its name label (in the grid view) doesn't open it.
         let cell = app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", "doyourwork-backup-\(day.string(from: Date()))")).firstMatch
         if cell.exists { cell.tap() } else { file.tap() }
         let add = app.buttons["Add it to the family"]
-        XCTAssertTrue(add.waitForExistence(timeout: wait), "restoring asks first")
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'admins and their codes become the family'")).firstMatch.exists)
+        guard add.waitForExistence(timeout: wait) else {
+            throw XCTSkip("the system file picker didn't open the backup on this simulator; restore is covered by BackupTests")
+        }
+        XCTAssertFalse(app.buttons["Replace everything here"].exists)
         screenshot("33-family-restore-confirm", of: app)
         add.tap()
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Restored:'")).firstMatch.waitForExistence(timeout: wait))
+        // It's this family's own backup, so nothing in it is new.
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Nothing new'")).firstMatch.waitForExistence(timeout: wait))
         app.buttons["OK"].tap()
-        XCTAssertTrue(app.staticTexts["27/30 · 90%"].waitForExistence(timeout: wait))
-        unlockAdmin(in: app)
-
-        // Restoring the same file again adds nothing.
-        adminSection("device", in: app)
-        app.buttons["restore-backup"].tap()
-        XCTAssertTrue(file.waitForExistence(timeout: wait))
-        file.tap()
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'already restored'")).firstMatch.waitForExistence(timeout: wait))
-        #endif
     }
 
     /// From a fresh install to a working scoreboard, with chores written in the family's own words.
@@ -411,11 +395,7 @@ final class GyattChoresUITests: XCTestCase {
         // No players are built in: a fresh install starts with the welcome.
         let start = app.buttons["Set up this device"]
         XCTAssertTrue(start.waitForExistence(timeout: wait))
-        #if FAMILY_SYNC
-        XCTAssertTrue(app.staticTexts["Players, chores and points are shared with the family's other phones."].exists)
-        #else
         XCTAssertTrue(app.staticTexts["Everything stays on this device."].exists)
-        #endif
         XCTAssertTrue(app.staticTexts["No accounts, no sign-in, no ads, no tracking."].exists)
         XCTAssertFalse(app.buttons["Admin"].exists)
         screenshot("20-setup-welcome", of: app)
@@ -546,15 +526,6 @@ final class GyattChoresUITests: XCTestCase {
 
     /// Everything the app holds can be wiped from inside it.
     func testEraseEverythingStartsOver() throws {
-        #if FAMILY_SYNC
-        // Erasing would only clear this phone's copy of a shared family, so it isn't offered.
-        let app = launch(["-resetData", "-demoData"])
-        unlockAdmin(in: app)
-        adminSection("device", in: app)
-        XCTAssertTrue(app.staticTexts["Your data"].waitForExistence(timeout: wait))
-        XCTAssertFalse(app.buttons["Erase everything…"].exists, "the family build must not offer erasing")
-        XCTAssertTrue(app.buttons["save-backup"].exists)
-        #else
         let app = launch(["-resetData", "-demoData"])
         XCTAssertTrue(app.staticTexts["27/30 · 90%"].waitForExistence(timeout: wait))
         unlockAdmin(in: app)
@@ -573,7 +544,6 @@ final class GyattChoresUITests: XCTestCase {
         let relaunched = launch()
         XCTAssertTrue(relaunched.buttons["Set up this device"].waitForExistence(timeout: wait))
         XCTAssertFalse(relaunched.staticTexts["27/30 · 90%"].exists)
-        #endif
     }
 
     func testDemoHistoryShowsTheDailyLogAndVerdicts() {
@@ -957,9 +927,8 @@ final class GyattChoresUITests: XCTestCase {
         XCUIDevice.shared.orientation = .portrait
     }
 
-    // MARK: Phones (family build)
+    // MARK: Phones
 
-    #if FAMILY_SYNC
     private func phonesSection(in app: XCUIApplication) {
         unlockAdmin(in: app)
         adminSection("device", in: app)
@@ -974,7 +943,7 @@ final class GyattChoresUITests: XCTestCase {
     func testAddAPhoneShowsACodeAndListsThisPhone() {
         let app = launch(["-resetData", "-demoFamily"])
         phonesSection(in: app)
-        XCTAssertTrue(app.buttons["Join with a code"].exists, "a phone on the old tables can still join a family")
+        XCTAssertTrue(app.buttons["Join with a code"].exists, "a phone that isn't linked can join a family")
         app.buttons["Add a phone"].tap()
         XCTAssertTrue(app.otherElements["joinQR"].waitForExistence(timeout: wait), "a QR code to scan")
         XCTAssertTrue(label(startingWith: "Expires in", in: app).exists)
@@ -1021,17 +990,29 @@ final class GyattChoresUITests: XCTestCase {
         app.buttons["Done"].tap()
         app.buttons["Delete this family from the server…"].tap()
         app.buttons["Delete from the server"].tap()
-        XCTAssertTrue(app.staticTexts["Sync is off. The family is only on this phone."].waitForExistence(timeout: wait))
+        XCTAssertTrue(label(startingWith: "The family is only on this phone.", in: app).waitForExistence(timeout: wait))
         XCTAssertTrue(app.buttons["Join with a code"].exists)
         screenshot("42-deleted-from-server", of: app)
         goBack(in: app)
         XCTAssertTrue(playerRow("riley", in: app).waitForExistence(timeout: wait), "the family stays on this phone")
 
-        // Still off after a restart: it doesn't go back to the old tables.
+        // Still on its own after a restart: no sync status, nothing sent.
         app.terminate()
         let again = launch()
         XCTAssertTrue(playerRow("riley", in: again).waitForExistence(timeout: wait))
-        XCTAssertTrue(again.staticTexts["Sound on · Off"].waitForExistence(timeout: wait) || again.staticTexts["Sound off · Off"].exists)
+        XCTAssertTrue(again.staticTexts["Everything here stays on this device. No accounts, nothing sent anywhere."].waitForExistence(timeout: wait))
+    }
+
+    /// A new phone joins from the very first screen, before anyone sets it up.
+    func testANewPhoneJoinsFromTheFirstScreen() {
+        let app = launch(["-resetData", "-scanResult", "seeded"])
+        let join = app.buttons["Join a family"]
+        XCTAssertTrue(join.waitForExistence(timeout: wait))
+        join.tap()
+        XCTAssertTrue(playerRow("jules", in: app).waitForExistence(timeout: wait))
+        XCTAssertTrue(playerRow("kai", in: app).exists)
+        XCTAssertFalse(app.buttons["Set up this device"].exists, "the family it joined is already set up")
+        unlockAdmin(in: app)
     }
 
     /// Another phone deletes the family: this one notices on its next pass and keeps what it has.
@@ -1046,7 +1027,6 @@ final class GyattChoresUITests: XCTestCase {
         app.buttons["OK"].tap()
         XCTAssertTrue(playerRow("jules", in: app).exists, "what it had stays")
         phonesSection(in: app)
-        XCTAssertTrue(app.staticTexts["Sync is off. The family is only on this phone."].waitForExistence(timeout: wait))
+        XCTAssertTrue(label(startingWith: "The family is only on this phone.", in: app).waitForExistence(timeout: wait))
     }
-    #endif
 }

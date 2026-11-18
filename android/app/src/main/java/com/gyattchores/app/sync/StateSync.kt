@@ -3,7 +3,7 @@ package com.gyattchores.app.sync
 import kotlinx.serialization.Serializable
 
 /**
- * A row of the shared `family_state` table: a named list that every phone keeps in step.
+ * A shared state row (a relay record): a named list that every phone keeps in step.
  * Used for each person's dares for a day ("dare|<fromId>|<yyyy-MM-dd>") and the player list.
  */
 data class RemoteEntry(val key: String, val items: List<String>, val updatedAt: Long)

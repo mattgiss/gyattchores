@@ -3,21 +3,23 @@
 Everything the Play Console asks for before an app can go to production, in roughly the order
 it asks, with text ready to paste. Where only you can answer, it says so.
 
-This is for the **public edition** (`com.gyattchores.app.public`): everything stays on the phone,
-no accounts, no network. The family edition is not for Play; it keeps going out through
-`release.sh` and Obtainium.
+This is for the **play** flavor (`com.gyattchores.app.public`). It's the same app as the
+**github** flavor (`com.gyattchores.app`) that goes out through `release.sh` and Obtainium; the
+two differ only in id, signing and distribution. Everything stays on the phone until someone
+taps Admin → Phones → "Add a phone", and then it travels to the family's other phones through
+the encrypted relay (docs/design/encrypted-relay-join.md).
 
 Written 17 November 2026 from what I know of the Play Console. I could not open the Play Console
 from here, so treat field names and limits as a guide and trust the Console where it disagrees.
 
 ## Decide these before the first upload
 
-1. **The package name is permanent.** The public edition is `com.gyattchores.app.public`. Once a
+1. **The package name is permanent.** The play flavor is `com.gyattchores.app.public`. Once a
    bundle with that name is uploaded it can never be changed, and it shows in the app's Play
    Store address. If you would rather have something like `com.gyattchores.scoreboard`, change
    `applicationIdSuffix` in `app/build.gradle.kts` first.
 2. **The version.** The project says 0.7.1 while the iPhone app says 1.0. For a joint launch the
-   public edition should say 1.0 as well; a 0.x number reads as unfinished on a store page.
+   Play build should say 1.0 as well; a 0.x number reads as unfinished on a store page.
 3. **A closed test comes first.** New personal developer accounts have to run a closed test with
    at least 12 testers who stay opted in for 14 days before Google allows a production release.
    I believe that is still the rule; the Console's dashboard says exactly what your account
@@ -133,22 +135,20 @@ cd android && ./PlayStore/take-screenshots.sh
 
 **Target audience.** This is the one answer that changes what rules apply. If any age group
 under 13 is ticked, Google's Families Policy applies to the whole app. DOYOURWORK would meet it
-(no ads, no data collected, no network), but it adds declarations and review. The app is set up
+(no ads, and nothing readable by anyone outside the family is sent), but it adds declarations and review. The app is set up
 and run by an adult and the listing is written for a household, so my recommendation is to tick
 **13–15, 16–17 and 18 and over**, and when asked whether the listing could unintentionally
 appeal to children, answer honestly that younger children may use it at home under an adult's
 supervision. This mirrors the App Store choice of not ticking "Made for Kids". I am not a
 lawyer, and this is a judgment call that is yours.
 
-**Data safety.**
-
-- "Does your app collect or share any of the required user data types?" — **No.**
-- That ends the form. The listing will say no data is collected and none is shared.
-
-Why that is true: the public edition has no network code and does not request the `INTERNET`
-permission (its only permissions are fingerprint/face unlock and vibration). Players, chores,
-points and admin codes are files in the app's own storage. A backup is a file the person saves
-themself, through the system's own save screen, to a place they choose.
+**Data safety.** Needs answering again for the one-app build: it now has the `INTERNET` and
+`CAMERA` permissions, and a phone linked to others sends the family to the relay, encrypted on
+the phone first. Answer "encrypted in transit: yes" and "users can ask for deletion: yes, Admin →
+Phones → Delete this family from the server". See "Store and privacy work" in
+docs/design/encrypted-relay-join.md before choosing the rest. An unlinked phone still sends
+nothing: players, chores, points and admin codes are files in the app's own storage, and a
+backup is a file the person saves themself, through the system's own save screen.
 
 ## Testing tracks
 

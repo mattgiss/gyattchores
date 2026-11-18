@@ -44,9 +44,9 @@ import com.gyattchores.app.engine.Engine
 import com.gyattchores.app.model.Chore
 
 /**
- * First run: who's in charge, who's playing, what needs doing. The same steps as iOS. In the
- * public edition the family then exists on this phone and nowhere else; in the family edition it
- * goes to the family's shared tables and the other phones pick it up.
+ * First run: who's in charge, who's playing, what needs doing. The same steps as iOS. The family
+ * then exists on this phone and nowhere else, until Admin → Phones → "Add a phone" shares it,
+ * encrypted. "Join a family" is for a new phone joining a family that's already on another phone.
  */
 @Composable
 fun SetupScreen(vm: AppViewModel) {
@@ -65,6 +65,8 @@ fun SetupScreen(vm: AppViewModel) {
     /** People already here: a family carried over from an earlier version, or set up on another phone. */
     val family by vm.store.family.collectAsState()
     val alreadyHere = family.members.map { it.name }
+    val linked by vm.relayLinked.collectAsState()
+    val join = rememberJoinFlow(vm)
 
     fun addName() {
         val name = newName.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }.joinToString(" ")
@@ -91,16 +93,18 @@ fun SetupScreen(vm: AppViewModel) {
                 0 -> {
                     Text("A chore scoreboard for your family.", style = MaterialTheme.typography.titleMedium)
                     Muted("Everyone picks ${Engine.DAILY_MINUTES} minutes of chores a day. An admin approves what got done. Points, streaks and a weekly winner follow.")
-                    if (vm.familySync) {
+                    if (linked) {
                         SectionLabel("shared with your family", padded = false)
-                        Muted("This edition keeps the family's chores and points in step across your family's phones.")
+                        Muted("This phone shares the family's chores and points with your family's other phones, encrypted. Only those phones can read it.")
                     } else {
                         SectionLabel("private by design", padded = false)
-                        Muted("Everything stays on this phone. No accounts, no sign-in, no ads, no tracking. Uninstall the app and it's all gone.")
+                        Muted("Everything stays on this phone. No accounts, no sign-in, no ads, no tracking. If you add a second phone later, the family travels to it encrypted, and nobody else can read it.")
                     }
                     if (alreadyHere.isNotEmpty()) Text("Your players and their points are still here. They just need someone in charge.",
                         style = MaterialTheme.typography.labelMedium, color = Warn)
-                    TermButton("Set up this ${if (vm.familySync) "family" else "phone"}") { fb.tap(); step = 1 }
+                    TermButton("Set up this ${if (linked) "family" else "phone"}") { fb.tap(); step = 1 }
+                    // A new phone for a family that's already on another phone: scan that phone's "Add a phone" code.
+                    if (!linked) OutlinedButton(onClick = { fb.tap(); join() }, modifier = Modifier.fillMaxWidth()) { Text("Join a family") }
                     OutlinedButton(onClick = { fb.tap(); restoreBackup() }, modifier = Modifier.fillMaxWidth()) { Text("Restore from a backup") }
                 }
                 1 -> {
@@ -117,7 +121,7 @@ fun SetupScreen(vm: AppViewModel) {
                     CodeField(code, "Admin code (${AdminCode.MIN_LENGTH} or more)") { code = it }
                     CodeField(codeAgain, "The same code again") { codeAgain = it }
                     if (problem != null) Text(problem, color = Bad, style = MaterialTheme.typography.labelMedium)
-                    Muted(if (vm.familySync) "Keep the code from the players. It opens Admin on every phone in the family."
+                    Muted(if (linked) "Keep the code from the players. It opens Admin on every phone in the family."
                         else "Keep the code from the players. It isn't stored anywhere but this phone, so nobody can look it up for you. If it's forgotten, the way back in is to erase the app's data and start a new scoreboard.")
                     SwitchRow("I do chores too", adminPlays) { adminPlays = it }
                     if (canBio) {
@@ -157,7 +161,7 @@ fun SetupScreen(vm: AppViewModel) {
     }
 }
 
-/** Family edition, before its first sync: it can't yet tell a new family from one it hasn't fetched. */
+/** A phone that just joined a family, before its first pass: it can't yet tell a new family from one it hasn't fetched. */
 @Composable
 fun WaitingForFamily(vm: AppViewModel, status: String) {
     Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
@@ -166,12 +170,6 @@ fun WaitingForFamily(vm: AppViewModel, status: String) {
         Text(if (status == "offline") "Can't reach the family's scoreboard. Check the connection and try again."
             else "Fetching your family's scoreboard…", color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (status == "offline") TermButton("Try again", modifier = Modifier.widthIn(max = 320.dp)) { vm.requestSync() }
-        // A new phone for a family that's already moved to encrypted sync joins with the other phone's code.
-        val linked by vm.relayLinked.collectAsState()
-        if (!linked) {
-            val join = rememberJoinFlow(vm)
-            androidx.compose.material3.OutlinedButton(onClick = join) { Text("Join with a code") }
-        }
     }
 }
 

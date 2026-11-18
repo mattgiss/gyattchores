@@ -9,11 +9,7 @@ import GyattCore
 ///   also takes its admins and codes from the backup. The same backup can't be restored twice.
 extension AppStore {
     static var backupSource: String {
-        #if FAMILY_SYNC
-        "ios-family"
-        #else
-        "ios-public"
-        #endif
+        "ios"
     }
 
     func makeBackup(now: Date = Date()) -> Backup {
@@ -27,24 +23,20 @@ extension AppStore {
     /// What restoring `backup` here would do, in words, for the confirmation before it happens.
     func restorePreview(_ backup: Backup) -> String {
         let when = backup.exportedDate.formatted(date: .abbreviated, time: .shortened)
-        #if FAMILY_SYNC
+        guard isLinked else {
+            guard backup.hasAdmin else { return "Saved \(when): \(backup.summary). It has no admin, so it can't be restored here." }
+            return "Saved \(when): \(backup.summary). " + (isSetUp ? "Everything on this device now is replaced by it." : "It becomes this device's scoreboard.")
+        }
         if restoredBackupIds.contains(backup.id) { return "This backup (saved \(when)) was already restored. Restoring it again adds nothing." }
         let plan = backup.mergePlan(members: members, chores: pool, logs: logs, nextId: familyNextId, calendar: calendar)
         return "Saved \(when): \(backup.summary).\n\nAdding it to the family: \(plan.isEmpty ? plan.summary : plan.summary + ".")" + (isSetUp ? "" : " Its admins and their codes become the family's.")
-        #else
-        guard backup.hasAdmin else { return "Saved \(when): \(backup.summary). It has no admin, so it can't be restored here." }
-        return "Saved \(when): \(backup.summary). " + (isSetUp ? "Everything on this device now is replaced by it." : "It becomes this device's scoreboard.")
-        #endif
     }
 
     /// Restores a backup. Returns what happened, for the message afterwards.
     @discardableResult
     func restore(_ backup: Backup) -> String {
-        #if FAMILY_SYNC
-        return restoreIntoFamily(backup)
-        #else
-        return restoreReplacing(backup)
-        #endif
+        // Linked, it joins what the family's phones share; on its own, the phone becomes the backup.
+        isLinked ? restoreIntoFamily(backup) : restoreReplacing(backup)
     }
 
     private func setPuzzleLevels(_ levels: [String: Int], idMap: [String: String]) {
@@ -54,7 +46,7 @@ extension AppStore {
         }
     }
 
-    #if !FAMILY_SYNC
+
     private func restoreReplacing(_ b: Backup) -> String {
         // Nobody could unlock the admin area afterwards. Android refuses these too.
         guard b.hasAdmin else { return "This backup has no admin, so it can't be restored here. Nothing changed." }
@@ -69,14 +61,17 @@ extension AppStore {
         pool = b.chores.isEmpty ? starterChores : b.chores
         members = b.players
         logs = b.choreLogs.map { var l = $0; l.remoteId = nil; l.statusDirty = false; return l }
-        restoreLegacyDares(b.gameDares)
+        // Its dares keep the points they earned.
+        let now = Int64(Date().timeIntervalSince1970 * 1000)
+        var dares: [String: [String]] = [:]
+        for d in b.gameDares { dares[FamilyState.dareKey(from: d.from, day: d.day), default: []].append("\(d.target):\(d.choreId)") }
+        shared = dares.mapValues { LocalEntry(items: $0, updatedAt: now, dirty: true) }
         settings = next
+        familyChanged()
         setPuzzleLevels(b.puzzleLevels, idMap: Dictionary(b.members.map { ($0.id, $0.id) }, uniquingKeysWith: { a, _ in a }))
         return "Restored: \(b.summary)."
     }
-    #endif
 
-    #if FAMILY_SYNC
     private func restoreIntoFamily(_ b: Backup) -> String {
         guard !restoredBackupIds.contains(b.id) else { return "This backup was already restored. Nothing changed." }
         let plan = b.mergePlan(members: members, chores: pool, logs: logs, nextId: familyNextId, calendar: calendar)
@@ -105,5 +100,4 @@ extension AppStore {
         familyChanged()
         return plan.isEmpty ? "Nothing new. Everything in this backup is already here." : "Restored: \(plan.summary)."
     }
-    #endif
 }

@@ -16,58 +16,37 @@ struct RootView: View {
     // lands on the same screen.
     @State private var selectedId: String?
     @State private var adminOpen = false
-    #if FAMILY_SYNC
     @State private var daresOpen = false
-    #endif
 
     private var selected: Player? { store.players.first { $0.id == selectedId } }
 
     var body: some View {
-        #if FAMILY_SYNC
         layout
             // Sync on open and every 10 seconds while the app is on screen, as on Android.
             .task { while !Task.isCancelled { store.requestSync(); try? await Task.sleep(for: .seconds(10)) } }
-        #else
-        layout
-        #endif
     }
 
     @ViewBuilder private var layout: some View {
-        #if FAMILY_SYNC
-        // Until the family's lists have loaded once, no players doesn't mean a new family.
-        // With sync off there's nothing to wait for (a phone dropped before its first load).
-        if !store.isSetUp && !store.hasSynced && !store.syncOff { FamilyLoadingView() }
+        // A phone that just joined a family: until its lists have loaded once, no players doesn't
+        // mean a new family.
+        if store.isLinked && !store.hasSynced && !store.isSetUp { FamilyLoadingView() }
         else if !store.isSetUp { SetupView().onAppear(perform: reset) }
         else if sizeClass == .regular { twoPane } else { onePane }
-        #else
-        if !store.isSetUp { SetupView().onAppear(perform: reset) }
-        else if sizeClass == .regular { twoPane } else { onePane }
-        #endif
     }
 
     /// The scoreboard was erased and set up again: don't reopen whatever was open before.
     private func reset() {
         adminOpen = false; selectedId = nil
-        #if FAMILY_SYNC
         daresOpen = false
-        #endif
     }
 
     private func home(highlighting id: String?) -> HomeView {
-        #if FAMILY_SYNC
         HomeView(
             selectedId: id,
             onPick: { adminOpen = false; daresOpen = false; selectedId = $0.id },
             onAdmin: { daresOpen = false; adminOpen = true },
             onDares: { adminOpen = false; daresOpen = true }
         )
-        #else
-        HomeView(
-            selectedId: id,
-            onPick: { adminOpen = false; selectedId = $0.id },
-            onAdmin: { adminOpen = true }
-        )
-        #endif
     }
 
     // MARK: One screen at a time
@@ -88,9 +67,7 @@ struct RootView: View {
         .fullScreenCover(isPresented: $adminOpen) {
             AdminView().environmentObject(store).environmentObject(fb).font(.app(.body)).tint(Theme.accent)
         }
-        #if FAMILY_SYNC
         .sheet(isPresented: $daresOpen) { DaresView().appChrome(store, fb) }
-        #endif
     }
 
     // MARK: Two panes
@@ -112,20 +89,14 @@ struct RootView: View {
     }
 
     private var daresIsOpen: Bool {
-        #if FAMILY_SYNC
-        daresOpen && store.me != nil
-        #else
-        false
-        #endif
+        daresOpen && store.me != nil && store.isLinked
     }
 
     @ViewBuilder private var detail: some View {
         if adminOpen {
             AdminView(onBack: { adminOpen = false })
         } else if daresIsOpen {
-            #if FAMILY_SYNC
             DaresView(onBack: { daresOpen = false })
-            #endif
         } else if let selected {
             // A fresh screen per player, so one kid's half-picked card doesn't carry over to the next.
             PlayerView(player: selected, showsBack: false).id(selected.id)
@@ -135,12 +106,9 @@ struct RootView: View {
     }
 }
 
-#if FAMILY_SYNC
-/// Family build, first launch: waiting for the family's players to load.
+/// A phone that just joined a family: waiting for the family's players to load.
 private struct FamilyLoadingView: View {
     @EnvironmentObject var store: AppStore
-    @EnvironmentObject var fb: Feedback
-    @State private var joining = false
 
     var body: some View {
         VStack(spacing: 16) {
@@ -152,13 +120,7 @@ private struct FamilyLoadingView: View {
                 ProgressView()
                 Text("Loading the family…").foregroundStyle(.secondary)
             }
-            // A new phone for a family already on the encrypted relay can't reach Admin yet.
-            if !store.isLinked {
-                OutlineButton(label: "Join with a code") { fb.tap(); joining = true }
-            }
         }
         .padding(24)
-        .sheet(isPresented: $joining) { JoinSheet().appChrome(store, fb) }
     }
 }
-#endif

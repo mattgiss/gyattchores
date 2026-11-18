@@ -21,10 +21,12 @@ import java.io.File
  * Local-first storage: logs, the family and today's cards as small JSON files in app storage.
  * Every write lands on disk immediately; nothing waits on the network.
  *
- * With [shared] (the family edition) every change to the family is also written to the shared
- * state for sync to push, and a sync pass that brings changes from another phone is adopted here.
+ * Every change to the family is also written to the shared state. Once this phone is linked to
+ * the family's other phones, sync pushes it, and a sync pass that brings changes from another
+ * phone is adopted here. Unlinked, the shared state just stays on the phone, ready for the first
+ * "Add a phone".
  */
-class Store(context: Context, private val shared: Boolean) {
+class Store(context: Context) {
     private val dir = context.filesDir
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
@@ -46,7 +48,7 @@ class Store(context: Context, private val shared: Boolean) {
     val cards: StateFlow<Map<String, Card>> = _cards.asStateFlow()
 
     /**
-     * Lists shared between the family's phones (see `family_state`): the family itself
+     * Lists shared between the family's phones: the family itself
      * ([FamilyState]) and each person's dares for a day under "dare|<fromId>|<yyyy-MM-dd>".
      */
     private val _state = MutableStateFlow(read("family_state.json") ?: emptyMap<String, LocalEntry>())
@@ -72,12 +74,12 @@ class Store(context: Context, private val shared: Boolean) {
         return Family(members = players, removed = removed, nextPlayerId = (used.maxOrNull() ?: 0) + 1)
     }
 
-    /** Replaces the family; with [shared], the rows that changed go out on the next sync. */
+    /** Replaces the family; the rows that changed go out on the next sync. */
     @Synchronized fun setFamily(next: Family, now: Long) {
         val before = _family.value
         _family.value = next
         write("family.json", next)
-        if (shared) for ((k, v) in FamilyState.changes(before, next)) setState(k, v, now)
+        for ((k, v) in FamilyState.changes(before, next)) setState(k, v, now)
         // Someone removed takes their history with them, on this phone at least.
         if (next.removed != before.removed) dropRemoved()
     }
@@ -154,15 +156,25 @@ class Store(context: Context, private val shared: Boolean) {
     }
 
     /**
+     * For a phone that isn't linked, whose family.json is the truth: the shared family rows are
+     * made to match it (see [FamilyState.reseed]). Run at every unlinked launch, which is how an
+     * install of the old on-device edition gets its shared state, and before the first "Add a
+     * phone". Does nothing when they already match.
+     */
+    @Synchronized fun shareFamilyFromDevice(now: Long) {
+        val next = FamilyState.reseed(_state.value, _family.value, now)
+        if (next != _state.value) { _state.value = next; write("family_state.json", next) }
+    }
+
+    /**
      * The first "Add a phone": the relay has nothing yet, so every log and every shared list goes
-     * out on the next pass. Family rows this phone never wrote are added, so the whole family
-     * travels, not only what changed here.
+     * out on the next pass. The family rows are rebuilt from this phone's family first, so the
+     * whole family travels as this phone has it, and nothing stale in the shared file can win.
      */
     @Synchronized fun prepareForNewServer(now: Long) {
         _logs.value = LogSync.forNewServer(_logs.value)
         write("logs.json", _logs.value)
-        val missing = FamilyState.encode(_family.value).filterKeys { it !in _state.value }.mapValues { LocalEntry(it.value, now) }
-        _state.value = StateSync.forNewServer(_state.value + missing)
+        _state.value = StateSync.forNewServer(FamilyState.reseed(_state.value, _family.value, now))
         write("family_state.json", _state.value)
     }
 
@@ -177,8 +189,8 @@ class Store(context: Context, private val shared: Boolean) {
     }
 
     /**
-     * Deletes everything this phone keeps. The public edition goes back to its first-run setup;
-     * the family edition fetches the family again on the next sync.
+     * Deletes everything this phone keeps. Unlinked, it goes back to its first-run setup; linked,
+     * it fetches the family again on the next sync.
      */
     @Synchronized fun eraseAll() {
         for (n in listOf("logs.json", "cards.json", "family.json", "family_state.json", "me.json", "players.json", "removed_players.json")) {

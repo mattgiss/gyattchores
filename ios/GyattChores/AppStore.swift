@@ -3,12 +3,10 @@ import GyattCore
 
 /// All app state and actions. Everything is written to this app's own storage the moment it changes.
 ///
-/// The public app (the App Store build) has no account, no server and no network code: nothing a
-/// family enters ever leaves the phone or tablet it was entered on.
-///
-/// The family build (`FAMILY_SYNC`, the "GyattChores Family" scheme) is for one family's own
-/// phones: it also keeps the players, chores, admin codes, chore logs and dares in step with the
-/// family's shared Supabase tables, like the Android app's family flavor. See `FamilySync.swift`.
+/// Nothing leaves the phone until someone taps "Add a phone" (or joins with a code). From then on
+/// the players, chores, admin codes, chore logs and dares travel between the family's phones
+/// through the encrypted relay: sealed with the family's key here, so the server can't read them.
+/// See `FamilySync.swift`, `RelayLink.swift` and docs/design/encrypted-relay-join.md.
 @MainActor
 final class AppStore: ObservableObject {
     /// What's kept beside the players, chores and logs.
@@ -40,40 +38,30 @@ final class AppStore: ObservableObject {
     @Published var logs: [ChoreLog] { didSet { save("logs.json", logs) } }
     /// Keyed "playerId|yyyy-MM-dd".
     @Published var cards: [String: Card] { didSet { save("cards.json", cards) } }
-    #if FAMILY_SYNC
-    /// The family's shared lists (`family_state`), as last synced plus any changes made here.
+    /// The family's shared lists, as last synced plus any changes made here. Kept on a phone that
+    /// isn't linked too, so "Add a phone" can send everything.
     @Published var shared: [String: LocalEntry] { didSet { save("family_state.json", shared) } }
     /// Whose phone this is. Dares are made as this player.
     @Published var me: String? { didSet { UserDefaults.standard.set(me, forKey: Self.meKey) } }
-    /// "syncing", "synced", "offline", or "off (ui testing)".
-    @Published var syncStatus = "idle"
-    /// True once this device has heard from the server at least once: until then an empty player
-    /// list only means "not loaded yet", not "a new family".
+    /// "local" (not linked), "syncing", "synced" or "offline".
+    @Published var syncStatus = "local"
+    /// True once this phone has finished a pass with the relay since it joined: until then an empty
+    /// player list only means "not loaded yet", not "a new family".
     @Published var hasSynced: Bool { didSet { UserDefaults.standard.set(hasSynced, forKey: Self.syncedKey) } }
     /// Players taken off the list. Their logs stay on the server.
     var removedIds: Set<String> = []
-    let api = Supabase()
     /// The encrypted relay, once this phone has added or joined a phone (`RelayLink.swift`). Until
-    /// then sync goes through the old tables (`api`).
+    /// then nothing is sent anywhere.
     var relay: RelayClient?
-    /// Bumped when sync switches to or from the relay, so a pass begun on the old one is thrown away.
+    /// Bumped when this phone joins or leaves the relay, so a pass begun before is thrown away.
     var transport = 0
-    /// The family was deleted from the server, or this phone was taken out of it: it keeps the
-    /// family to itself and doesn't fall back to the old tables. Adding or joining a phone ends it.
-    @Published var syncOff: Bool { didSet { UserDefaults.standard.set(syncOff, forKey: Self.syncOffKey) } }
-    static let syncOffKey = uiTesting ? "ui-testing.sync_off" : "sync_off"
     var syncing = false, syncAgain = false
     static let meKey = uiTesting ? "ui-testing.me" : "me"
     static let syncedKey = uiTesting ? "ui-testing.has_synced" : "has_synced"
+    /// Set once this phone has run the one-app version (below, in `init`).
+    static let oneAppKey = uiTesting ? "ui-testing.one_app" : "one_app"
     /// Every dare in the shared state.
     var dares: [Dare] { FamilyState.dares(shared.mapValues(\.items)) }
-    #else
-    /// Dares made in an earlier version of the app. Nothing adds to them now; they're read so the
-    /// points they earned aren't lost.
-    private(set) var dares: [Dare]
-    /// A restored backup brings its dares' points with it.
-    func restoreLegacyDares(_ list: [Dare]) { dares = list }
-    #endif
 
     /// A one-off message for the app to show, such as what a restored backup brought in.
     @Published var notice: String?
@@ -81,24 +69,20 @@ final class AppStore: ObservableObject {
     /// The people on the scoreboard.
     var players: [Player] { members.filter(\.plays) }
     var admins: [Player] { members.filter(\.isAdmin) }
-    #if FAMILY_SYNC
-    /// A family build is set up once the family has an admin. A family from before admins existed
-    /// runs setup once, which merges into its players by username.
-    var isSetUp: Bool { members.contains(where: \.isAdmin) }
-    #else
-    var isSetUp: Bool { settings.setUp }
-    #endif
+    /// Set up once setup has been finished here, or the family this phone joined has an admin. A
+    /// family from before admins existed runs setup once, which merges into its players by username.
+    var isSetUp: Bool { settings.setUp || members.contains(where: \.isAdmin) }
 
     /// Debug builds only: `-uiTesting` is how the UI tests launch the app. It gives them their own
     /// data folder, so a test run can never touch a real scoreboard. With it, `-resetData` starts
     /// from a fresh install, `-demoFamily` from a family that's already set up, and `-demoData`
     /// from that family with a made-up month of chores.
     #if DEBUG
-    static let launchArguments = ProcessInfo.processInfo.arguments
+    nonisolated static let launchArguments = ProcessInfo.processInfo.arguments
     #else
-    static let launchArguments: [String] = []
+    nonisolated static let launchArguments: [String] = []
     #endif
-    static let uiTesting = launchArguments.contains("-uiTesting")
+    nonisolated static let uiTesting = launchArguments.contains("-uiTesting")
     /// On top of `-uiTesting`: the made-up family in the App Store pictures (`testAppStoreScreenshots`)
     /// has three players with names fit for a store page, and logs its chores before 9:41.
     private static let screenshots = uiTesting && launchArguments.contains("-screenshots")
@@ -137,24 +121,25 @@ final class AppStore: ObservableObject {
             let used = (members.map(\.id) + logs.map(\.playerId) + removed).compactMap(Int.init)
             settings.nextPlayerId = max(settings.nextPlayerId, (used.max() ?? 0) + 1)
         }
-        #if FAMILY_SYNC
-        let shared: [String: LocalEntry] = Self.load("family_state.json") ?? [:]
+        // Before the one app (2026-11) there were two editions. The family edition's shared lists
+        // carry over as they are. The App Store edition never synced: a family_state.json on it was
+        // left by an older version and is stale, so only its dares are kept, and the shared lists are
+        // rebuilt from this phone's own players and chores below.
+        var shared: [String: LocalEntry] = Self.load("family_state.json") ?? [:]
+        var seedShared = false
+        if !UserDefaults.standard.bool(forKey: Self.oneAppKey) {
+            if UserDefaults.standard.object(forKey: Self.syncedKey) == nil {
+                shared = legacy.filter { $0.key.hasPrefix("dare|") }.mapValues { LocalEntry(items: $0.items, updatedAt: 0, dirty: true) }
+                seedShared = true
+            }
+            UserDefaults.standard.set(true, forKey: Self.oneAppKey)
+        }
         self.shared = shared
         me = UserDefaults.standard.string(forKey: Self.meKey)
         if Self.uiTesting && Self.launchArguments.contains("-resetData") { RelayVault.clear() }
         relay = RelayVault.client()
-        syncOff = UserDefaults.standard.bool(forKey: Self.syncOffKey)
-        hasSynced = (Self.uiTesting && SyncConfig.testURL == nil && relay == nil) || UserDefaults.standard.bool(forKey: Self.syncedKey)
-        #else
-        dares = legacy.flatMap { key, entry -> [Dare] in
-            let parts = key.split(separator: "|").map(String.init)
-            guard parts.count == 3, parts[0] == "dare" else { return [] }
-            return entry.items.compactMap { item in
-                let t = item.split(separator: ":", maxSplits: 1).map(String.init)
-                return t.count == 2 ? Dare(from: parts[1], target: t[0], choreId: t[1], day: parts[2]) : nil
-            }
-        }
-        #endif
+        if relay != nil { syncStatus = "idle" }
+        hasSynced = UserDefaults.standard.bool(forKey: Self.syncedKey)
         let pool: [Chore] = Self.load("chores.json") ?? starterChores
         self.settings = settings
         self.members = members
@@ -162,9 +147,7 @@ final class AppStore: ObservableObject {
         self.poolById = Self.index(pool)
         self.logs = logs
         self.cards = Self.load("cards.json") ?? [:]
-        #if FAMILY_SYNC
-        applyShared()
-        #endif
+        if seedShared { if settings.setUp { familyChanged() } } else { applyShared() }
         #if DEBUG
         if Self.uiTesting, !settings.setUp, Self.launchArguments.contains("-demoFamily") || Self.launchArguments.contains("-demoData") {
             finishSetup(adminName: "pat", adminPlays: false, code: Self.demoAdminCode, biometricUnlock: false,
@@ -198,9 +181,7 @@ final class AppStore: ObservableObject {
     func finishSetup(adminName: String, adminPlays: Bool, code: String, biometricUnlock: Bool, playerNames: [String], chores: [Chore]) {
         guard !isSetUp, let adminCode = AdminCode(code), let admin = Self.tidy(adminName) else { return }
         var next = settings
-        #if FAMILY_SYNC
         next.nextPlayerId = max(next.nextPlayerId, familyNextId)
-        #endif
         var list = members
         let now = Date()
         func find(_ name: String) -> Int? { list.firstIndex { $0.name.lowercased() == name.lowercased() } }
@@ -245,9 +226,7 @@ final class AppStore: ObservableObject {
             defaults.removeObject(forKey: key)
         }
         cards = [:]; logs = []; members = []; pool = starterChores
-        #if !FAMILY_SYNC
-        dares = []
-        #endif
+        shared = [:]; removedIds = []; me = nil
         settings = Settings()
     }
 
@@ -413,9 +392,7 @@ final class AppStore: ObservableObject {
     func saveMember(_ draft: MemberDraft, id: String?) -> Bool {
         guard problem(with: draft, for: id) == nil, let name = Self.tidy(draft.name) else { return false }
         var next = settings
-        #if FAMILY_SYNC
         next.nextPlayerId = max(next.nextPlayerId, familyNextId)
-        #endif
         var member: Player
         if let id, let current = members.first(where: { $0.id == id }) { member = current } else {
             member = Player(id: String(next.nextPlayerId), name: name); next.nextPlayerId += 1
@@ -442,10 +419,8 @@ final class AppStore: ObservableObject {
         guard canRemove(member) else { return }
         members.removeAll { $0.id == member.id }
         logs.removeAll { $0.playerId == member.id }
-        #if FAMILY_SYNC
         // Their rows on the server are left alone; sync keeps them off this device.
         removedIds.insert(member.id)
-        #endif
         cards = cards.filter { !$0.key.hasPrefix("\(member.id)|") }
         settings.adminCodes[member.id] = nil
         settings.memberJoined[member.id] = nil
@@ -606,11 +581,6 @@ final class AppStore: ObservableObject {
     }
     #endif
 
-    #if !FAMILY_SYNC
-    /// The family build pushes these to the other devices; the public app has nowhere to send them.
-    func familyChanged() {}
-    func logsChanged() {}
-    #endif
 
     // MARK: Disk
 

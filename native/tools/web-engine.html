@@ -14,7 +14,6 @@
 <script crossorigin="anonymous" integrity="sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z" src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
 <script crossorigin="anonymous" integrity="sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1" src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 <script crossorigin="anonymous" integrity="sha384-ezQ6HS3FLspd9te19o2McUV6FAK091+GG7KO54f/R8DKgCDi7fULhapNrd5LY+vG" src="https://unpkg.com/@babel/standalone@7.29.7/babel.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.108.0"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; background: #fff; color: #111; overflow: hidden; }
@@ -55,11 +54,9 @@ const ADMIN_CODE_HASH   = 3856382990;
 const STORAGE_KEY       = 'gyattchores_logs';
 const ACCENT            = '#F23861';
 const BUILD             = '2026.11.13.1'; // bump on every deploy — drives the build-freshness indicator
-const SUPABASE_URL      = 'https://ukshxdoqgwoxobjdclpx.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrc2h4ZG9xZ3dveG9iamRjbHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3MjI2NDEsImV4cCI6MjA4MDI5ODY0MX0.UGNrsfG6goEA0PPWG4x7gxBueA7D5Oe9uWI-iCXIar0';
-const supabase = window.supabase?.createClient
-  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-  : null;
+// Retired (2026-11): the old plaintext tables are gone, so this page no longer syncs. It's kept
+// as the source of truth for the game rules (native/tools/golden.js, scenarios.mjs).
+const supabase = null;
 
 // ─── PLAYERS ─────────────────────────────────────────────────────────────────
 const PLAYERS = [

@@ -1,6 +1,7 @@
 package com.gyattchores.app.model
 
 import com.gyattchores.app.engine.AdminCode
+import com.gyattchores.app.sync.LocalEntry
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -9,8 +10,8 @@ import kotlinx.serialization.json.Json
  * Who's in the family and what needs doing: the members (admins who don't do chores included),
  * each admin's code, the family's own chore list, and when each chore and person arrived.
  *
- * The public edition keeps this on the device. The family edition also keeps it in the shared
- * `family_state` table (see [FamilyState]), so a change on one phone reaches the rest.
+ * Kept on the device, and also as shared rows (see [FamilyState]) that go to the family's other
+ * phones through the encrypted relay once this phone is linked to them.
  */
 @Serializable
 data class Family(
@@ -35,8 +36,9 @@ data class Family(
 }
 
 /**
- * The family's lists as `family_state` rows. Every value is a list of strings; the last writer
- * wins per key. iOS's family build reads and writes exactly these keys.
+ * The family's lists as shared state rows (relay records; the old `family_state` table had the
+ * same keys). Every value is a list of strings; the last writer wins per key. iOS reads and
+ * writes exactly these keys.
  *
  * Kept from earlier versions, so Android 0.3.x and iOS 0.1.0 still understand them:
  *  - "players": "id:username" for each member who plays
@@ -98,6 +100,27 @@ object FamilyState {
         val out = linkedMapOf<String, List<String>>()
         for ((k, v) in b) if (a[k] != v) out[k] = v
         for (k in a.keys - b.keys) if (a[k]!!.isNotEmpty()) out[k] = emptyList()
+        return out
+    }
+
+    /**
+     * The shared rows made to say exactly what [family] says, for a phone whose own family is the
+     * truth: one that isn't linked to any other phone. Every family row that differs (or is
+     * missing) is rewritten from [family], stamped [now] and marked to go out; a family row
+     * [family] has no use for (a stale display name, say) is emptied. Dares and every other key
+     * are left as they are, and rows that already agree aren't touched, so it's safe to run on
+     * every launch.
+     *
+     * This is how an install of the old on-device-only edition, which kept its family in
+     * family.json only (and its dares in the shared file), gets shared state the first time it
+     * runs the one-app version, and how a stale shared file can never overwrite its players when
+     * it later adds a phone.
+     */
+    fun reseed(state: Map<String, LocalEntry>, family: Family, now: Long): Map<String, LocalEntry> {
+        val want = encode(family)
+        val out = LinkedHashMap(state)
+        for ((k, items) in want) if (state[k]?.items != items) out[k] = LocalEntry(items, now, dirty = true)
+        for ((k, e) in state) if (owns(k) && k !in want && e.items.isNotEmpty()) out[k] = LocalEntry(emptyList(), now, dirty = true)
         return out
     }
 

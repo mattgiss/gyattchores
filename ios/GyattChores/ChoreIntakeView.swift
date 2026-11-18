@@ -11,6 +11,7 @@ struct ChoreIntakeView: View {
     let existing: [Chore]
     let onDone: ([Chore]) -> Void
 
+    @EnvironmentObject var store: AppStore
     @EnvironmentObject var fb: Feedback
     @State private var text = ""
     @State private var found: [Found]?
@@ -51,7 +52,7 @@ struct ChoreIntakeView: View {
             writing = false
             found = ChoreIntake.parse(text, existing: existing).map { Found(id: $0.id, name: $0.name, minutes: $0.tiers[0]) }
         }
-        Text(SetupView.familyBuild
+        Text(store.isLinked
              ? "Sorted on this device. Only the chores you add are shared with the family's phones."
              : "Sorted on this device. Nothing you write or say here is sent anywhere by this app.")
             .font(.app(.caption2)).foregroundStyle(.secondary)

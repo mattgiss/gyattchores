@@ -35,7 +35,43 @@ import java.security.MessageDigest
 import java.time.Instant
 import java.util.UUID
 
-/** The real relay, for the RELAY_LIVE=1 test only. The app keeps its copy in the family edition's `Servers`. */
+/**
+ * The desktop JVM's HttpURLConnection refuses PATCH (Android's accepts it), so the live tests speak
+ * HTTP/1.1 over a TLS socket themselves.
+ */
+private object SocketHttp : RelayHttp {
+    override fun send(method: String, url: String, headers: Map<String, String>, body: String?): Pair<Int, String> {
+        val u = URI(url)
+        val bytes = body?.toByteArray() ?: ByteArray(0)
+        (javax.net.ssl.SSLSocketFactory.getDefault().createSocket(u.host, 443) as javax.net.ssl.SSLSocket).use { sock ->
+            sock.soTimeout = 20_000
+            val head = buildString {
+                append("$method ${u.rawPath}${u.rawQuery?.let { "?$it" } ?: ""} HTTP/1.1\r\nHost: ${u.host}\r\nConnection: close\r\n")
+                headers.forEach { (k, v) -> append("$k: $v\r\n") }
+                append("Content-Length: ${bytes.size}\r\n\r\n")
+            }
+            sock.outputStream.apply { write(head.toByteArray()); write(bytes); flush() }
+            val raw = sock.inputStream.readBytes()
+            val split = String(raw, Charsets.ISO_8859_1).indexOf("\r\n\r\n")
+            val lines = String(raw, 0, split, Charsets.ISO_8859_1).split("\r\n")
+            val code = lines[0].split(" ")[1].toInt()
+            var rest = raw.copyOfRange(split + 4, raw.size)
+            if (lines.any { it.lowercase().replace(" ", "") == "transfer-encoding:chunked" }) {
+                val out = java.io.ByteArrayOutputStream(); var i = 0
+                while (true) {
+                    val eol = (i until rest.size - 1).first { rest[it] == '\r'.code.toByte() && rest[it + 1] == '\n'.code.toByte() }
+                    val n = String(rest, i, eol - i, Charsets.ISO_8859_1).substringBefore(';').trim().toInt(16)
+                    if (n == 0) break
+                    out.write(rest, eol + 2, n); i = eol + 2 + n + 2
+                }
+                rest = out.toByteArray()
+            }
+            return code to String(rest, Charsets.UTF_8)
+        }
+    }
+}
+
+/** The real relay, for the RELAY_LIVE=1 tests only. The app keeps its copy in `Servers`. */
 private val LIVE = RelayConfig("https://omemognwvcnonnzjmcxm.supabase.co", "sb_publishable_prXq51_BMc8lnG4BY5vXmA_xJysoZxa")
 
 class RelayTest {
@@ -134,7 +170,7 @@ class RelayTest {
         assertEquals(first.userId, store.load()!!.userId)
     }
 
-    /** Against the real DOYOURWORK relay, only when asked: `RELAY_LIVE=1 ./gradlew testPublicDebugUnitTest --tests '*RelayTest*'`. */
+    /** Against the real DOYOURWORK relay, only when asked: `RELAY_LIVE=1 ./gradlew testPlayDebugUnitTest --tests '*RelayTest*'`. */
     @Test fun relayLive() {
         assumeTrue("set RELAY_LIVE=1 to run against the real relay", System.getenv("RELAY_LIVE") == "1")
         val keys = FamilyKeys.generate()
@@ -152,5 +188,48 @@ class RelayTest {
             assertTrue(Relay(keys, MemorySessionStore(), LIVE).selectAll().isEmpty())
         } finally { a.deleteHousehold() }
     }
-}
+    /**
+     * An iPhone and an Android phone in one family, on the real relay. Runs beside the iOS test
+     * `testInteropWithAndroid`, handing join codes over through a folder:
+     * `INTEROP_DIR=<dir> RELAY_LIVE=1 ./gradlew testPlayDebugUnitTest --tests '*RelayTest.interopWithIos'`.
+     * The iPhone makes a family and this phone joins it; then this phone makes one and the iPhone joins.
+     */
+    @Test fun interopWithIos() {
+        val dir = System.getenv("INTEROP_DIR")
+        assumeTrue("set INTEROP_DIR to run beside the iOS test", dir != null)
+        fun waitFor(name: String): String {
+            val f = java.io.File(dir, name)
+            repeat(600) { if (f.exists()) return f.readText(); Thread.sleep(500) }
+            fail("the iPhone never wrote $name"); error("")
+        }
+        fun done(name: String, text: String = "ok") { java.io.File(dir, "$name.tmp").apply { writeText(text); renameTo(java.io.File(dir, name)) } }
 
+        // 1. The iPhone's family.
+        val code = JoinCode.parse(waitFor("ios-code"))
+        val b = Relay(code.keys, MemorySessionStore(), LIVE, http = SocketHttp)
+        assertTrue("joins the iPhone's family", b.join(code))
+        val pulled = LogSync.run(b, emptyList())
+        val fromIos = pulled.single { it.remoteId == "ios-1" }
+        assertEquals("make bed", fromIos.choreName)
+        assertEquals(1_731_700_000_123L, fromIos.timestamp)
+        assertEquals(listOf("1|from-ios"), StateSync.run(b, emptyMap())["players"]?.items)
+        LogSync.run(b, pulled.map { if (it.remoteId == "ios-1") it.copy(status = "approved", statusDirty = true) else it } + log("android-1"))
+        StateSync.run(b, mapOf("chores" to LocalEntry(listOf("make-bed|from-android"), 6, true)))
+        done("android-joined")
+
+        // 2. This phone's family.
+        val a = Relay(FamilyKeys.generate(), MemorySessionStore(), LIVE, http = SocketHttp)
+        a.createHousehold()
+        try {
+            LogSync.run(a, listOf(log("android-2")))
+            StateSync.run(a, mapOf("players" to LocalEntry(listOf("1|from-android"), 7, true)))
+            done("android-code", a.makeJoinCode().first.text)
+            waitFor("ios-joined")
+            val back = LogSync.run(a, emptyList()).associate { it.remoteId to it.status }
+            assertEquals(mapOf("android-2" to "approved", "ios-2" to "pending"), back)
+            assertEquals(listOf("make-bed|from-ios"), StateSync.run(a, emptyMap())["chores"]?.items)
+            assertEquals(2, a.devices().size)
+        } finally { a.deleteHousehold() }
+        done("android-finished")
+    }
+}

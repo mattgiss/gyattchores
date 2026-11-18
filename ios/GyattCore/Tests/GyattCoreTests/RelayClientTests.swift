@@ -196,4 +196,55 @@ final class RelayClientTests: XCTestCase {
         let aIn = try await a.isMember()
         XCTAssertFalse(aIn, "nobody is in a deleted family")
     }
+    /// An iPhone and an Android phone in one family, on the real relay. Runs beside the Android test
+    /// `interopWithIos`, handing join codes over through a folder:
+    /// `INTEROP_DIR=<dir> swift test --filter testInteropWithAndroid`.
+    func testInteropWithAndroid() async throws {
+        guard let dir = ProcessInfo.processInfo.environment["INTEROP_DIR"].map(URL.init(fileURLWithPath:)) else { throw XCTSkip("set INTEROP_DIR to run beside the Android test") }
+        func waitFor(_ name: String) async throws -> String {
+            for _ in 0..<600 {
+                if let s = try? String(contentsOf: dir.appendingPathComponent(name), encoding: .utf8) { return s }
+                try await Task.sleep(for: .milliseconds(500))
+            }
+            XCTFail("the Android phone never wrote \(name)"); throw CancellationError()
+        }
+        func done(_ name: String, _ text: String = "ok") throws {
+            let tmp = dir.appendingPathComponent(name + ".tmp")
+            try text.write(to: tmp, atomically: true, encoding: .utf8)
+            try FileManager.default.moveItem(at: tmp, to: dir.appendingPathComponent(name))
+        }
+
+        // 1. This phone's family; the Android phone joins it.
+        let a = RelayClient(keys: .generate(), config: .live, sessions: MemorySessionStore())
+        try await a.createHousehold()
+        do {
+            _ = try await LogSync.run(api: a, local: [log("ios-1")])
+            _ = try await StateSync.run(api: a, local: ["players": LocalEntry(items: ["1|from-ios"], updatedAt: 5, dirty: true)])
+            try done("ios-code", try await a.makeJoinCode().code.text)
+            _ = try await waitFor("android-joined")
+            let back = try await LogSync.run(api: a, local: [])
+            XCTAssertEqual(Dictionary(uniqueKeysWithValues: back.map { ($0.remoteId!, $0.status) }), ["ios-1": "approved", "android-1": "pending"])
+            XCTAssertEqual(back.first { $0.remoteId == "android-1" }?.timestamp.timeIntervalSince1970 ?? 0, 1_731_700_000.123, accuracy: 0.001)
+            let state = try await StateSync.run(api: a, local: [:])
+            XCTAssertEqual(state["chores"]?.items, ["make-bed|from-android"])
+            let devices = try await a.devices()
+            XCTAssertEqual(devices.count, 2)
+        } catch { try? await a.deleteHousehold(); throw error }
+        try await a.deleteHousehold()
+
+        // 2. The Android phone's family; this phone joins it.
+        let code = try JoinCode(scanned: try await waitFor("android-code"))
+        let b = RelayClient(keys: code.keys, config: .live, sessions: MemorySessionStore())
+        let joined = try await b.join(code)
+        XCTAssertTrue(joined, "joins the Android phone's family")
+        var pulled = try await LogSync.run(api: b, local: [])
+        XCTAssertEqual(pulled.map(\.remoteId), ["android-2"])
+        let state = try await StateSync.run(api: b, local: [:])
+        XCTAssertEqual(state["players"]?.items, ["1|from-android"])
+        pulled[0].status = "approved"; pulled[0].statusDirty = true
+        _ = try await LogSync.run(api: b, local: pulled + [log("ios-2")])
+        _ = try await StateSync.run(api: b, local: ["chores": LocalEntry(items: ["make-bed|from-ios"], updatedAt: 8, dirty: true)])
+        try done("ios-joined")
+        _ = try await waitFor("android-finished")
+    }
 }

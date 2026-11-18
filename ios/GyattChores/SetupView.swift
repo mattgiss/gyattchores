@@ -10,6 +10,7 @@ struct SetupView: View {
 
     private enum Step: Int { case welcome, admin, players, chores }
     @State private var step = Step.welcome
+    @State private var joining = false
     @State private var adminName = ""
     @State private var code = ""
     @State private var codeAgain = ""
@@ -71,27 +72,21 @@ struct SetupView: View {
             Text("Points, streaks and a weekly winner follow.")
         }
         .foregroundStyle(.secondary)
-        #if FAMILY_SYNC
-        SectionLabel("the family build")
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Players, chores and points are shared with the family's other phones.")
-            Text("No accounts, no sign-in, no ads, no tracking.")
-        }
-        .foregroundStyle(.secondary)
-        #else
         SectionLabel("private by design")
         VStack(alignment: .leading, spacing: 6) {
             Text("Everything stays on this device.")
+            Text("Add a phone later and it's encrypted before it's sent, so only your family's phones can read it.")
             Text("No accounts, no sign-in, no ads, no tracking.")
-            Text("Delete the app and it's all gone.")
         }
         .foregroundStyle(.secondary)
-        #endif
-        if !alreadyHere.isEmpty && !Self.familyBuild {
+        if !alreadyHere.isEmpty && !store.isLinked {
             Text("Your players and their points are still here. This device now keeps its own scoreboard and no longer shares with other phones.")
                 .font(.app(.footnote)).foregroundStyle(Theme.warn).padding(.top, 4)
         }
         TermButton(label: "Set up this device") { fb.tap(); step = .admin }.padding(.top, 12)
+        // A new phone for a family that's already on another phone.
+        OutlineButton(label: "Join a family") { fb.tap(); joining = true }.padding(.horizontal, -20)
+            .sheet(isPresented: $joining) { JoinSheet().appChrome(store, fb) }
         // A new phone for a family that already has a scoreboard saved as a file.
         BackupControls(canSave: false).padding(.top, 4)
         Link("Privacy policy", destination: Links.privacy).font(.app(.footnote)).frame(maxWidth: .infinity, minHeight: 44)
@@ -123,7 +118,7 @@ struct SetupView: View {
             .textFieldStyle(.roundedBorder).textContentType(.oneTimeCode).submitLabel(.done)
             .accessibilityIdentifier("admin-code-again")
         if let codeProblem { Text(codeProblem).font(.app(.footnote)).foregroundStyle(Theme.bad) }
-        Text(Self.familyBuild
+        Text(store.isLinked
              ? "Keep the code from the players. Only a scrambled copy is shared with the family's phones. If it's forgotten, another admin can set a new one."
              : "Keep the code from the players. It isn't stored anywhere but this device, so nobody can look it up for you. If it's forgotten, the way back in is to delete the app and start a new scoreboard.")
             .font(.app(.footnote)).foregroundStyle(.secondary)
@@ -208,10 +203,4 @@ struct SetupView: View {
     }
 }
 
-extension SetupView {
-    #if FAMILY_SYNC
-    static let familyBuild = true
-    #else
-    static let familyBuild = false
-    #endif
-}
+

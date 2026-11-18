@@ -40,7 +40,7 @@ fun rememberBackup(vm: AppViewModel, onRestored: () -> Unit = {}): Pair<() -> Un
         try {
             val text = ctx.contentResolver.openInputStream(uri)!!.use { it.readBytes().decodeToString() }
             val b = Backup.decode(text)
-            val problem = if (vm.familySync) null else Backup.replaceProblem(b)
+            val problem = if (vm.relayLinked.value) null else Backup.replaceProblem(b)
             when {
                 problem != null -> { message = problem; fb.error() }
                 vm.alreadyRestored(b) -> message = "This backup has already been restored into the family."
@@ -55,7 +55,8 @@ fun rememberBackup(vm: AppViewModel, onRestored: () -> Unit = {}): Pair<() -> Un
 
     pending?.let { b ->
         val what = "${b.players} player${if (b.players == 1) "" else "s"}, ${b.chores.size} chores and ${b.logs.size} chores logged"
-        val joining = vm.familySync
+        // Linked: merged into the family. Unlinked: it replaces what's on this phone.
+        val joining = vm.relayLinked.value
         val setUp = vm.store.family.value.isSetUp
         AlertDialog(
             onDismissRequest = { pending = null },

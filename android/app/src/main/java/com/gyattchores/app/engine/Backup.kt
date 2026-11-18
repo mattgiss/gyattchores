@@ -24,7 +24,7 @@ data class BackupFile(
     /** New for every export, so restoring the same file twice into a family can be spotted. */
     val id: String = UUID.randomUUID().toString(),
     val exportedAt: Long = 0,
-    /** "ios-public", "ios-family", "android-public" or "android-family". */
+    /** Where it was made: "ios" or "android" (older backups say "ios-public", "android-family" and so on). Informational only. */
     val source: String = "",
     val appVersion: String = "",
     val members: List<Player> = emptyList(),

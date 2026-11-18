@@ -25,25 +25,19 @@ import java.time.ZoneId
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 import androidx.lifecycle.viewModelScope
-import com.gyattchores.app.sync.HttpStatusException
 import com.gyattchores.app.sync.LogSync
 import com.gyattchores.app.sync.StateSync
 import com.gyattchores.app.sync.LocalEntry
 import com.gyattchores.app.model.Dare
-import com.gyattchores.app.sync.Supabase
 import com.gyattchores.app.sync.DemoRelayFamily
 import com.gyattchores.app.sync.FamilyKeys
 import com.gyattchores.app.sync.JoinCode
-import com.gyattchores.app.sync.LogApi
 import com.gyattchores.app.sync.MemoryRelay
 import com.gyattchores.app.sync.MemoryRelayVault
 import com.gyattchores.app.sync.Relay
-import com.gyattchores.app.sync.RelayConfig
 import com.gyattchores.app.sync.Servers
 import com.gyattchores.app.sync.RelayDevice
-import com.gyattchores.app.sync.RelayHttp
 import com.gyattchores.app.sync.RelayVault
-import com.gyattchores.app.sync.StateApi
 import com.gyattchores.app.sync.UrlConnectionHttp
 import com.gyattchores.app.data.KeystoreRelayVault
 import kotlinx.coroutines.withContext
@@ -57,9 +51,7 @@ import kotlinx.coroutines.launch
  * Screens read the store's flows and call these actions.
  */
 class AppViewModel(app: Application) : AndroidViewModel(app) {
-    /** Family edition: shares the family and logs with the family's other phones. Public: nothing leaves the phone. */
-    val familySync = BuildConfig.FAMILY_SYNC
-    val store = Store(app, familySync)
+    val store = Store(app)
     val zone: ZoneId get() = ZoneId.systemDefault()
     fun now() = System.currentTimeMillis()
     fun today(): LocalDate = Engine.dayOf(now(), zone)
@@ -191,65 +183,39 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     // ─── Sync ───────────────────────────────────────────────────────────────
 
-    /** "syncing", "synced", "offline", or "synced · dares stay on this phone". */
-    val syncStatus = MutableStateFlow("idle")
     /**
-     * Who to sync with. Release builds: the family's Supabase. Debug builds: only a test server
-     * given at launch (`--es syncURL http://<host>:8789`, kept until another is given; an empty
-     * value clears it), and with none they stay offline — a test build can never reach real data.
+     * "syncing", "synced" or "offline" while this phone is linked to the family's other phones;
+     * "idle" otherwise. Only shown when linked.
      */
-    private fun syncApi(): Supabase? =
-        if (BuildConfig.REAL_SYNC) realApi
-        else prefs.getString(KEY_SYNC_URL, null)?.takeIf { it.isNotBlank() }?.let { url ->
-            if (testApi?.first != url) testApi = url to Supabase(url.trimEnd('/'), "test-server")
-            testApi!!.second
-        }
-    private val realApi by lazy { Servers.OLD_TABLES?.let { (url, key) -> Supabase(url, key) } }
-    private var testApi: Pair<String, Supabase>? = null
-
-    /** Debug builds only: the test server to sync with (see [syncApi]). */
-    fun setTestSyncUrl(url: String) {
-        if (BuildConfig.REAL_SYNC) return
-        prefs.edit().putString(KEY_SYNC_URL, url.trim()).apply()
-    }
+    val syncStatus = MutableStateFlow("idle")
     private val syncing = AtomicBoolean(false)
     private val syncAgain = AtomicBoolean(false)
 
-    /** One pass at a time; a request that arrives mid-pass runs one follow-up pass instead of overlapping. */
+    /**
+     * One pass at a time; a request that arrives mid-pass runs one follow-up pass instead of
+     * overlapping. Only a linked phone syncs, and only through the encrypted relay: an unlinked
+     * one keeps everything to itself.
+     */
     fun requestSync() {
-        if (!familySync) return
-        // The family was deleted from the server, or this phone taken out of its sync: it keeps the
-        // family to itself, and never goes back to the old tables.
-        if (relay == null && syncOff.value) { syncStatus.value = "off"; return }
+        val relay = relay ?: run { syncStatus.value = "idle"; return }
         if (!syncing.compareAndSet(false, true)) { syncAgain.set(true); return }
-        // The encrypted relay once this phone has joined one; the family's old tables until then.
-        val relay = relay
-        val supabase = if (relay == null) syncApi() else null
-        val logApi: LogApi = relay ?: supabase ?: run { syncStatus.value = "offline"; syncing.set(false); return }
-        val stateApi: StateApi = relay ?: supabase!!
         val epoch = transport.get()
         viewModelScope.launch(Dispatchers.IO) {
             syncStatus.value = "syncing"
             try {
                 // Reads from a family this phone is no longer in come back empty, not as an error, so ask first.
-                if (relay != null && !relay.isMember()) {
+                if (!relay.isMember()) {
                     if (transport.get() == epoch) dropRelay("This phone is no longer in the family's sync. Everything on it stays here.")
                     return@launch
                 }
-                val logs = LogSync.run(logApi, store.logs.value)
-                // This phone moved to another server mid-pass: what this pass found belongs to the old one.
+                val logs = LogSync.run(relay, store.logs.value)
+                // This phone left the family or joined another mid-pass: what this pass found belongs to the old one.
                 if (transport.get() != epoch) return@launch
                 store.applySyncedLogs(logs)
-                syncStatus.value = try {
-                    val state = StateSync.run(stateApi, store.state.value)
-                    if (transport.get() != epoch) return@launch
-                    store.applySyncedState(state)
-                    "synced"
-                } catch (e: HttpStatusException) {
-                    // The family_state table is optional until its SQL has been run: dares and
-                    // family changes then stay on this phone.
-                    if (e.code == 404 && relay == null) "synced · dares stay on this phone" else throw e
-                }
+                val state = StateSync.run(relay, store.state.value)
+                if (transport.get() != epoch) return@launch
+                store.applySyncedState(state)
+                syncStatus.value = "synced"
                 // After the family rows, so someone removed on another phone isn't added back from old logs.
                 store.adoptPlayersFromLogs(now())
                 if (!prefs.getBoolean(KEY_SYNCED, false)) { prefs.edit().putBoolean(KEY_SYNCED, true).apply(); syncedOnce.value = true }
@@ -263,32 +229,42 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     // ─── Encrypted relay ────────────────────────────────────────────────────
-    // docs/design/encrypted-relay-join.md. Family edition only for now: the public edition has no
-    // network code until the two editions become one.
+    // docs/design/encrypted-relay-join.md. A phone is "linked" once it has the family's keys
+    // (from "Add a phone" or a scanned code); until then nothing leaves it.
 
+    private val prefs = app.getSharedPreferences("device", android.content.Context.MODE_PRIVATE)
     /** Debug builds only: an in-memory relay for trying the join flow (`--ez memoryRelay true`). */
     private var memoryRelay: MemoryRelay? = null
     /** Debug builds only: what the next scan "reads" (`--es scanResult <code>`, or `seeded`). */
     private var testScanResult: String? = null
-    private var vault: RelayVault = if (familySync) KeystoreRelayVault(app) else MemoryRelayVault()
+    private var vault: RelayVault = KeystoreRelayVault(app)
     /** Bumped whenever this phone switches server, so a pass still running for the old one is ignored. */
     private val transport = AtomicInteger(0)
-    @Volatile private var relay: Relay? = relayHttp()?.let { http -> vault.loadKeys()?.let { Relay(it, vault.sessions, relayConfig()!!, http = http) } }
-    /** True once this phone syncs through the encrypted relay. */
+    @Volatile private var relay: Relay? = vault.loadKeys()?.let { Relay(it, vault.sessions, relayConfig(), http = relayHttp()) }
+    /** True once this phone syncs through the encrypted relay with the family's other phones. */
     val relayLinked = MutableStateFlow(relay != null)
 
-    /** Release builds reach the real relay. Debug builds only the in-memory one, so a test build never touches real data. */
-    private fun relayHttp(): RelayHttp? = memoryRelay ?: if (BuildConfig.REAL_SYNC && Servers.RELAY != null) UrlConnectionHttp else null
-    private fun relayConfig(): RelayConfig? = if (memoryRelay != null) MemoryRelay.CONFIG else Servers.RELAY
+    init {
+        // Before one app, a phone that left the relay was marked "sync off". Now it's just unlinked.
+        prefs.edit().remove("relay_sync_off").remove("test_sync_url").apply()
+        // Unlinked, this phone's own family is the truth: the shared rows are made to match it.
+        // This is how an install of the old on-device edition gets shared state (see FamilyState.reseed).
+        if (relay == null) store.shareFamilyFromDevice(now())
+    }
+
+    /** The real relay (sync/Servers.kt) for every build, or a debug build's in-memory one. See build.gradle.kts. */
+    private fun relayHttp() = memoryRelay ?: UrlConnectionHttp
+    private fun relayConfig() = if (memoryRelay != null) MemoryRelay.CONFIG else Servers.RELAY
 
     /** Debug builds: switches to a fresh in-memory relay, and a vault that's forgotten with it. Once per process. */
     fun useMemoryRelay() {
-        if (BuildConfig.REAL_SYNC || !familySync || memoryRelay != null) return
+        if (!BuildConfig.DEBUG || memoryRelay != null) return
         memoryRelay = MemoryRelay(); vault = MemoryRelayVault(); relay = null; relayLinked.value = false
         transport.incrementAndGet()
+        syncStatus.value = "idle"
     }
 
-    fun setTestScanResult(text: String) { if (!BuildConfig.REAL_SYNC) testScanResult = text }
+    fun setTestScanResult(text: String) { if (BuildConfig.DEBUG) testScanResult = text }
 
     /** Debug builds: the scan result a test asked for, instead of the camera. Null means use the camera. */
     suspend fun testScan(): String? = withContext(Dispatchers.IO) {
@@ -297,9 +273,6 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         if (t == "seeded" && server != null) runCatching { DemoRelayFamily.seed(server) }.getOrElse { "" } else t
     }
 
-    /** Why the relay can't be used here, or null. */
-    private fun relayOff(): String? = if (relayHttp() == null) "Encrypted sync is off in test builds. Start with memoryRelay to try it." else null
-
     /**
      * Admin → "Add a phone". The first time, this phone makes the family's keys, puts the household
      * on the relay and sends the whole family there, encrypted. Then it asks for a one-time code
@@ -307,14 +280,14 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
      */
     suspend fun addPhone(): Result<Pair<JoinCode, Long>> = withContext(Dispatchers.IO) {
         runCatching {
-            relayOff()?.let { throw RelayProblem(it) }
-            val r = relay ?: Relay(FamilyKeys.generate(), vault.sessions, relayConfig()!!, http = relayHttp()!!).also { r ->
+            val r = relay ?: Relay(FamilyKeys.generate(), vault.sessions, relayConfig(), http = relayHttp()).also { r ->
                 try { r.createHousehold() } catch (e: Exception) { throw RelayProblem(OFFLINE) }
                 vault.saveKeys(r.keys)
                 store.prepareForNewServer(now())
                 transport.incrementAndGet()
                 relay = r; relayLinked.value = true
-                setSyncOff(false)
+                // It has the family already: no "Loading the family" for this one.
+                prefs.edit().putBoolean(KEY_SYNCED, true).apply(); syncedOnce.value = true
                 requestSync()
             }
             try { r.makeJoinCode() } catch (e: Exception) { throw RelayProblem(OFFLINE) }
@@ -328,17 +301,16 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     suspend fun joinWith(text: String?): String? = withContext(Dispatchers.IO) {
         if (text == null) return@withContext null
         val code = try { JoinCode.parse(text) } catch (e: Exception) { return@withContext "That isn't a DOYOURWORK code." }
-        relayOff()?.let { return@withContext it }
-        val r = Relay(code.keys, vault.sessions, relayConfig()!!, http = relayHttp()!!)
+        val r = Relay(code.keys, vault.sessions, relayConfig(), http = relayHttp())
         val ok = try { r.join(code) } catch (e: Exception) { return@withContext OFFLINE }
         if (!ok) return@withContext "That code has expired or was already used. Ask for a new one."
         vault.saveKeys(code.keys)
         transport.incrementAndGet()
         store.clearForJoin()
+        // "Loading the family" until the first pass is done.
         prefs.edit().remove(KEY_SYNCED).apply()
         syncedOnce.value = false
         relay = r; relayLinked.value = true
-        setSyncOff(false)
         requestSync()
         null
     }
@@ -368,19 +340,20 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         null
     }
 
-    /** Leaves the relay on this phone: keys and sign-in forgotten, sync off, everything here kept. */
+    /**
+     * Leaves the relay on this phone: keys and sign-in forgotten, everything here kept. It's then
+     * unlinked like any other phone, its family the truth again, until it adds or joins a phone.
+     */
     private fun dropRelay(notice: String?) {
         vault.clear()
         transport.incrementAndGet()
         relay = null; relayLinked.value = false
-        setSyncOff(true)
-        syncStatus.value = "off"
+        syncStatus.value = "idle"
+        store.shareFamilyFromDevice(now())
+        // A phone dropped before its first load has nothing to wait for: it goes to setup.
+        prefs.edit().putBoolean(KEY_SYNCED, true).apply(); syncedOnce.value = true
         notice?.let { this.notice.value = it }
     }
-
-    /** True once this phone left the relay: it syncs with nothing until it adds or joins a phone again. */
-    val syncOff by lazy { MutableStateFlow(prefs.getBoolean(KEY_SYNC_OFF, false)) }
-    private fun setSyncOff(on: Boolean) { prefs.edit().putBoolean(KEY_SYNC_OFF, on).apply(); syncOff.value = on }
 
     private class RelayProblem(message: String) : Exception(message)
 
@@ -454,14 +427,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     // ─── Setup ──────────────────────────────────────────────────────────────
 
-    private val prefs = app.getSharedPreferences("device", android.content.Context.MODE_PRIVATE)
-
     /**
-     * Family edition: true once this phone has finished one sync. Until then it can't tell a new
-     * family from one it hasn't fetched yet, so it waits rather than offering setup and starting
-     * a second family.
+     * For a linked phone: true once it has finished one pass. A phone that just joined can't tell
+     * a new family from one it hasn't fetched yet, so it shows "Loading the family" rather than
+     * setup. Unlinked phones never wait (see AppRoot).
      */
-    val syncedOnce = MutableStateFlow(!familySync || prefs.getBoolean(KEY_SYNCED, false))
+    val syncedOnce by lazy { MutableStateFlow(prefs.getBoolean(KEY_SYNCED, false)) }
 
     /** Off unless an admin turns it on: a fingerprint belongs to whoever owns the phone, which on a player's own phone is the player. */
     val biometricUnlock = MutableStateFlow(prefs.getBoolean(KEY_BIOMETRIC, false))
@@ -499,7 +470,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         requestSync()
     }
 
-    /** Wipes this phone. Public: back to first-run setup. Family: the family is fetched again. */
+    /**
+     * Wipes this phone. Unlinked ("Erase everything"): back to first-run setup. Linked ("Reset
+     * this phone"): it keeps its keys and fetches the family again.
+     */
     fun eraseEverything() {
         store.eraseAll()
         seen.edit().clear().apply()
@@ -507,7 +481,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         puzzleTime.edit().clear().apply()
         prefs.edit().clear().apply()
         biometricUnlock.value = false
-        syncedOnce.value = !familySync
+        syncedOnce.value = false
         requestSync()
     }
 
@@ -646,7 +620,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val f = store.family.value
         val levels = f.members.associate { it.id to puzzleLevel(it.id) }.filterValues { it > 1 }
         return Backup.encode(Backup.make(f, store.pool, store.logs.value, dares(store.state.value), levels,
-            if (familySync) "android-family" else "android-public", appVersion, now()))
+            "android", appVersion, now()))
     }
 
     fun backupFileName() = Backup.fileName(today())
@@ -655,15 +629,15 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val notice = MutableStateFlow<String?>(null)
 
     /** True when this exact backup has already been merged into the family. */
-    fun alreadyRestored(b: BackupFile) = familySync && b.id in store.state.value[KEY_RESTORED]?.items.orEmpty()
+    fun alreadyRestored(b: BackupFile) = relayLinked.value && b.id in store.state.value[KEY_RESTORED]?.items.orEmpty()
 
     /**
-     * Restores a backup. Public: it replaces everything on this phone. Family: it's merged into
+     * Restores a backup. Unlinked: it replaces everything on this phone. Linked: it's merged into
      * the family (see [Backup.merge]) and goes out to the other phones on the next sync.
      */
     fun restore(b: BackupFile): RestoreCounts {
         val t = now()
-        if (!familySync) {
+        if (!relayLinked.value) {
             val r = Backup.replace(b)
             store.eraseAll()
             seen.edit().clear().apply()
@@ -672,6 +646,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             store.addLogs(r.logs)
             // Kept where dares always live ("dare|<from>|<day>"), so their points count as on iOS.
             for ((key, ds) in r.dares.groupBy { "dare|${it.from}|${it.day}" }) store.setState(key, ds.map { "${it.target}:${it.choreId}" }, t)
+            store.shareFamilyFromDevice(t)
             return r.counts
         }
         if (alreadyRestored(b)) return RestoreCounts(0, 0, 0)
@@ -694,9 +669,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     private companion object {
         const val KEY_SYNCED = "synced_once"
-        const val KEY_SYNC_OFF = "relay_sync_off"
         const val KEY_BIOMETRIC = "biometric_unlock"
-        const val KEY_SYNC_URL = "test_sync_url"
         /** Shared: ids of backups already merged into the family, so a repeat does nothing. */
         const val KEY_RESTORED = "restored_backups"
         const val OFFLINE = "Can't reach the server. Check the connection and try again."

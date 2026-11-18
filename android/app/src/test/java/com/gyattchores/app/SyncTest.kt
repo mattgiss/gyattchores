@@ -15,7 +15,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SyncTest {
-    /** An in-memory stand-in for the `simple_logs` table. */
+    /** An in-memory stand-in for the relay's log records. */
     private class FakeLogs : LogApi {
         val rows = LinkedHashMap<String, RemoteLog>()
         var next = 1
