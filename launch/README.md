@@ -14,6 +14,7 @@ Status as of 17 November 2026: **ready** means it exists and matches the app as 
 | What a reviewer might object to | [`ios/AppStore/REVIEW-RISKS.md`](../ios/AppStore/REVIEW-RISKS.md) | in the Play guide, under "Decide these before the first upload" |
 | Screenshots | made by CI on every push: the `app-store-screenshots` download on the newest green [iOS run](https://github.com/mattgiss/doyourwork/actions/workflows/ios.yml) | [`android/PlayStore/screenshots/`](../android/PlayStore/screenshots/) |
 | Icon and graphics | in the app (`ios/DOYOURWORK/Assets.xcassets`) | [`android/PlayStore/graphics/`](../android/PlayStore/graphics/) |
+| Redrawing the icon, banner or characters | [`tools/brand/`](../tools/brand/) and [`tools/characters/`](../tools/characters/) | the same |
 | The build | the public scheme, uploaded from the Mac (`ios/README.md`) | `android/play-bundle.sh` |
 
 Shared: the website (`main` branch) carries the support page (`app.html`), the privacy policy
