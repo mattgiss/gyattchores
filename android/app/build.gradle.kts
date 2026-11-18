@@ -119,6 +119,10 @@ dependencies {
     implementation("androidx.window:window:1.3.0")
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+    // Draws the "Add a phone" QR code. No permissions, no Play services.
+    implementation("com.google.zxing:core:3.5.3")
+    // Reads it with the camera. Family edition only, so the public one has no camera code or permission.
+    "familyImplementation"("com.journeyapps:zxing-android-embedded:4.3.0")
 
     testImplementation("junit:junit:4.13.2")
     if (storeScreenshots) {

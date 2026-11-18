@@ -39,10 +39,11 @@ jobs:
           TZ=UTC node native/tools/golden.js native/tools/web-engine.html android/app/src/test/resources/golden.json
           node native/tools/scenarios.mjs
           node native/tools/puzzles.mjs
+          node native/tools/relay-crypto.mjs
       - name: Fail if the committed test data is stale
         run: |
           if ! git diff --quiet -- android/app/src/test/resources/golden.json native/fixtures native/puzzles.json android/app/src/main/assets/puzzles.json; then
-            echo "::error::Committed test data is out of date. Re-run native/tools/golden.js, native/tools/scenarios.mjs and native/tools/puzzles.mjs, commit the results, and update the native engines if their tests then fail."
+            echo "::error::Committed test data is out of date. Re-run native/tools/golden.js, scenarios.mjs, puzzles.mjs and relay-crypto.mjs, commit the results, and update the native engines if their tests then fail."
             git diff --stat -- android/app/src/test/resources/golden.json native/fixtures native/puzzles.json android/app/src/main/assets/puzzles.json
             exit 1
           fi

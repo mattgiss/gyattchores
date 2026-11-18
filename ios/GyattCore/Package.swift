@@ -6,8 +6,13 @@ let package = Package(
     name: "GyattCore",
     platforms: [.iOS(.v17), .macOS(.v13)],
     products: [.library(name: "GyattCore", targets: ["GyattCore"])],
+    // The relay's encryption uses CryptoKit on Apple platforms. swift-crypto is the same API for
+    // Linux, where CI runs these tests; the iOS app never links it.
+    dependencies: [.package(url: "https://github.com/apple/swift-crypto.git", "3.15.0"..<"4.0.0")],
     targets: [
-        .target(name: "GyattCore"),
+        .target(name: "GyattCore", dependencies: [
+            .product(name: "Crypto", package: "swift-crypto", condition: .when(platforms: [.linux])),
+        ]),
         // Fixtures: backups written by the real apps, so the format can't drift unnoticed.
         .testTarget(name: "GyattCoreTests", dependencies: ["GyattCore"], resources: [.copy("Fixtures")]),
     ]

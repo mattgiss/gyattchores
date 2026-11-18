@@ -154,6 +154,29 @@ class Store(context: Context, private val shared: Boolean) {
     }
 
     /**
+     * The first "Add a phone": the relay has nothing yet, so every log and every shared list goes
+     * out on the next pass. Family rows this phone never wrote are added, so the whole family
+     * travels, not only what changed here.
+     */
+    @Synchronized fun prepareForNewServer(now: Long) {
+        _logs.value = LogSync.forNewServer(_logs.value)
+        write("logs.json", _logs.value)
+        val missing = FamilyState.encode(_family.value).filterKeys { it !in _state.value }.mapValues { LocalEntry(it.value, now) }
+        _state.value = StateSync.forNewServer(_state.value + missing)
+        write("family_state.json", _state.value)
+    }
+
+    /**
+     * Joining a family with a code: what this phone had came from elsewhere, and the family it
+     * joins has it already, so it starts empty and loads the family. Whose phone it is stays.
+     */
+    @Synchronized fun clearForJoin() {
+        for (n in listOf("logs.json", "cards.json", "family.json", "family_state.json", "players.json", "removed_players.json")) File(dir, n).delete()
+        _logs.value = emptyList(); _cards.value = emptyMap(); _state.value = emptyMap()
+        _family.value = Family()
+    }
+
+    /**
      * Deletes everything this phone keeps. The public edition goes back to its first-run setup;
      * the family edition fetches the family again on the next sync.
      */

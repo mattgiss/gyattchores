@@ -23,6 +23,7 @@
 		4AEAF7A73B7B929C12295533 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5713C489E0FED8ACE31202AF /* Components.swift */; };
 		5D0DBCEA64EBEAD0FE8720B6 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 147CAD24C71D72F3E322CABA /* PrivacyInfo.xcprivacy */; };
 		5F1F395619FAD4DA41D774A8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 51E25F92C2A2E95EA8800ED0 /* Assets.xcassets */; };
+		7F346FCF39711F9C382F59EC /* RelayLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = E799723F043017F9753E145C /* RelayLink.swift */; };
 		860B2F5DA0F42A045C292891 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E05411D9D6D89454354D6504 /* RootView.swift */; };
 		916FD9E47347E1253B010B01 /* GyattChoresUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F41F120FFA15EAABE3146658 /* GyattChoresUITests.swift */; };
 		9AAA5EB7566D8F8664316A80 /* chores.json in Resources */ = {isa = PBXBuildFile; fileRef = 44339DF38F0B41428DED1FA0 /* chores.json */; };
@@ -30,6 +31,7 @@
 		9FDBA5BF4A17A0156A9260C8 /* GyattCore in Frameworks */ = {isa = PBXBuildFile; productRef = 082E13C94D4E9AAC05E89A26 /* GyattCore */; };
 		A010EF76DAC311B90FEA0C3F /* Feedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD615C04B74E794B9204B97B /* Feedback.swift */; };
 		A828A79D9FB56E67813DEF64 /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4971E3BEE78F1A82504A5490 /* AppStore.swift */; };
+		B595491A99EF30FD14AB7F79 /* PhonesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5E41DCE583AC956A390DF48 /* PhonesView.swift */; };
 		BB97D5802E276F750ED728C3 /* Backup+Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A816062A9FD976D43C9FD9A /* Backup+Store.swift */; };
 		C3C8E844E8AAF2DEBC58A92B /* SetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7EE3EB6E2624053E7D467FC /* SetupView.swift */; };
 		CC2DA1AA093DF7D28E9E86A4 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3272DA0935BA832663FC915B /* HomeView.swift */; };
@@ -66,12 +68,14 @@
 		62B65A76A66B53134EF79DFF /* Palette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Palette.swift; sourceTree = "<group>"; };
 		88B421E0D81623C58D00E31C /* AdminView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminView.swift; sourceTree = "<group>"; };
 		9A816062A9FD976D43C9FD9A /* Backup+Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Backup+Store.swift"; sourceTree = "<group>"; };
+		A5E41DCE583AC956A390DF48 /* PhonesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhonesView.swift; sourceTree = "<group>"; };
 		AD615C04B74E794B9204B97B /* Feedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Feedback.swift; sourceTree = "<group>"; };
 		B1546F72E810EE14A38EEA3E /* PuzzleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PuzzleView.swift; sourceTree = "<group>"; };
 		B702638EB01A201DCC1EFB50 /* SchibstedGrotesk-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SchibstedGrotesk-SemiBold.ttf"; sourceTree = "<group>"; };
 		C3BE9EFE4605E34DA58153E6 /* SchibstedGrotesk-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SchibstedGrotesk-Black.ttf"; sourceTree = "<group>"; };
 		D096B95D3190ED58C9D5CEA7 /* DaresView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaresView.swift; sourceTree = "<group>"; };
 		E05411D9D6D89454354D6504 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		E799723F043017F9753E145C /* RelayLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelayLink.swift; sourceTree = "<group>"; };
 		E7EE3EB6E2624053E7D467FC /* SetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupView.swift; sourceTree = "<group>"; };
 		F3A5421D0874ADF5517A9979 /* puzzles.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = puzzles.json; sourceTree = "<group>"; };
 		F41F120FFA15EAABE3146658 /* GyattChoresUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GyattChoresUITests.swift; sourceTree = "<group>"; };
@@ -146,6 +150,8 @@
 			children = (
 				D096B95D3190ED58C9D5CEA7 /* DaresView.swift */,
 				039B149E89F0E77F200C94AE /* FamilySync.swift */,
+				A5E41DCE583AC956A390DF48 /* PhonesView.swift */,
+				E799723F043017F9753E145C /* RelayLink.swift */,
 				2856999DD0F558CCEB895897 /* Supabase.swift */,
 			);
 			path = Family;
@@ -318,8 +324,10 @@
 				2E032658D2557E5FB845C1DC /* GyattChoresApp.swift in Sources */,
 				CC2DA1AA093DF7D28E9E86A4 /* HomeView.swift in Sources */,
 				1A9C627FBFB9084C372F44B4 /* Palette.swift in Sources */,
+				B595491A99EF30FD14AB7F79 /* PhonesView.swift in Sources */,
 				119A3672AD8787ADC74C613B /* PlayerView.swift in Sources */,
 				9B45257610B8CBC6E1472B98 /* PuzzleView.swift in Sources */,
+				7F346FCF39711F9C382F59EC /* RelayLink.swift in Sources */,
 				860B2F5DA0F42A045C292891 /* RootView.swift in Sources */,
 				C3C8E844E8AAF2DEBC58A92B /* SetupView.swift in Sources */,
 				2F7375E6A72363482F52CB66 /* Supabase.swift in Sources */,
@@ -369,6 +377,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = DOYOURWORK;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Scan the code another phone shows to join its family.";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Open the admin area to approve chores.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -573,6 +582,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = DOYOURWORK;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Scan the code another phone shows to join its family.";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Open the admin area to approve chores.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";

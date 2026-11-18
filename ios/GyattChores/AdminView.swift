@@ -383,6 +383,7 @@ private struct Device: View {
         SectionLabel("your data")
         Text("This is the family build. Players, chores, codes and points are shared with the family's other phones. Sync: \(store.syncStatus).")
             .font(.app(.callout)).foregroundStyle(.secondary)
+        PhonesSection()
         SectionLabel("backup")
         Text("Save the whole scoreboard as a file, or add one saved earlier (from this app or the public one, on iPhone or Android) to the family.")
             .font(.app(.footnote)).foregroundStyle(.secondary)

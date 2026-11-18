@@ -23,9 +23,9 @@ class SyncTest {
             val r = RemoteLog("srv${next++}", log.playerId, log.playerName, log.choreId, log.choreName, log.points, log.status, 5_000L + next)
             rows[r.id] = r; return r
         }
-        override fun updateStatus(remoteId: String, status: String): Boolean {
-            val r = rows[remoteId] ?: return false
-            rows[remoteId] = r.copy(status = status); return true
+        override fun updateStatus(log: ChoreLog): Boolean {
+            val r = rows[log.remoteId] ?: return false
+            rows[r.id] = r.copy(status = log.status); return true
         }
         override fun selectAll() = rows.values.toList()
     }
@@ -70,7 +70,7 @@ class SyncTest {
 
     @Test fun unpushedLocalChangeBeatsRemoteStatus() {
         val api = object : LogApi by FakeLogs() {
-            override fun updateStatus(remoteId: String, status: String) = false // server dropped it
+            override fun updateStatus(log: ChoreLog) = false // server dropped it
             override fun selectAll() = listOf(RemoteLog("x", "1", "kid", "make-bed", "make bed", 8, "pending", 1_000L))
         }
         val out = LogSync.run(api, listOf(local("a", "rejected", remoteId = "x", dirty = true)))

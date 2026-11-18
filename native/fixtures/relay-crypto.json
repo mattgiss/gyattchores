@@ -1,0 +1,53 @@
+{
+ "generatedBy": "native/tools/relay-crypto.mjs",
+ "familyKey": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+ "household": "a1b2c3d4e5f60718293a4b5c6d7e8f90",
+ "encKey": "a9f0f702d75c07fe76812ddde62ce68c766607e2b08f8e54097c694b464c1b95",
+ "rowKey": "aaa594594ece6833805d3ae2831cbfbebdf51656896ee77268cfab9143e7a93f",
+ "seal": [
+  {
+   "kind": "log",
+   "rowId": "1731700000000_ab12cd",
+   "nonce": "000000000000000000000001",
+   "plaintext": "{\"id\":\"1731700000000_ab12cd\",\"playerId\":\"1\",\"playerName\":\"kid\",\"choreId\":\"make-bed\",\"choreName\":\"make bed\",\"points\":8,\"minutes\":5,\"status\":\"pending\",\"timestamp\":1731700000000}",
+   "sealed": "AQAAAAAAAAAAAAAAAXFT6Jg0ddqg8yVENO1zXsQummMUX5gcQUuKXCvkpWvaExaRC8ghKgtCe1EYQeNSFj4z4zJLCqQ4/6AYmxug6yTQ0CMQ6yn/jIFbaHt5mKLABxVmz+hJ4JbLhoLT0PeR/IetO2g8AgK+kcEDIJSJDPJUemaZjkawVG7CFvwfoAtAWE9eV4wcuQh0pFX1XzbO1jSE82dqJB8CtOJrg5ZOl2vnnXiPwRYxNG8vIdPPO/Yy4a85y+ByT3Y2w2vEt7Xi"
+  },
+  {
+   "kind": "state",
+   "rowId": "4KMWUepn1HWB3dKwBvl1rJmDQ38ye3i99jSjkFjKElE",
+   "nonce": "ffffffffffffffffffffffff",
+   "plaintext": "",
+   "sealed": "Af///////////////3zjQAI9hasUJcaRMg1X0R8="
+  },
+  {
+   "kind": "state",
+   "rowId": "x",
+   "nonce": "0102030405060708090a0b0c",
+   "plaintext": "chores in your own words — émoji 🧹",
+   "sealed": "AQECAwQFBgcICQoLDI17R/PdcOsDDY7+5LF0nwsE98la3ZLg7G3uQZbxAxBoTmT0Pkhiysabpep1M+Ho3uyN6qK/ShDe"
+  }
+ ],
+ "stateRowIds": [
+  {
+   "key": "players",
+   "rowId": "4KMWUepn1HWB3dKwBvl1rJmDQ38ye3i99jSjkFjKElE"
+  },
+  {
+   "key": "dare|3|2026-11-16",
+   "rowId": "wLJ7pMJZjigJj0T3Ux3vE2cOs-Xyq3R9Hzkkz0KamBY"
+  },
+  {
+   "key": "family",
+   "rowId": "2ZLECprMw30WHCG6Myd8bUiqAUGW_vGOyaM7zg8sl6M"
+  },
+  {
+   "key": "",
+   "rowId": "kM0pkK9Ks3gKS6K-mTuwBjYxWkZc7wbabKMHMu3qQQw"
+  }
+ ],
+ "joinCode": {
+  "token": "f0e1d2c3b4a5968778695a4b3c2d1e0f00112233445566778899aabbccddeeff",
+  "code": "dyw1:obLD1OX2BxgpOktcbX6PkAABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4f8OHSw7Sllod4aVpLPC0eDwARIjNEVWZ3iJmqu8zd7v8",
+  "tokenHash": "d54d65c8080cfe95521fb546c3ae0ab9cd171f111e454a05a826d685f83bd407"
+ }
+}

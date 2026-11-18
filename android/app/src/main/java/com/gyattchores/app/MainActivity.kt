@@ -57,10 +57,14 @@ class MainActivity : FragmentActivity() {
     /**
      * Debug builds: `adb shell am start ... --es syncURL http://<host>:8789` picks a test server, and
      * `--es restoreFile <name>` restores a backup pushed to the app's external files folder (for
-     * previews on an emulator). Both ignored in release.
+     * previews on an emulator). `--ez memoryRelay true` syncs with an in-memory encrypted relay
+     * instead, and `--es scanResult <code>` (or `seeded`, a family made up on that relay) is what
+     * "Join with a code" reads instead of the camera. All ignored in release.
      */
     private fun takeTestSyncUrl(intent: android.content.Intent?) {
         intent?.getStringExtra("syncURL")?.let { vm.setTestSyncUrl(it) }
+        if (BuildConfig.DEBUG && intent?.getBooleanExtra("memoryRelay", false) == true) vm.useMemoryRelay()
+        if (BuildConfig.DEBUG) intent?.getStringExtra("scanResult")?.let { vm.setTestScanResult(it) }
         if (BuildConfig.DEBUG) intent?.getStringExtra("restoreFile")?.let { name ->
             runCatching { vm.restore(com.gyattchores.app.engine.Backup.decode(java.io.File(getExternalFilesDir(null), name).readText())) }
                 .onFailure { android.util.Log.w("GyattChores", "restoreFile $name: $it") }

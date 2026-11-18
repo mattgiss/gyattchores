@@ -166,6 +166,12 @@ fun WaitingForFamily(vm: AppViewModel, status: String) {
         Text(if (status == "offline") "Can't reach the family's scoreboard. Check the connection and try again."
             else "Fetching your family's scoreboard…", color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (status == "offline") TermButton("Try again", modifier = Modifier.widthIn(max = 320.dp)) { vm.requestSync() }
+        // A new phone for a family that's already moved to encrypted sync joins with the other phone's code.
+        val linked by vm.relayLinked.collectAsState()
+        if (!linked) {
+            val join = rememberJoinFlow(vm)
+            androidx.compose.material3.OutlinedButton(onClick = join) { Text("Join with a code") }
+        }
     }
 }
 
