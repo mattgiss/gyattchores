@@ -1,4 +1,4 @@
-// GyattChores used to be a web app at this address, with a service worker that cached it for
+// DOYOURWORK used to be a web app at this address, with a service worker that cached it for
 // offline use. The site is now a plain page about the native app, so this worker's only job is
 // to retire the old one: browsers that still have it fetch this file, which clears the cached
 // app, unregisters itself, and reloads any open tab so it shows the new site.
