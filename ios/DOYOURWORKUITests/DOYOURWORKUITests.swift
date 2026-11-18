@@ -317,6 +317,7 @@ final class DOYOURWORKUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Save"].waitForExistence(timeout: wait), "the save panel should open")
         screenshot("31-backup-save-panel", of: app)
         let backupName = confirmBackupSave(in: app)
+        XCTAssertTrue(app.buttons["OK"].waitForExistence(timeout: wait))
         app.buttons["OK"].tap()
 
         // Erase, then restore from the first screen, as a new phone would.
@@ -386,50 +387,33 @@ final class DOYOURWORKUITests: XCTestCase {
     }
 
     /// On a phone that's linked, a backup is added to what the family's phones share instead of
-    /// replacing it.
-    func testALinkedPhoneAddsABackupToTheFamily() throws {
-        let app = launch(["-resetData", "-demoData"])
+    /// replacing it. The system's save and open panels are covered by
+    /// testBackupSurvivesErasingEverything; here `-restoreOwnBackup` hands the restore this phone's
+    /// own backup, since those panels are unreliable on CI's simulators.
+    func testALinkedPhoneAddsABackupToTheFamily() {
+        let app = launch(["-resetData", "-demoData", "-restoreOwnBackup"])
         XCTAssertTrue(app.staticTexts["27/30 · 90%"].waitForExistence(timeout: wait))
         unlockAdmin(in: app)
         adminSection("device", in: app)
-        let save = app.buttons["save-backup"]
-        XCTAssertTrue(save.waitForExistence(timeout: wait))
-        save.tap()
-        let backupName = confirmBackupSave(in: app)
-        app.buttons["OK"].tap()
 
         // Linked (to the in-memory relay), the phone offers adding it, not replacing.
         app.buttons["Add a phone"].tap()
         XCTAssertTrue(app.otherElements["joinQR"].waitForExistence(timeout: wait))
         app.buttons["Done"].tap()
         XCTAssertFalse(app.buttons["Erase everything…"].exists, "a phone in a family doesn't erase it")
-        app.buttons["restore-backup"].tap()
-        let file = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", backupName)).firstMatch
-        if !file.waitForExistence(timeout: 5) {
-            for place in ["Browse", "On My iPhone", "On My iPad"] {
-                let control = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@ AND (elementType == %d OR elementType == %d OR elementType == %d)",
-                                                                                   place, XCUIElement.ElementType.button.rawValue,
-                                                                                   XCUIElement.ElementType.cell.rawValue, XCUIElement.ElementType.staticText.rawValue)).firstMatch
-                if control.waitForExistence(timeout: 3) { control.tap() }
-                if file.waitForExistence(timeout: 3) { break }
-            }
-        }
-        XCTAssertTrue(file.waitForExistence(timeout: wait), "the saved backup should be in the picker")
-        let cell = app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", backupName)).firstMatch
-        if cell.exists { cell.tap() } else { file.tap() }
+        let restore = app.buttons["restore-backup"]
+        XCTAssertTrue(restore.waitForExistence(timeout: wait))
+        restore.tap()
         let add = app.buttons["Add it to the family"]
-        guard add.waitForExistence(timeout: wait) else {
-            throw XCTSkip("the system file picker didn't open the backup on this simulator; restore is covered by BackupTests")
-        }
+        XCTAssertTrue(add.waitForExistence(timeout: wait), "a linked phone adds a backup to the family")
         XCTAssertFalse(app.buttons["Replace everything here"].exists)
         screenshot("33-family-restore-confirm", of: app)
-        // The question can redraw while the file picker finishes closing: wait until it's tappable.
-        let settle = Date().addingTimeInterval(wait)
-        while !(add.exists && add.isHittable), Date() < settle { Thread.sleep(forTimeInterval: 0.25) }
         add.tap()
         // It's this family's own backup, so nothing in it is new.
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Nothing new'")).firstMatch.waitForExistence(timeout: wait))
-        app.buttons["OK"].tap()
+        let ok = app.buttons["OK"]
+        XCTAssertTrue(ok.waitForExistence(timeout: wait))
+        ok.tap()
     }
 
     /// From a fresh install to a working scoreboard, with chores written in the family's own words.
