@@ -131,7 +131,7 @@ struct JoinSheet: View {
             if working { ProgressView().frame(maxHeight: .infinity) }
             else if let preset = Self.presetScan, attempt == 0 {
                 // UI tests: no camera in the simulator; the code arrives as if it had been read.
-                Color.clear.task { await handle(preset == "seeded" ? await store.seededJoinCode() : preset) }
+                Color.clear.task { await handle(await Self.resolve(preset, store)) }
             } else if canScan {
                 CodeScanner { text in Task { await handle(text) } }
                     .id(attempt)
@@ -152,6 +152,13 @@ struct JoinSheet: View {
         let outcome = await store.joinFamily(scanned: text)
         working = false
         if let message = outcome.message { problem = message; attempt += 1; fb.error() } else { fb.approve(); dismiss() }
+    }
+
+    private static func resolve(_ preset: String, _ store: AppStore) async -> String {
+        #if DEBUG
+        if preset == "seeded" { return await store.seededJoinCode() }
+        #endif
+        return preset
     }
 
     /// Debug builds under -uiTesting only: `-scanResult <text>`, or `seeded` for a code from a
