@@ -53,6 +53,11 @@ final class AppStore: ObservableObject {
     /// Players taken off the list. Their logs stay on the server.
     var removedIds: Set<String> = []
     let api = Supabase()
+    /// The encrypted relay, once this phone has added or joined a phone (`RelayLink.swift`). Until
+    /// then sync goes through the old tables (`api`).
+    var relay: RelayClient?
+    /// Bumped when sync switches to the relay, so a pass begun on the old tables is thrown away.
+    var transport = 0
     var syncing = false, syncAgain = false
     static let meKey = uiTesting ? "ui-testing.me" : "me"
     static let syncedKey = uiTesting ? "ui-testing.has_synced" : "has_synced"
@@ -132,7 +137,9 @@ final class AppStore: ObservableObject {
         let shared: [String: LocalEntry] = Self.load("family_state.json") ?? [:]
         self.shared = shared
         me = UserDefaults.standard.string(forKey: Self.meKey)
-        hasSynced = (Self.uiTesting && SyncConfig.testURL == nil) || UserDefaults.standard.bool(forKey: Self.syncedKey)
+        if Self.uiTesting && Self.launchArguments.contains("-resetData") { RelayVault.clear() }
+        relay = RelayVault.client()
+        hasSynced = (Self.uiTesting && SyncConfig.testURL == nil && relay == nil) || UserDefaults.standard.bool(forKey: Self.syncedKey)
         #else
         dares = legacy.flatMap { key, entry -> [Dare] in
             let parts = key.split(separator: "|").map(String.init)

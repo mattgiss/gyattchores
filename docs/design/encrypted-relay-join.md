@@ -1,6 +1,6 @@
 # Families on more than one phone: encrypted relay, joined by QR code
 
-Status: design, nothing built. Decided 2026-11-16: an encrypted relay with a QR-code join. Not
+Status: being built (steps 1 to 3 below). Decided 2026-11-16: an encrypted relay with a QR-code join. Not
 local-only sync, and not a server that can read family data.
 
 ## What a family sees
@@ -129,6 +129,9 @@ switches the old sync off. That change goes to `main`, which deploys the website
   collected even when it's encrypted. Check the current App Privacy guidance before choosing
   answers. At least the anonymous device id and diagnostics need declaring, and probably "Other
   User Content" (encrypted).
+- **Export compliance.** The iOS build declares `ITSAppUsesNonExemptEncryption = NO`. Encrypting
+  family data with AES-GCM may change that answer (and the annual self-classification report).
+  Check before submitting the one-app build.
 - **Google Play data-safety form.** It asks whether data is encrypted in transit and whether users
   can ask for deletion. Answer both: yes, and Admin → "Delete this family from the server".
 - **Privacy policy (`app-privacy.html`).** Rewrite the "collects nothing" paragraphs for both
@@ -164,9 +167,36 @@ switches the old sync off. That change goes to `main`, which deploys the website
    - **Still to do:** the app still uses the old tables. Keeping the session and keys on the
      device (Keychain / Keystore) and switching the apps over come with the join flow, along with
      an in-memory relay for the UI tests (like today's `-syncURL`).
-3. **Join flow.** QR display (CoreImage / ZXing core for drawing), scanning (VisionKit
-   `DataScannerViewController` / CameraX + ML Kit, or ZXing), camera permission text,
-   Admin → Phones.
+3. **Join flow.** Started 2026-11-17, in the **family build only** (the iOS "GyattChores Family"
+   scheme and Android's family flavor, the builds the family's phones run). The App Store / Play
+   build gets no network code, camera permission or server address until step 5, and CI checks
+   the iOS App Store build has no server address in it.
+   - **Admin → Device → Phones.** "Add a phone" puts the family on the relay the first time: a new
+     household and family key, every log and piece of state uploaded again encrypted
+     (`LogSync.forNewServer` / `StateSync.forNewServer`), and sync switches from the old tables to
+     the relay. Then, and every time after, it shows a QR code with a 10-minute countdown.
+   - **"Join with a code"** (only while a phone is still on the old tables, in Admin and on the
+     "Loading the family" screen a new phone starts on) asks first, then scans.
+     On success the phone drops what it had from the old tables and loads the family from the
+     relay. Whose phone it is stays. Bad, used or expired codes and no connection each get a
+     plain message.
+   - **Phones list.** Once on the relay, the list shows "This phone" and the others, each with a
+     date and a Remove button.
+   - **Storage.** The keys and the anonymous sign-in live in the iOS Keychain (this device only) and,
+     on Android, in preferences encrypted with an Android Keystore key.
+   - **Drawing and scanning.** CoreImage draws the QR code on iOS and VisionKit's
+     `DataScannerViewController` reads it. On Android, ZXing does both.
+   - **Address.** The relay's address, and on Android the old tables' address too, is kept in
+     family-only code, not in GyattCore or Kotlin `main`. Neither store build contains
+     "supabase.co". Before this, the Play build carried the old tables' address unused.
+   - **Tests.** UI tests use an in-memory relay (`MemoryRelay`, the same one the unit tests use).
+     `-scanResult seeded` makes a second phone with a family in it and hands over its code, so the
+     whole join is tested without a camera.
+   - **Still to do:**
+     - "Join a family" on the first-run setup screen. It belongs to the one-app build in step 5.
+     - Trying it with two real phones and a real camera, against the real server.
+     - Android debug builds only ever use the in-memory relay, so its Keystore storage is first
+       exercised by a release family build. iOS uses the in-memory relay under UI tests only.
 4. **Server deletion** (Admin → "Delete this family from the server").
 5. **Move your family over**, then retire `FAMILY_SYNC`.
 6. **Store forms and privacy policy**, then submit.

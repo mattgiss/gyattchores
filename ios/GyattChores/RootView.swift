@@ -138,6 +138,8 @@ struct RootView: View {
 /// Family build, first launch: waiting for the family's players to load.
 private struct FamilyLoadingView: View {
     @EnvironmentObject var store: AppStore
+    @EnvironmentObject var fb: Feedback
+    @State private var joining = false
 
     var body: some View {
         VStack(spacing: 16) {
@@ -149,8 +151,13 @@ private struct FamilyLoadingView: View {
                 ProgressView()
                 Text("Loading the family…").foregroundStyle(.secondary)
             }
+            // A new phone for a family already on the encrypted relay can't reach Admin yet.
+            if !store.isLinked {
+                OutlineButton(label: "Join with a code") { fb.tap(); joining = true }
+            }
         }
         .padding(24)
+        .sheet(isPresented: $joining) { JoinSheet().appChrome(store, fb) }
     }
 }
 #endif

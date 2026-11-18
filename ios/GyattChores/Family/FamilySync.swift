@@ -15,23 +15,30 @@ extension AppStore {
     /// One pass at a time; a request that arrives mid-pass runs one follow-up pass instead of overlapping.
     func requestSync() {
         // UI tests never reach the family's data: sync is off, unless pointed at a test server.
-        if Self.uiTesting && SyncConfig.testURL == nil { syncStatus = "off (ui testing)"; return }
+        // (Under -uiTesting the relay is always the in-memory one, so it may run.)
+        if Self.uiTesting && SyncConfig.testURL == nil && relay == nil { syncStatus = "off (ui testing)"; return }
         if syncing { syncAgain = true; return }
         syncing = true
         syncStatus = "syncing"
         let logSnapshot = logs, stateSnapshot = shared
+        let logAPI: LogAPI = relay ?? api, stateAPI: StateAPI = relay ?? api, started = transport
         Task {
             do {
-                let synced = try await LogSync.run(api: api, local: logSnapshot)
+                let synced = try await LogSync.run(api: logAPI, local: logSnapshot)
+                // Sync moved to the relay mid-pass: what came from the old tables doesn't belong here now.
+                guard started == transport else { throw CancellationError() }
                 // Taken off the list: their rows stay on the server but not on this device.
                 logs = LogSync.reconcile(synced: synced, latest: logs).filter { !removedIds.contains($0.playerId) }
-                let st = try await StateSync.run(api: api, local: stateSnapshot)
+                let st = try await StateSync.run(api: stateAPI, local: stateSnapshot)
+                guard started == transport else { throw CancellationError() }
                 shared = StateSync.reconcile(synced: st, latest: shared)
                 applyShared()
                 logs.removeAll { removedIds.contains($0.playerId) }
                 adoptPlayersFromLogs()
                 hasSynced = true
                 syncStatus = "synced"
+            } catch is CancellationError {
+                syncAgain = true
             } catch {
                 syncStatus = "offline"
             }

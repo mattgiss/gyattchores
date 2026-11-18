@@ -19,6 +19,9 @@ data class LocalEntry(val items: List<String>, val updatedAt: Long = 0, val dirt
 
 /** Last writer wins per key, by `updated_at`. */
 object StateSync {
+    /** Moving to a server that has none of this: every entry goes out on the next pass, dated as it is. */
+    fun forNewServer(state: Map<String, LocalEntry>): Map<String, LocalEntry> = state.mapValues { it.value.copy(dirty = true) }
+
     fun run(api: StateApi, local: Map<String, LocalEntry>): Map<String, LocalEntry> {
         val work = local.toMutableMap()
         for ((key, e) in local) {

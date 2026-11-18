@@ -12,19 +12,10 @@ import java.net.URLEncoder
 import java.time.Instant
 import java.time.OffsetDateTime
 
-/**
- * The same Supabase project and publishable (anon) key the web app ships in `index.html`.
- * The key is public by design; access is governed by the table's row-level-security policies.
- */
-object SyncConfig {
-    const val URL = "https://ukshxdoqgwoxobjdclpx.supabase.co"
-    const val ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrc2h4ZG9xZ3dveG9iamRjbHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3MjI2NDEsImV4cCI6MjA4MDI5ODY0MX0.UGNrsfG6goEA0PPWG4x7gxBueA7D5Oe9uWI-iCXIar0"
-}
-
 class HttpStatusException(val code: Int, body: String) : IOException("HTTP $code: ${body.take(200)}")
 
-/** Minimal PostgREST client over HttpURLConnection. */
-class Supabase(private val baseUrl: String = SyncConfig.URL, private val key: String = SyncConfig.ANON_KEY) : LogApi, StateApi {
+/** Minimal PostgREST client over HttpURLConnection. The family's project and key are in the family edition's `Servers`. */
+class Supabase(private val baseUrl: String, private val key: String) : LogApi, StateApi {
     private val json = Json { ignoreUnknownKeys = true; explicitNulls = false }
 
     @Serializable

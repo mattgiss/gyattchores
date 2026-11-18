@@ -273,6 +273,7 @@ private fun AdminContent(vm: AppViewModel, logs: List<ChoreLog>) {
                 Text(if (vm.familySync) "Reset this phone…" else "Erase everything…", color = Bad)
             }
         }
+        if (vm.familySync) item { PhonesSection(vm) }
     }
 
     editing?.let { m -> MemberDialog(vm, m, onDismiss = { editing = null }) }

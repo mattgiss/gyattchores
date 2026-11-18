@@ -61,6 +61,12 @@ public enum LogSync {
         return work
     }
 
+    /// The family moves to a server that has none of its logs (the first "Add a phone"): every log
+    /// goes up again, under its own id, as the next pass's step 1.
+    public static func forNewServer(_ logs: [ChoreLog]) -> [ChoreLog] {
+        logs.map { var l = $0; l.remoteId = nil; l.statusDirty = false; return l }
+    }
+
     /// Folds in whatever changed locally while the pass was on the network.
     public static func reconcile(synced: [ChoreLog], latest: [ChoreLog]) -> [ChoreLog] {
         var out = synced
@@ -108,6 +114,12 @@ public enum StateSync {
             work[r.key] = LocalEntry(items: r.items, updatedAt: r.updatedAt, dirty: false)
         }
         return work
+    }
+
+    /// The family moves to a server that has none of its state: every entry goes up again, and
+    /// keeps its date, so a newer change from another phone still wins later.
+    public static func forNewServer(_ state: [String: LocalEntry]) -> [String: LocalEntry] {
+        state.mapValues { var e = $0; e.dirty = true; return e }
     }
 
     /// Keeps entries edited locally while the pass was on the network.

@@ -34,6 +34,12 @@ interface LogApi {
  */
 object LogSync {
 
+    /**
+     * Moving to a server that has none of these logs (the first "Add a phone"): each one is sent
+     * again, under its own id, with the status it has now.
+     */
+    fun forNewServer(logs: List<ChoreLog>): List<ChoreLog> = logs.map { it.copy(remoteId = null, statusDirty = false) }
+
     /** Returns the merged list. [local] is the snapshot the pass started from. */
     fun run(api: LogApi, local: List<ChoreLog>): List<ChoreLog> {
         val work = local.toMutableList()

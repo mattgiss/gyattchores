@@ -17,14 +17,10 @@ import java.net.URLEncoder
 import java.time.OffsetDateTime
 
 /**
- * Where the relay lives: the DOYOURWORK Supabase project (supabase/doyourwork/001_relay.sql).
- * The publishable key is public by design; the row-level security in that SQL decides access.
+ * Where a relay lives. The real one (the DOYOURWORK Supabase project) is in the family edition's
+ * `Servers`, so the public edition carries no server address at all.
  */
-data class RelayConfig(val url: String, val publishableKey: String) {
-    companion object {
-        val DOYOURWORK = RelayConfig("https://omemognwvcnonnzjmcxm.supabase.co", "sb_publishable_prXq51_BMc8lnG4BY5vXmA_xJysoZxa")
-    }
-}
+data class RelayConfig(val url: String, val publishableKey: String)
 
 /** This device's anonymous sign-in. No email or password: just a random user id the server made. */
 @Serializable
@@ -72,7 +68,7 @@ data class RelayDevice(val userId: String, /** Epoch millis. */ val joinedAt: Lo
 class Relay(
     val keys: FamilyKeys,
     private val sessions: RelaySessionStore,
-    private val config: RelayConfig = RelayConfig.DOYOURWORK,
+    private val config: RelayConfig,
     private val http: RelayHttp = UrlConnectionHttp,
     private val now: () -> Long = System::currentTimeMillis,
 ) : LogApi, StateApi {

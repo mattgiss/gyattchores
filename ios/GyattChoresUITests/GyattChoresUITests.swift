@@ -956,4 +956,60 @@ final class GyattChoresUITests: XCTestCase {
         add(sideways)
         XCUIDevice.shared.orientation = .portrait
     }
+
+    // MARK: Phones (family build)
+
+    #if FAMILY_SYNC
+    private func phonesSection(in app: XCUIApplication) {
+        unlockAdmin(in: app)
+        adminSection("device", in: app)
+        XCTAssertTrue(app.staticTexts["Phones"].waitForExistence(timeout: wait))
+    }
+
+    private func label(startingWith text: String, in app: XCUIApplication) -> XCUIElement {
+        app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", text)).firstMatch
+    }
+
+    /// The first "Add a phone" moves the family to the relay (here, the in-memory one) and shows a code.
+    func testAddAPhoneShowsACodeAndListsThisPhone() {
+        let app = launch(["-resetData", "-demoFamily"])
+        phonesSection(in: app)
+        XCTAssertTrue(app.buttons["Join with a code"].exists, "a phone on the old tables can still join a family")
+        app.buttons["Add a phone"].tap()
+        XCTAssertTrue(app.otherElements["joinQR"].waitForExistence(timeout: wait), "a QR code to scan")
+        XCTAssertTrue(label(startingWith: "Expires in", in: app).exists)
+        screenshot("40-add-a-phone", of: app)
+        app.buttons["Done"].tap()
+        XCTAssertTrue(label(startingWith: "This phone · joined", in: app).waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts["Encrypted sync. Only this family's phones can read what's sent."].exists)
+        XCTAssertFalse(app.buttons["Join with a code"].exists, "a phone in the relay doesn't join another family")
+    }
+
+    /// Scanning another phone's code swaps this phone's family for that one, through the relay.
+    func testJoiningWithACodeLoadsTheOtherPhonesFamily() {
+        let app = launch(["-resetData", "-demoFamily", "-scanResult", "seeded"])
+        phonesSection(in: app)
+        app.buttons["Join with a code"].tap()
+        app.buttons["Scan the code"].tap()
+        // The other phone's family (jules and kai) replaces the demo one (riley and sam).
+        XCTAssertTrue(playerRow("jules", in: app).waitForExistence(timeout: wait))
+        XCTAssertTrue(playerRow("kai", in: app).waitForExistence(timeout: wait))
+        XCTAssertFalse(playerRow("riley", in: app).exists)
+        screenshot("41-joined-family", of: app)
+        // Its admin code came with it, and both phones are listed.
+        phonesSection(in: app)
+        XCTAssertTrue(label(startingWith: "This phone · joined", in: app).waitForExistence(timeout: wait))
+        XCTAssertTrue(label(startingWith: "Phone · joined", in: app).exists)
+    }
+
+    func testACodeFromSomewhereElseIsRefused() {
+        let app = launch(["-resetData", "-demoFamily", "-scanResult", "https://example.com"])
+        phonesSection(in: app)
+        app.buttons["Join with a code"].tap()
+        app.buttons["Scan the code"].tap()
+        XCTAssertTrue(app.staticTexts["That isn't a DOYOURWORK code."].waitForExistence(timeout: wait))
+        app.buttons["Cancel"].tap()
+        XCTAssertTrue(app.buttons["Join with a code"].waitForExistence(timeout: wait), "nothing changed")
+    }
+    #endif
 }

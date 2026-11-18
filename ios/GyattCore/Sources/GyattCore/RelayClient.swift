@@ -3,13 +3,13 @@ import Foundation
 import FoundationNetworking
 #endif
 
-/// Where the relay lives: the DOYOURWORK Supabase project (supabase/doyourwork/001_relay.sql).
-/// The publishable key is public by design; the row-level security in that SQL decides access.
+/// Where the relay lives. The app passes in the DOYOURWORK project's address (supabase/doyourwork/
+/// 001_relay.sql); it isn't kept here, because the App Store build links GyattCore too and must not
+/// contain a server address. The publishable key is public by design; the SQL's row-level security
+/// decides access.
 public struct RelayConfig: Sendable, Equatable {
     public let url: String, publishableKey: String
     public init(url: String, publishableKey: String) { self.url = url; self.publishableKey = publishableKey }
-    public static let doyourwork = RelayConfig(url: "https://omemognwvcnonnzjmcxm.supabase.co",
-                                               publishableKey: "sb_publishable_prXq51_BMc8lnG4BY5vXmA_xJysoZxa")
 }
 
 /// This device's anonymous sign-in. No email or password: just a random user id the server made.
@@ -72,8 +72,8 @@ public actor RelayClient: LogAPI, StateAPI {
     /// Records the last pull skipped because they wouldn't open. Zero unless something is wrong.
     public private(set) var unreadable = 0
 
-    public init(keys: FamilyKeys, config: RelayConfig = .doyourwork, sessions: RelaySessionStore,
-                http: RelayHTTP = URLSessionHTTP(), now: @escaping @Sendable () -> Date = Date.init) {
+    public init(keys: FamilyKeys, config: RelayConfig, sessions: RelaySessionStore,
+                http: RelayHTTP = URLSessionHTTP(), now: @escaping @Sendable () -> Date = { Date() }) {
         self.keys = keys; self.config = config; self.sessions = sessions; self.http = http; self.now = now
     }
 
