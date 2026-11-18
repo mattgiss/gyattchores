@@ -16,6 +16,9 @@ struct BackupControls: View {
     /// A backup read from the picked file, shown once the file picker has closed.
     @State private var loaded: Backup?
     @State private var prompt: Prompt?
+    /// A restore's result, shown once the alert that asked about it has gone: one alert presented
+    /// while another is still closing can be lost.
+    @State private var pendingMessage: String?
 
     /// One alert at a time: asking before a restore, or saying how something went.
     private enum Prompt: Identifiable {
@@ -66,6 +69,11 @@ struct BackupControls: View {
             loaded = nil
             Task { try? await Task.sleep(for: .milliseconds(400)); prompt = .confirm(b) }
         }
+        .onChange(of: prompt == nil) { _, closed in
+            guard closed, let m = pendingMessage else { return }
+            pendingMessage = nil
+            Task { try? await Task.sleep(for: .milliseconds(400)); prompt = .message(m) }
+        }
         .alert(item: $prompt) { p in
             switch p {
             case .confirm(let b):
@@ -85,7 +93,8 @@ struct BackupControls: View {
         let result = store.restore(b)
         fb.approve()
         if fromSetup { store.notice = result }
-        else { Task { try? await Task.sleep(for: .milliseconds(400)); prompt = .message(result) } }
+        else if prompt == nil { Task { try? await Task.sleep(for: .milliseconds(700)); prompt = .message(result) } }
+        else { pendingMessage = result }
     }
 }
 

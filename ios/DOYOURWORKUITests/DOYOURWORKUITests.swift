@@ -420,7 +420,7 @@ final class DOYOURWORKUITests: XCTestCase {
         screenshot("33-family-restore-confirm", of: app)
         add.tap()
         // It's this family's own backup, so nothing in it is new.
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Nothing new'")).firstMatch.waitForExistence(timeout: wait))
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Nothing new'")).firstMatch.waitForExistence(timeout: wait * 2))
         let ok = app.buttons["OK"]
         XCTAssertTrue(ok.waitForExistence(timeout: wait))
         ok.tap()
