@@ -48,6 +48,23 @@ final class DOYOURWORKUITests: XCTestCase {
         app.segmentedControls.firstMatch.buttons[name.prefix(1).uppercased() + name.dropFirst()].tap()
     }
 
+    /// Taps Save in the system's save panel and waits for the app to say the backup was saved. A
+    /// backup from earlier in the run has today's file name too, so iOS may first ask whether to
+    /// replace it, which on a slow simulator can take a while to appear.
+    private func confirmBackupSave(in app: XCUIApplication) {
+        let saveButton = app.buttons["Save"]
+        XCTAssertTrue(saveButton.waitForExistence(timeout: wait), "the save panel should open")
+        saveButton.tap()
+        let saved = app.staticTexts["Backup saved. Keep it somewhere safe, like Files or iCloud Drive."]
+        let replace = app.buttons["Replace"]
+        let deadline = Date().addingTimeInterval(wait)
+        while Date() < deadline && !saved.exists {
+            if replace.exists { replace.tap() }
+            _ = saved.waitForExistence(timeout: 1)
+        }
+        XCTAssertTrue(saved.exists, "the app should say the backup was saved")
+    }
+
     /// Flips a switch. Tapping the middle of a labelled switch lands on its label, which does nothing.
     private func flip(_ toggle: XCUIElement) {
         XCTAssertTrue(toggle.waitForExistence(timeout: wait))
@@ -264,13 +281,9 @@ final class DOYOURWORKUITests: XCTestCase {
         let save = app.buttons["save-backup"]
         XCTAssertTrue(save.waitForExistence(timeout: wait))
         save.tap()
-        let saveButton = app.buttons["Save"]
-        XCTAssertTrue(saveButton.waitForExistence(timeout: wait), "the save panel should open")
+        XCTAssertTrue(app.buttons["Save"].waitForExistence(timeout: wait), "the save panel should open")
         screenshot("31-backup-save-panel", of: app)
-        saveButton.tap()
-        let replace = app.buttons["Replace"]
-        if replace.waitForExistence(timeout: 3) { replace.tap() }
-        XCTAssertTrue(app.staticTexts["Backup saved. Keep it somewhere safe, like Files or iCloud Drive."].waitForExistence(timeout: wait))
+        confirmBackupSave(in: app)
         app.buttons["OK"].tap()
 
         // Erase, then restore from the first screen, as a new phone would.
@@ -350,10 +363,7 @@ final class DOYOURWORKUITests: XCTestCase {
         let save = app.buttons["save-backup"]
         XCTAssertTrue(save.waitForExistence(timeout: wait))
         save.tap()
-        XCTAssertTrue(app.buttons["Save"].waitForExistence(timeout: wait), "the save panel should open")
-        app.buttons["Save"].tap()
-        if app.buttons["Replace"].waitForExistence(timeout: 3) { app.buttons["Replace"].tap() }
-        XCTAssertTrue(app.staticTexts["Backup saved. Keep it somewhere safe, like Files or iCloud Drive."].waitForExistence(timeout: wait))
+        confirmBackupSave(in: app)
         app.buttons["OK"].tap()
 
         // Linked (to the in-memory relay), the phone offers adding it, not replacing.
@@ -932,6 +942,9 @@ final class DOYOURWORKUITests: XCTestCase {
     private func phonesSection(in app: XCUIApplication) {
         unlockAdmin(in: app)
         adminSection("device", in: app)
+        // Right after a join the family is still arriving and the admin area can redraw under the
+        // first tap; tap Device again if the section hasn't shown.
+        if !app.staticTexts["Phones"].waitForExistence(timeout: 5) { adminSection("device", in: app) }
         XCTAssertTrue(app.staticTexts["Phones"].waitForExistence(timeout: wait))
     }
 
