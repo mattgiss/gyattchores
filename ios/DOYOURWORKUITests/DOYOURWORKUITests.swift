@@ -44,16 +44,34 @@ final class DOYOURWORKUITests: XCTestCase {
         XCTAssertTrue(app.segmentedControls.firstMatch.waitForExistence(timeout: wait), "the right code opens the admin area")
     }
 
+    /// Opens one of the admin tabs. On a slow simulator the first tap, right as the sheet opens,
+    /// can be lost, so tap again until the tab is selected.
     private func adminSection(_ name: String, in app: XCUIApplication) {
-        app.segmentedControls.firstMatch.buttons[name.prefix(1).uppercased() + name.dropFirst()].tap()
+        let tab = app.segmentedControls.firstMatch.buttons[name.prefix(1).uppercased() + name.dropFirst()]
+        XCTAssertTrue(tab.waitForExistence(timeout: wait))
+        for _ in 0..<5 where !tab.isSelected {
+            tab.tap()
+            let until = Date().addingTimeInterval(2)
+            while !tab.isSelected, Date() < until { Thread.sleep(forTimeInterval: 0.25) }
+        }
+        XCTAssertTrue(tab.isSelected, "the \(name) tab should open")
     }
 
-    /// Taps Save in the system's save panel and waits for the app to say the backup was saved. A
-    /// backup from earlier in the run has today's file name too, so iOS may first ask whether to
-    /// replace it, which on a slow simulator can take a while to appear.
-    private func confirmBackupSave(in app: XCUIApplication) {
+    /// Saves the backup in the system's save panel under a name of its own and waits for the app to
+    /// say it was saved. Returns the name, to find the file again. A backup from earlier in the run
+    /// would otherwise have the same name, and replacing a file can hang the simulator's Files.
+    @discardableResult
+    private func confirmBackupSave(in app: XCUIApplication) -> String {
         let saveButton = app.buttons["Save"]
         XCTAssertTrue(saveButton.waitForExistence(timeout: wait), "the save panel should open")
+        let day = DateFormatter(); day.locale = Locale(identifier: "en_US_POSIX"); day.dateFormat = "yyyy-MM-dd"
+        let name = "doyourwork-backup-\(day.string(from: Date()))-\(UUID().uuidString.prefix(6).lowercased())"
+        let field = app.textFields["DOCPicker.filenameTextField"]
+        if field.waitForExistence(timeout: 5) {
+            field.tap()
+            let current = (field.value as? String) ?? ""
+            field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: current.count + 5) + name)
+        }
         saveButton.tap()
         let saved = app.staticTexts["Backup saved. Keep it somewhere safe, like Files or iCloud Drive."]
         let replace = app.buttons["Replace"]
@@ -72,6 +90,7 @@ final class DOYOURWORKUITests: XCTestCase {
             _ = saved.waitForExistence(timeout: 1)
         }
         XCTAssertTrue(saved.exists, "the app should say the backup was saved")
+        return name
     }
 
     /// Flips a switch. Tapping the middle of a labelled switch lands on its label, which does nothing.
@@ -297,7 +316,7 @@ final class DOYOURWORKUITests: XCTestCase {
         save.tap()
         XCTAssertTrue(app.buttons["Save"].waitForExistence(timeout: wait), "the save panel should open")
         screenshot("31-backup-save-panel", of: app)
-        confirmBackupSave(in: app)
+        let backupName = confirmBackupSave(in: app)
         app.buttons["OK"].tap()
 
         // Erase, then restore from the first screen, as a new phone would.
@@ -308,9 +327,8 @@ final class DOYOURWORKUITests: XCTestCase {
         let restore = app.buttons["restore-backup"]
         XCTAssertTrue(restore.waitForExistence(timeout: wait), "setup offers restoring a backup")
         restore.tap()
-        // Today's file by name: a simulator can still hold backups from earlier runs, with older demo history.
-        let day = DateFormatter(); day.locale = Locale(identifier: "en_US_POSIX"); day.dateFormat = "yyyy-MM-dd"
-        let file = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", "doyourwork-backup-\(day.string(from: Date()))")).firstMatch
+        // This test's file by name: the simulator can hold backups from other tests and earlier runs.
+        let file = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", backupName)).firstMatch
         // Older iOS opens the picker on Recents, which may not list the file yet: go to where it was saved.
         if !file.waitForExistence(timeout: 5) {
             for place in ["Browse", "On My iPhone", "On My iPad"] {
@@ -323,7 +341,7 @@ final class DOYOURWORKUITests: XCTestCase {
         }
         XCTAssertTrue(file.waitForExistence(timeout: wait), "the saved backup should be in the picker")
         // Tap the file itself: on older iOS a tap on its name label (in the grid view) doesn't open it.
-        let cell = app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", "doyourwork-backup-\(day.string(from: Date()))")).firstMatch
+        let cell = app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", backupName)).firstMatch
         if cell.exists { cell.tap() } else { file.tap() }
         let confirm = app.buttons["Replace everything here"]
         // Older iOS can select the file without opening it: open it.
@@ -377,7 +395,7 @@ final class DOYOURWORKUITests: XCTestCase {
         let save = app.buttons["save-backup"]
         XCTAssertTrue(save.waitForExistence(timeout: wait))
         save.tap()
-        confirmBackupSave(in: app)
+        let backupName = confirmBackupSave(in: app)
         app.buttons["OK"].tap()
 
         // Linked (to the in-memory relay), the phone offers adding it, not replacing.
@@ -386,8 +404,7 @@ final class DOYOURWORKUITests: XCTestCase {
         app.buttons["Done"].tap()
         XCTAssertFalse(app.buttons["Erase everything…"].exists, "a phone in a family doesn't erase it")
         app.buttons["restore-backup"].tap()
-        let day = DateFormatter(); day.locale = Locale(identifier: "en_US_POSIX"); day.dateFormat = "yyyy-MM-dd"
-        let file = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", "doyourwork-backup-\(day.string(from: Date()))")).firstMatch
+        let file = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", backupName)).firstMatch
         if !file.waitForExistence(timeout: 5) {
             for place in ["Browse", "On My iPhone", "On My iPad"] {
                 let control = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@ AND (elementType == %d OR elementType == %d OR elementType == %d)",
@@ -398,7 +415,7 @@ final class DOYOURWORKUITests: XCTestCase {
             }
         }
         XCTAssertTrue(file.waitForExistence(timeout: wait), "the saved backup should be in the picker")
-        let cell = app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", "doyourwork-backup-\(day.string(from: Date()))")).firstMatch
+        let cell = app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", backupName)).firstMatch
         if cell.exists { cell.tap() } else { file.tap() }
         let add = app.buttons["Add it to the family"]
         guard add.waitForExistence(timeout: wait) else {
@@ -406,6 +423,9 @@ final class DOYOURWORKUITests: XCTestCase {
         }
         XCTAssertFalse(app.buttons["Replace everything here"].exists)
         screenshot("33-family-restore-confirm", of: app)
+        // The question can redraw while the file picker finishes closing: wait until it's tappable.
+        let settle = Date().addingTimeInterval(wait)
+        while !(add.exists && add.isHittable), Date() < settle { Thread.sleep(forTimeInterval: 0.25) }
         add.tap()
         // It's this family's own backup, so nothing in it is new.
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Nothing new'")).firstMatch.waitForExistence(timeout: wait))
