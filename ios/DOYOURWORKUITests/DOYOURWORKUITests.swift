@@ -57,9 +57,18 @@ final class DOYOURWORKUITests: XCTestCase {
         saveButton.tap()
         let saved = app.staticTexts["Backup saved. Keep it somewhere safe, like Files or iCloud Drive."]
         let replace = app.buttons["Replace"]
-        let deadline = Date().addingTimeInterval(wait)
+        // A tap that lands while the panel is still loading does nothing, so tap Save again while
+        // the panel is still up.
+        let deadline = Date().addingTimeInterval(wait * 2)
+        var lastTap = Date()
         while Date() < deadline && !saved.exists {
-            if replace.exists { replace.tap() }
+            if replace.exists {
+                replace.tap()
+                lastTap = Date()
+            } else if saveButton.exists, saveButton.isHittable, Date().timeIntervalSince(lastTap) > 3 {
+                saveButton.tap()
+                lastTap = Date()
+            }
             _ = saved.waitForExistence(timeout: 1)
         }
         XCTAssertTrue(saved.exists, "the app should say the backup was saved")
@@ -1028,7 +1037,7 @@ final class DOYOURWORKUITests: XCTestCase {
         XCTAssertTrue(join.waitForExistence(timeout: wait))
         join.tap()
         XCTAssertTrue(playerRow("jules", in: app).waitForExistence(timeout: wait))
-        XCTAssertTrue(playerRow("kai", in: app).exists)
+        XCTAssertTrue(playerRow("kai", in: app).waitForExistence(timeout: wait))
         XCTAssertFalse(app.buttons["Set up this device"].exists, "the family it joined is already set up")
         unlockAdmin(in: app)
     }
