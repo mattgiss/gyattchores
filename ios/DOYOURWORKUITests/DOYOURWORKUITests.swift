@@ -124,13 +124,18 @@ final class DOYOURWORKUITests: XCTestCase {
     /// Checks off every chore on the card and returns the submit button, now enabled.
     private func checkOffEverything(in app: XCUIApplication) -> XCUIElement {
         let submit = app.buttons["Send it off for approval"]
-        var steps = 0
-        while !submit.exists, steps < 40 {
-            steps += 1
+        // Go by time, not a count of tries: on a slow simulator the card and the button can take
+        // a while to settle, and a tap that lands mid-animation does nothing.
+        let deadline = Date().addingTimeInterval(wait * 4)
+        while !submit.exists, Date() < deadline {
             let next = uncheckedChores(in: app).firstMatch
-            if next.exists, next.isHittable { next.tap() } else { nudgeUp(app) }
+            if next.exists, next.isHittable {
+                next.tap()
+            } else if !submit.waitForExistence(timeout: 1) {
+                nudgeUp(app)
+            }
         }
-        XCTAssertTrue(submit.exists, "checking every chore off should enable submit")
+        XCTAssertTrue(submit.waitForExistence(timeout: wait), "checking every chore off should enable submit")
         XCTAssertTrue(submit.isEnabled)
         return submit
     }
