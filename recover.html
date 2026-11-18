@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#ffffff">
-<title>Points Recovery — GyattChores</title>
+<title>Points Recovery — DOYOURWORK</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: #fff; color: #111; font-family: 'Courier New', Courier, monospace; line-height: 1.6; }
@@ -41,7 +41,7 @@ pre { background: #f5f5f5; border: 1px solid #e5e5e5; padding: 16px; font-size: 
 </head>
 <body>
 <nav>
-  <a href="/" class="nav-brand">GYATTCHORES</a>
+  <a href="/" class="nav-brand">DOYOURWORK</a>
   <div class="nav-links">
     <a href="/">home</a>
     <a href="/app.html">support</a>
@@ -49,7 +49,7 @@ pre { background: #f5f5f5; border: 1px solid #e5e5e5; padding: 16px; font-size: 
 </nav>
 <div class="container">
   <h1>POINTS RECOVERY</h1>
-  <p class="sub">reads this device's local storage — open on the same browser where you use gyattchores</p>
+  <p class="sub">reads this device's local storage — open on the same browser where you use DOYOURWORK</p>
 
   <div id="output"></div>
   <button class="export-btn" onclick="copyJSON()">COPY RAW JSON TO CLIPBOARD</button>
@@ -57,6 +57,7 @@ pre { background: #f5f5f5; border: 1px solid #e5e5e5; padding: 16px; font-size: 
 </div>
 
 <script>
+// Where the retired web app saved chores in this browser, under the app's first name.
 const KEY = 'gyattchores_logs';
 
 function run() {

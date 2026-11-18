@@ -46,7 +46,7 @@ for (const page of pages) {
   if (/text\/babel|serviceWorker\.register/.test(html)) fail('index.html still carries the web app or registers a service worker');
   else pass('index.html is not the web app');
   const outside = [...html.matchAll(/<(?:script|link|img|iframe)[^>]*(?:src|href)="(https?:\/\/[^"]+)"/g)]
-    .map((m) => m[1]).filter((u) => !u.startsWith('https://gyattchores.com/'));
+    .map((m) => m[1]).filter((u) => !u.startsWith('https://doyourwork.today/'));
   if (outside.length) fail('index.html loads from other sites: ' + outside.join(', '));
   else pass('index.html loads nothing from other sites');
 }
