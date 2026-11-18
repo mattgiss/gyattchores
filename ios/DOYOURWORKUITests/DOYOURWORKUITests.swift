@@ -65,13 +65,17 @@ final class DOYOURWORKUITests: XCTestCase {
         let saveButton = app.buttons["Save"]
         XCTAssertTrue(saveButton.waitForExistence(timeout: wait), "the save panel should open")
         let day = DateFormatter(); day.locale = Locale(identifier: "en_US_POSIX"); day.dateFormat = "yyyy-MM-dd"
-        let name = "doyourwork-backup-\(day.string(from: Date()))-\(UUID().uuidString.prefix(6).lowercased())"
+        var name = "doyourwork-backup-\(day.string(from: Date()))"
         let field = app.textFields["DOCPicker.filenameTextField"]
         if field.waitForExistence(timeout: 5) {
             field.tap()
             let current = (field.value as? String) ?? ""
-            field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: current.count + 5) + name)
+            field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: current.count + 5)
+                           + name + "-" + UUID().uuidString.prefix(6).lowercased())
+            // Typing doesn't always reach the field on a slow simulator: go by what it holds now.
+            if let now = field.value as? String, now.hasPrefix("doyourwork-backup-") { name = now }
         }
+        if !name.hasSuffix(".json") { name += ".json" }
         saveButton.tap()
         let saved = app.staticTexts["Backup saved. Keep it somewhere safe, like Files or iCloud Drive."]
         let replace = app.buttons["Replace"]
