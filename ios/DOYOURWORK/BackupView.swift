@@ -19,6 +19,9 @@ struct BackupControls: View {
     /// A restore's result, shown once the alert that asked about it has gone: one alert presented
     /// while another is still closing can be lost.
     @State private var pendingMessage: String?
+    /// A backup to restore once the alert that asked has gone: restoring changes the whole
+    /// screen, and doing that while the alert is still closing can leave it stuck on screen.
+    @State private var pendingRestore: Backup?
 
     /// One alert at a time: asking before a restore, or saying how something went.
     private enum Prompt: Identifiable {
@@ -70,20 +73,31 @@ struct BackupControls: View {
             Task { try? await Task.sleep(for: .milliseconds(400)); prompt = .confirm(b) }
         }
         .onChange(of: prompt == nil) { _, closed in
-            guard closed, let m = pendingMessage else { return }
-            pendingMessage = nil
-            Task { try? await Task.sleep(for: .milliseconds(400)); prompt = .message(m) }
+            guard closed else { return }
+            if let b = pendingRestore {
+                pendingRestore = nil
+                Task { try? await Task.sleep(for: .milliseconds(400)); restore(b) }
+            } else if let m = pendingMessage {
+                pendingMessage = nil
+                Task { try? await Task.sleep(for: .milliseconds(400)); prompt = .message(m) }
+            }
         }
         .alert(item: $prompt) { p in
             switch p {
             case .confirm(let b):
                 Alert(title: Text("Restore this backup?"), message: Text(store.restorePreview(b)),
-                      primaryButton: store.isLinked ? .default(Text("Add it to the family")) { restore(b) } : .destructive(Text("Replace everything here")) { restore(b) },
+                      primaryButton: store.isLinked ? .default(Text("Add it to the family")) { restoreOnceClosed(b) } : .destructive(Text("Replace everything here")) { restoreOnceClosed(b) },
                       secondaryButton: .cancel())
             case .message(let m):
                 Alert(title: Text("Backup"), message: Text(m), dismissButton: .cancel(Text("OK")))
             }
         }
+    }
+
+    /// Called from the alert's button: SwiftUI may or may not have cleared `prompt` yet.
+    private func restoreOnceClosed(_ b: Backup) {
+        if prompt == nil { Task { try? await Task.sleep(for: .milliseconds(400)); restore(b) } }
+        else { pendingRestore = b }
     }
 
     private func restore(_ b: Backup) {
