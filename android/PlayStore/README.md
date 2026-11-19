@@ -19,8 +19,8 @@ from here, so treat field names and limits as a guide and trust the Console wher
 1. **The package name is permanent.** The play flavor is `com.doyourwork.app` (chosen 18 November
    2026). Once a bundle with that name is uploaded it can never be changed, and it shows in the
    app's Play Store address.
-2. **The version.** The project says 0.9.0 while the iPhone app says 1.0. For a joint launch the
-   Play build should say 1.0 as well; a 0.x number reads as unfinished on a store page.
+2. **The version.** The Play build says 1.0, like the iPhone app (set in the play flavor in
+   `app/build.gradle.kts`; `release.sh` only changes the github build's version).
 3. **A closed test comes first.** New personal developer accounts have to run a closed test with
    at least 12 testers who stay opted in for 14 days before Google allows a production release.
    I believe that is still the rule; the Console's dashboard says exactly what your account
