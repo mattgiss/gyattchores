@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// A look for the app, chosen per phone. "Clear" is the default: black, with Clear's red-to-yellow
-/// heat map for the players, its ocean blues for the admin area and its plums for the dares. The rest
+/// A look for the app, chosen per phone. "Fuego" is the default (saved as "clear", its old name, so
+/// phones that chose it keep it): black, with the Clear app's red-to-yellow heat map for the players, its ocean blues for the admin area and its plums for the dares. The rest
 /// are built from four colours each (background, main, muted and text), an idea borrowed from
 /// monkeytype's themes; their palettes come from monkeytype's dark themes, under names of our own.
 /// The same list as Android's AppTheme.
@@ -10,7 +10,7 @@ struct AppTheme: Identifiable, Equatable {
     let name: String
     let bg: Color, main: Color, sub: Color, text: Color
 
-    static let clear = AppTheme(id: "clear", name: "Clear", bg: .hex(0x000000), main: .hex(0xD90015), sub: .hex(0x5A5A5E), text: .hex(0xFFFFFF))
+    static let clear = AppTheme(id: "clear", name: "Fuego", bg: .hex(0x000000), main: .hex(0xD90015), sub: .hex(0x5A5A5E), text: .hex(0xFFFFFF))
 
     static let all: [AppTheme] = [
         clear,
