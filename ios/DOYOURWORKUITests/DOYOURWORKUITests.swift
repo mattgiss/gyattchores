@@ -197,18 +197,25 @@ final class DOYOURWORKUITests: XCTestCase {
     /// simulators XCTest sometimes can't work out where an alert button is ("activation point
     /// invalid"): `isHittable` then fails the test, and `tap()` treats the button as blocked and
     /// lets its own interruption handler press the alert's Cancel. A coordinate tap does neither.
+    /// While the alert is still coming in, its button can report an infinite frame, so only a
+    /// frame that's on screen counts, and the tap goes to where that frame was seen.
     private func tapWhenReady(_ button: XCUIElement, _ what: String) {
         XCTAssertTrue(button.waitForExistence(timeout: wait), "\(what) should appear")
+        let app = XCUIApplication()
         var last = CGRect.null
+        var settled = CGRect.null
         let deadline = Date().addingTimeInterval(wait)
         while Date() < deadline {
             let now = button.exists ? button.frame : .null
-            if !now.isEmpty, now == last { break }
-            last = now
+            let onScreen = !now.isEmpty && !now.isInfinite && app.frame.contains(CGPoint(x: now.midX, y: now.midY))
+            if onScreen, now == last { settled = now; break }
+            last = onScreen ? now : .null
             Thread.sleep(forTimeInterval: 0.25)
         }
-        XCTAssertTrue(button.exists, "\(what) should still be there")
-        button.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        XCTAssertFalse(settled.isNull, "\(what) should settle on screen")
+        guard !settled.isNull else { return }
+        app.coordinate(withNormalizedOffset: .zero)
+            .withOffset(CGVector(dx: settled.midX, dy: settled.midY)).tap()
     }
 
     /// Back to the home list. On an iPad it never left, so there's only something to close when
