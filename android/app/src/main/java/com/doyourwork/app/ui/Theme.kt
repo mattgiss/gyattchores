@@ -23,8 +23,9 @@ import androidx.compose.ui.text.font.FontWeight
 import com.doyourwork.app.R
 
 /**
- * A look for the app, chosen per phone (the same list as iOS's AppTheme). "Clear" is the default:
- * black, with Clear's red-to-yellow heat map for the players, its ocean blues for the admin area and
+ * A look for the app, chosen per phone (the same list as iOS's AppTheme). "Fuego" is the default
+ * (saved as "clear", its old name, so phones that chose it keep it): black, with the Clear app's
+ * red-to-yellow heat map for the players, its ocean blues for the admin area and
  * its plums for the dares. The rest are four colours each (background, main, muted, text), an idea
  * borrowed from monkeytype's themes; the palettes are from its dark themes, under names of our own.
  */
@@ -45,7 +46,7 @@ data class AppTheme(val id: String, val name: String, val bg: Color, val main: C
         else Palette(listOf(lerp(sub, bg, 0.2f), lerp(sub, bg, 0.45f), lerp(sub, bg, 0.6f)), text)
 
     companion object {
-        val CLEAR = AppTheme("clear", "Clear", Color(0xFF000000), Color(0xFFD90015), Color(0xFF5A5A5E), Color(0xFFFFFFFF))
+        val CLEAR = AppTheme("clear", "Fuego", Color(0xFF000000), Color(0xFFD90015), Color(0xFF5A5A5E), Color(0xFFFFFFFF))
         val ALL = listOf(
             CLEAR,
             AppTheme("mustard", "Mustard", Color(0xFF323437), Color(0xFFE2B714), Color(0xFF646669), Color(0xFFD1D0C5)),
