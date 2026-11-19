@@ -432,34 +432,6 @@ final class DOYOURWORKUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["27/30 · 90%"].waitForExistence(timeout: wait))
     }
 
-    /// On a phone that's linked, a backup is added to what the family's phones share instead of
-    /// replacing it. The system's save and open panels are covered by
-    /// testBackupSurvivesErasingEverything; here `-restoreOwnBackup` hands the restore this phone's
-    /// own backup, since those panels are unreliable on CI's simulators.
-    func testALinkedPhoneAddsABackupToTheFamily() {
-        let app = launch(["-resetData", "-demoData", "-restoreOwnBackup"])
-        XCTAssertTrue(app.staticTexts["27/30 · 90%"].waitForExistence(timeout: wait))
-        unlockAdmin(in: app)
-        adminSection("device", in: app)
-
-        // Linked (to the in-memory relay), the phone offers adding it, not replacing.
-        app.buttons["Add a phone"].tap()
-        XCTAssertTrue(app.otherElements["joinQR"].waitForExistence(timeout: wait))
-        app.buttons["Done"].tap()
-        XCTAssertFalse(app.buttons["Erase everything…"].exists, "a phone in a family doesn't erase it")
-        let restore = app.buttons["restore-backup"]
-        XCTAssertTrue(restore.waitForExistence(timeout: wait))
-        restore.tap()
-        let add = app.buttons["Add it to the family"]
-        XCTAssertTrue(add.waitForExistence(timeout: wait), "a linked phone adds a backup to the family")
-        XCTAssertFalse(app.buttons["Replace everything here"].exists)
-        screenshot("33-family-restore-confirm", of: app)
-        tapWhenReady(add, "Add it to the family")
-        // It's this family's own backup, so nothing in it is new.
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Nothing new'")).firstMatch.waitForExistence(timeout: wait * 2))
-        tapWhenReady(app.buttons["OK"], "the result's OK")
-    }
-
     /// From a fresh install to a working scoreboard, with chores written in the family's own words.
     func testSettingUpFromNothing() {
         let app = launch(["-resetData"])

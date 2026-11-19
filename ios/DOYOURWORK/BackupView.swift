@@ -41,13 +41,6 @@ struct BackupControls: View {
             }
             OutlineButton(label: "Restore from a backup…") {
                 fb.tap()
-                // Debug builds under -uiTesting only: `-restoreOwnBackup` skips the system's file
-                // picker, which is unreliable on CI's simulators, and restores this phone's own
-                // backup, to test what the app does with it.
-                if AppStore.uiTesting, AppStore.launchArguments.contains("-restoreOwnBackup") {
-                    prompt = .confirm(store.makeBackup())
-                    return
-                }
                 importing = true
             }
                 .accessibilityIdentifier("restore-backup")
