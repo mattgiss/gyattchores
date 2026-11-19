@@ -1,6 +1,6 @@
 #!/bin/bash
 # Build the Play Store bundle: the play flavor (the same app as the github one, with the
-# com.gyattchores.app.public id, kept from the first name so installed phones keep updating), signed with the upload key. Upload the .aab it prints in the Play Console; Play re-signs it for phones.
+# com.doyourwork.app id), signed with the upload key. Upload the .aab it prints in the Play Console; Play re-signs it for phones.
 #
 #   ./play-bundle.sh
 #
@@ -27,7 +27,8 @@ AAB=app/build/outputs/bundle/playRelease/app-play-release.aab
 OWNER=$("$JAVA_HOME/bin/keytool" -printcert -jarfile "$AAB" | grep -m1 Owner)
 case "$OWNER" in *"Android Debug"*) echo "Signed with the debug key, not the upload key." >&2; exit 1;; esac
 
-VERSION=$(grep -oE 'versionName = "[^"]+"' app/build.gradle.kts | cut -d'"' -f2)
+# The play flavor's own versionName (see app/build.gradle.kts).
+VERSION=$(sed -n '/create("play")/,/^        }/p' app/build.gradle.kts | grep -oE 'versionName = "[^"]+"' | cut -d'"' -f2)
 CODE=$(grep -oE 'versionCode = [0-9]+' app/build.gradle.kts | grep -oE '[0-9]+')
 OUT="build/DOYOURWORK-play-$VERSION-$CODE.aab"
 mkdir -p build && cp "$AAB" "$OUT"

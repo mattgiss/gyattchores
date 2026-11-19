@@ -14,7 +14,8 @@ TAG="v$VERSION"
 
 # versionCode must go up with every release, or Android refuses the update.
 CODE=$(( $(grep -oE 'versionCode = [0-9]+' app/build.gradle.kts | grep -oE '[0-9]+') + 1 ))
-sed -i '' -E "s/versionCode = [0-9]+/versionCode = $CODE/; s/versionName = \"[^\"]+\"/versionName = \"$VERSION\"/" app/build.gradle.kts
+sed -i '' -E "s/versionCode = [0-9]+/versionCode = $CODE/; s/^        versionName = \"[^\"]+\"/        versionName = \"$VERSION\"/" app/build.gradle.kts
+# (Only defaultConfig's versionName, the github one: the play flavor keeps its own.)
 
 export JAVA_HOME="${JAVA_HOME:-/opt/homebrew/opt/openjdk@17}"
 # The github flavor (com.gyattchores.app, kept from the first name so phones keep updating; debug key) is what Obtainium installs. Both flavors'
