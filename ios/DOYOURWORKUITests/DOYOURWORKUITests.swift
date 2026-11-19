@@ -214,8 +214,14 @@ final class DOYOURWORKUITests: XCTestCase {
         }
         XCTAssertFalse(settled.isNull, "\(what) should settle on screen")
         guard !settled.isNull else { return }
-        app.coordinate(withNormalizedOffset: .zero)
-            .withOffset(CGVector(dx: settled.midX, dy: settled.midY)).tap()
+        // CI's simulators sometimes drop a synthesized tap on an alert outright: the alert stays,
+        // with the button never even highlighted. Tap again while the button's still there.
+        for _ in 0..<3 {
+            app.coordinate(withNormalizedOffset: .zero)
+                .withOffset(CGVector(dx: settled.midX, dy: settled.midY)).tap()
+            if button.waitForNonExistence(timeout: 3) { return }
+        }
+        XCTFail("\(what) should close its alert when tapped")
     }
 
     /// Back to the home list. On an iPad it never left, so there's only something to close when
