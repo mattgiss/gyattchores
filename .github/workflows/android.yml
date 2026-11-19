@@ -4,7 +4,7 @@ name: Android
 # build. The flavors are the same app, differing only in id, signing and distribution (both ids
 # keep the app's first name on purpose, so installed phones keep updating):
 #   github — com.gyattchores.app, what Obtainium installs from GitHub releases (android/release.sh)
-#   play   — com.gyattchores.app.public, the Play Store build (android/play-bundle.sh)
+#   play   — com.doyourwork.app, the Play Store build (android/play-bundle.sh)
 # Here the play build falls back to the debug key, since the upload key never leaves the Mac.
 # Every APK must carry the encrypted relay's address and none the old plain tables' one.
 

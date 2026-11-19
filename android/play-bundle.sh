@@ -1,6 +1,6 @@
 #!/bin/bash
 # Build the Play Store bundle: the play flavor (the same app as the github one, with the
-# com.gyattchores.app.public id, kept from the first name so installed phones keep updating), signed with the upload key. Upload the .aab it prints in the Play Console; Play re-signs it for phones.
+# com.doyourwork.app id), signed with the upload key. Upload the .aab it prints in the Play Console; Play re-signs it for phones.
 #
 #   ./play-bundle.sh
 #

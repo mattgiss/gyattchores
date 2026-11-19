@@ -51,8 +51,8 @@ android {
     // distributed: no code, permission or server address is different between them.
     //  github: com.gyattchores.app, the id and debug key the family's phones already have, so
     //          Obtainium keeps updating them from GitHub releases (./release.sh).
-    //  play:   com.gyattchores.app.public, signed with the upload key for the Play Store
-    //          (./play-bundle.sh); Play re-signs it for phones.
+    //  play:   com.doyourwork.app, the app's own name since it had never been on the Play Store;
+    //          signed with the upload key (./play-bundle.sh) and re-signed by Play for phones.
     flavorDimensions += "dist"
     productFlavors {
         create("github") {
@@ -61,7 +61,7 @@ android {
         }
         create("play") {
             dimension = "dist"
-            applicationIdSuffix = ".public" // com.gyattchores.app.public, kept on purpose so installed phones keep updating
+            applicationId = "com.doyourwork.app" // permanent once uploaded to the Play Store
             signingConfig = upload ?: signingConfigs.getByName("debug")
         }
     }

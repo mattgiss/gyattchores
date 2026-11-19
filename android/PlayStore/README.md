@@ -3,11 +3,11 @@
 Everything the Play Console asks for before an app can go to production, in roughly the order
 it asks, with text ready to paste. Where only you can answer, it says so.
 
-This is for the **play** flavor (`com.gyattchores.app.public`). It's the same app as the
+This is for the **play** flavor (`com.doyourwork.app`). It's the same app as the
 **github** flavor (`com.gyattchores.app`) that goes out through `release.sh` and Obtainium
 (pointed at https://github.com/mattgiss/doyourwork); the two differ only in id, signing and
-distribution. Both ids keep the app's first name on purpose: changing them would stop installed
-phones from updating. Everything stays on the phone until someone
+distribution. The github id keeps the app's first name because changing it would stop installed
+phones from updating; the play id had never been uploaded, so it uses the new name. Everything stays on the phone until someone
 taps Admin → Phones → "Add a phone", and then it travels to the family's other phones through
 the encrypted relay (docs/design/encrypted-relay-join.md).
 
@@ -16,10 +16,10 @@ from here, so treat field names and limits as a guide and trust the Console wher
 
 ## Decide these before the first upload
 
-1. **The package name is permanent.** The play flavor is `com.gyattchores.app.public`, kept from
-   the app's first name on purpose (decided at the rename to DOYOURWORK). Once a bundle with that
-   name is uploaded it can never be changed, and it shows in the app's Play Store address.
-2. **The version.** The project says 0.7.1 while the iPhone app says 1.0. For a joint launch the
+1. **The package name is permanent.** The play flavor is `com.doyourwork.app` (chosen 18 November
+   2026). Once a bundle with that name is uploaded it can never be changed, and it shows in the
+   app's Play Store address.
+2. **The version.** The project says 0.9.0 while the iPhone app says 1.0. For a joint launch the
    Play build should say 1.0 as well; a 0.x number reads as unfinished on a store page.
 3. **A closed test comes first.** New personal developer accounts have to run a closed test with
    at least 12 testers who stay opted in for 14 days before Google allows a production release.
@@ -47,7 +47,7 @@ DOYOURWORK: Chore Scoreboard
 **Short description** (80 at most; this is 80)
 
 ```
-25 minutes of chores a day. Points, streaks, a weekly winner. Nothing collected.
+25 minutes of chores a day. Points, streaks, a weekly winner. Only you can read it.
 ```
 
 **Full description** (4,000 at most)
@@ -57,9 +57,10 @@ DOYOURWORK is a scoreboard for housework. Everyone picks about 25 minutes of cho
 
 PRIVATE BY DESIGN
 • No accounts and no sign-up. Open it and start.
-• Everything stays on your phone or tablet. The app has no servers and never goes online.
+• On one phone or tablet, nothing ever leaves it.
+• Add a second device and everything is encrypted on the device before it's sent, with a key only your family's devices have. We can't read it.
 • No ads, no tracking, no in-app purchases.
-• Uninstall the app, or tap "Erase everything", and it's all gone.
+• Erase a device, or delete your family from the server, whenever you like.
 
 YOUR CHORES, IN YOUR WORDS
 • Start from 27 everyday chores, or just describe your home. Type or dictate "do the dishes, take out the trash, feed the dog for 5 minutes" and the app sorts it into a list you can tidy up.
@@ -83,8 +84,8 @@ WHAT KEEPS IT GOING
 YOURS TO KEEP
 • Save a backup of the whole scoreboard to a file you control, and restore it on a new phone.
 
-ONE DEVICE, ONE SCOREBOARD
-DOYOURWORK runs on a single phone or tablet that the household shares, like the scoreboard at a bowling alley. On a tablet or an unfolded foldable, the scoreboard and the day's card sit side by side.
+ONE DEVICE, OR EVERYONE'S
+Share one phone or tablet, like the scoreboard at a bowling alley, or give everyone their own. In Admin, tap "Add a phone" and scan the code it shows with the other device: points, approvals and the chore list stay in step. With everyone on their own phone, you can dare each other to do a chore. On a tablet or an unfolded foldable, the scoreboard and the day's card sit side by side.
 ```
 
 Don't mention iPhone, Apple or the App Store in any of this: Google's metadata policy doesn't
@@ -143,13 +144,25 @@ appeal to children, answer honestly that younger children may use it at home und
 supervision. This mirrors the App Store choice of not ticking "Made for Kids". I am not a
 lawyer, and this is a judgment call that is yours.
 
-**Data safety.** Needs answering again for the one-app build: it now has the `INTERNET` and
-`CAMERA` permissions, and a phone linked to others sends the family to the relay, encrypted on
-the phone first. Answer "encrypted in transit: yes" and "users can ask for deletion: yes, Admin →
-Phones → Delete this family from the server". See "Store and privacy work" in
-docs/design/encrypted-relay-join.md before choosing the rest. An unlinked phone still sends
-nothing: players, chores, points and admin codes are files in the app's own storage, and a
-backup is a file the person saves themself, through the system's own save screen.
+**Data safety.** Google counts data as collected when the app sends it off the device, but says
+end-to-end encrypted data, "unreadable by you or anyone other than the sender and recipient", is
+out of scope. A family's records are exactly that: sealed on the phone with a key the server
+never has. What is collected is each linked phone's anonymous sign-in ID.
+
+| Question | Answer |
+|---|---|
+| Does your app collect or share any of the required user data types? | Yes |
+| Is all of the user data collected by your app encrypted in transit? | Yes (HTTPS) |
+| Do you provide a way for users to request that their data is deleted? | Yes: Admin → Device → Phones → "Delete this family from the server" |
+| Data types collected | **Device or other IDs** only (the anonymous ID of a phone that has joined a family) |
+| — Collected or shared? | Collected, not shared |
+| — Processed ephemerally? | No (kept while the family is on the server) |
+| — Required or optional? | Optional: only phones that add or join another phone sign in |
+| — Why is it collected? | App functionality |
+
+Not declared, and why: the family's names, chores, logs and codes (end-to-end encrypted, out of
+scope); the camera (it reads the QR code on the phone, nothing is sent); IP addresses (seen by the
+host to serve each request, not kept or used by us). An unlinked phone sends nothing at all.
 
 ## Testing tracks
 
@@ -162,7 +175,7 @@ backup is a file the person saves themself, through the system's own save screen
 Release notes for the first closed test (500 at most):
 
 ```
-The first test release of DOYOURWORK: a chore scoreboard for one household on one phone or tablet. Set up your family, pick 25 minutes of chores, and have an admin approve them. Everything stays on your device. Tell us what confused you and what broke.
+The first test release of DOYOURWORK: a chore scoreboard for your household. Set up your family, pick 25 minutes of chores, and have an admin approve them. Use one phone, or add more with a QR code; what's shared is encrypted so only your family can read it. Tell us what confused you and what broke.
 ```
 
 ## Launch
@@ -176,6 +189,6 @@ The first test release of DOYOURWORK: a chore scoreboard for one household on on
 
 - The Play Console itself: its screens, exact wording, and what your particular account is
   required to do before production.
-- That Google accepts `com.gyattchores.app.public` as a package name. It builds, but the first
-  upload is the real test.
+- That Google accepts `com.doyourwork.app` as a package name. It builds, but the first upload is
+  the real test.
 - The app on a physical phone. The screenshots are the real screens drawn on a computer.

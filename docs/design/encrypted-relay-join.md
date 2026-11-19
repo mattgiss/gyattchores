@@ -125,7 +125,7 @@ the engines in step. An iPhone and an Android phone must produce and open the sa
     later "Add a phone" sends everything.
   - **iOS:** one scheme, "DOYOURWORK", with the camera prompt in every build.
   - **Android:** the `family` and `public` flavors become `github` (com.gyattchores.app, the
-    debug key, what Obtainium installs) and `play` (com.gyattchores.app.public, the upload key).
+    debug key, what Obtainium installs) and `play` (com.doyourwork.app, the upload key).
     They differ only in id and signing; INTERNET, CAMERA and the QR scanner are in every build.
   - **The web app** (native/tools/web-engine.html, still served at doyourwork.today) no longer
     syncs; it stays as the source of truth for the game rules. The Discord bots that read the
