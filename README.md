@@ -2,7 +2,7 @@
 
 A chore scoreboard for a household: everyone picks about **25 minutes** of chores a day, an admin approves what got done, and points, streaks and a weekly winner follow.
 
-**[doyourwork.today](https://doyourwork.today)** is the public page about the app: what it is, that it's coming soon to iPhone and iPad, and how to join the beta. It is a plain static site (this branch, served by GitHub Pages) with no app and no database behind it.
+**[doyourwork.today](https://doyourwork.today)** is the public page about the app: what it is, where to get it on the [App Store](https://apps.apple.com/us/app/doyourwork/id6833601994), and how to join the Android beta. It is a plain static site (this branch, served by GitHub Pages) with no app and no database behind it.
 
 - **The apps** live on the [`native-android`](../../tree/native-android) branch: `ios/` (iPhone and iPad) and `android/`.
 - **The website** is `index.html`, plus `app.html` (support) and `app-privacy.html` (the app's privacy policy). `scripts/validate-build.mjs` checks it before a merge.
