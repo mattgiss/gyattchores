@@ -184,8 +184,23 @@ final class DOYOURWORKUITests: XCTestCase {
             // The day opens beside the list; there's nothing to go back to.
             XCTAssertTrue(row.isSelected, "\(name) should be highlighted in the list")
         } else {
-            XCTAssertTrue(app.buttons["Back"].waitForExistence(timeout: wait), "\(name)'s screen should open")
+            // A tap that lands while the list is still settling can be lost: tap again.
+            let back = app.buttons["Back"]
+            for _ in 0..<3 where !back.waitForExistence(timeout: wait / 3) {
+                if row.exists, row.isHittable { row.tap() }
+            }
+            XCTAssertTrue(back.waitForExistence(timeout: wait), "\(name)'s screen should open")
         }
+    }
+
+    /// Taps a button once it can take the tap: an alert's button can exist a moment before the
+    /// alert has finished appearing.
+    private func tapWhenReady(_ button: XCUIElement, _ what: String) {
+        XCTAssertTrue(button.waitForExistence(timeout: wait), "\(what) should appear")
+        let deadline = Date().addingTimeInterval(wait)
+        while !(button.exists && button.isHittable), Date() < deadline { Thread.sleep(forTimeInterval: 0.25) }
+        XCTAssertTrue(button.exists, "\(what) should still be there")
+        button.tap()
     }
 
     /// Back to the home list. On an iPad it never left, so there's only something to close when
@@ -421,9 +436,7 @@ final class DOYOURWORKUITests: XCTestCase {
         add.tap()
         // It's this family's own backup, so nothing in it is new.
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Nothing new'")).firstMatch.waitForExistence(timeout: wait * 2))
-        let ok = app.buttons["OK"]
-        XCTAssertTrue(ok.waitForExistence(timeout: wait))
-        ok.tap()
+        tapWhenReady(app.buttons["OK"], "the result's OK")
     }
 
     /// From a fresh install to a working scoreboard, with chores written in the family's own words.
