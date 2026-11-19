@@ -193,14 +193,22 @@ final class DOYOURWORKUITests: XCTestCase {
         }
     }
 
-    /// Taps a button once it can take the tap: an alert's button can exist a moment before the
-    /// alert has finished appearing.
+    /// Taps an alert's button once the alert has stopped moving, by its position. On CI's
+    /// simulators XCTest sometimes can't work out where an alert button is ("activation point
+    /// invalid"): `isHittable` then fails the test, and `tap()` treats the button as blocked and
+    /// lets its own interruption handler press the alert's Cancel. A coordinate tap does neither.
     private func tapWhenReady(_ button: XCUIElement, _ what: String) {
         XCTAssertTrue(button.waitForExistence(timeout: wait), "\(what) should appear")
+        var last = CGRect.null
         let deadline = Date().addingTimeInterval(wait)
-        while !(button.exists && button.isHittable), Date() < deadline { Thread.sleep(forTimeInterval: 0.25) }
+        while Date() < deadline {
+            let now = button.exists ? button.frame : .null
+            if !now.isEmpty, now == last { break }
+            last = now
+            Thread.sleep(forTimeInterval: 0.25)
+        }
         XCTAssertTrue(button.exists, "\(what) should still be there")
-        button.tap()
+        button.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
     }
 
     /// Back to the home list. On an iPad it never left, so there's only something to close when
@@ -341,7 +349,7 @@ final class DOYOURWORKUITests: XCTestCase {
         screenshot("31-backup-save-panel", of: app)
         let backupName = try confirmBackupSave(in: app)
         XCTAssertTrue(app.buttons["OK"].waitForExistence(timeout: wait))
-        app.buttons["OK"].tap()
+        tapWhenReady(app.buttons["OK"], "the saved message's OK")
 
         // Erase, then restore from the first screen, as a new phone would.
         let erase = app.buttons["Erase everything…"]
@@ -383,11 +391,11 @@ final class DOYOURWORKUITests: XCTestCase {
         }
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS '2 players, 27 chores'")).firstMatch.exists)
         screenshot("32-backup-restore-confirm", of: app)
-        confirm.tap()
+        tapWhenReady(confirm, "the restore confirmation")
 
         // Everything's back: the month of history, and the admin's code.
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Restored:'")).firstMatch.waitForExistence(timeout: wait))
-        app.buttons["OK"].tap()
+        tapWhenReady(app.buttons["OK"], "the restored message's OK")
         XCTAssertTrue(app.staticTexts["27/30 · 90%"].waitForExistence(timeout: wait))
         XCTAssertTrue(playerRow("riley", in: app).exists)
         unlockAdmin(in: app)
@@ -404,9 +412,9 @@ final class DOYOURWORKUITests: XCTestCase {
         XCTAssertTrue(replaceHere.waitForExistence(timeout: wait))
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'replaced by it'")).firstMatch.exists,
                       "over an existing scoreboard the confirmation warns it will be replaced")
-        replaceHere.tap()
+        tapWhenReady(replaceHere, "Replace everything here")
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Restored:'")).firstMatch.waitForExistence(timeout: wait))
-        app.buttons["OK"].tap()
+        tapWhenReady(app.buttons["OK"], "the restored message's OK")
         goBack(in: app)
         XCTAssertTrue(app.staticTexts["27/30 · 90%"].waitForExistence(timeout: wait))
     }
@@ -433,7 +441,7 @@ final class DOYOURWORKUITests: XCTestCase {
         XCTAssertTrue(add.waitForExistence(timeout: wait), "a linked phone adds a backup to the family")
         XCTAssertFalse(app.buttons["Replace everything here"].exists)
         screenshot("33-family-restore-confirm", of: app)
-        add.tap()
+        tapWhenReady(add, "Add it to the family")
         // It's this family's own backup, so nothing in it is new.
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Nothing new'")).firstMatch.waitForExistence(timeout: wait * 2))
         tapWhenReady(app.buttons["OK"], "the result's OK")
@@ -1078,7 +1086,7 @@ final class DOYOURWORKUITests: XCTestCase {
         XCTAssertTrue(playerRow("jules", in: app).waitForExistence(timeout: wait))
         // Sync runs every 10 seconds.
         XCTAssertTrue(app.staticTexts["This phone is no longer in the family's sync. Everything on it stays here."].waitForExistence(timeout: 30))
-        app.buttons["OK"].tap()
+        tapWhenReady(app.buttons["OK"], "the left-out message's OK")
         XCTAssertTrue(playerRow("jules", in: app).exists, "what it had stays")
         phonesSection(in: app)
         XCTAssertTrue(label(startingWith: "The family is only on this phone.", in: app).waitForExistence(timeout: wait))
