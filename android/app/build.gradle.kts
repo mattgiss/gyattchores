@@ -21,8 +21,8 @@ android {
         applicationId = "com.gyattchores.app"
         minSdk = 29
         targetSdk = 36
-        versionCode = 15
-        versionName = "0.9.1"
+        versionCode = 16
+        versionName = "1.0"
     }
 
     // The Play Store upload key. Its password lives outside the repo, in
