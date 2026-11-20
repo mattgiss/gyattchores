@@ -44,6 +44,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -255,6 +256,7 @@ private fun AdminContent(vm: AppViewModel, logs: List<ChoreLog>) {
         }
 
         item { SectionLabel("this phone", padded = false) }
+        item { EveningReminderRow() }
         if (canBio) item {
             SwitchRow("Fingerprint or face opens Admin", bioOn) { vm.setBiometricUnlock(it) }
             Text("Only turn this on if this is your own phone, not a player's.",
@@ -349,4 +351,21 @@ private fun ChoreDialog(vm: AppViewModel, chore: Chore, pool: List<Chore>, onDis
         confirmButton = { TextButton(onClick = { vm.updateChore(chore, name, minutes); fb.approve(); onDismiss() }, enabled = clean != null && !clash) { Text("Save") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
+}
+
+/** The evening reminder's time, kept on this phone. The morning one is always at 7. */
+@Composable
+private fun EveningReminderRow() {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var hour by remember { mutableIntStateOf(com.doyourwork.app.ReminderReceiver.eveningHour(context)) }
+    fun set(h: Int) { hour = h; com.doyourwork.app.ReminderReceiver.setEveningHour(context, h) }
+    val range = com.doyourwork.app.engine.Reminders.EVENING_HOURS
+    val shown = java.time.LocalTime.of(hour, 0).format(java.time.format.DateTimeFormatter.ofLocalizedTime(java.time.format.FormatStyle.SHORT))
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text("Evening reminder at $shown", modifier = Modifier.weight(1f))
+        TextButton(onClick = { set(hour - 1) }, enabled = hour > range.first) { Text("Earlier") }
+        TextButton(onClick = { set(hour + 1) }, enabled = hour < range.last) { Text("Later") }
+    }
+    Text("At 7 a.m. a line to get everyone picking. In the evening, only if someone on this phone hasn't picked yet. Notifications can be turned off in Settings.",
+        style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }

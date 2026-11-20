@@ -220,6 +220,6 @@ final class ScenarioTests: XCTestCase {
         XCTAssertEqual(Engine.dayKey(stamp, calendar: cal), "2026-11-11")
         XCTAssertEqual(Engine.dayKey(stamp, calendar: la), "2026-11-10")
         XCTAssertEqual(Engine.streak(playerId: "1", logs: [log], now: now, calendar: cal), 1)
-        XCTAssertEqual(Engine.streak(playerId: "1", logs: [log], now: now, calendar: la), 0, "in LA that log belongs to yesterday")
+        XCTAssertEqual(Engine.streak(playerId: "1", logs: [log], now: now, calendar: la), 1, "in LA that log belongs to yesterday, which still keeps the streak")
     }
 }

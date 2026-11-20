@@ -253,11 +253,14 @@ const getRank = xp => {
   return { level, version:toVersion(level), nextVersion:toVersion(level+1), into, need, pct: Math.round(into/need*100) };
 };
 
+// Consecutive days with an approved log. A streak runs until midnight: if today has
+// nothing yet, it counts back from yesterday, so it only breaks after a whole empty day.
 const getStreak = (playerId, logs) => {
   let streak=0; const d=new Date(); d.setHours(0,0,0,0);
+  const has = () => logs.some(l => { const lt=new Date(l.timestamp); lt.setHours(0,0,0,0); return l.playerId===playerId && l.status==='approved' && lt.getTime()===d.getTime(); });
+  if (!has()) d.setDate(d.getDate()-1);
   for (let i=0; i<365; i++) {
-    const has = logs.some(l => { const lt=new Date(l.timestamp); lt.setHours(0,0,0,0); return l.playerId===playerId && l.status==='approved' && lt.getTime()===d.getTime(); });
-    if (!has) break; streak++; d.setDate(d.getDate()-1);
+    if (!has()) break; streak++; d.setDate(d.getDate()-1);
   }
   return streak;
 };

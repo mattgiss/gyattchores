@@ -31,13 +31,13 @@ final class AppStore: ObservableObject {
 
     @Published var settings: Settings { didSet { save("settings.json", settings) } }
     /// Everyone in the family, admins who don't do chores included.
-    @Published var members: [Player] { didSet { save("players.json", members) } }
+    @Published var members: [Player] { didSet { save("players.json", members); remindersChanged() } }
     /// The family's own chore list.
     @Published var pool: [Chore] { didSet { save("chores.json", pool); poolById = Self.index(pool) } }
     var poolById: [String: Chore]
-    @Published var logs: [ChoreLog] { didSet { save("logs.json", logs) } }
+    @Published var logs: [ChoreLog] { didSet { save("logs.json", logs); remindersChanged() } }
     /// Keyed "playerId|yyyy-MM-dd".
-    @Published var cards: [String: Card] { didSet { save("cards.json", cards) } }
+    @Published var cards: [String: Card] { didSet { save("cards.json", cards); remindersChanged() } }
     /// The family's shared lists, as last synced plus any changes made here. Kept on a phone that
     /// isn't linked too, so "Add a phone" can send everything.
     @Published var shared: [String: LocalEntry] { didSet { save("family_state.json", shared) } }
@@ -273,6 +273,9 @@ final class AppStore: ObservableObject {
     /// True when the player logged chores today and every one was rejected: they start over.
     func rejectedToday(_ playerId: String) -> Bool { !todaysLogs(playerId).isEmpty && !submittedToday(playerId) }
     func streak(_ playerId: String) -> Int { Engine.streak(playerId: playerId, logs: logs, now: Date(), calendar: calendar) }
+    /// Picking or submitting can settle today's evening reminder (see `ReminderScheduler`).
+    private func remindersChanged() { ReminderScheduler.shared.reschedule(self) }
+
     func todaysLogs(_ playerId: String) -> [ChoreLog] { logs.filter { $0.playerId == playerId && calendar.isDateInToday($0.timestamp) } }
 
     /// Today's card, or one rebuilt from today's logs if the card itself is gone. Nil means the

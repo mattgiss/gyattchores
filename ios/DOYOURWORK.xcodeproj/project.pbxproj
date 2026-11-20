@@ -28,6 +28,7 @@
 		84A0FF8131A1848F54330E12 /* ChoreIntakeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4494676B524BCB5B46480EA5 /* ChoreIntakeView.swift */; };
 		8AB439935E984B7D938396FE /* BackupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 825FF93ECAB7A0BA80D7F029 /* BackupView.swift */; };
 		8F293C4A06CEF9E9D3EE1777 /* Feedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67D43AB325B26E414C5FAAD0 /* Feedback.swift */; };
+		979EE4F296971A1C0BC72506 /* Notifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C242792965CB5AA1C037E6A /* Notifications.swift */; };
 		97E71EC3F586D5E90E10AF62 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B858C9C08F6A99492AA046E8 /* PrivacyInfo.xcprivacy */; };
 		997CBC4E5E3F36A1683DFDE6 /* DoYourWorkCore in Frameworks */ = {isa = PBXBuildFile; productRef = 46C34C1A24E7C0E90CE09378 /* DoYourWorkCore */; };
 		9D6CDEDFFD8F36E9F4E4B1CA /* DOYOURWORKUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C832C152D2EF971BFB0EC9CB /* DOYOURWORKUITests.swift */; };
@@ -51,6 +52,7 @@
 /* Begin PBXFileReference section */
 		1067664B19CF7592EBDBCE00 /* SchibstedGrotesk-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SchibstedGrotesk-Bold.ttf"; sourceTree = "<group>"; };
 		19B83183CAACAA7CC6378583 /* FamilySync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilySync.swift; sourceTree = "<group>"; };
+		1C242792965CB5AA1C037E6A /* Notifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notifications.swift; sourceTree = "<group>"; };
 		1E592160EA9ABDFEE691B835 /* Palette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Palette.swift; sourceTree = "<group>"; };
 		1F30322FB74ED786B905F610 /* SetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupView.swift; sourceTree = "<group>"; };
 		26C3AC6CCAAF2BF2C21DE1C8 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
@@ -174,6 +176,7 @@
 				9CFCBF2F28B3A9C530916C9A /* DOYOURWORKApp.swift */,
 				67D43AB325B26E414C5FAAD0 /* Feedback.swift */,
 				AB09090B633FF8178281FBC5 /* HomeView.swift */,
+				1C242792965CB5AA1C037E6A /* Notifications.swift */,
 				1E592160EA9ABDFEE691B835 /* Palette.swift */,
 				8F83F5B179389A89CDA0C264 /* PlayerView.swift */,
 				B858C9C08F6A99492AA046E8 /* PrivacyInfo.xcprivacy */,
@@ -311,6 +314,7 @@
 				A4F57CE03CC3585CA73DCBFB /* FamilySync.swift in Sources */,
 				8F293C4A06CEF9E9D3EE1777 /* Feedback.swift in Sources */,
 				218448F081E081987BC3971F /* HomeView.swift in Sources */,
+				979EE4F296971A1C0BC72506 /* Notifications.swift in Sources */,
 				08A11DD4DF5C067703E7410B /* Palette.swift in Sources */,
 				1C198951B4BC8DB269099287 /* PhonesView.swift in Sources */,
 				B55AC16FDEE1673B2E0B8010 /* PlayerView.swift in Sources */,
