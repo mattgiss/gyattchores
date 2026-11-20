@@ -47,7 +47,7 @@ DOYOURWORK: Chore Scoreboard
 **Short description** (80 at most; this is 80)
 
 ```
-25 minutes of chores a day. Points, streaks, a weekly winner. Only you can read it.
+25 minutes of chores a day. Points, streaks, a weekly winner. Private by design.
 ```
 
 **Full description** (4,000 at most)
@@ -115,7 +115,7 @@ cd android && ./PlayStore/take-screenshots.sh
 | App or game | App |
 | Category | Productivity |
 | Tags | Your choice from Google's list; "Productivity" and "Parenting" fit |
-| Email | **Only you can fill this in.** It is shown publicly on the listing. |
+| Email | Set (the owner's address). It is shown publicly on the listing. |
 | Website | `https://doyourwork.today` |
 | Phone | Optional. Leave empty. |
 
@@ -127,7 +127,7 @@ cd android && ./PlayStore/take-screenshots.sh
 | Ads | No, the app does not contain ads |
 | App access | All functionality is available without special access. (The admin code is one the tester sets themself during setup.) |
 | Content rating | Questionnaire category: Utility, Productivity, Communication or Other. Answer No to every content question. The result should be Everyone / PEGI 3. |
-| Target audience and content | **Your decision; see below.** |
+| Target audience and content | All ages, including under 13 (see below) |
 | News app | No |
 | Data safety | See below |
 | Government app | No |
@@ -135,14 +135,11 @@ cd android && ./PlayStore/take-screenshots.sh
 | Health | None |
 | Advertising ID | No, the app does not use an advertising ID |
 
-**Target audience.** This is the one answer that changes what rules apply. If any age group
-under 13 is ticked, Google's Families Policy applies to the whole app. DOYOURWORK would meet it
-(no ads, and nothing readable by anyone outside the family is sent), but it adds declarations and review. The app is set up
-and run by an adult and the listing is written for a household, so my recommendation is to tick
-**13–15, 16–17 and 18 and over**, and when asked whether the listing could unintentionally
-appeal to children, answer honestly that younger children may use it at home under an adult's
-supervision. This mirrors the App Store choice of not ticking "Made for Kids". I am not a
-lawyer, and this is a judgment call that is yours.
+**Target audience.** All ages, under 13 included, so Google's Families Policy applies to the
+whole app. DOYOURWORK meets it: no ads, no advertising ID, and nothing readable by anyone outside
+the family is sent. The Families Policy adds declarations and review, including a certification
+that the app follows children's privacy laws (COPPA in the US). The app is set up and run by an
+adult, and the listing is written for a household.
 
 **Data safety.** Google counts data as collected when the app sends it off the device, but says
 end-to-end encrypted data, "unreadable by you or anyone other than the sender and recipient", is
@@ -169,19 +166,19 @@ host to serve each request, not kept or used by us). An unlinked phone sends not
 | Track | Use it for |
 |---|---|
 | Internal testing | You and the family, straight away, no review. Up to 100 testers by email. |
-| Closed testing | The 12-tester, 14-day requirement above, and the public beta. Add testers by the email on their Google account, or use a Google Group. |
+| Closed testing | The 12-tester, 14-day requirement above, and the public beta. Testers come from one shared Google Group used by the closed tests of both DOYOURWORK and ƒlatcam, so one sign-up gets someone into both betas. |
 | Production | The launch. Unlocks once the closed test requirement is met. |
 
 Release notes for the first closed test (500 at most):
 
 ```
-The first test release of DOYOURWORK: a chore scoreboard for your household. Set up your family, pick 25 minutes of chores, and have an admin approve them. Use one phone, or add more with a QR code; what's shared is encrypted so only your family can read it. Tell us what confused you and what broke.
+The first test release of DOYOURWORK: a chore scoreboard for your household. Set up your family, pick 25 minutes of chores, and have an admin approve them. Use one phone, or add more with a QR code; what's shared is encrypted so only your family can read it. A nudge at 7 a.m. and an evening reminder if you haven't picked yet. Tell us what confused you and what broke.
 ```
 
 ## Launch
 
 - Price: Free.
-- Countries: your decision. United States only is the simplest start.
+- Countries: United States only.
 - Release it as a staged or full rollout on the same day the App Store version is released
   (the App Store side is set to manual release so the two can be lined up).
 
