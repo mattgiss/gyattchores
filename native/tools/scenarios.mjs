@@ -98,8 +98,12 @@ add('pending and rejected never count', [
   add('14-day streak vs sporadic', logs);
 }
 
-add('streak broken: nothing today', [
+add('streak still alive: nothing today yet', [
   log(P1, 'make-bed', 1, { minutes: 3 }), log(P1, 'make-bed', 2, { minutes: 3 }), log(P1, 'make-bed', 3, { minutes: 3 }),
+]);
+
+add('streak broken: nothing yesterday or today', [
+  log(P1, 'make-bed', 2, { minutes: 3 }), log(P1, 'make-bed', 3, { minutes: 3 }), log(P1, 'make-bed', 4, { minutes: 3 }),
 ]);
 
 add('sync duplicates collapse to one per chore per day', [

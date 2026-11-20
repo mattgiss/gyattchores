@@ -141,11 +141,15 @@ object Engine {
         return Rank(level, toVersion(level), toVersion(level + 1), into, need, (into.toDouble() / need * 100).roundHalfUp())
     }
 
-    /** Consecutive days, counting back from today, with at least one approved log. 0 if none today. */
+    /**
+     * Consecutive days with at least one approved log. A streak runs until midnight: if today has
+     * nothing yet, it counts back from yesterday, so it only breaks after a whole empty day.
+     */
     fun streak(playerId: String, logs: List<ChoreLog>, now: Long, zone: ZoneId): Int {
         val days = logs.filter { it.playerId == playerId && it.status == Status.APPROVED }
             .map { dayOf(it.timestamp, zone) }.toSet()
         var d = dayOf(now, zone)
+        if (d !in days) d = d.minusDays(1)
         var n = 0
         while (n < 365 && d in days) { n++; d = d.minusDays(1) }
         return n

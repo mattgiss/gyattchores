@@ -124,10 +124,12 @@ public enum Engine {
                     pct: jsRound(Double(into) / Double(need) * 100))
     }
 
-    /// Consecutive days, counting back from today, with at least one approved log.
+    /// Consecutive days with at least one approved log. A streak runs until midnight: if today has
+    /// nothing yet, it counts back from yesterday, so it only breaks after a whole empty day.
     public static func streak(playerId: String, logs: [ChoreLog], now: Date, calendar: Calendar) -> Int {
         let days = Set(logs.filter { $0.playerId == playerId && $0.status == Status.approved }.map { calendar.startOfDay(for: $0.timestamp) })
         var d = calendar.startOfDay(for: now), n = 0
+        if !days.contains(d) { d = calendar.date(byAdding: .day, value: -1, to: d)! }
         while n < 365, days.contains(d) { n += 1; d = calendar.date(byAdding: .day, value: -1, to: d)! }
         return n
     }

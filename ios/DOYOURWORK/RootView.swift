@@ -11,6 +11,7 @@ struct RootView: View {
     @EnvironmentObject var store: AppStore
     @EnvironmentObject var fb: Feedback
     @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.scenePhase) private var scenePhase
 
     // What's open lives here, above both layouts, so rotating an iPad or resizing its window
     // lands on the same screen.
@@ -24,6 +25,11 @@ struct RootView: View {
         layout
             // Sync on open and every 10 seconds while the app is on screen, as on Android.
             .task { while !Task.isCancelled { store.requestSync(); try? await Task.sleep(for: .seconds(10)) } }
+            // The two daily notifications: asked about once the family is set up, and rescheduled
+            // whenever the app opens or leaves the screen (a new day, a new player, a new phone owner).
+            .onChange(of: scenePhase, initial: true) { _, _ in remind() }
+            .onChange(of: store.isSetUp) { _, _ in remind() }
+            .onChange(of: store.me) { _, _ in remind() }
     }
 
     @ViewBuilder private var layout: some View {
@@ -32,6 +38,11 @@ struct RootView: View {
         if store.isLinked && !store.hasSynced && !store.isSetUp { FamilyLoadingView() }
         else if !store.isSetUp { SetupView().onAppear(perform: reset) }
         else if sizeClass == .regular { twoPane } else { onePane }
+    }
+
+    private func remind() {
+        if store.isSetUp && scenePhase == .active { ReminderScheduler.shared.askPermission(store) }
+        ReminderScheduler.shared.reschedule(store, force: true)
     }
 
     /// The scoreboard was erased and set up again: don't reopen whatever was open before.

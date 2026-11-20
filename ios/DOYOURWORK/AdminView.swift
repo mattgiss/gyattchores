@@ -357,12 +357,26 @@ private struct ChoreEditor: View {
 // MARK: - Device
 
 private struct Device: View {
+    /// "5 PM", "17:00": the hour as this phone writes times.
+    static func hourText(_ hour: Int) -> String {
+        let at = Calendar.current.date(bySettingHour: hour, minute: 0, second: 0, of: Date()) ?? Date()
+        return at.formatted(date: .omitted, time: .shortened)
+    }
+
     @EnvironmentObject var store: AppStore
     @EnvironmentObject var fb: Feedback
     @State private var confirmingErase = false
+    @State private var eveningHour = ReminderScheduler.eveningHour
     private var hasBio: Bool { LAContext().canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil) }
 
     var body: some View {
+        Stepper(value: Binding(get: { eveningHour }, set: { h in
+            eveningHour = h; ReminderScheduler.eveningHour = h; ReminderScheduler.shared.reschedule(store, force: true)
+        }), in: Reminders.eveningHours) {
+            Text("Evening reminder at \(Self.hourText(eveningHour))")
+        }
+        Text("At 7 a.m. a line to get everyone picking. In the evening, only if someone on this phone hasn't picked yet. Notifications can be turned off in Settings.")
+            .font(.app(.footnote)).foregroundStyle(.secondary)
         if hasBio {
             Toggle("Face ID or Touch ID opens Admin", isOn: Binding(get: { store.settings.biometricUnlock }, set: { store.setBiometricUnlock($0) }))
             Text("Only turn this on if this is your own device, not a player's.").font(.app(.footnote)).foregroundStyle(.secondary)

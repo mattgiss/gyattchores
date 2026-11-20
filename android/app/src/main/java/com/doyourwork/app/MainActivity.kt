@@ -1,6 +1,11 @@
 package com.doyourwork.app
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -22,6 +27,8 @@ import kotlinx.coroutines.launch
 class MainActivity : FragmentActivity() {
     private val vm: AppViewModel by viewModels()
     private var fold by mutableStateOf<FoldingFeature?>(null)
+    // Whatever the answer, the reminders are set; Android just won't show them without a yes.
+    private val askToNotify = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,7 +52,25 @@ class MainActivity : FragmentActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) { while (true) { vm.requestSync(); delay(10_000) } }
         }
 
+        // The two daily reminders: set again on every open (a new install or a restart clears
+        // them), and once the family is set up, asked about once.
+        ReminderReceiver.schedule(this)
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                vm.store.family.collect { if (it.isSetUp) askToNotifyOnce() }
+            }
+        }
+
         setContent { DoYourWorkTheme { AppRoot(vm, fold) } }
+    }
+
+    private fun askToNotifyOnce() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) return
+        val prefs = getSharedPreferences("reminders", MODE_PRIVATE)
+        if (prefs.getBoolean("asked", false)) return
+        prefs.edit().putBoolean("asked", true).apply()
+        askToNotify.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 
     override fun onNewIntent(intent: android.content.Intent) {
