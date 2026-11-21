@@ -14,8 +14,8 @@ class CharactersTest {
     private fun p(id: String, name: String, character: String? = null) = Player(id, name, character = character)
 
     @Test fun everyDrawingReadsInFullAndStaysInItsSquare() {
-        assertEquals(23, Characters.all.size)
-        assertEquals(23, Characters.all.map { it.id }.toSet().size)
+        assertEquals(25, Characters.all.size)
+        assertEquals(25, Characters.all.map { it.id }.toSet().size)
         for (c in Characters.all) for (l in c.layers) {
             val steps = Characters.steps(l.path)
             assertTrue("${c.id} starts with a move", steps.first() is Characters.Step.Move)
