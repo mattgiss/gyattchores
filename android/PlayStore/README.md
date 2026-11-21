@@ -19,7 +19,7 @@ from here, so treat field names and limits as a guide and trust the Console wher
 1. **The package name is permanent.** The play flavor is `com.doyourwork.app` (chosen 18 November
    2026). Once a bundle with that name is uploaded it can never be changed, and it shows in the
    app's Play Store address.
-2. **The version.** The Play build says 1.0, like the iPhone app (set in the play flavor in
+2. **The version.** The Play build's version (1.1 now) matches the iPhone app's release with the same features (set in the play flavor in
    `app/build.gradle.kts`; `release.sh` only changes the github build's version).
 3. **A closed test comes first.** New personal developer accounts have to run a closed test with
    at least 12 testers who stay opted in for 14 days before Google allows a production release.
@@ -173,6 +173,12 @@ Release notes for the first closed test (500 at most):
 
 ```
 The first test release of DOYOURWORK: a chore scoreboard for your household. Set up your family, pick 25 minutes of chores, and have an admin approve them. Use one phone, or add more with a QR code; what's shared is encrypted so only your family can read it. A nudge at 7 a.m. and an evening reminder if you haven't picked yet. Tell us what confused you and what broke.
+```
+
+Release notes for 1.1:
+
+```
+Nine new characters to pick: dragon, dinosaur, moose, otter, beaver, sloth, panda, fox and penguin. Tap your character on your page to change it.
 ```
 
 ## Launch

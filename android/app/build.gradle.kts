@@ -63,7 +63,7 @@ android {
             dimension = "dist"
             applicationId = "com.doyourwork.app" // permanent once uploaded to the Play Store
             // The store version, matching the iPhone app's; release.sh only changes the github one.
-            versionName = "1.0"
+            versionName = "1.1"
             signingConfig = upload ?: signingConfigs.getByName("debug")
         }
     }
