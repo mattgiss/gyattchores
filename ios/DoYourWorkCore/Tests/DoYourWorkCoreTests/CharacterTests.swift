@@ -7,8 +7,8 @@ final class CharacterTests: XCTestCase {
     private func p(_ id: String, _ name: String, _ character: String? = nil) -> Player { Player(id: id, name: name, character: character) }
 
     func testEveryDrawingReadsInFullAndStaysInItsSquare() {
-        XCTAssertEqual(Characters.all.count, 23)
-        XCTAssertEqual(Set(Characters.all.map(\.id)).count, 23)
+        XCTAssertEqual(Characters.all.count, 25)
+        XCTAssertEqual(Set(Characters.all.map(\.id)).count, 25)
         for c in Characters.all {
             for l in c.layers {
                 let steps = Characters.steps(l.path)
