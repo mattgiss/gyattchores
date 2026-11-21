@@ -21,8 +21,8 @@ android {
         applicationId = "com.gyattchores.app"
         minSdk = 29
         targetSdk = 36
-        versionCode = 16
-        versionName = "1.0"
+        versionCode = 17
+        versionName = "1.1"
     }
 
     // The Play Store upload key. Its password lives outside the repo, in
@@ -63,7 +63,7 @@ android {
             dimension = "dist"
             applicationId = "com.doyourwork.app" // permanent once uploaded to the Play Store
             // The store version, matching the iPhone app's; release.sh only changes the github one.
-            versionName = "1.0"
+            versionName = "1.1"
             signingConfig = upload ?: signingConfigs.getByName("debug")
         }
     }
