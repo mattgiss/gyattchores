@@ -18,6 +18,14 @@ object Characters {
     /** The drawings themselves are in [CharacterArt], written out from `tools/characters`. */
     val all: List<PlayerCharacter> get() = CharacterArt.ALL
 
+    /**
+     * The characters handed out to someone who hasn't picked: the first sixteen, the ones every
+     * version has. Characters added later can be picked but aren't handed out, so nobody's
+     * character changes when the app updates, and phones on different versions still agree.
+     */
+    const val GIVEN_COUNT = 16
+    val given: List<PlayerCharacter> get() = all.take(GIVEN_COUNT)
+
     /** The character with this id; null for none, or one this version doesn't know. */
     fun named(id: String?): PlayerCharacter? = id?.let { i -> all.firstOrNull { it.id == i } }
 
@@ -25,7 +33,8 @@ object Characters {
      * Who has which character. Someone who picked one has it. Everyone else is given one from
      * their username, so it's the same on every phone: a character named in it if there is one
      * ("sockninja" starts as the ninja), else one the username's hash lands on, or the next free one.
-     * Only once there are more players than characters do two share.
+     * Only the [given] characters are handed out this way, and only once there are more players
+     * than those do two share.
      */
     fun assign(players: List<Player>): Map<String, PlayerCharacter> {
         val out = HashMap<String, PlayerCharacter>()
@@ -35,9 +44,10 @@ object Characters {
         for (p in players.sortedWith(compareBy({ it.id.toIntOrNull() ?: Int.MAX_VALUE }, { it.id }))) {
             if (p.id in out) continue
             // "sockninja" gets the ninja if it's free. Otherwise the username picks a place to start looking.
-            val namesake = all.firstOrNull { it.id in p.name.lowercase() && it.id !in taken }
-            val start = (Engine.fnv1a(p.name) % all.size).toInt()
-            val pick = namesake ?: (0 until all.size).map { all[(start + it) % all.size] }.firstOrNull { it.id !in taken } ?: all[start]
+            val pool = given
+            val namesake = pool.firstOrNull { it.id in p.name.lowercase() && it.id !in taken }
+            val start = (Engine.fnv1a(p.name) % pool.size).toInt()
+            val pick = namesake ?: (0 until pool.size).map { pool[(start + it) % pool.size] }.firstOrNull { it.id !in taken } ?: pool[start]
             out[p.id] = pick; taken += pick.id
         }
         return out
