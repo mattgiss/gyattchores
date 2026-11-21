@@ -7,8 +7,8 @@ final class CharacterTests: XCTestCase {
     private func p(_ id: String, _ name: String, _ character: String? = nil) -> Player { Player(id: id, name: name, character: character) }
 
     func testEveryDrawingReadsInFullAndStaysInItsSquare() {
-        XCTAssertEqual(Characters.all.count, 16)
-        XCTAssertEqual(Set(Characters.all.map(\.id)).count, 16)
+        XCTAssertEqual(Characters.all.count, 23)
+        XCTAssertEqual(Set(Characters.all.map(\.id)).count, 23)
         for c in Characters.all {
             for l in c.layers {
                 let steps = Characters.steps(l.path)
@@ -50,8 +50,8 @@ final class CharacterTests: XCTestCase {
         let alone = try XCTUnwrap(Characters.assign([p("1", "pat")])["1"])
         let got = Characters.assign([p("1", "pat"), p("2", "broomrider", alone.id)])
         XCTAssertEqual(got["2"]?.id, alone.id)
-        let i = try XCTUnwrap(Characters.all.firstIndex(of: alone))
-        XCTAssertEqual(got["1"]?.id, Characters.all[(i + 1) % Characters.all.count].id)
+        let i = try XCTUnwrap(Characters.given.firstIndex(of: alone))
+        XCTAssertEqual(got["1"]?.id, Characters.given[(i + 1) % Characters.given.count].id)
     }
 
     func testACharacterThisVersionDoesNotKnowCountsAsNotPicked() {
@@ -98,5 +98,15 @@ final class CharacterTests: XCTestCase {
         // A save from before there were characters still reads, with nobody having picked.
         let old = try JSONDecoder().decode([Player].self, from: Data(#"[{"id":"2","name":"sockninja"}]"#.utf8))
         XCTAssertNil(old[0].character)
+    }
+
+    /// Characters added after the first sixteen can be picked, but nobody is handed one, so an
+    /// update never changes someone's character and older phones still agree.
+    func testNewerCharactersArePickedNeverGiven() {
+        XCTAssertEqual(Characters.given.map(\.id), Array(Characters.all.prefix(16)).map(\.id))
+        let got = Characters.assign([Player(id: "1", name: "ottermom"), Player(id: "2", name: "kid", character: "dragon")])
+        XCTAssertEqual(got["2"]?.id, "dragon")
+        XCTAssertNotEqual(got["1"]?.id, "otter")
+        XCTAssertTrue(Characters.given.contains { $0.id == got["1"]?.id })
     }
 }

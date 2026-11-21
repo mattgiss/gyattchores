@@ -14,8 +14,8 @@ class CharactersTest {
     private fun p(id: String, name: String, character: String? = null) = Player(id, name, character = character)
 
     @Test fun everyDrawingReadsInFullAndStaysInItsSquare() {
-        assertEquals(16, Characters.all.size)
-        assertEquals(16, Characters.all.map { it.id }.toSet().size)
+        assertEquals(23, Characters.all.size)
+        assertEquals(23, Characters.all.map { it.id }.toSet().size)
         for (c in Characters.all) for (l in c.layers) {
             val steps = Characters.steps(l.path)
             assertTrue("${c.id} starts with a move", steps.first() is Characters.Step.Move)
@@ -55,7 +55,7 @@ class CharactersTest {
         val alone = Characters.assign(listOf(p("1", "pat")))["1"]!!
         val got = Characters.assign(listOf(p("1", "pat"), p("2", "broomrider", alone.id)))
         assertEquals(alone.id, got["2"]?.id)
-        val next = Characters.all[(Characters.all.indexOf(alone) + 1) % Characters.all.size]
+        val next = Characters.given[(Characters.given.indexOf(alone) + 1) % Characters.given.size]
         assertEquals(next.id, got["1"]?.id)
     }
 
@@ -97,5 +97,14 @@ class CharactersTest {
         val old = mapOf("players" to listOf("1:sockninja", "2:broomrider"))
         assertEquals("owl", FamilyState.decode(old, family).members[0].character)
         assertTrue(FamilyState.owns("character|1"))
+    }
+
+    /** Characters added after the first sixteen can be picked, but nobody is handed one, so an update never changes someone's character. */
+    @Test fun newerCharactersArePickedNeverGiven() {
+        assertEquals(Characters.all.take(16).map { it.id }, Characters.given.map { it.id })
+        val got = Characters.assign(listOf(p("1", "ottermom"), p("2", "kid", "dragon")))
+        assertEquals("dragon", got["2"]?.id)
+        assertTrue(got["1"]?.id != "otter")
+        assertTrue(Characters.given.any { it.id == got["1"]?.id })
     }
 }

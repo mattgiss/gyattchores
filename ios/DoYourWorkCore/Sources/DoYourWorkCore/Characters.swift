@@ -20,6 +20,12 @@ public enum Characters {
     /// The drawings themselves are in `CharacterArt`, written out from `tools/characters`.
     public static var all: [PlayerCharacter] { CharacterArt.all }
 
+    /// The characters handed out to someone who hasn't picked: the first sixteen, the ones every
+    /// version has. Characters added later can be picked but aren't handed out, so nobody's
+    /// character changes when the app updates, and phones on different versions still agree.
+    public static let givenCount = 16
+    public static var given: [PlayerCharacter] { Array(all.prefix(givenCount)) }
+
     /// The character with this id; nil for none, or one this version doesn't know.
     public static func named(_ id: String?) -> PlayerCharacter? {
         guard let id else { return nil }
@@ -29,7 +35,8 @@ public enum Characters {
     /// Who has which character. Someone who picked one has it. Everyone else is given one from
     /// their username, so it's the same on every phone: a character named in it if there is one
     /// ("sockninja" starts as the ninja), else one the username's hash lands on, or the next free
-    /// one. Only once there are more players than characters do two share.
+    /// one. Only the `given` characters are handed out this way, and only once there are more
+    /// players than those do two share.
     public static func assign(_ players: [Player]) -> [String: PlayerCharacter] {
         var out: [String: PlayerCharacter] = [:]
         var taken = Set<String>()
@@ -40,10 +47,11 @@ public enum Characters {
         let ordered = players.sorted { (Int($0.id) ?? Int.max, $0.id) < (Int($1.id) ?? Int.max, $1.id) }
         for p in ordered where out[p.id] == nil {
             let lowered = p.name.lowercased()
-            let start = Int(Engine.fnv1a(p.name) % UInt32(all.count))
-            let pick = all.first { lowered.contains($0.id) && !taken.contains($0.id) }
-                ?? (0..<all.count).map { all[(start + $0) % all.count] }.first { !taken.contains($0.id) }
-                ?? all[start]
+            let pool = given
+            let start = Int(Engine.fnv1a(p.name) % UInt32(pool.count))
+            let pick = pool.first { lowered.contains($0.id) && !taken.contains($0.id) }
+                ?? (0..<pool.count).map { pool[(start + $0) % pool.count] }.first { !taken.contains($0.id) }
+                ?? pool[start]
             out[p.id] = pick; taken.insert(pick.id)
         }
         return out
